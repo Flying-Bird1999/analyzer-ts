@@ -1,0 +1,131 @@
+package parser
+
+import (
+	"fmt"
+	"main/bundle/utils"
+
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+)
+
+// 解析导入模块
+// - 默认导入: import Bird from './type2';
+// - 命名空间导入: import * as allTypes from './type';
+// - 命名导入: import { School, School2 } from './school';
+// 					- import type { CurrentRes } from './type';
+//      		- import { School as NewSchool } from './school';
+
+// ==> 解析结果:
+// [
+//   {
+//     "modules": [
+//       {
+//         "module": "default",
+//         "type": "default",
+//         "identifier": "Bird"
+//       }
+//     ],
+//     "raw": "import Bird from './type2';",
+//     "source": "./type2"
+//   },
+//   {
+//     "modules": [
+//       {
+//         "module": "allTypes",
+//         "type": "namespace",
+//         "identifier": "allTypes"
+//       }
+//     ],
+//     "raw": "import * as allTypes from './type';",
+//     "source": "./type"
+//   },
+//   {
+//     "modules": [
+//       {
+//         "module": "School",
+//         "type": "named",
+//         "identifier": "School"
+//       },
+//       {
+//         "module": "School2",
+//         "type": "named",
+//         "identifier": "School2"
+//       }
+//     ],
+//     "raw": "import { School, School2 } from './school';",
+//     "source": "./school"
+//   },
+//   {
+//     "modules": [
+//       {
+//         "module": "CurrentRes",
+//         "type": "named",
+//         "identifier": "CurrentRes"
+//       }
+//     ],
+//     "raw": "import type { CurrentRes } from './type';",
+//     "source": "./type"
+//   },
+//   {
+//     "modules": [
+//       {
+//         "module": "School",
+//         "type": "named",
+//         "identifier": "NewSchool"
+//       }
+//     ],
+//     "raw": "import { School as NewSchool } from './school';",
+//     "source": "./school"
+//   }
+// ]
+
+func TraverseImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
+	// ✅ 解析 import 的源代码
+	raw := utils.GetNodeText(node.AsNode(), sourceCode)
+	fmt.Printf("源代码 raw: %s\n", raw)
+
+	// ✅ 解析 import 的模块路径
+	moduleSpecifier := node.ModuleSpecifier
+	source := moduleSpecifier.Text()
+	fmt.Printf("导入路径 source: %s\n", source)
+
+	// ✅ 解析 import 的模块内容
+	importClause := node.ImportClause.AsImportClause()
+
+	// 默认导入: import Bird from './type2';
+	if ast.IsDefaultImport(node.AsNode()) {
+		Name := importClause.Name().Text()
+		fmt.Printf("默认导入: %s\n", Name) // Bird
+	}
+
+	// - 命名空间导入: import * as allTypes from './type';
+	namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
+	if namespaceNode != nil {
+		Name := namespaceNode.Name().Text()
+		fmt.Printf("命名空间导入: %s\n", Name) // allTypes
+	}
+
+	// - 命名导入: import { School, School2 } from './school';
+	// 					- import type { CurrentRes } from './type';
+	//      		- import { School as NewSchool } from './school';
+	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
+		namedImports := importClause.NamedBindings.AsNamedImports()
+		for _, element := range namedImports.Elements.Nodes {
+			importSpecifier := element.AsImportSpecifier()
+
+			if importSpecifier.PropertyName != nil {
+				// import { School as NewSchool } from './school';
+				Name := importSpecifier.PropertyName.Text()
+				Alias := importSpecifier.Name().Text()
+				fmt.Printf("命名导入 Name: %s\n", Name)   // School
+				fmt.Printf("命名导入 Alias: %s\n", Alias) // NewSchool
+
+			} else {
+				// import { School, School2 } from './school';
+				// import type { CurrentRes } from './type';
+				Name := importSpecifier.Name().Text()
+				fmt.Printf("命名导入 Name: %s\n", Name) // 分别输出School / School2  和 CurrentRes
+			}
+		}
+	}
+	fmt.Print("\n\n\n\n")
+}
