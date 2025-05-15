@@ -41,7 +41,6 @@ func ParseTypeScriptFile(filePath string, sourceCode string) *ast.SourceFile {
 }
 
 func Traverse(filePath string) {
-	// 读取文件内容
 	sourceCode, err := ReadFileContent(filePath)
 	if err != nil {
 		fmt.Printf("读取文件失败: %v\n", err)
@@ -52,12 +51,27 @@ func Traverse(filePath string) {
 	for _, node := range sourceFile.Statements.Nodes {
 		// 解析 import
 		if node.Kind == ast.KindImportDeclaration {
-			// TraverseImportDeclaration(node.AsImportDeclaration(), sourceCode)
+			idr := NewImportDeclarationResult()
+			idr.analyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
 		}
 
 		// 解析 interface
 		if node.Kind == ast.KindInterfaceDeclaration {
-			TraverseInterfaceDeclaration(node.AsInterfaceDeclaration(), sourceCode)
+			inter := NewCusInterfaceDeclaration(node.AsNode(), sourceCode)
+			inter.analyzeInterfaces(node.AsInterfaceDeclaration())
+
+			fmt.Printf("\n分析接口: %s\n", inter.Name)
+			for _, ref := range inter.Reference {
+				if ref.IsExtend {
+					fmt.Printf("- %s【继承】", ref.Name)
+				} else {
+					fmt.Printf("- %s 在", ref.Name)
+					for _, location := range ref.Location {
+						fmt.Printf("%s, ", location)
+					}
+				}
+				fmt.Printf("\n")
+			}
 		}
 
 		// // 解析 type

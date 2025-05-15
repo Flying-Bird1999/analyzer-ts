@@ -1,21 +1,9 @@
-// import
 import Bird from './type2';
 import * as allTypes from './type';
 import { School, School2 } from './school';
 import type { CurrentRes } from './type';
 import { School as NewSchool } from './school';
 
-
-
-
-// interface
-
-interface Class {
-  teacher: string | number;
-  count?: number[];
-  name: Name;
-  student: Person[];
-}
 
 interface Person {
   age: number
@@ -25,21 +13,64 @@ interface Person {
 //   ho: boolean;
 // }
 
-// export interface LinearModel {
-//   /**单价 抽佣场景该值为比例,万分为抽佣,0.05%=5 其他场景为分 必填 */
-//   price: number;
-// }
-
-// export interface LinearWithFixedModel {
-//   /**单价 抽佣场景该值为比例,万分为抽佣,0.05%=5 其他场景为分 必填 */
-//   price: number;
-//   /**固额 必填 */
-//   fixedPrice: number;
-// }
+export interface LinearModel {
+  price: number;
+}
 
 
+export interface LinearModel2 {
+  price: number;
+}
 
+export interface LinearModel3 {
+  price: number;
+}
 
+export interface LinearModel4 {
+  price: number;
+  name: string;
+}
+
+export interface LinearModel5 {
+  price: number;
+  age: number;
+}
+
+export interface LinearModel6 {
+  price: number;
+  age: number;
+}
+
+interface CurrentRes2 {
+  /**佣金政策维度，SUB - 基于已购套餐的佣金政策，STORE - 基于店铺的佣金政策 */
+  policyDimension: LinearModel5;
+  /**万分位抽佣比例，例如0.05%这里是：5 */
+}
+
+interface CurrentRes3<T> {
+  number: T;
+}
+
+// interface
+interface Class extends CurrentRes2 {
+  test: LinearModel4 & LinearModel5;
+  test2: LinearModel4 | LinearModel5;
+  cccc: CurrentRes3<LinearModel6>
+  count?: number[];
+  name?: Name;
+  student: Person[];
+  student2: [LinearModel4, LinearModel2];
+  school: {
+    school_name: allTypes.StoreDetailReq;
+    school_age: {
+      color: {
+        sc: NewSchool
+      }
+    };
+    linearModel: LinearModel;
+  };
+  school2: LinearModel | Person;
+}
 
 // type
 export type Name = {

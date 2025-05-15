@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"main/bundle/utils"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
@@ -78,15 +77,46 @@ import (
 //   }
 // ]
 
-func TraverseImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
+type Module struct {
+	Module     string // 模块名, 对应实际导出的内容模块
+	Type       string // 默认导入: default、命名空间导入: namespace、命名导入:named、unknown
+	Identifier string //
+}
+
+type Data struct {
+	Modules []Module
+	Raw     string
+	Source  string
+}
+
+type ImportDeclarationResult struct {
+	Data Data
+}
+
+func NewImportDeclarationResult() *ImportDeclarationResult {
+	return &ImportDeclarationResult{
+		Data: Data{
+			Modules: make([]Module, 0),
+			Raw:     "",
+			Source:  "",
+		},
+	}
+}
+
+func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
+	initImportModule := Data{
+		Modules: make([]Module, 0),
+		Raw:     "",
+		Source:  "",
+	}
+
 	// ✅ 解析 import 的源代码
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	fmt.Printf("源代码 raw: %s\n", raw)
+	initImportModule.Raw = raw
 
 	// ✅ 解析 import 的模块路径
 	moduleSpecifier := node.ModuleSpecifier
-	source := moduleSpecifier.Text()
-	fmt.Printf("导入路径 source: %s\n", source)
+	initImportModule.Source = moduleSpecifier.Text()
 
 	// ✅ 解析 import 的模块内容
 	importClause := node.ImportClause.AsImportClause()
@@ -94,14 +124,22 @@ func TraverseImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
 	// 默认导入: import Bird from './type2';
 	if ast.IsDefaultImport(node.AsNode()) {
 		Name := importClause.Name().Text()
-		fmt.Printf("默认导入: %s\n", Name) // Bird
+		initImportModule.Modules = append(initImportModule.Modules, Module{
+			Module:     "default",
+			Type:       "default",
+			Identifier: Name,
+		})
 	}
 
 	// - 命名空间导入: import * as allTypes from './type';
 	namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
 	if namespaceNode != nil {
 		Name := namespaceNode.Name().Text()
-		fmt.Printf("命名空间导入: %s\n", Name) // allTypes
+		initImportModule.Modules = append(initImportModule.Modules, Module{
+			Module:     Name,
+			Type:       "namespace",
+			Identifier: Name,
+		})
 	}
 
 	// - 命名导入: import { School, School2 } from './school';
@@ -116,16 +154,24 @@ func TraverseImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
 				// import { School as NewSchool } from './school';
 				Name := importSpecifier.PropertyName.Text()
 				Alias := importSpecifier.Name().Text()
-				fmt.Printf("命名导入 Name: %s\n", Name)   // School
-				fmt.Printf("命名导入 Alias: %s\n", Alias) // NewSchool
+				initImportModule.Modules = append(initImportModule.Modules, Module{
+					Module:     Name,
+					Type:       "namespace",
+					Identifier: Alias,
+				})
 
 			} else {
 				// import { School, School2 } from './school';
 				// import type { CurrentRes } from './type';
 				Name := importSpecifier.Name().Text()
-				fmt.Printf("命名导入 Name: %s\n", Name) // 分别输出School / School2  和 CurrentRes
+				initImportModule.Modules = append(initImportModule.Modules, Module{
+					Module:     Name,
+					Type:       "namespace",
+					Identifier: Name,
+				})
 			}
 		}
 	}
-	fmt.Print("\n\n\n\n")
+
+	idr.Data = initImportModule
 }

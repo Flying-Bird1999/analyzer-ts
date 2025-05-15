@@ -2,153 +2,185 @@ package parser
 
 import (
 	"fmt"
+	"main/bundle/utils"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// InterfaceDependency 表示接口依赖的类型
-type InterfaceDependency struct {
+// 解析 interface 声明，递归去查找interface里边的类型
+// - 如果有引用外部类型的就找出来
+// - 如果有应用到其他的ts语法的也要找出来，比如：extends、omit等
+
+type TypeReference struct {
 	Name     string
-	IsBasic  bool   // 是否是基本类型
-	TypeKind string // 类型的种类
+	Location []string // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
+	IsExtend bool     // 是否继承，true表示继承，false表示member中引用的
 }
 
-// InterfaceInfo 表示接口的信息
-type InterfaceInfo struct {
-	Name         string
-	Properties   []string
-	Dependencies []InterfaceDependency
+type InterfaceDeclarationResult struct {
+	Name      string // 接口名称
+	Raw       string // 源码
+	Reference map[string]TypeReference
 }
 
-// ExtractTypeScriptInterface 从TypeScript文件中提取接口信息
-func ExtractTypeScriptInterface(interfaceDeclaration *ast.InterfaceDeclaration, sourceCode string) ([]InterfaceInfo, error) {
-	// 存储接口信息的结果
-	var interfaces []InterfaceInfo
+func NewCusInterfaceDeclaration(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {
+	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 
-	// 创建接口信息
-	interfaceInfo := InterfaceInfo{
-		Name: interfaceDeclaration.Name().AsIdentifier().Text,
+	return &InterfaceDeclarationResult{
+		Name:      "",
+		Raw:       raw,
+		Reference: make(map[string]TypeReference),
 	}
+}
 
-	// 提取属性和方法
-	if interfaceDeclaration.Members != nil {
-		for _, member := range interfaceDeclaration.Members.Nodes {
-			if ast.IsPropertySignatureDeclaration(member) {
-				propSig := member.AsPropertySignatureDeclaration()
-				interfaceInfo.Properties = append(interfaceInfo.Properties, propSig.Name().AsIdentifier().Text)
+// 分析接口的主要结构，包括：
+// 1. 接口名称。
+// 2. 继承关系（通过 analyzeHeritageClause）。
+// 3. 接口成员（通过 analyzeMember）。
+func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
+	interfaceName := interfaceDecl.Name().AsIdentifier().Text
+	inter.Name = interfaceName
 
-				// 提取属性类型依赖
-				if propSig.Type != nil {
-					dependency := extractTypeDependency(propSig.Type)
-					if dependency != nil {
-						interfaceInfo.Dependencies = append(interfaceInfo.Dependencies, *dependency)
-					}
-				}
-			}
+	// 分析接口的继承关系
+	inter.analyzeHeritageClause(interfaceDecl, interfaceName)
+
+	// 分析接口的成员
+	if interfaceDecl.Members != nil {
+		for _, member := range interfaceDecl.Members.Nodes {
+			inter.analyzeMember(member, interfaceName)
 		}
 	}
+}
 
-	// 提取继承的接口
-	if interfaceDeclaration.HeritageClauses != nil {
-		for _, clause := range interfaceDeclaration.HeritageClauses.Nodes {
+// 分析接口的继承子句（extends）。
+// 1. 找出接口继承的其他接口。
+// 2. 提取继承的接口名称及其类型参数。
+func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *ast.InterfaceDeclaration, interfaceName string) {
+	if interfaceDecl.HeritageClauses != nil {
+		for _, clause := range interfaceDecl.HeritageClauses.Nodes {
 			heritageClause := clause.AsHeritageClause()
 			if heritageClause.Token == ast.KindExtendsKeyword {
-				for _, type_ := range heritageClause.Types.Nodes {
-					expr := type_.AsExpressionWithTypeArguments()
+				for _, typeRef := range heritageClause.Types.Nodes {
+					// 将节点转换为 ExpressionWithTypeArguments
+					expr := typeRef.AsExpressionWithTypeArguments()
 					if ast.IsIdentifier(expr.Expression) {
-						interfaceInfo.Dependencies = append(interfaceInfo.Dependencies, InterfaceDependency{
-							Name:     expr.Expression.AsIdentifier().Text,
-							IsBasic:  false,
-							TypeKind: "interface",
-						})
+						typeName := expr.Expression.AsIdentifier().Text
+						inter.addTypeReference(typeName, "", true)
 					}
 				}
 			}
 		}
 	}
-
-	interfaces = append(interfaces, interfaceInfo)
-
-	return interfaces, nil
 }
 
-// extractTypeDependency 提取类型依赖
-func extractTypeDependency(typeNode *ast.TypeNode) *InterfaceDependency {
+// 分析接口的成员属性类型
+func (inter *InterfaceDeclarationResult) analyzeMember(member *ast.Node, interfaceName string) {
+	if ast.IsPropertySignatureDeclaration(member) {
+		propSig := member.AsPropertySignatureDeclaration()
+		propName := propSig.Name().AsIdentifier().Text
+		location := fmt.Sprintf("%s.%s", interfaceName, propName)
+		if propSig.Type != nil {
+			inter.analyzeType(propSig.Type, location)
+		}
+	}
+}
+
+// 递归分析类型节点。
+// 根据类型节点的种类（如类型引用、数组类型、联合类型、交叉类型等）进行不同的处理。
+// 如果类型是外部引用，则调用 inter.addTypeReference 记录。
+func (inter *InterfaceDeclarationResult) analyzeType(typeNode *ast.Node, location string) {
 	if typeNode == nil {
-		return nil
-	}
-
-	// 根据类型节点的种类提取依赖
-	if ast.IsTypeReferenceNode(typeNode) {
-		typeRef := typeNode.AsTypeReferenceNode()
-		if ast.IsIdentifier(typeRef.TypeName) {
-			return &InterfaceDependency{
-				Name:     typeRef.TypeName.AsIdentifier().Text,
-				IsBasic:  false,
-				TypeKind: "reference",
-			}
-		}
-	} else if ast.IsKeywordKind(typeNode.Kind) {
-		// 处理基本类型
-		return &InterfaceDependency{
-			Name:     typeNode.Kind.String(),
-			IsBasic:  true,
-			TypeKind: "keyword",
-		}
-	} else if typeNode.Kind == ast.KindArrayType {
-		// 处理数组类型
-		arrayType := typeNode.AsArrayTypeNode()
-		elemDep := extractTypeDependency(arrayType.ElementType)
-		if elemDep != nil {
-			elemDep.TypeKind = "array"
-			return elemDep
-		}
-	} else if typeNode.Kind == ast.KindUnionType {
-		// 处理联合类型
-		unionType := typeNode.AsUnionTypeNode()
-		if unionType.Types != nil && len(unionType.Types.Nodes) > 0 {
-			// 简化处理，只返回第一个类型
-			firstType := unionType.Types.Nodes[0]
-			dep := extractTypeDependency(firstType)
-			if dep != nil {
-				dep.TypeKind = "union"
-				return dep
-			}
-		}
-	}
-
-	return nil
-}
-
-// 解析当前文件中的 interface 声明
-// - 当指定某个 interface 后，找到内部依赖的其他类型
-//  	- 需要考虑 继承 extends 的case
-
-func TraverseInterfaceDeclaration(node *ast.InterfaceDeclaration, sourceCode string) {
-	// ✅ 解析 interface 的源代码
-	// raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	// fmt.Printf("源代码 raw: %s\n", raw)
-
-	interfaces, err := ExtractTypeScriptInterface(node, sourceCode)
-
-	fmt.Printf("interfaces: %v\n", interfaces)
-
-	if err != nil {
-		fmt.Printf("错误: %v\n", err)
 		return
 	}
 
-	// 输出结果
-	for _, iface := range interfaces {
-		fmt.Printf("接口名称: %s\n", iface.Name)
-		fmt.Println("属性:")
-		for _, prop := range iface.Properties {
-			fmt.Printf("  - %s\n", prop)
+	switch {
+	// 处理类型引用
+	case ast.IsTypeReferenceNode(typeNode):
+		typeRef := typeNode.AsTypeReferenceNode()
+		if ast.IsIdentifier(typeRef.TypeName) {
+			typeName := typeRef.TypeName.AsIdentifier().Text
+			// 排除基本类型
+			if !utils.IsBasicType(typeName) {
+				inter.addTypeReference(typeName, location, false)
+			}
+
+			// 分析类型参数 (泛型场景)
+			if typeRef.TypeArguments != nil {
+				for _, typeArg := range typeRef.TypeArguments.Nodes {
+					inter.analyzeType(typeArg, location+"<>")
+				}
+			}
+		} else if ast.IsQualifiedName(typeRef.TypeName) {
+			// 处理 namespace.Type
+			qualifiedName := typeRef.TypeName.AsQualifiedName()
+			right := qualifiedName.Right.AsIdentifier().Text
+			left := ""
+			if ast.IsIdentifier(qualifiedName.Left) {
+				left = qualifiedName.Left.AsIdentifier().Text
+			}
+			inter.addTypeReference(left+"."+right, location, false)
 		}
-		fmt.Println("依赖类型:")
-		for _, dep := range iface.Dependencies {
-			fmt.Printf("  - %s (基本类型: %v, 类型: %s)\n", dep.Name, dep.IsBasic, dep.TypeKind)
+	// 处理数组类型
+	case typeNode.Kind == ast.KindArrayType:
+		arrayType := typeNode.AsArrayTypeNode()
+		if ast.IsTypeReferenceNode(arrayType.ElementType) {
+			elemTypeRef := arrayType.ElementType.AsTypeReferenceNode()
+			if ast.IsIdentifier(elemTypeRef.TypeName) {
+				typeName := elemTypeRef.TypeName.AsIdentifier().Text
+				if !utils.IsBasicType(typeName) {
+					inter.addTypeReference(typeName, location, false)
+				}
+			}
+
+		} else {
+			// 递归处理数组元素类型
+			inter.analyzeType(arrayType.ElementType, location)
 		}
-		fmt.Println("\n\n\n")
+	// 处理联合类型
+	case typeNode.Kind == ast.KindUnionType:
+		unionType := typeNode.AsUnionTypeNode()
+		for _, unionMember := range unionType.Types.Nodes {
+			inter.analyzeType(unionMember, location)
+		}
+	// 处理交叉类型
+	case typeNode.Kind == ast.KindIntersectionType:
+		intersectionType := typeNode.AsIntersectionTypeNode()
+		for _, intersectionMember := range intersectionType.Types.Nodes {
+			inter.analyzeType(intersectionMember, location)
+		}
+	// 处理元组类型
+	case ast.IsTupleTypeNode(typeNode):
+
+		tupleType := typeNode.AsTupleTypeNode()
+		for i, elemType := range tupleType.Elements.Nodes {
+			inter.analyzeType(elemType, fmt.Sprintf("%s[%d]", location, i))
+		}
+	// 处理内联类型，持续递归调用 {a: {b: c:number}}
+	case ast.IsTypeLiteralNode(typeNode):
+		typeLiteral := typeNode.AsTypeLiteralNode()
+		for _, member := range typeLiteral.Members.Nodes {
+			inter.analyzeMember(member, location)
+		}
+	}
+}
+
+// 填充数据
+func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, location string, isExtend bool) {
+	// 排除基本类型和已知的内置类型
+	if utils.IsBasicType(typeName) {
+		return
+	}
+
+	if ref, exists := inter.Reference[typeName]; exists {
+		// 如果类型引用已存在，追加新的位置
+		ref.Location = append(ref.Location, location)
+		inter.Reference[typeName] = ref
+	} else {
+		// 如果类型引用不存在，创建新的引用
+		inter.Reference[typeName] = TypeReference{
+			Name:     typeName,
+			Location: []string{location},
+			IsExtend: isExtend,
+		}
 	}
 }
