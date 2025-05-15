@@ -2,76 +2,55 @@ package parser
 
 import (
 	"fmt"
-	"os"
+	"main/bundle/utils"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/core"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/parser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/scanner"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/tspath"
 )
 
 type BundleResult struct {
+	ImportDeclarations    []ImportDeclarationResult
+	InterfaceDeclarations []InterfaceDeclarationResult
 }
 
-// 读取文件内容
-func ReadFileContent(filePath string) (string, error) {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", err
+func NewBundleResult() *BundleResult {
+	return &BundleResult{
+		ImportDeclarations:    []ImportDeclarationResult{},
+		InterfaceDeclarations: []InterfaceDeclarationResult{},
 	}
-	return string(content), nil
 }
 
-// 解析TypeScript文件为AST
-func ParseTypeScriptFile(filePath string, sourceCode string) *ast.SourceFile {
-	// 创建路径对象
-	path := tspath.Path(filePath)
+func (br *BundleResult) AddImportDeclaration(idr *ImportDeclarationResult) {
+	br.ImportDeclarations = append(br.ImportDeclarations, *idr)
+}
 
-	// 使用ParseSourceFile函数解析源代码
-	sourceFile := parser.ParseSourceFile(
-		filePath,
-		path,
-		sourceCode,
-		core.ScriptTargetES2015,
-		scanner.JSDocParsingModeParseAll,
-	)
-
-	return sourceFile
+func (br *BundleResult) AddInterfaceDeclaration(inter *InterfaceDeclarationResult) {
+	br.InterfaceDeclarations = append(br.InterfaceDeclarations, *inter)
 }
 
 func Traverse(filePath string) {
-	sourceCode, err := ReadFileContent(filePath)
+	sourceCode, err := utils.ReadFileContent(filePath)
 	if err != nil {
 		fmt.Printf("读取文件失败: %v\n", err)
 	}
 
-	sourceFile := ParseTypeScriptFile(filePath, sourceCode)
+	sourceFile := utils.ParseTypeScriptFile(filePath, sourceCode)
+
+	bundle := NewBundleResult()
 
 	for _, node := range sourceFile.Statements.Nodes {
 		// 解析 import
 		if node.Kind == ast.KindImportDeclaration {
 			idr := NewImportDeclarationResult()
 			idr.analyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
+
+			bundle.AddImportDeclaration(idr)
 		}
 
 		// 解析 interface
 		if node.Kind == ast.KindInterfaceDeclaration {
 			inter := NewCusInterfaceDeclaration(node.AsNode(), sourceCode)
 			inter.analyzeInterfaces(node.AsInterfaceDeclaration())
-
-			fmt.Printf("\n分析接口: %s\n", inter.Name)
-			for _, ref := range inter.Reference {
-				if ref.IsExtend {
-					fmt.Printf("- %s【继承】", ref.Name)
-				} else {
-					fmt.Printf("- %s 在", ref.Name)
-					for _, location := range ref.Location {
-						fmt.Printf("%s, ", location)
-					}
-				}
-				fmt.Printf("\n")
-			}
+			bundle.AddInterfaceDeclaration(inter)
 		}
 
 		// // 解析 type

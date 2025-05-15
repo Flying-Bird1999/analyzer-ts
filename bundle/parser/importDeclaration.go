@@ -83,28 +83,22 @@ type Module struct {
 	Identifier string //
 }
 
-type Data struct {
+type ImportDeclarationResult struct {
 	Modules []Module
 	Raw     string
 	Source  string
 }
 
-type ImportDeclarationResult struct {
-	Data Data
-}
-
 func NewImportDeclarationResult() *ImportDeclarationResult {
 	return &ImportDeclarationResult{
-		Data: Data{
-			Modules: make([]Module, 0),
-			Raw:     "",
-			Source:  "",
-		},
+		Modules: make([]Module, 0),
+		Raw:     "",
+		Source:  "",
 	}
 }
 
 func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
-	initImportModule := Data{
+	initImportModule := ImportDeclarationResult{
 		Modules: make([]Module, 0),
 		Raw:     "",
 		Source:  "",
@@ -173,5 +167,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 		}
 	}
 
-	idr.Data = initImportModule
+	idr.Modules = initImportModule.Modules
+	idr.Raw = initImportModule.Raw
+	idr.Source = initImportModule.Source
 }
