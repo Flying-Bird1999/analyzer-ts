@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"main/bundle/utils"
+	"strings"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -47,7 +48,14 @@ func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.In
 	// 分析接口的成员
 	if interfaceDecl.Members != nil {
 		for _, member := range interfaceDecl.Members.Nodes {
-			inter.analyzeMember(member, interfaceName)
+			memberTypeName, memberLocation := AnalyzeMember(member, interfaceName)
+			if memberTypeName != "" && memberLocation != "" {
+				memberTypeNameArray := strings.Split(memberTypeName, ",")
+				memberLocationArray := strings.Split(memberLocation, ",")
+				for i, typeName := range memberTypeNameArray {
+					inter.addTypeReference(typeName, memberLocationArray[i], false)
+				}
+			}
 		}
 	}
 }
@@ -73,97 +81,6 @@ func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *as
 	}
 }
 
-// 分析接口的成员属性类型
-func (inter *InterfaceDeclarationResult) analyzeMember(member *ast.Node, interfaceName string) {
-	if ast.IsPropertySignatureDeclaration(member) {
-		propSig := member.AsPropertySignatureDeclaration()
-		propName := propSig.Name().AsIdentifier().Text
-		location := fmt.Sprintf("%s.%s", interfaceName, propName)
-		if propSig.Type != nil {
-			inter.analyzeType(propSig.Type, location)
-		}
-	}
-}
-
-// 递归分析类型节点。
-// 根据类型节点的种类（如类型引用、数组类型、联合类型、交叉类型等）进行不同的处理。
-// 如果类型是外部引用，则调用 inter.addTypeReference 记录。
-func (inter *InterfaceDeclarationResult) analyzeType(typeNode *ast.Node, location string) {
-	if typeNode == nil {
-		return
-	}
-
-	switch {
-	// 处理类型引用
-	case ast.IsTypeReferenceNode(typeNode):
-		typeRef := typeNode.AsTypeReferenceNode()
-		if ast.IsIdentifier(typeRef.TypeName) {
-			typeName := typeRef.TypeName.AsIdentifier().Text
-			// 排除基本类型
-			if !utils.IsBasicType(typeName) {
-				inter.addTypeReference(typeName, location, false)
-			}
-
-			// 分析类型参数 (泛型场景)
-			if typeRef.TypeArguments != nil {
-				for _, typeArg := range typeRef.TypeArguments.Nodes {
-					inter.analyzeType(typeArg, location+"<>")
-				}
-			}
-		} else if ast.IsQualifiedName(typeRef.TypeName) {
-			// 处理 namespace.Type
-			qualifiedName := typeRef.TypeName.AsQualifiedName()
-			right := qualifiedName.Right.AsIdentifier().Text
-			left := ""
-			if ast.IsIdentifier(qualifiedName.Left) {
-				left = qualifiedName.Left.AsIdentifier().Text
-			}
-			inter.addTypeReference(left+"."+right, location, false)
-		}
-	// 处理数组类型
-	case typeNode.Kind == ast.KindArrayType:
-		arrayType := typeNode.AsArrayTypeNode()
-		if ast.IsTypeReferenceNode(arrayType.ElementType) {
-			elemTypeRef := arrayType.ElementType.AsTypeReferenceNode()
-			if ast.IsIdentifier(elemTypeRef.TypeName) {
-				typeName := elemTypeRef.TypeName.AsIdentifier().Text
-				if !utils.IsBasicType(typeName) {
-					inter.addTypeReference(typeName, location, false)
-				}
-			}
-
-		} else {
-			// 递归处理数组元素类型
-			inter.analyzeType(arrayType.ElementType, location)
-		}
-	// 处理联合类型
-	case typeNode.Kind == ast.KindUnionType:
-		unionType := typeNode.AsUnionTypeNode()
-		for _, unionMember := range unionType.Types.Nodes {
-			inter.analyzeType(unionMember, location)
-		}
-	// 处理交叉类型
-	case typeNode.Kind == ast.KindIntersectionType:
-		intersectionType := typeNode.AsIntersectionTypeNode()
-		for _, intersectionMember := range intersectionType.Types.Nodes {
-			inter.analyzeType(intersectionMember, location)
-		}
-	// 处理元组类型
-	case ast.IsTupleTypeNode(typeNode):
-
-		tupleType := typeNode.AsTupleTypeNode()
-		for i, elemType := range tupleType.Elements.Nodes {
-			inter.analyzeType(elemType, fmt.Sprintf("%s[%d]", location, i))
-		}
-	// 处理内联类型，持续递归调用 {a: {b: c:number}}
-	case ast.IsTypeLiteralNode(typeNode):
-		typeLiteral := typeNode.AsTypeLiteralNode()
-		for _, member := range typeLiteral.Members.Nodes {
-			inter.analyzeMember(member, location)
-		}
-	}
-}
-
 // 填充数据
 func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, location string, isExtend bool) {
 	// 排除基本类型和已知的内置类型
@@ -183,4 +100,125 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 			IsExtend: isExtend,
 		}
 	}
+}
+
+// 分析接口的成员属性类型
+func AnalyzeMember(member *ast.Node, interfaceName string) (string, string) {
+	if ast.IsPropertySignatureDeclaration(member) {
+		propSig := member.AsPropertySignatureDeclaration()
+		propName := propSig.Name().AsIdentifier().Text
+		location := fmt.Sprintf("%s.%s", interfaceName, propName)
+		if propSig.Type != nil {
+			return AnalyzeType(propSig.Type, location)
+		}
+	}
+	return "", ""
+}
+
+// 递归分析类型节点。
+// 根据类型节点的种类（如类型引用、数组类型、联合类型、交叉类型等）进行不同的处理。
+// 如果类型是外部引用，则调用 inter.addTypeReference 记录。
+func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
+	if typeNode == nil {
+		return "", ""
+	}
+	var typeNames []string
+	var locations []string
+
+	switch {
+	// 处理类型引用
+	case ast.IsTypeReferenceNode(typeNode):
+		typeRef := typeNode.AsTypeReferenceNode()
+		if ast.IsIdentifier(typeRef.TypeName) {
+			typeName := typeRef.TypeName.AsIdentifier().Text
+			// 排除基本类型
+			if !utils.IsBasicType(typeName) {
+				typeNames = append(typeNames, typeName)
+				locations = append(locations, location)
+			}
+
+			// 分析类型参数 (泛型场景)
+			if typeRef.TypeArguments != nil {
+				for _, typeArg := range typeRef.TypeArguments.Nodes {
+					argTypeName, argLocation := AnalyzeType(typeArg, location+"<>")
+					if argTypeName != "" {
+						typeNames = append(typeNames, argTypeName)
+						locations = append(locations, argLocation)
+					}
+				}
+			}
+		} else if ast.IsQualifiedName(typeRef.TypeName) {
+			// 处理 namespace.Type
+			qualifiedName := typeRef.TypeName.AsQualifiedName()
+			right := qualifiedName.Right.AsIdentifier().Text
+			left := ""
+			if ast.IsIdentifier(qualifiedName.Left) {
+				left = qualifiedName.Left.AsIdentifier().Text
+			}
+			typeNames = append(typeNames, left+"."+right)
+			locations = append(locations, location)
+		}
+	// 处理数组类型
+	case typeNode.Kind == ast.KindArrayType:
+		arrayType := typeNode.AsArrayTypeNode()
+		if ast.IsTypeReferenceNode(arrayType.ElementType) {
+			elemTypeRef := arrayType.ElementType.AsTypeReferenceNode()
+			if ast.IsIdentifier(elemTypeRef.TypeName) {
+				typeName := elemTypeRef.TypeName.AsIdentifier().Text
+				if !utils.IsBasicType(typeName) {
+					typeNames = append(typeNames, typeName)
+					locations = append(locations, location)
+				}
+			}
+
+		} else {
+			// 递归处理数组元素类型
+			memberTypeName, memberLocation := AnalyzeType(arrayType.ElementType, location)
+			if memberTypeName != "" {
+				typeNames = append(typeNames, memberTypeName)
+				locations = append(locations, memberLocation)
+			}
+		}
+	// 处理联合类型
+	case typeNode.Kind == ast.KindUnionType:
+		unionType := typeNode.AsUnionTypeNode()
+		for _, unionMember := range unionType.Types.Nodes {
+			memberTypeName, memberLocation := AnalyzeType(unionMember, location)
+			if memberTypeName != "" {
+				typeNames = append(typeNames, memberTypeName)
+				locations = append(locations, memberLocation)
+			}
+		}
+	// 处理交叉类型
+	case typeNode.Kind == ast.KindIntersectionType:
+		intersectionType := typeNode.AsIntersectionTypeNode()
+		for _, intersectionMember := range intersectionType.Types.Nodes {
+			memberTypeName, memberLocation := AnalyzeType(intersectionMember, location)
+			if memberTypeName != "" {
+				typeNames = append(typeNames, memberTypeName)
+				locations = append(locations, memberLocation)
+			}
+		}
+	// 处理元组类型
+	case ast.IsTupleTypeNode(typeNode):
+		tupleType := typeNode.AsTupleTypeNode()
+		for i, elemType := range tupleType.Elements.Nodes {
+			elemTypeName, elemLocation := AnalyzeType(elemType, fmt.Sprintf("%s[%d]", location, i))
+			if elemTypeName != "" {
+				typeNames = append(typeNames, elemTypeName)
+				locations = append(locations, elemLocation)
+			}
+		}
+	// 处理内联类型，持续递归调用 {a: {b: c:number}}
+	case ast.IsTypeLiteralNode(typeNode):
+		typeLiteral := typeNode.AsTypeLiteralNode()
+		for _, member := range typeLiteral.Members.Nodes {
+			memberTypeName, memberLocation := AnalyzeMember(member, location)
+			if memberTypeName != "" {
+				typeNames = append(typeNames, memberTypeName)
+				locations = append(locations, memberLocation)
+			}
+		}
+	}
+	return strings.Join(typeNames, ","), strings.Join(locations, ",")
 }
