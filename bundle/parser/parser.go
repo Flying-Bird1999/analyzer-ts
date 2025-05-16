@@ -13,8 +13,8 @@ type BundleResult struct {
 	TypeDeclarations      []TypeDeclarationResult
 }
 
-func NewBundleResult() *BundleResult {
-	return &BundleResult{
+func NewBundleResult() BundleResult {
+	return BundleResult{
 		ImportDeclarations:    []ImportDeclarationResult{},
 		InterfaceDeclarations: []InterfaceDeclarationResult{},
 		TypeDeclarations:      []TypeDeclarationResult{},
@@ -33,7 +33,7 @@ func (br *BundleResult) addTypeDeclaration(tr *TypeDeclarationResult) {
 	br.TypeDeclarations = append(br.TypeDeclarations, *tr)
 }
 
-func Traverse(filePath string) {
+func Traverse(filePath string) BundleResult {
 	sourceCode, err := utils.ReadFileContent(filePath)
 	if err != nil {
 		fmt.Printf("读取文件失败: %v\n", err)
@@ -64,4 +64,5 @@ func Traverse(filePath string) {
 			bundle.addTypeDeclaration(tr)
 		}
 	}
+	return bundle
 }

@@ -9,10 +9,6 @@ interface Person {
   age: number
 }
 
-// interface smallClass extends Class {
-//   ho: boolean;
-// }
-
 export interface LinearModel {
   price: number;
 }
@@ -42,16 +38,13 @@ export interface LinearModel6 {
 }
 
 interface CurrentRes2 {
-  /**佣金政策维度，SUB - 基于已购套餐的佣金政策，STORE - 基于店铺的佣金政策 */
   policyDimension: LinearModel5;
-  /**万分位抽佣比例，例如0.05%这里是：5 */
 }
 
 interface CurrentRes3<T> {
   number: T;
 }
 
-// interface
 interface Class extends CurrentRes2 {
   test: LinearModel4 & LinearModel5;
   test2: LinearModel4 | LinearModel5;
@@ -72,7 +65,6 @@ interface Class extends CurrentRes2 {
   school2: LinearModel | Person;
 }
 
-// type
 type TestType = {
   test: LinearModel4 & LinearModel5;
   test2: LinearModel4 | LinearModel5;
