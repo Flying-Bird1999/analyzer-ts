@@ -18,12 +18,12 @@ type TypeReference struct {
 }
 
 type InterfaceDeclarationResult struct {
-	Name      string // 接口名称
+	Name      string // 名称
 	Raw       string // 源码
 	Reference map[string]TypeReference
 }
 
-func NewCusInterfaceDeclaration(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {
+func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 
 	return &InterfaceDeclarationResult{

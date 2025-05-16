@@ -73,13 +73,27 @@ interface Class extends CurrentRes2 {
 }
 
 // type
-export type Name = {
-  age: number;
-  name: string;
-  bird: Bird;
-  class: Class;
-  school: School;
-  school2: NewSchool;
-  storeDetailReq: allTypes.StoreDetailReq;
-  currentRes: CurrentRes
+type TestType = {
+  test: LinearModel4 & LinearModel5;
+  test2: LinearModel4 | LinearModel5;
+  cccc: CurrentRes3<LinearModel6>
+  count?: number[];
+  name?: Name;
+  student: Person[];
+  student2: [LinearModel4, LinearModel2];
+  school: {
+    school_name: allTypes.StoreDetailReq;
+    school_age: {
+      color: {
+        sc: NewSchool
+      }
+    };
+    linearModel: LinearModel;
+  };
+  school2: LinearModel | Person;
 }
+
+type Name = string | number;
+type Name2 = LinearModel;
+type Name3 = LinearModel | Person;
+type Name4 = LinearModel & Person;

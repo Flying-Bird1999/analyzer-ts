@@ -10,12 +10,14 @@ import (
 type BundleResult struct {
 	ImportDeclarations    []ImportDeclarationResult
 	InterfaceDeclarations []InterfaceDeclarationResult
+	TypeDeclarations      []TypeDeclarationResult
 }
 
 func NewBundleResult() *BundleResult {
 	return &BundleResult{
 		ImportDeclarations:    []ImportDeclarationResult{},
 		InterfaceDeclarations: []InterfaceDeclarationResult{},
+		TypeDeclarations:      []TypeDeclarationResult{},
 	}
 }
 
@@ -27,6 +29,10 @@ func (br *BundleResult) AddInterfaceDeclaration(inter *InterfaceDeclarationResul
 	br.InterfaceDeclarations = append(br.InterfaceDeclarations, *inter)
 }
 
+func (br *BundleResult) addTypeDeclaration(tr *TypeDeclarationResult) {
+	br.TypeDeclarations = append(br.TypeDeclarations, *tr)
+}
+
 func Traverse(filePath string) {
 	sourceCode, err := utils.ReadFileContent(filePath)
 	if err != nil {
@@ -34,7 +40,6 @@ func Traverse(filePath string) {
 	}
 
 	sourceFile := utils.ParseTypeScriptFile(filePath, sourceCode)
-
 	bundle := NewBundleResult()
 
 	for _, node := range sourceFile.Statements.Nodes {
@@ -42,21 +47,21 @@ func Traverse(filePath string) {
 		if node.Kind == ast.KindImportDeclaration {
 			idr := NewImportDeclarationResult()
 			idr.analyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
-
 			bundle.AddImportDeclaration(idr)
 		}
 
 		// 解析 interface
 		if node.Kind == ast.KindInterfaceDeclaration {
-			inter := NewCusInterfaceDeclaration(node.AsNode(), sourceCode)
+			inter := NewInterfaceDeclarationResult(node.AsNode(), sourceCode)
 			inter.analyzeInterfaces(node.AsInterfaceDeclaration())
 			bundle.AddInterfaceDeclaration(inter)
 		}
 
-		// // 解析 type
-		// if node.Kind == ast.KindTypeAliasDeclaration {
-		// 	fmt.Printf("Type: %s\n", node.Kind, node.AsTypeAliasDeclaration())
-		// }
-
+		// 解析 type
+		if node.Kind == ast.KindTypeAliasDeclaration {
+			tr := NewTypeDeclarationResult(node.AsNode(), sourceCode)
+			tr.analyzeTypeDecl(node.AsTypeAliasDeclaration())
+			bundle.addTypeDeclaration(tr)
+		}
 	}
 }
