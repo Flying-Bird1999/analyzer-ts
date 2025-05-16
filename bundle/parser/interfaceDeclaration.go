@@ -50,10 +50,8 @@ func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.In
 		for _, member := range interfaceDecl.Members.Nodes {
 			memberTypeName, memberLocation := AnalyzeMember(member, interfaceName)
 			if memberTypeName != "" && memberLocation != "" {
-				memberTypeNameArray := strings.Split(memberTypeName, ",")
-				memberLocationArray := strings.Split(memberLocation, ",")
-				for i, typeName := range memberTypeNameArray {
-					inter.addTypeReference(typeName, memberLocationArray[i], false)
+				for i, typeName := range strings.Split(memberTypeName, ",") {
+					inter.addTypeReference(typeName, strings.Split(memberLocation, ",")[i], false)
 				}
 			}
 		}
@@ -117,7 +115,7 @@ func AnalyzeMember(member *ast.Node, interfaceName string) (string, string) {
 
 // 递归分析类型节点。
 // 根据类型节点的种类（如类型引用、数组类型、联合类型、交叉类型等）进行不同的处理。
-// 如果类型是外部引用，则调用 inter.addTypeReference 记录。
+// 如果类型是外部引用，则记录下来返回。
 func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 	if typeNode == nil {
 		return "", ""
