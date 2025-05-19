@@ -150,7 +150,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 				Alias := importSpecifier.Name().Text()
 				initImportModule.Modules = append(initImportModule.Modules, Module{
 					Module:     Name,
-					Type:       "namespace",
+					Type:       "named",
 					Identifier: Alias,
 				})
 
@@ -160,7 +160,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 				Name := importSpecifier.Name().Text()
 				initImportModule.Modules = append(initImportModule.Modules, Module{
 					Module:     Name,
-					Type:       "namespace",
+					Type:       "named",
 					Identifier: Name,
 				})
 			}
