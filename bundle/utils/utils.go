@@ -85,6 +85,7 @@ func PrintAST(node *ast.Node) {
 	})
 }
 
+// 判断切片中是否包含指定元素
 func Contains(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {
@@ -92,4 +93,22 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// 创建文件，写入内容
+func WriteResultToFile(filePath string, result string) error {
+	// 打开或创建文件
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("创建文件失败: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(result)
+	if err != nil {
+		return fmt.Errorf("写入文件失败: %w", err)
+	}
+
+	fmt.Printf("文件已生成: %s\n", filePath)
+	return nil
 }
