@@ -116,5 +116,5 @@ func GenerateBundle() {
 		resultCode += value + "\n"
 	}
 	// fmt.Printf("最终的代码：%s", resultCode)
-	utils.WriteResultToFile("./bundle/result.ts", resultCode)
+	utils.WriteResultToFile("./ts/output/result.ts", resultCode)
 }
