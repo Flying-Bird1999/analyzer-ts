@@ -112,57 +112,59 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 	moduleSpecifier := node.ModuleSpecifier
 	initImportModule.Source = moduleSpecifier.Text()
 
-	// ✅ 解析 import 的模块内容
-	importClause := node.ImportClause.AsImportClause()
+	if node.ImportClause != nil {
+		// ✅ 解析 import 的模块内容
+		importClause := node.ImportClause.AsImportClause()
 
-	// 默认导入: import Bird from './type2';
-	if ast.IsDefaultImport(node.AsNode()) {
-		Name := importClause.Name().Text()
-		initImportModule.Modules = append(initImportModule.Modules, Module{
-			Module:     "default",
-			Type:       "default",
-			Identifier: Name,
-		})
-	}
+		// 默认导入: import Bird from './type2';
+		if ast.IsDefaultImport(node.AsNode()) {
+			Name := importClause.Name().Text()
+			initImportModule.Modules = append(initImportModule.Modules, Module{
+				Module:     "default",
+				Type:       "default",
+				Identifier: Name,
+			})
+		}
 
-	// - 命名空间导入: import * as allTypes from './type';
-	namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
-	if namespaceNode != nil {
-		Name := namespaceNode.Name().Text()
-		initImportModule.Modules = append(initImportModule.Modules, Module{
-			Module:     Name,
-			Type:       "namespace",
-			Identifier: Name,
-		})
-	}
+		// - 命名空间导入: import * as allTypes from './type';
+		namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
+		if namespaceNode != nil {
+			Name := namespaceNode.Name().Text()
+			initImportModule.Modules = append(initImportModule.Modules, Module{
+				Module:     Name,
+				Type:       "namespace",
+				Identifier: Name,
+			})
+		}
 
-	// - 命名导入: import { School, School2 } from './school';
-	// 					- import type { CurrentRes } from './type';
-	//      		- import { School as NewSchool } from './school';
-	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
-		namedImports := importClause.NamedBindings.AsNamedImports()
-		for _, element := range namedImports.Elements.Nodes {
-			importSpecifier := element.AsImportSpecifier()
+		// - 命名导入: import { School, School2 } from './school';
+		// 					- import type { CurrentRes } from './type';
+		//      		- import { School as NewSchool } from './school';
+		if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
+			namedImports := importClause.NamedBindings.AsNamedImports()
+			for _, element := range namedImports.Elements.Nodes {
+				importSpecifier := element.AsImportSpecifier()
 
-			if importSpecifier.PropertyName != nil {
-				// import { School as NewSchool } from './school';
-				Name := importSpecifier.PropertyName.Text()
-				Alias := importSpecifier.Name().Text()
-				initImportModule.Modules = append(initImportModule.Modules, Module{
-					Module:     Name,
-					Type:       "named",
-					Identifier: Alias,
-				})
+				if importSpecifier.PropertyName != nil {
+					// import { School as NewSchool } from './school';
+					Name := importSpecifier.PropertyName.Text()
+					Alias := importSpecifier.Name().Text()
+					initImportModule.Modules = append(initImportModule.Modules, Module{
+						Module:     Name,
+						Type:       "named",
+						Identifier: Alias,
+					})
 
-			} else {
-				// import { School, School2 } from './school';
-				// import type { CurrentRes } from './type';
-				Name := importSpecifier.Name().Text()
-				initImportModule.Modules = append(initImportModule.Modules, Module{
-					Module:     Name,
-					Type:       "named",
-					Identifier: Name,
-				})
+				} else {
+					// import { School, School2 } from './school';
+					// import type { CurrentRes } from './type';
+					Name := importSpecifier.Name().Text()
+					initImportModule.Modules = append(initImportModule.Modules, Module{
+						Module:     Name,
+						Type:       "named",
+						Identifier: Name,
+					})
+				}
 			}
 		}
 	}

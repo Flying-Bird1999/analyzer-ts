@@ -75,24 +75,4 @@ func (pr *ParserResult) Traverse() {
 		}
 	}
 
-	// // 解析 Interface 中的 type
-	// for _, inter := range bundle.InterfaceDeclarations {
-	// 	fmt.Printf("Name: %s\n", inter.Name)
-	// 	fmt.Printf("Raw: %s\n", inter.Raw)
-	// 	for _, ref := range inter.Reference {
-	// 		fmt.Printf("Reference: %s, %v, %b \n", ref.Name, ref.Location, ref.IsExtend)
-	// 	}
-	// 	fmt.Print("\n\n\n")
-	// }
-
-	// // 解析 Type 中的 type
-	// for _, tr := range bundle.TypeDeclarations {
-	// 	fmt.Printf("Name: %s\n", tr.Name)
-	// 	fmt.Printf("Raw: %s\n", tr.Raw)
-	// 	for _, ref := range tr.Reference {
-	// 		fmt.Printf("Reference: %s, %v, %b \n", ref.Name, ref.Location, ref.IsExtend)
-	// 	}
-	// 	fmt.Print("\n\n\n")
-	// }
-
 }
