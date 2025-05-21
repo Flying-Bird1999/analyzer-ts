@@ -88,10 +88,13 @@ func analyze(Result map[string]parser.ParserResult, targetTypeName string, targe
 }
 
 func GenerateBundle() {
+	// inputAnalyzeDir := "/Users/zxc/Desktop/shopline-order-detail"
+	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
+	// inputAnalyzeType := "PreloadedState"
 
-	inputAnalyzeDir := "/Users/zxc/Desktop/shopline-order-detail"
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	inputAnalyzeType := "PreloadedState"
+	inputAnalyzeDir := "./ts/demo"
+	inputAnalyzeFile := "./ts/demo/index.ts"
+	inputAnalyzeType := "Class"
 
 	filePath, _ := filepath.Abs(inputAnalyzeDir)
 
@@ -102,7 +105,6 @@ func GenerateBundle() {
 	projectResult.ScanProject()
 
 	for _, item := range projectResult.GetFileList() {
-		fmt.Printf("开始解析文件: %s\n", item.Path)
 		pr := parser.NewBundleResult(item.Path)
 		pr.Traverse()
 		Result[item.Path] = pr.GetResult()
@@ -121,6 +123,5 @@ func GenerateBundle() {
 	for _, value := range sourceCodeMap {
 		resultCode += value + "\n"
 	}
-	// fmt.Printf("最终的代码：%s", resultCode)
 	utils.WriteResultToFile("./ts/output/result.ts", resultCode)
 }

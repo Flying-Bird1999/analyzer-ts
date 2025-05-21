@@ -102,9 +102,24 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 
 // 分析接口的成员属性类型
 func AnalyzeMember(member *ast.Node, interfaceName string) (string, string) {
+	// 大多数情况下，成员是属性签名
 	if ast.IsPropertySignatureDeclaration(member) {
 		propSig := member.AsPropertySignatureDeclaration()
-		propName := propSig.Name().AsIdentifier().Text
+		// 提取属性名称
+		var propName string
+		if propSig.Name().Kind == ast.KindIdentifier {
+			// 常规：interface Person { name: string; };
+			propName = propSig.Name().Text()
+		} else if propSig.Name().Kind == ast.KindStringLiteral || propSig.Name().Kind == ast.KindNumericLiteral {
+			// 字符串/数字 字面量：interface Person { 0: string;  1: number; };
+			propName = propSig.Name().Text()
+		} else if propSig.Name().Kind == ast.KindComputedPropertyName {
+			// 计算属性名 interface Person { ["sss111"]: string; }
+			expr := propSig.Name().AsComputedPropertyName().Expression
+			if ast.IsStringOrNumericLiteralLike(expr) {
+				propName = expr.Text()
+			}
+		}
 		location := fmt.Sprintf("%s.%s", interfaceName, propName)
 		if propSig.Type != nil {
 			return AnalyzeType(propSig.Type, location)
