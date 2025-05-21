@@ -62,18 +62,29 @@ func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.In
 // 1. 找出接口继承的其他接口。
 // 2. 提取继承的接口名称及其类型参数。
 func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *ast.InterfaceDeclaration, interfaceName string) {
-	if interfaceDecl.HeritageClauses != nil {
-		for _, clause := range interfaceDecl.HeritageClauses.Nodes {
-			heritageClause := clause.AsHeritageClause()
-			if heritageClause.Token == ast.KindExtendsKeyword {
-				for _, typeRef := range heritageClause.Types.Nodes {
-					// 将节点转换为 ExpressionWithTypeArguments
-					expr := typeRef.AsExpressionWithTypeArguments()
-					if ast.IsIdentifier(expr.Expression) {
-						typeName := expr.Expression.AsIdentifier().Text
-						inter.addTypeReference(typeName, "", true)
-					}
-				}
+	// 获取 extends 子句元素
+	extendsElements := ast.GetExtendsHeritageClauseElements(interfaceDecl.AsNode())
+
+	// 处理每个 extends 元素
+	for _, node := range extendsElements {
+		expression := node.Expression()
+		if ast.IsIdentifier(expression) {
+			name := expression.AsIdentifier().Text
+			// 如果不是工具类型，直接添加到依赖列表
+			if !(utils.IsUtilityType(name)) {
+				inter.addTypeReference(name, "", true)
+			}
+		} else if ast.IsPropertyAccessExpression(expression) {
+			// 属性访问表达式，如 "module.Interface"
+			name := entityNameToString(expression)
+			inter.addTypeReference(name, "", true)
+		}
+
+		// 处理类型参数，无论是否是工具类型都提取参数中的依赖
+		if node.TypeArguments != nil {
+			for _, typeArg := range node.TypeArguments() {
+				name, _ := AnalyzeType(typeArg, "")
+				inter.addTypeReference(name, "", true)
 			}
 		}
 	}
@@ -162,13 +173,7 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 			}
 		} else if ast.IsQualifiedName(typeRef.TypeName) {
 			// 处理 namespace.Type
-			qualifiedName := typeRef.TypeName.AsQualifiedName()
-			right := qualifiedName.Right.AsIdentifier().Text
-			left := ""
-			if ast.IsIdentifier(qualifiedName.Left) {
-				left = qualifiedName.Left.AsIdentifier().Text
-			}
-			typeNames = append(typeNames, left+"."+right)
+			typeNames = append(typeNames, entityNameToString(typeRef.TypeName))
 			locations = append(locations, location)
 		}
 	// 处理数组类型
@@ -234,4 +239,19 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 		}
 	}
 	return strings.Join(typeNames, ","), strings.Join(locations, ",")
+}
+
+// typescript-go内部方法，从实体名称节点获取完整的字符串表示
+func entityNameToString(name *ast.Node) string {
+	switch name.Kind {
+	case ast.KindThisKeyword:
+		return "this"
+	case ast.KindIdentifier, ast.KindPrivateIdentifier:
+		return name.Text()
+	case ast.KindQualifiedName:
+		return entityNameToString(name.AsQualifiedName().Left) + "." + entityNameToString(name.AsQualifiedName().Right)
+	case ast.KindPropertyAccessExpression:
+		return entityNameToString(name.AsPropertyAccessExpression().Expression) + "." + entityNameToString(name.AsPropertyAccessExpression().Name())
+	}
+	return fmt.Sprintf("UnknownExpression(%s)", name.Kind)
 }
