@@ -1,32 +1,5 @@
 
 
-export interface Class2 {
-  "name_str": string;
-  age: number;
-  2: CusNum;
-}
-
-
-export interface CusNum  {
-  number: number;
-}
-
-
-export interface Class8 extends Omit<Class12, 'age'>, Pick<Class11, 'age'>, Class10 {
-  name: string;
-}
-
-
-export interface Age2 {
-  age: number;
-}
-
-
-export type Teacher = {
-  age: Age
-}
-
-
 interface Class12 {
   age: number
   school: {
@@ -43,15 +16,35 @@ interface Class11 {
 }
 
 
-
-interface Class10 {
-  name: string
+export type School = {
+  area: string;
 }
 
 
-interface A {
-  code: number;
-  message: string;
+export type School2 = {
+  area2: string;
+  stu: Student;
+}
+
+
+export interface Age2 {
+  age: number;
+}
+export interface Age {
+  age: number;
+}
+
+
+export interface Class2 {
+  "name_str": string;
+  age: number;
+  2: CusNum;
+}
+
+
+
+interface Class10 {
+  name: string
 }
 
 
@@ -65,14 +58,9 @@ export interface Class extends A {
 }
 
 
-export type School = {
-  area: string;
-}
-
-
-export type School2 = {
-  area2: string;
-  stu: Student;
+interface A {
+  code: number;
+  message: string;
 }
 
 
@@ -81,6 +69,18 @@ export type Student = {
   age: Age2;
   teacher: Teacher;
 }
-export interface Age {
-  age: number;
+
+
+export type Teacher = {
+  age: Age
+}
+
+
+export interface CusNum  {
+  number: number;
+}
+
+
+export interface Class8 extends Omit<Class12, 'age'>, Pick<Class11, 'age'>, Class10 {
+  name: string;
 }

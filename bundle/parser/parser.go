@@ -60,6 +60,11 @@ func (pr *ParserResult) Traverse() {
 			pr.AddImportDeclaration(idr)
 		}
 
+		// 解析 export
+		if node.Kind == ast.KindExportDeclaration {
+			fmt.Print("export")
+		}
+
 		// 解析 interface
 		if node.Kind == ast.KindInterfaceDeclaration {
 			inter := NewInterfaceDeclarationResult(node.AsNode(), sourceCode)
