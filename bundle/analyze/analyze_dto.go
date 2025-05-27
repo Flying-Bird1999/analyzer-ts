@@ -1,15 +1,17 @@
 package analyze
 
+import "main/bundle/parser"
+
 type FileAnalyzeResult struct {
 	ImportDeclarations    []ImportDeclarationResult
-	InterfaceDeclarations map[string]InterfaceDeclarationResult
-	TypeDeclarations      map[string]TypeDeclarationResult
+	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult
+	TypeDeclarations      map[string]parser.TypeDeclarationResult
 }
 
 type ImportDeclarationResult struct {
 	Modules []Module
 	Raw     string
-	Source  string
+	Source  SourceData
 }
 
 type Module struct {
@@ -18,20 +20,8 @@ type Module struct {
 	Identifier string //
 }
 
-type TypeDeclarationResult struct {
-	Name      string // 名称
-	Raw       string // 源码
-	Reference map[string]TypeReference
-}
-
-type InterfaceDeclarationResult struct {
-	Name      string // 名称
-	Raw       string // 源码
-	Reference map[string]TypeReference
-}
-
-type TypeReference struct {
-	Name     string
-	Location []string // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
-	IsExtend bool     // 是否继承，true表示继承，false表示member中引用的
+type SourceData struct {
+	FilePath string // 绝对路径
+	NpmPkg   string // npm 包名，如果是 npm 包则有值
+	Type     string // file | npm | unknown
 }

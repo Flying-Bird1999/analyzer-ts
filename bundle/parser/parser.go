@@ -15,7 +15,7 @@ type ParserResult struct {
 	TypeDeclarations      map[string]TypeDeclarationResult
 }
 
-func NewBundleResult(filePath string) ParserResult {
+func NewParserResult(filePath string) ParserResult {
 	return ParserResult{
 		filePath:              filePath,
 		ImportDeclarations:    []ImportDeclarationResult{},
@@ -60,7 +60,7 @@ func (pr *ParserResult) Traverse() {
 			pr.AddImportDeclaration(idr)
 		}
 
-		// 解析 export
+		// TODO: 解析 export
 		if node.Kind == ast.KindExportDeclaration {
 			fmt.Print("export")
 		}

@@ -11,7 +11,7 @@ func runTestCase(t *testing.T) {
 	t.Run("随便写一个", func(t *testing.T) {
 		root, _ := filepath.Abs("./ts/example.ts")
 
-		br := NewBundleResult(root)
+		br := NewParserResult(root)
 		br.Traverse()
 		assert.Equal(t, "./type2", br.ImportDeclarations[0].Source)
 	})

@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
@@ -111,4 +113,69 @@ func WriteResultToFile(filePath string, result string) error {
 
 	fmt.Printf("文件已生成: %s\n", filePath)
 	return nil
+}
+
+// 新方法：从 tsconfig.json 中读取 alias
+func ReadAliasFromTsConfig(rootPath string) map[string]string {
+	alias := make(map[string]string)
+	tsConfigPath := filepath.Join(rootPath, "tsconfig.json")
+
+	// 检查 tsconfig.json 是否存在
+	if _, err := os.Stat(tsConfigPath); os.IsNotExist(err) {
+		return alias // 如果文件不存在，返回空的 alias
+	}
+
+	// 解析 tsconfig.json
+	parseTsConfig(tsConfigPath, rootPath, alias)
+	return alias
+}
+
+// 递归解析 tsconfig.json
+func parseTsConfig(configPath, rootPath string, alias map[string]string) {
+	// 打开 tsconfig.json 文件
+	file, err := os.Open(configPath)
+	if err != nil {
+		return // 如果打开失败，直接返回
+	}
+	defer file.Close()
+
+	// 解析 tsconfig.json
+	var tsConfig struct {
+		Extends         string `json:"extends"`
+		CompilerOptions struct {
+			Paths map[string][]string `json:"paths"`
+		} `json:"compilerOptions"`
+	}
+	if err := json.NewDecoder(file).Decode(&tsConfig); err != nil {
+		return // 如果解析失败，直接返回
+	}
+
+	// 如果存在 extends，递归解析父配置文件
+	if tsConfig.Extends != "" {
+		extendsPath := tsConfig.Extends
+		if !filepath.IsAbs(extendsPath) {
+			extendsPath = filepath.Join(filepath.Dir(configPath), extendsPath)
+		}
+		extendsPath = filepath.Clean(extendsPath)
+		if _, err := os.Stat(extendsPath); err == nil {
+			parseTsConfig(extendsPath, rootPath, alias)
+		}
+	}
+
+	// 合并当前配置文件的 paths 到 alias
+	for key, paths := range tsConfig.CompilerOptions.Paths {
+		if len(paths) > 0 {
+			alias[key] = filepath.Join(rootPath, paths[0])
+		}
+	}
+}
+
+// 检查路径是否有有效后缀
+func HasValidExtension(filePath string, extensions []string) bool {
+	for _, ext := range extensions {
+		if strings.HasSuffix(filePath, ext) {
+			return true
+		}
+	}
+	return false
 }

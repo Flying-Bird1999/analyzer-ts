@@ -105,7 +105,7 @@ func GenerateBundle() {
 	projectResult.ScanProject()
 
 	for _, item := range projectResult.GetFileList() {
-		pr := parser.NewBundleResult(item.Path)
+		pr := parser.NewParserResult(item.Path)
 		pr.Traverse()
 		Result[item.Path] = pr.GetResult()
 	}
