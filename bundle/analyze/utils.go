@@ -11,22 +11,21 @@ import (
 
 // 新方法：从 tsconfig.json 中读取 alias
 func ReadAliasFromTsConfig(rootPath string) map[string]string {
-	alias := make(map[string]string)
+	var alias *map[string]string = &map[string]string{}
 	tsConfigPath := filepath.Join(rootPath, "tsconfig.json")
 
 	// 检查 tsconfig.json 是否存在
 	if _, err := os.Stat(tsConfigPath); os.IsNotExist(err) {
-		return alias // 如果文件不存在，返回空的 alias
+		return *alias // 如果文件不存在，返回空的 alias
 	}
 
 	// 解析 tsconfig.json
 	parseTsConfig(tsConfigPath, rootPath, alias)
-
-	return alias
+	return formatAlias(*alias)
 }
 
 // 递归解析 tsconfig.json
-func parseTsConfig(configPath, rootPath string, alias map[string]string) {
+func parseTsConfig(configPath, rootPath string, alias *map[string]string) {
 	// 读取 tsconfig.json 文件内容
 	data, err := utils.ReadFileContent(configPath)
 	if err != nil {
@@ -59,21 +58,25 @@ func parseTsConfig(configPath, rootPath string, alias map[string]string) {
 		}
 	}
 
-	// 合并当前配置文件的 paths 到 alias
+	// 先默认读取第一个path，后续再考虑优化
 	for key, paths := range tsConfig.CompilerOptions.Paths {
+		(*alias)[key] = paths[0]
+	}
+}
+
+// 格式化 alias，默认alias结尾带*，需要去掉
+func formatAlias(alias map[string]string) map[string]string {
+	formattedAlias := make(map[string]string)
+	for key, path := range alias {
 		// 如果有星号(*)需要去掉，读取tsconfig的case可能有
 		if strings.HasSuffix(key, "*") {
 			key = strings.TrimSuffix(key, "*")
 		}
 
-		// 先读取第一个path即可，后续再考虑优化
-		if len(paths) > 0 {
-			if strings.HasSuffix(paths[0], "*") {
-				realPath := strings.TrimSuffix(paths[0], "*")
-				alias[key] = realPath
-				break
-			}
-			alias[key] = paths[0]
+		if strings.HasSuffix(path, "*") {
+			path = strings.TrimSuffix(path, "*")
 		}
+		formattedAlias[key] = path
 	}
+	return formattedAlias
 }
