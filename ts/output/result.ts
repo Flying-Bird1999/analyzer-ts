@@ -1,5 +1,14 @@
 
 
+export default interface PreloadedState {
+  currentMerchant: MerchantData;
+  currentStaff: CurrentStaff;
+  currentStaffPermission: { [key: string]: string[] };
+  locale: SupportedLanguages;
+  callBackData: { [key: string]: any };
+}
+
+
 export interface CurrentStaff {
   readonly id: string;
   readonly name: string;
@@ -13,15 +22,6 @@ export interface CurrentStaff {
 
 export type SupportedLanguages = _SupportedLanguages;
 export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';
-
-
-export default interface PreloadedState {
-  currentMerchant: MerchantData;
-  currentStaff: CurrentStaff;
-  currentStaffPermission: { [key: string]: string[] };
-  locale: SupportedLanguages;
-  callBackData: { [key: string]: any };
-}
 
 
 export interface MerchantData {

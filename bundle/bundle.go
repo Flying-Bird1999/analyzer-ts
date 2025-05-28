@@ -37,17 +37,15 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 		for _, module := range importDecl.Modules {
 			if module.Identifier == refName {
 				realRefName := refName
+				var replaceTypeName *string
+				// case: import { School as NewSchool } from './school';
 				if module.Type == "named" && module.Module != refName {
 					realRefName = module.Module
-					// 根据导入路径查找目标文件
-					if _, exists := Result[importDecl.Source.FilePath]; exists {
-						analyze(Result, realRefName, &refName, importDecl.Source.FilePath, sourceCodeMap)
-					}
-				} else {
-					// 根据导入路径查找目标文件
-					if _, exists := Result[importDecl.Source.FilePath]; exists {
-						analyze(Result, realRefName, nil, importDecl.Source.FilePath, sourceCodeMap)
-					}
+					replaceTypeName = &refName
+				}
+				// 根据导入路径查找目标文件
+				if _, exists := Result[importDecl.Source.FilePath]; exists {
+					analyze(Result, realRefName, replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
 				}
 			}
 		}
