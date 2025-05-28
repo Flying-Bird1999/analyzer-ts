@@ -1,6 +1,7 @@
 package analyze
 
 import (
+	"fmt"
 	"main/bundle/parser"
 	"main/bundle/scanProject"
 	"main/bundle/utils"
@@ -23,7 +24,8 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 	curAlias := Alias
 	if Alias == nil {
 		// 如果没有传入 Alias，尝试读取项目中tsconfig.json的 alias
-		curAlias = utils.ReadAliasFromTsConfig(rootPath)
+		curAlias = ReadAliasFromTsConfig(rootPath)
+		fmt.Printf("读取到的alias: %+v\n", curAlias)
 	}
 
 	curExtensions := Extensions
@@ -43,17 +45,16 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 }
 
 // 是否命中别名 alias，如果命中则做替换
-// 1. 匹配是否命中，
 func (ar *AnalyzeResult) isMatchAlias(filePath string) (string, bool) {
 	for alias, realPath := range ar.Alias {
-		// 检查路径是否以 alias 开头,并确保 alias 后面是路径分隔符或结束
-		if strings.HasPrefix(filePath, alias) && (len(filePath) == len(alias) || filePath[len(alias)] == '/') {
-			// 替换 alias 为真实路径
-			absolutePath := filepath.Join(realPath, strings.TrimPrefix(filePath, alias))
-			return absolutePath, true
+		// 检查路径是否以 alias 开头
+		if strings.HasPrefix(filePath, alias) {
+			// 替换 alias 为绝对路径
+			absolutePath := filepath.Join(ar.RootPath, realPath)
+			return filepath.Join(absolutePath, strings.TrimPrefix(filePath, alias)), true
 		}
 	}
-	return "", false // 未命中别名
+	return filePath, false // 未命中别名
 }
 
 func (ar *AnalyzeResult) Analyze() {
@@ -98,33 +99,7 @@ func (ar *AnalyzeResult) Analyze() {
 
 // 匹配 import 的真实绝对路径
 func (ar *AnalyzeResult) matchImportSource(targetPath string, filePath string, fileList map[string]scanProject.FileItem) SourceData {
-	realPath := filePath
-
-	// 1. 匹配 alias,替换为真实路径
-	if absolutePath, matched := ar.isMatchAlias(filePath); matched {
-		realPath = absolutePath
-	}
-
-	// 2. 需要检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
-	if !utils.HasValidExtension(realPath, ar.Extensions) {
-		for _, ext := range ar.Extensions {
-			// 尝试直接拼接扩展名
-			extendedPath := realPath + ext
-			if _, exists := fileList[extendedPath]; exists {
-				realPath = extendedPath
-				break
-			}
-
-			// 如果找不到文件，尝试将其视为目录并拼接 index 文件
-			indexPath := filepath.Join(realPath, "index"+ext)
-			if _, exists := fileList[indexPath]; exists {
-				realPath = extendedPath
-				break
-			}
-		}
-	}
-
-	// 3. 匹配 npm 包
+	// 匹配 npm 包
 	for npmName, npmItem := range ar.Npm {
 		// 检查 filePath 是否包含 npm 包名
 		if strings.HasPrefix(filePath, npmName) {
@@ -135,17 +110,46 @@ func (ar *AnalyzeResult) matchImportSource(targetPath string, filePath string, f
 			}
 		}
 	}
-	// 4. 将路径转换为绝对路径
-	returnPath, _ := filepath.Abs(filepath.Join(filepath.Dir(targetPath), realPath))
+
+	realPath := filePath
+
+	// 匹配 alias,替换为真实路径
+	if absolutePath, matched := ar.isMatchAlias(filePath); matched {
+		realPath = absolutePath
+	} else {
+		// 如果没有匹配到别名，尝试将其视为绝对路径
+		realPath, _ = filepath.Abs(filepath.Join(filepath.Dir(targetPath), realPath))
+	}
+
+	// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
+	if !utils.HasExtension(realPath) {
+		for _, ext := range ar.Extensions {
+			// 尝试直接拼接扩展名
+			extendedPath := realPath + ext
+			if _, exists := fileList[extendedPath]; exists {
+				realPath = extendedPath
+				break
+			}
+		}
+		// 如果拼接上扩展名后还是没有找到文件，尝试在目录下查找
+		for _, ext := range ar.Extensions {
+			extendedPath := realPath + "/index" + ext
+			if _, exists := fileList[extendedPath]; exists {
+				realPath = extendedPath
+				break
+			}
+		}
+	}
 
 	// 5. 如果存在，则返回 SourceData
-	if _, exists := fileList[returnPath]; exists {
+	if _, exists := fileList[realPath]; exists {
 		return SourceData{
-			FilePath: returnPath,
+			FilePath: realPath,
 			NpmPkg:   "",
 			Type:     "file",
 		}
 	}
+
 	return SourceData{
 		FilePath: filePath,
 		NpmPkg:   "",

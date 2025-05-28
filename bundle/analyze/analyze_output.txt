@@ -1,0 +1,4319 @@
+file: /Users/zxc/Desktop/shopline-order-detail/lint-staged.config.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshouqishichuang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtishi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGengduozhixiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGuanjianziguanbi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGengduohengxiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/hoc/CheckUrlHoc/index.tsx
+FilePath: react, Type: npm
+FilePath: react, Type: npm
+FilePath: react-router-dom, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/storage.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/sentry.ts
+FilePath: @sentry/browser, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/envVariable.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/preloadedContext.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshangpinka.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderPostNormal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshijianlianjie.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaDirectionLeft.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/slstd.config.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfukuanxiangguan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdingyue.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.husky/commit-msg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzixunyixiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkuaijiehuifu1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Revpay/index.tsx
+FilePath: react, Type: npm
+FilePath: react-dom, Type: npm
+FilePath: antd, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-privacy.svg, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: dayjs, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCommon.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/os.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/getUrlLocal.ts, Type: file
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Revpay/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/index.css
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCpinglun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdengpao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkucun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/iconfont-template.ts
+FilePath: @yy/sl-iconfont-generate, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconDataSale.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/favicon.ico
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSClingdang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCheartforIGpreview.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/apiConfig.ts
+FilePath: axios, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/apiUtils.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzidongzhipaihuihua.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSClianjieqingchu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/paymentOrder.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCstep2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaCsv.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhankai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyulan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCclose.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbianji1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshaixuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getMerchant.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getMerchant.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/storage.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/locale/MessageCenter/interface.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/service/i18n.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconOutlineImport.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/logo512.png
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgongzuoshijian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaPoorconnect.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/README.md
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCnormal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralCheckboxcheck.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguanwangxiaoxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdaochu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScPlayCircle.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralTrash.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/axios-extend.d.ts
+FilePath: axios, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/index.html
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLoudSpeaker.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScUp1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/icon-fpx-ec3a7dda.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCircleTickFill.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScPost.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCcommentLive.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyichu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScBroadcast.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfanhuishangyiye.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiamge.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getCountry.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getDetail.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getMerchant.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadPaymentRecord.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadTransferProof.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCorderRemark.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/webpackDevServer.config.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/reducers/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/rootAction.ts, Type: file
+FilePath: redux, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts
+FilePath: redux-saga/effects, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/rootAction.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: history, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.sentryclirc
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralRadiobg.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshortcut.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSChuibaowenti.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCorder1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCa1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/context/index.ts
+FilePath: history, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/i18n.ts
+FilePath: i18next, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/service/i18n.ts, Type: file
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconPostSale.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderStatus.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-paying.svg, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFilterNoassign.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyunfeixiangguan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralCheckboxbg.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconHintCheck.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralCheck.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralListexpand.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/isMobile.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/OrderDeliveryTrack.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfengcun1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxunxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCard.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshaixuan1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/getUrlLocal.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useOmise.tsx
+FilePath: react, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: @slpayment/payment-element, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: ahooks, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/isMobile.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconPostCmt.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaShangpinxiaoshou011.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/isTranslationEmpty.ts
+FilePath: lodash-es, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguanwangzhibo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaCuowushise.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshuju.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: react, Type: npm
+FilePath: history, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/configStore.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconChannelFb.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Omise/index.tsx
+FilePath: react, Type: npm
+FilePath: antd, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: dayjs/plugin/utc, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useOmise.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCommon.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: ahooks, Type: npm
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Omise/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtongbushuliang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFrame99470.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-afa98c21.js
+FilePath: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-c532289c.js, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/storage.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfukuan1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqidanshangpin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/icon-paying-6180191b.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaPinglunxiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCweifabu1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/paths.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/rootReducer.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+FilePath: connected-react-router, Type: npm
+FilePath: redux, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/reducers/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCjinggao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralDelete.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiaolian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbofang1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Revpay/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderDetail.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ProductSetDetail.tsx, Type: file
+FilePath: sl-utils-node, Type: npm
+FilePath: react-copy-to-clipboard, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/static/default-product.png, Type: file
+FilePath: antd, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/countries/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/tax.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/TaxDrawer.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: antd/lib/tooltip, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshezhi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/PaymentProofUpload.tsx
+FilePath: react, Type: npm
+FilePath: antd, Type: npm
+FilePath: react-router-dom, Type: npm
+FilePath: lodash-es, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/DatePicker/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/uploadPayment/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/PaymentProofUpload.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/error.ts, Type: file
+FilePath: i18next, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/constant/envVariable.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/genFullAddress.ts
+FilePath: lodash-es, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbiaoqian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshouqi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaAIicon.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderPostSelected.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/FETCH_HEAD
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconChannelFbSingle.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtxt.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyinliang2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/getChannel.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrder.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrderForOmise.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createSign.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrderStandard.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/DatePicker/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLine.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCcopyMessage.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaApplePayWhiteLogowine1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/tsconfig.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts
+FilePath: axios, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdingdan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtuichuqingping.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLock.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconOutlineLock.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Credit/index.tsx
+FilePath: react, Type: npm
+FilePath: antd, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCredit.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCommon.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: ahooks, Type: npm
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Credit/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsuokucun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCweifabu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyunshuwuliu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/packed-refs
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbianlidian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/react-app-env.d.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCportrait1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsharePost.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/yarn.lock
+FilePath: ^2.27.5, Type: unknown
+FilePath: ^2.25.3, Type: unknown
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/countries/response.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/hooks/useQueryString.ts
+FilePath: react, Type: npm
+FilePath: react-router-dom, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdaoru.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCexcel.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrder.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createSign.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrderForOmise.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createSign.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralRadiocheck.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconShoplineCircle.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralMinus.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getCountry.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/countries/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getCountry.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCliuyan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/iconup-5b354cb8.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconDataOrder.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdakai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/oaApi.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/api.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: @payment/payment-sdk/build/types/card, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-eae9e458.js
+FilePath: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-c532289c.js, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScUp.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDrawer/index.tsx
+FilePath: react, Type: npm
+FilePath: antd, Type: npm
+FilePath: antd/lib/drawer, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDrawer/index.module.less, Type: file
+FilePath: classnames, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzip.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/Invoice.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgoumaiyixiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralBox.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconDataCmt.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/empty-315a4172.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchenggong.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts
+FilePath: uuid, Type: npm
+FilePath: crypto-js/sha512, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCselected.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/uploadTransferProof.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadTransferProof.ts, Type: file
+FilePath: redux-saga/effects, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/error.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCjiarufengcun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaYinliangtianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconOutlineInfo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaXianshixiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfanhuibutton.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/index.tsx
+FilePath: react, Type: npm
+FilePath: react-dom, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/index.css, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/App.tsx, Type: file
+FilePath: i18next, Type: npm
+FilePath: i18next-http-backend, Type: npm
+FilePath: react-i18next, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/getUrlLocal.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/api.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/sentry.ts, Type: file
+FilePath: antd/dist/antd.css, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/tax.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.env
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtuwen1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralCopy.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconWallet.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguanbi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchuansong.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsheji.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScEvent.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScai2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralProduct.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts
+FilePath: redux, Type: npm
+FilePath: connected-react-router, Type: npm
+FilePath: history, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtiaozhuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getCountry.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getDetail.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getMerchant.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/uploadPaymentRecord.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/uploadTransferProof.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScmCduihuakuang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCircleTickLineal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgugepay1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyoujian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshouhouzixun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaizhushou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/index.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: ahooks, Type: npm
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useStandard.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/api.ts, Type: file
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/ErrorIcon.tsx, Type: file
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/index.module.less, Type: file
+FilePath: antd, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchannelInsatgram.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Loading/index.tsx
+FilePath: react, Type: npm
+FilePath: antd, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGuanjianziguanbi1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgouxuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScgo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLeft1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/.well-known/apple-developer-merchantid-domain-association
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/uploadPaymentRecord.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadPaymentRecord.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/uploadPayment/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmcChatTemplate.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFenggexiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaKehuxiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCportrait2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralInfo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchannelWhatsapp.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshise.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsettingsDiscount1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/uploadPayment/response.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts
+FilePath: @sl/logger, Type: npm
+FilePath: @sl/logger-sentry, Type: npm
+FilePath: axios, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/storage.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScDrag.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmicrosoft.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/icondown1-b5678785.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralLink.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/IllegalUrl/index.tsx
+FilePath: react, Type: npm
+FilePath: classnames, Type: npm
+FilePath: react-i18next, Type: npm
+FilePath: ahooks, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/IllegalUrl/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCjinyanyonghu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmcChatAssistant.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaLiwu2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/jest/cssTransform.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfujian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralLike.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguangboxiaoxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScRight2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkulian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCcart.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchannelLine.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCinfo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyiban.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbiaoqing.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCartAdd.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbiaoweiweidu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralExpand.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFrame5216.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSetting.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/adminBff/schema/demo.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshequnxunxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralRefresh.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaYingyeexiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadTransferProof.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCadd1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCadd.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsousuo1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralUp.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/logo192.png
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralSave.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmcChatSmartreply1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/icon-archived-alert-2729c880.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCicondiscountsGift.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaXianshitianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSClixian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/package.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralCollapse.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/icon-privacy-b8e6a1d0.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconGeneralListcollapse.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaRecommendIcon1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconOutlineArrow.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCliwu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScInbox.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/credentials
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCcollection.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/adminBff/schema/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/adminBff/schema/demo.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCwhatsappCart.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderCmtSelected.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaYingyeetianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLock1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtuozhuai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/preloadContext/index.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScUnpublish.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralOrder.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/logo512.png
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/modules.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguanjianzi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/ArchivedOrder.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: @payment/payment-sdk, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/TaxDrawer.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.husky/_/.gitignore
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Credit/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-privacy.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGouwuchexiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScText.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzairuzhong1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshuaxin1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCinstantxinxiaoxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFenggeshise.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdianhua.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/service/i18n.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconyingxiaoxin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqudao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useStandard.ts
+FilePath: react, Type: npm
+FilePath: @payment/payment-sdk, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: sl-utils-node, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/paymentOrder.ts, Type: file
+FilePath: @payment/payment-sdk/build/index.css, Type: npm
+FilePath: emoji-regex, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDrawer/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/check-0f084bee.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/manifest.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/description
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshop.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/jest/babelTransform.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/favicon.ico
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiangsiwenti.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaChenggongtianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyugou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/jest/fileTransform.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-eae9e458.js.map
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCportrait5.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts
+FilePath: react, Type: npm
+FilePath: react-redux, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/rootAction.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyincang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCportrait4.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchannelMessenger.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgugepay.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScBell.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtiqianjieshu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/os.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderPostNormal2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/tsconfig.paths.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/PaymentProofDisplayment.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDatePicker/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhinenghuifujianyi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkuaijiehuifu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/manifest.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/adminBff/client.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.gitlab-ci.yml
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqingchulianjie.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaIconProductPreorder.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/static/default-product.png
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/index.html
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGouwuchetianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScPrintLineal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCword.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfukuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdangou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLogout.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/ErrorIcon.tsx
+FilePath: react, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Omise/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/static/icon-archived-alert.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCliuyanlieyin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshangpinqingdan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/setupTests.ts
+FilePath: @testing-library/jest-dom, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaHuifu2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/slick-12459f22.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSend.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtianjialianjie.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconHintWarnFill.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ProductSetDetail.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: sl-utils-node, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/error.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCirclePlus.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScRisk.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmingzhonghuodongliuyan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScGroup.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguanggao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ArchivedOrder.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/static/icon-archived-alert.svg, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/ArchivedOrder.module.less, Type: file
+FilePath: react-redux, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCstep1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScRight1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiazai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaStoreIcon1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.eslintrc.migrate.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconPostInventory.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/getChannel.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/getHttpsConfig.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqudao1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralCross.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqianse.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconSolidBudgeActive.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzidongtianjiabiaoqian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/rootSaga.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderDeliveryTrack.tsx
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: react, Type: npm
+FilePath: sl-utils-node, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/OrderDeliveryTrack.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiazai1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiaoximoban.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshijian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/PaymentProofDisplayment.tsx
+FilePath: react, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/PaymentProofDisplayment.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfenxiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/PaymentProofUpload.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsousuo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtongzhi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.prettierrc.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdingxuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getCountry.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderCmtNormal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/webpack.config.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-paying.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/locale/MessageCenter/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/MessageCenter/interface.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/i18n.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshangchuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdingxuan1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.stylelintrc.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhinengkefuzhushou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/ORIG_HEAD
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScAlertLineal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/interface.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/i18n.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaPingluntianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbianji.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/index
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/disabled-9aea160b.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCwenhao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaQudaoFacebook.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/DatePicker/index.tsx
+FilePath: react, Type: npm
+FilePath: antd-mobile/lib/date-picker/style/css, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: rc-picker/lib/generate/dayjs, Type: npm
+FilePath: antd/es/date-picker/generatePicker, Type: npm
+FilePath: antd/es/date-picker/style/index, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDatePicker/index.tsx, Type: file
+FilePath: dayjs/plugin/weekday, Type: npm
+FilePath: dayjs/plugin/localeData, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/isMobile.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/DatePicker/index.module.less, Type: file
+FilePath: classnames, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconSiderBack.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/locale/interface.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/service/i18n.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/index.tsx
+FilePath: react, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/options.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-fpx.svg, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrderForOmise.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSChuifu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScInstant.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScDown2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScStream.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-2ec5eeab.css
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCportrait3.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyoujian1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/uploadPaymentRecord.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/uploadPayment/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-afa98c21.js.map
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScPrintLinealCheck.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguangbobaogao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdayin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCinputSend.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralSearch.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/apiUtils.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: axios, Type: npm
+FilePath: @sentry/types, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCquantongluCrMzhushou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/translation.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfuzhi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconChatEmoji.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCpayment.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgenghuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxinxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtax.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/Invoice.tsx
+FilePath: react, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: i18next, Type: npm
+FilePath: ahooks, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: @sl/sc-components/lib/esm/Components/Common/Dropdown, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/ts-utils.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/Invoice.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyoutube.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCorder.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScDown.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.DS_Store
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/scripts/start.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCscMenu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/OrderTransferInfo.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCppt.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCquanping.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/logo192.png
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaBiaozhuxiantiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/config
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmcChatContent.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkongbai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxuanzeshangpin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralLeft.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScDown1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/options/interface.ts
+FilePath: react, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaYinliangtianman1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconChatReply.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLeft.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyingyee.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCfengcun.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCjianshao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/index.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: antd, Type: npm
+FilePath: ahooks, Type: npm
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useStandard.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Refresh/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/api.ts, Type: file
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/isMobile.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/oaApi.ts, Type: file
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: @payment/payment-sdk, Type: npm
+FilePath: @sl/ts-utils, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconSolidBudgeYellow.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaBiaozhutianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFenggetianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtupian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzihuamian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCmaijiaxinxi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/sentry.d.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdingdanxiangguan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScExclamationCircle1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/COMMIT_EDITMSG
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSChourglass.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshanchu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralMore.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzitigenghuan1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/iconfont.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSetting1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralShare.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbofang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.husky/pre-commit
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/getDetail.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getDetail.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/getUrlLocal.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useStandard.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: @sl/ts-utils, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCbiaoweiyidu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.gitignore
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-d4e37c8e.css
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/static/shoplinePayment/icon-fpx.svg
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshuanggou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCwenzi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/ajax-loader-e7b44c86.gif
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/.well-known/apple-developer-merchantid-domain-association
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCxiangsiwentimorendoudi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCa01Default.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/countryCallingCode.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/hasRolloutKey.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtuichu.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/preloadedContext.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/preloadContext/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCapple.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScUp2.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconTaglDelete.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconPostAdd.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/robots.txt
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.npmrc
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/pnpTs.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshanchu1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCwhatsappGlobal.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCgouwudai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhipai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzanting1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzengjia.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshuaxin.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScEyeView.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/index.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/sonar-project.properties
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/TaxDrawer.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDrawer/index.tsx, Type: file
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/TaxDrawer.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCguke.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/App.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+FilePath: react-redux, Type: npm
+FilePath: connected-react-router, Type: npm
+FilePath: react-router-dom, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Loading/index.tsx, Type: file
+FilePath: @sl/sc-components, Type: npm
+FilePath: @sl/sc-error-boundary, Type: npm
+FilePath: react-dev-inspector, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hoc/CheckUrlHoc/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCircleCross.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzitigenghuan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.commitlintrc.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/common.ts
+FilePath: axios, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshangyiye.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdelivery.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralPlay.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCshandian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkaishi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaQudaoShopline.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCcomments.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaLiwu3.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconChatPic.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/hasRolloutKey.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/preloadedState.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconProductTime.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/scripts/build.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzairuzhong.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-5b82a61b.css
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyinliang1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGuanjianzikaiqi1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdaogouzaihangxiaozhushou.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/ts-utils.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.git/HEAD
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCsound.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createOrderStandard.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralDown.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaKehutianman.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/index.tsx
+FilePath: react, Type: npm
+FilePath: react-redux, Type: npm
+FilePath: react-router-dom, Type: npm
+FilePath: antd, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/useQueryString.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts, Type: file
+FilePath: ahooks, Type: npm
+FilePath: lodash-es, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderStatus.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/genFullAddress.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/isTranslationEmpty.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/index.ts, Type: file
+FilePath: react-copy-to-clipboard, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icons/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/countryCallingCode.ts, Type: file
+FilePath: sl-utils-node, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderDetail.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/PaymentProofUpload.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/PaymentProofDisplayment.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderDeliveryTrack.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderTransferInfo.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/Invoice.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/hasRolloutKey.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/AtmVirtualAccount/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/constant/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: classnames, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/index.module.less, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ArchivedOrder.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/IllegalUrl/index.tsx, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/scripts/test.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCupload.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtongbujiage.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSquareMinus.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFrame3557244666.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtongzhi1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScIconSolidAlertInfo.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqingkong.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScRight.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqingkong1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.eslintrc.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/node_modules/.yarn-integrity
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralEdit.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyouxiang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDatePicker/index.tsx
+FilePath: react, Type: npm
+FilePath: antd-mobile/lib/date-picker-view/PropsType, Type: npm
+FilePath: antd-mobile/lib/date-picker-view/style/css, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: rmc-date-picker/lib/DatePicker, Type: npm
+FilePath: dayjs, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/MessageCenter/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/MobileDatePicker/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCkuoyinqi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/configStore.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/index.ts, Type: file
+FilePath: history, Type: npm
+FilePath: redux, Type: npm
+FilePath: redux-logger, Type: npm
+FilePath: redux-saga, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/rootReducer.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/rootSaga.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/index.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/translation.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/OrderTransferInfo.tsx
+FilePath: react, Type: npm
+FilePath: react-slick, Type: npm
+FilePath: slick-carousel/slick/slick.css, Type: npm
+FilePath: slick-carousel/slick/slick-theme.css, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.tsx, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/styles/OrderTransferInfo.module.less, Type: file
+FilePath: classnames, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCpackage.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdakai1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/public/envConfig.json
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScComment.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Standard/api.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/model/paymentOrder.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/api.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/IllegalUrl/index.module.less
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqingping.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScExport.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScReplayCircle.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/config/env.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchannelTelegram.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconDataUnpaid.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-c532289c.js.map
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.eslintignore
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.yarnrc
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/sagas/shoplinePayment/createSign.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/effects.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaScLoudSpeaker.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/Dropdown/options.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/options/interface.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScai1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCpdf.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtuwen.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/index.tsx
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getDetail.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconPostCart.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/api.ts
+FilePath: axios, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/envConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/apiConfig.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/service/common.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScShare.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhuanliandengdai.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzaiyici.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScLive.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqiehuanliebiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconProductHide.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/service/adminBff/handler.ts
+FilePath: axios, Type: npm
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCdianhua1.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/assets/index-c532289c.js
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaFbGroup.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScCustomer.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconGeneralAdd.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSubtract.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaGuanjianzikaiqi.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCaMultilive.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCredit.tsx
+FilePath: react, Type: npm
+FilePath: lodash-es, Type: npm
+FilePath: @sl/sc-components, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/hooks/usePromiseDispatch.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/logger.ts, Type: file
+FilePath: @slpayment/payment-element, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/locale/index.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/index.module.less, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/yarn-error.log
+FilePath: ^2.27.5, Type: unknown
+FilePath: ^2.25.3, Type: unknown
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScSquarePlus.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCrili.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/rootAction.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCproof.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/pages/OrderDetail/components/ShoplinePayment/hooks/useCommon.ts
+FilePath: react, Type: npm
+FilePath: sl-utils-node, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/env.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/utils/shoplinePayment.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/store/orderDetail/state.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/context/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconScClock.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCiconpostPromotionalGames.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/store/orderDetail/actions/getMerchant.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/api/orderDetail/response.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzanting.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/.husky/_/husky.sh
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCqitazixunleixing.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/utils/preloadedState.ts
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/build/robots.txt
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCchakanyemian.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCliebiao.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCliveYoutube.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCyinliang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCtiewenliuyan.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+
+file: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/IconSCzhankaishichuang.tsx
+FilePath: react, Type: npm
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/helper.ts, Type: file
+FilePath: /Users/zxc/Desktop/shopline-order-detail/src/components/Icon/index.css, Type: file
+
+
+

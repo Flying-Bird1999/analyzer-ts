@@ -62,7 +62,7 @@ func (pr *ParserResult) Traverse() {
 
 		// TODO: 解析 export
 		if node.Kind == ast.KindExportDeclaration {
-			fmt.Print("export")
+			//
 		}
 
 		// 解析 interface
