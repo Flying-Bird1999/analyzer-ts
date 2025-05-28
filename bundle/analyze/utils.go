@@ -22,7 +22,6 @@ func ReadAliasFromTsConfig(rootPath string) map[string]string {
 	// 解析 tsconfig.json
 	parseTsConfig(tsConfigPath, rootPath, alias)
 
-	fmt.Printf("解析到的alias: %+v\n", alias)
 	return alias
 }
 

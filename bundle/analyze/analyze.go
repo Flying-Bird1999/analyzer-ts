@@ -1,7 +1,6 @@
 package analyze
 
 import (
-	"fmt"
 	"main/bundle/parser"
 	"main/bundle/scanProject"
 	"main/bundle/utils"
@@ -25,7 +24,6 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 	if Alias == nil {
 		// 如果没有传入 Alias，尝试读取项目中tsconfig.json的 alias
 		curAlias = ReadAliasFromTsConfig(rootPath)
-		fmt.Printf("读取到的alias: %+v\n", curAlias)
 	}
 
 	curExtensions := Extensions
@@ -42,6 +40,14 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 		File:       make(map[string]FileAnalyzeResult),
 		Npm:        make(map[string]scanProject.NpmItem),
 	}
+}
+
+func (ar *AnalyzeResult) GetFileData() map[string]FileAnalyzeResult {
+	return ar.File
+}
+
+func (ar *AnalyzeResult) GetNpmData() map[string]scanProject.NpmItem {
+	return ar.Npm
 }
 
 // 是否命中别名 alias，如果命中则做替换

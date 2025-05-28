@@ -2,22 +2,19 @@ package bundle
 
 import (
 	"fmt"
-	"main/bundle/parser"
-	"main/bundle/scanProject"
+	analyzeModule "main/bundle/analyze"
 	"main/bundle/utils"
 	"path/filepath"
-
-	"github.com/samber/lo"
+	"strings"
 )
 
 // 处理引用的逻辑
-func processReference(refName string, parserResult parser.ParserResult, Result map[string]parser.ParserResult, targetPath string, sourceCodeMap *map[string]string) {
+func processReference(refName string, parserResult analyzeModule.FileAnalyzeResult, Result map[string]analyzeModule.FileAnalyzeResult, targetPath string, sourceCodeMap *map[string]string) {
 	// 在 TypeDeclarations 中查找引用的类型
 	if refTypeDecl, found := parserResult.TypeDeclarations[refName]; found {
 		(*sourceCodeMap)[targetPath+"_"+refName] = refTypeDecl.Raw
 		// 在目标文件中递归查找引用的类型
-		if len(refTypeDecl.Reference) == 0 {
-		} else {
+		if len(refTypeDecl.Reference) != 0 {
 			for refName := range refTypeDecl.Reference {
 				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
 			}
@@ -28,8 +25,7 @@ func processReference(refName string, parserResult parser.ParserResult, Result m
 	if refInterfaceDecl, found := parserResult.InterfaceDeclarations[refName]; found {
 		(*sourceCodeMap)[targetPath+"_"+refName] = refInterfaceDecl.Raw
 		// 在目标文件中递归查找引用的类型
-		if len(refInterfaceDecl.Reference) == 0 {
-		} else {
+		if len(refInterfaceDecl.Reference) != 0 {
 			for refName := range refInterfaceDecl.Reference {
 				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
 			}
@@ -38,13 +34,21 @@ func processReference(refName string, parserResult parser.ParserResult, Result m
 
 	// 在 ImportDeclarations 中查找引用的类型
 	for _, importDecl := range parserResult.ImportDeclarations {
-		if utils.Contains(lo.Map(importDecl.Modules, func(it parser.Module, index int) string {
-			return it.Identifier
-		}), refName) {
-			// 根据导入路径查找目标文件
-			importPath, _ := filepath.Abs(filepath.Join(filepath.Dir(targetPath), importDecl.Source))
-			if _, exists := Result[importPath]; exists {
-				analyze(Result, refName, importPath, sourceCodeMap)
+		for _, module := range importDecl.Modules {
+			if module.Identifier == refName {
+				realRefName := refName
+				if module.Type == "named" && module.Module != refName {
+					realRefName = module.Module
+					// 根据导入路径查找目标文件
+					if _, exists := Result[importDecl.Source.FilePath]; exists {
+						analyze(Result, realRefName, &refName, importDecl.Source.FilePath, sourceCodeMap)
+					}
+				} else {
+					// 根据导入路径查找目标文件
+					if _, exists := Result[importDecl.Source.FilePath]; exists {
+						analyze(Result, realRefName, nil, importDecl.Source.FilePath, sourceCodeMap)
+					}
+				}
 			}
 		}
 	}
@@ -58,7 +62,7 @@ func processReference(refName string, parserResult parser.ParserResult, Result m
 //   - 有值，遍历 Reference, 查找引用的类型
 //   - 1. 在 InterfaceDeclarationResult / TypeDeclarations 中查找
 //   - 2. 在 ImportDeclarations 中查找, 结合继续 1 的步骤
-func analyze(Result map[string]parser.ParserResult, targetTypeName string, targetPath string, sourceCodeMap *map[string]string) {
+func analyze(Result map[string]analyzeModule.FileAnalyzeResult, targetTypeName string, replaceTypeName *string, targetPath string, sourceCodeMap *map[string]string) {
 	// 在 Result 中找到 targetPath 的 ParserResult
 	parserResult, exists := Result[targetPath]
 	if !exists {
@@ -67,17 +71,23 @@ func analyze(Result map[string]parser.ParserResult, targetTypeName string, targe
 
 	// 在 ParserResult 中找到 targetTypeName
 	if typeDecl, found := parserResult.TypeDeclarations[targetTypeName]; found {
-		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = typeDecl.Raw
-		if len(typeDecl.Reference) == 0 {
-		} else {
+		realRaw := typeDecl.Raw
+		if replaceTypeName != nil {
+			realRaw = strings.ReplaceAll(typeDecl.Raw, targetTypeName, *replaceTypeName)
+		}
+		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realRaw
+		if len(typeDecl.Reference) != 0 {
 			for refName := range typeDecl.Reference {
 				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
 			}
 		}
 	} else if interfaceDecl, found := parserResult.InterfaceDeclarations[targetTypeName]; found {
-		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = interfaceDecl.Raw
-		if len(interfaceDecl.Reference) == 0 {
-		} else {
+		realRaw := interfaceDecl.Raw
+		if replaceTypeName != nil {
+			realRaw = strings.ReplaceAll(typeDecl.Raw, targetTypeName, *replaceTypeName)
+		}
+		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realRaw
+		if len(interfaceDecl.Reference) != 0 {
 			for refName := range interfaceDecl.Reference {
 				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
 			}
@@ -88,36 +98,17 @@ func analyze(Result map[string]parser.ParserResult, targetTypeName string, targe
 }
 
 func GenerateBundle() {
-	// inputAnalyzeDir := "/Users/zxc/Desktop/shopline-order-detail"
-	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	// inputAnalyzeType := "PreloadedState"
+	inputAnalyzeDir := "/Users/zxc/Desktop/shopline-order-detail"
+	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
+	inputAnalyzeType := "PreloadedState"
 
-	inputAnalyzeDir := "./ts/demo"
-	inputAnalyzeFile := "./ts/demo/index.ts"
-	inputAnalyzeType := "Class"
-
-	filePath, _ := filepath.Abs(inputAnalyzeDir)
-
-	Result := make(map[string]parser.ParserResult)
-
-	// 扫描项目
-	projectResult := scanProject.NewProjectResult(filePath, []string{})
-	projectResult.ScanProject()
-
-	for _, item := range projectResult.GetFileList() {
-		pr := parser.NewParserResult(item.Path)
-		pr.Traverse()
-		Result[item.Path] = pr.GetResult()
-	}
-
-	// fmt.Println("解析完成，结果如下:")
-	// for path, result := range Result {
-	// 	fmt.Printf("文件: %s, 解析结果: %+v, %+v, %+v\n", path, result.ImportDeclarations, result.InterfaceDeclarations, result.TypeDeclarations)
-	// }
+	ar := analyzeModule.NewAnalyzeResult(inputAnalyzeDir, nil, nil)
+	ar.Analyze()
+	fileData := ar.GetFileData()
 
 	var sourceCodeMap = make(map[string]string)
 	targetPath, _ := filepath.Abs(inputAnalyzeFile)
-	analyze(Result, inputAnalyzeType, targetPath, &sourceCodeMap)
+	analyze(fileData, inputAnalyzeType, nil, targetPath, &sourceCodeMap)
 
 	resultCode := ""
 	for _, value := range sourceCodeMap {
