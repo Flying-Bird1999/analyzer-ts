@@ -80,13 +80,13 @@ import (
 type ImportModule struct {
 	ImportModule string // 模块名, 对应实际导出的内容模块
 	Type         string // 默认导入: default、命名空间导入: namespace、命名导入:named、unknown
-	Identifier   string //
+	Identifier   string //唯一标识
 }
 
 type ImportDeclarationResult struct {
-	ImportModules []ImportModule
-	Raw           string
-	Source        string
+	ImportModules []ImportModule // 导入的模块内容
+	Raw           string         // 源码
+	Source        string         // 路径
 }
 
 func NewImportDeclarationResult() *ImportDeclarationResult {

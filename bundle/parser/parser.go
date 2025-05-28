@@ -11,6 +11,7 @@ type ParserResult struct {
 	filePath string
 
 	ImportDeclarations    []ImportDeclarationResult
+	ExportDeclarations    []ExportDeclarationResult
 	InterfaceDeclarations map[string]InterfaceDeclarationResult
 	TypeDeclarations      map[string]TypeDeclarationResult
 }
@@ -28,6 +29,10 @@ func (pr *ParserResult) AddImportDeclaration(idr *ImportDeclarationResult) {
 	pr.ImportDeclarations = append(pr.ImportDeclarations, *idr)
 }
 
+func (pr *ParserResult) AddExportDeclaration(edr *ExportDeclarationResult) {
+	pr.ExportDeclarations = append(pr.ExportDeclarations, *edr)
+}
+
 func (pr *ParserResult) AddInterfaceDeclaration(inter *InterfaceDeclarationResult) {
 	pr.InterfaceDeclarations[inter.Name] = *inter
 }
@@ -39,6 +44,7 @@ func (pr *ParserResult) addTypeDeclaration(tr *TypeDeclarationResult) {
 func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
+		ExportDeclarations:    pr.ExportDeclarations,
 		InterfaceDeclarations: pr.InterfaceDeclarations,
 		TypeDeclarations:      pr.TypeDeclarations,
 	}
@@ -60,9 +66,12 @@ func (pr *ParserResult) Traverse() {
 			pr.AddImportDeclaration(idr)
 		}
 
-		// TODO: 解析 export
-		if node.Kind == ast.KindExportDeclaration {
-			//
+		// 解析 export
+		if node.Kind == ast.KindExportAssignment || node.Kind == ast.KindExportDeclaration || node.Kind == ast.KindNamedExports || node.Kind == ast.KindNamespaceExport || node.Kind == ast.KindExportSpecifier {
+			fmt.Print("export...")
+			edr := NewExportDeclarationResult()
+			edr.analyzeExportDeclaration(node.AsExportDeclaration(), sourceCode)
+			pr.AddExportDeclaration(edr)
 		}
 
 		// 解析 interface
