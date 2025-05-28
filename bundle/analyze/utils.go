@@ -21,7 +21,7 @@ func ReadAliasFromTsConfig(rootPath string) map[string]string {
 
 	// 解析 tsconfig.json
 	parseTsConfig(tsConfigPath, rootPath, alias)
-	return formatAlias(*alias)
+	return FormatAlias(*alias)
 }
 
 // 递归解析 tsconfig.json
@@ -65,7 +65,7 @@ func parseTsConfig(configPath, rootPath string, alias *map[string]string) {
 }
 
 // 格式化 alias，默认alias结尾带*，需要去掉
-func formatAlias(alias map[string]string) map[string]string {
+func FormatAlias(alias map[string]string) map[string]string {
 	formattedAlias := make(map[string]string)
 	for key, path := range alias {
 		// 如果有星号(*)需要去掉，读取tsconfig的case可能有

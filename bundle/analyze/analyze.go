@@ -20,7 +20,7 @@ type AnalyzeResult struct {
 }
 
 func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []string) *AnalyzeResult {
-	curAlias := Alias
+	curAlias := FormatAlias(Alias)
 	if Alias == nil {
 		// 如果没有传入 Alias，尝试读取项目中tsconfig.json的 alias
 		curAlias = ReadAliasFromTsConfig(rootPath)
