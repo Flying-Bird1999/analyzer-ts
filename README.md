@@ -1,5 +1,7 @@
 # analyzer-ts
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Flying-Bird1999/analyzer-ts)
+
 go mod tidy
 
 go run main.go
