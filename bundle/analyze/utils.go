@@ -6,6 +6,7 @@ import (
 	"main/bundle/utils"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ func ReadAliasFromTsConfig(rootPath string) map[string]string {
 
 	// 解析 tsconfig.json
 	parseTsConfig(tsConfigPath, rootPath, alias)
+
 	return FormatAlias(*alias)
 }
 
@@ -31,6 +33,9 @@ func parseTsConfig(configPath, rootPath string, alias *map[string]string) {
 	if err != nil {
 		return
 	}
+
+	// 移除注释
+	data = removeJSONComments(data)
 
 	// 解析 tsconfig.json
 	var tsConfig struct {
@@ -79,4 +84,19 @@ func FormatAlias(alias map[string]string) map[string]string {
 		formattedAlias[key] = path
 	}
 	return formattedAlias
+}
+
+// 移除 JSON 文件中的注释
+func removeJSONComments(data string) string {
+	// 匹配单行注释 (//...)
+	singleLineComment := regexp.MustCompile(`(?m)^\s*//.*$`)
+	data = singleLineComment.ReplaceAllString(data, "")
+
+	// TODO: 匹配多行注释 (/*...*/)
+
+	// 移除多余的空行
+	emptyLines := regexp.MustCompile(`(?m)^\s*\n`)
+	data = emptyLines.ReplaceAllString(data, "")
+
+	return data
 }

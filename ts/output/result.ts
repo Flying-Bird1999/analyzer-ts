@@ -1,3 +1,17 @@
+
+
+export interface CurrentStaff {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly merchant_ids: string[];
+  readonly organization_ids: string[];
+  readonly role_keys: string[];
+  readonly locale_code: string;
+}
+
+
+export type SupportedLanguages = _SupportedLanguages;
 export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';
 
 
@@ -63,17 +77,3 @@ export interface BaseCurrency {
   iso_code: string;
   symbol_first: boolean;
 }
-
-
-export interface CurrentStaff {
-  readonly id: string;
-  readonly name: string;
-  readonly email: string;
-  readonly merchant_ids: string[];
-  readonly organization_ids: string[];
-  readonly role_keys: string[];
-  readonly locale_code: string;
-}
-
-
-export type SupportedLanguages = _SupportedLanguages;
