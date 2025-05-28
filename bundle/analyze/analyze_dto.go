@@ -9,15 +9,15 @@ type FileAnalyzeResult struct {
 }
 
 type ImportDeclarationResult struct {
-	Modules []Module
-	Raw     string
-	Source  SourceData
+	ImportModules []ImportModule
+	Raw           string
+	Source        SourceData
 }
 
-type Module struct {
-	Module     string // 模块名, 对应实际导出的内容模块
-	Type       string // 默认导入: default、命名空间导入: namespace、命名导入:named、unknown
-	Identifier string //
+type ImportModule struct {
+	ImportModule string // 模块名, 对应实际导出的内容模块
+	Type         string // 默认导入: default、命名空间导入: namespace、命名导入:named、unknown
+	Identifier   string //
 }
 
 type SourceData struct {

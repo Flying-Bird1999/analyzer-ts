@@ -36,15 +36,13 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 	for _, importDecl := range parserResult.ImportDeclarations {
 		// fmt.Printf("refName: %s\n", refName)
 		// fmt.Printf("importDecl.Raw: %s\n", importDecl.Raw)
-		for _, module := range importDecl.Modules {
-			fmt.Printf("关注这里: %s, %s, %s\n", module.Identifier, module.Module, module.Type)
-
+		for _, module := range importDecl.ImportModules {
 			if module.Identifier == refName {
 				realRefName := refName
 				var replaceTypeName *string
 				// case: import { School as NewSchool } from './school';
-				if module.Type == "named" && module.Module != refName {
-					realRefName = module.Module
+				if module.Type == "named" && module.ImportModule != refName {
+					realRefName = module.ImportModule
 					replaceTypeName = &refName
 				}
 

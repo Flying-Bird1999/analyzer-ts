@@ -83,11 +83,11 @@ func (ar *AnalyzeResult) Analyze() {
 		for _, importDecl := range result.ImportDeclarations {
 			sourceData := ar.matchImportSource(targetPath, importDecl.Source, projectResult.GetFileList())
 			importResult = append(importResult, ImportDeclarationResult{
-				Modules: lo.Map(importDecl.Modules, func(module parser.Module, _ int) Module {
-					return Module{
-						Module:     module.Module,
-						Type:       module.Type,
-						Identifier: module.Identifier,
+				ImportModules: lo.Map(importDecl.ImportModules, func(module parser.ImportModule, _ int) ImportModule {
+					return ImportModule{
+						ImportModule: module.ImportModule,
+						Type:         module.Type,
+						Identifier:   module.Identifier,
 					}
 				}),
 				Raw:    importDecl.Raw,
