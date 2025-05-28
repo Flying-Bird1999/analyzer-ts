@@ -1,6 +1,6 @@
 
 
-export interface CurrentStaff {
+export interface allTypes_CurrentStaff {
   readonly id: string;
   readonly name: string;
   readonly email: string;
@@ -16,15 +16,15 @@ export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';
 
 
 export default interface PreloadedState {
-  currentMerchant: MerchantData;
-  currentStaff: CurrentStaff;
+  currentMerchant: allTypes_MerchantData;
+  currentStaff: allTypes_CurrentStaff;
   currentStaffPermission: { [key: string]: string[] };
   locale: SupportedLanguages;
   callBackData: { [key: string]: any };
 }
 
 
-export interface MerchantData {
+export interface allTypes_MerchantData {
   readonly id: string;
   readonly email: string;
   readonly owner_id: string;

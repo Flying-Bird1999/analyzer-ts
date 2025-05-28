@@ -9,14 +9,14 @@ import (
 )
 
 // 处理引用的逻辑
-func processReference(refName string, parserResult analyzeModule.FileAnalyzeResult, Result map[string]analyzeModule.FileAnalyzeResult, targetPath string, sourceCodeMap *map[string]string) {
+func processReference(refName string, parserResult analyzeModule.FileAnalyzeResult, Result map[string]analyzeModule.FileAnalyzeResult, targetPath string, targetTypeName string, sourceCodeMap *map[string]string) {
 	// 在 TypeDeclarations 中查找引用的类型
 	if refTypeDecl, found := parserResult.TypeDeclarations[refName]; found {
 		(*sourceCodeMap)[targetPath+"_"+refName] = refTypeDecl.Raw
 		// 在目标文件中递归查找引用的类型
 		if len(refTypeDecl.Reference) != 0 {
 			for refName := range refTypeDecl.Reference {
-				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
+				processReference(refName, parserResult, Result, targetPath, targetTypeName, sourceCodeMap)
 			}
 		}
 	}
@@ -27,14 +27,18 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 		// 在目标文件中递归查找引用的类型
 		if len(refInterfaceDecl.Reference) != 0 {
 			for refName := range refInterfaceDecl.Reference {
-				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
+				processReference(refName, parserResult, Result, targetPath, targetTypeName, sourceCodeMap)
 			}
 		}
 	}
 
 	// 在 ImportDeclarations 中查找引用的类型
 	for _, importDecl := range parserResult.ImportDeclarations {
+		// fmt.Printf("refName: %s\n", refName)
+		// fmt.Printf("importDecl.Raw: %s\n", importDecl.Raw)
 		for _, module := range importDecl.Modules {
+			fmt.Printf("关注这里: %s, %s, %s\n", module.Identifier, module.Module, module.Type)
+
 			if module.Identifier == refName {
 				realRefName := refName
 				var replaceTypeName *string
@@ -43,9 +47,27 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 					realRefName = module.Module
 					replaceTypeName = &refName
 				}
+
 				// 根据导入路径查找目标文件
 				if _, exists := Result[importDecl.Source.FilePath]; exists {
 					analyze(Result, realRefName, replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
+				}
+			}
+
+			// case: import * as allTypes from './type';
+			if module.Type == "namespace" {
+				// 解析refName: allTypes.MerchantData。提取出 allTypes.MerchantData 中的 MerchantData
+				refNameArr := strings.Split(refName, ".")
+				realRefName := refNameArr[len(refNameArr)-1] // MerchantData
+				if refNameArr[0] == module.Identifier {      // allTypes
+					var replaceTypeName = module.Identifier + "_" + realRefName // allTypes_MerchantData
+					// 替换源码的类型， allTypes.MerchantData -> allTypes_MerchantData
+					realTargetTypeRaw := strings.ReplaceAll((*sourceCodeMap)[targetPath+"_"+targetTypeName], refName, replaceTypeName)
+					(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realTargetTypeRaw
+					// 根据导入路径查找目标文件
+					if _, exists := Result[importDecl.Source.FilePath]; exists {
+						analyze(Result, realRefName, &replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
+					}
 				}
 			}
 		}
@@ -76,18 +98,18 @@ func analyze(Result map[string]analyzeModule.FileAnalyzeResult, targetTypeName s
 		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realRaw
 		if len(typeDecl.Reference) != 0 {
 			for refName := range typeDecl.Reference {
-				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
+				processReference(refName, parserResult, Result, targetPath, targetTypeName, sourceCodeMap)
 			}
 		}
 	} else if interfaceDecl, found := parserResult.InterfaceDeclarations[targetTypeName]; found {
 		realRaw := interfaceDecl.Raw
 		if replaceTypeName != nil {
-			realRaw = strings.ReplaceAll(typeDecl.Raw, targetTypeName, *replaceTypeName)
+			realRaw = strings.ReplaceAll(interfaceDecl.Raw, targetTypeName, *replaceTypeName)
 		}
 		(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realRaw
 		if len(interfaceDecl.Reference) != 0 {
 			for refName := range interfaceDecl.Reference {
-				processReference(refName, parserResult, Result, targetPath, sourceCodeMap)
+				processReference(refName, parserResult, Result, targetPath, targetTypeName, sourceCodeMap)
 			}
 		}
 	} else {
