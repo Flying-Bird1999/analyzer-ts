@@ -1,48 +1,79 @@
 
 
-interface Name extends ISelectProductSetItem {
-  name: string;
-  value: string;
+export interface allTypes_CurrentStaff {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly merchant_ids: string[];
+  readonly organization_ids: string[];
+  readonly role_keys: string[];
+  readonly locale_code: string;
 }
 
-/** 选中组合商品 */
-export type ISelectProductSetItem = {
-    id: string;
-    /** 组合商品图片 */
-    image: string;
-    /** 组合商品名称 */
-    name: string;
-    /** 价格 */
-    price: {
-        /** 原价 */
-        origin?: string;
-        /** 销售价 */
-        sales: string;
-    };
-    /**
-     * 是否所有的子商品含有多规格商品
-     * 排除掉 无规格/单规格
-     */
-    isChildProductHasMoreVariations: boolean;
-    /** 组合列表 */
-    subItems: ISubItems[];
-    /** defaultKey */
-    defaultKey?: string;
-};
 
-/** 组合类型 */
-export type ISubItems = {
-    /** mock 组合id */
-    id: string;
-    selectedList: ISelectItem[];
-    /** 预设 keywords */
-    keyword?: string[];
-};
+export type SupportedLanguages = _SupportedLanguages;
+export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';
 
-/** 回调选中数据类型 */
-export type ISelectItem = {
-    spuId: string;
-    skuId?: string;
-    quantity: number;
-    selectedLabel: string;
-};
+
+export default interface PreloadedState {
+  currentMerchant: allTypes_MerchantData;
+  currentStaff: allTypes_CurrentStaff;
+  currentStaffPermission: { [key: string]: string[] };
+  locale: SupportedLanguages;
+  callBackData: { [key: string]: any };
+}
+
+
+export interface allTypes_MerchantData {
+  readonly id: string;
+  readonly email: string;
+  readonly owner_id: string;
+  readonly staff_id: string;
+  readonly logo_media_url: string;
+  readonly handle: string;
+  readonly admin_url: string;
+  readonly url: string;
+  readonly rollout_keys: string[];
+  readonly rolloutKeys: string[];
+  readonly supported_languages: LanguageKey[];
+  readonly name: string;
+  readonly base_country_code: string;
+  readonly title_translations: {
+    [key in SupportedLanguages]: string;
+  };
+  readonly subtitle_translations: {
+    [key in SupportedLanguages]: string;
+  };
+  readonly icon?: string;
+  readonly base_currency?: BaseCurrency;
+  readonly created_at: string;
+  readonly current_plan_key: string;
+  readonly base_currency_code: string;
+  readonly raw_subscription_currency: string;
+  readonly subscription_currency: BaseCurrency;
+  readonly default_language_code: string;
+  readonly sl_payment_merchant_id: string;
+  readonly brand_home_url: string;
+}
+
+
+export type LanguageKey =
+  | 'en'
+  | 'zh-hant'
+  | 'zh-hk'
+  | 'zh-tw'
+  | 'zh-cn'
+  | 'vi'
+  | 'ms'
+  | 'ja'
+  | 'th'
+  | 'id'
+  | 'de'
+  | 'fr';
+
+
+export interface BaseCurrency {
+  alternate_symbol: string;
+  iso_code: string;
+  symbol_first: boolean;
+}

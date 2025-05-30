@@ -43,7 +43,7 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleRes
 
 // 递归解析依赖
 // absFilePath必须传入绝对路径
-func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, replaceTypeName string) {
+func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
 	// 解析当前文件
 	pr := parser.NewParserResult(absFilePath)
 	pr.Traverse()
@@ -58,7 +58,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 		br.SourceCodeMap[absFilePath+"_"+typeName] = realRaw
 		for ref := range typeDecl.Reference {
-			br.analyzeFileAndType(absFilePath, ref, "")
+			br.analyzeFileAndType(absFilePath, ref, "", typeName)
 		}
 		return
 	}
@@ -70,7 +70,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 		}
 		br.SourceCodeMap[absFilePath+"_"+typeName] = realRaw
 		for ref := range interfaceDecl.Reference {
-			br.analyzeFileAndType(absFilePath, ref, "")
+			br.analyzeFileAndType(absFilePath, ref, "", typeName)
 		}
 		return
 	}
@@ -95,7 +95,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					// nextFile = br.RootPath + "/node_modules" + importDecl.Source
 					nextFile = importDecl.Source
 				}
-				br.analyzeFileAndType(nextFile, realTypeName, replaceTypeName)
+				br.analyzeFileAndType(nextFile, realTypeName, replaceTypeName, typeName)
 			}
 
 			// case: import * as allTypes from './type';
@@ -108,8 +108,8 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 					// TODO: 这里有问题, 需要fix
 					// 替换源码的类型，PreloadedState中的 allTypes.MerchantData -> allTypes_MerchantData
-					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+"PreloadedState"], typeName, replaceTypeName)
-					br.SourceCodeMap[absFilePath+"_"+"PreloadedState"] = realTargetTypeRaw
+					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+parentTypeName], typeName, replaceTypeName)
+					br.SourceCodeMap[absFilePath+"_"+parentTypeName] = realTargetTypeRaw
 
 					sourceData := analyze.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList, br.Alias, br.Extensions)
 					nextFile := ""
@@ -118,7 +118,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					} else {
 						nextFile = importDecl.Source
 					}
-					br.analyzeFileAndType(nextFile, realRefName, replaceTypeName)
+					br.analyzeFileAndType(nextFile, realRefName, replaceTypeName, typeName)
 				}
 			}
 		}
@@ -127,12 +127,13 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 // 入口方法
 func GenerateBundle2() {
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
-	inputAnalyzeType := "Name"
+	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
+	// inputAnalyzeType := "Name"
 	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	// inputAnalyzeType := "PreloadedState"
+	inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/shopline-order-detail/src/interface/preloadedState/index.ts"
+	inputAnalyzeType := "PreloadedState"
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
-	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "")
+	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
 
 	resultCode := ""
 	for _, value := range br.SourceCodeMap {
