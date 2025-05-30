@@ -4,25 +4,47 @@ package bundle
 
 import (
 	"fmt"
+	"main/bundle/analyze"
 	"main/bundle/parser"
+	"main/bundle/scanProject"
 	"main/bundle/utils"
 	"path/filepath"
 	"strings"
 )
 
-// 递归解析依赖
-func analyzeFileAndType(rootPath, filePath, typeName string, sourceCodeMap map[string]string, visited map[string]bool) {
-	// 这里精准处理导入的路径，就可以了
-	absFilePath, _ := filepath.Abs(filePath)
+type BundleResult struct {
+	RootPath   string
+	Alias      map[string]string
+	Extensions []string
+	NpmList    map[string]scanProject.NpmItem
 
-	fmt.Printf("absFilePath: %s\n", absFilePath)
+	SourceCodeMap map[string]string
+}
 
-	visitKey := absFilePath + "::" + typeName
-	if visited[visitKey] {
-		return
+func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleResult {
+	// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
+	absFilePath, _ := filepath.Abs(inputAnalyzeFile)
+	rootPath := strings.Split(absFilePath, "/src")[0]
+
+	// 2. 获取 npm 列表
+	pr := scanProject.NewProjectResult(rootPath, []string{})
+	pr.ScanNpmList()
+
+	// 3. 获取 tsconfig.json 中的 alias 列表
+	ar := analyze.NewAnalyzeResult(rootPath, nil, nil)
+
+	return BundleResult{
+		RootPath:      rootPath,
+		Alias:         ar.Alias,
+		Extensions:    ar.Extensions,
+		NpmList:       pr.GetNpmList(),
+		SourceCodeMap: make(map[string]string),
 	}
-	visited[visitKey] = true
+}
 
+// 递归解析依赖
+// absFilePath必须传入绝对路径
+func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string) {
 	// 解析当前文件
 	pr := parser.NewParserResult(absFilePath)
 	pr.Traverse()
@@ -30,17 +52,17 @@ func analyzeFileAndType(rootPath, filePath, typeName string, sourceCodeMap map[s
 
 	// 查找类型声明
 	if typeDecl, found := parserResult.TypeDeclarations[typeName]; found {
-		sourceCodeMap[absFilePath+"_"+typeName] = typeDecl.Raw
+		br.SourceCodeMap[absFilePath+"_"+typeName] = typeDecl.Raw
 		for ref := range typeDecl.Reference {
-			analyzeFileAndType(rootPath, absFilePath, ref, sourceCodeMap, visited)
+			br.analyzeFileAndType(absFilePath, ref)
 		}
 		return
 	}
 	// 查找接口声明
 	if interfaceDecl, found := parserResult.InterfaceDeclarations[typeName]; found {
-		sourceCodeMap[absFilePath+"_"+typeName] = interfaceDecl.Raw
+		br.SourceCodeMap[absFilePath+"_"+typeName] = interfaceDecl.Raw
 		for ref := range interfaceDecl.Reference {
-			analyzeFileAndType(rootPath, absFilePath, ref, sourceCodeMap, visited)
+			br.analyzeFileAndType(absFilePath, ref)
 		}
 		return
 	}
@@ -54,11 +76,16 @@ func analyzeFileAndType(rootPath, filePath, typeName string, sourceCodeMap map[s
 				if module.Type == "named" && module.ImportModule != typeName {
 					realTypeName = module.ImportModule
 				}
-				nextFile := importDecl.Source
-				if !filepath.IsAbs(nextFile) {
-					nextFile = filepath.Join(filepath.Dir(absFilePath), nextFile)
+				sourceData := analyze.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList, br.Alias, br.Extensions)
+
+				nextFile := ""
+				if sourceData.Type == "file" {
+					nextFile = sourceData.FilePath
+				} else {
+					nextFile = br.RootPath + "/node_modules" + importDecl.Source
+					fmt.Printf("nextFile: %s\n", nextFile)
 				}
-				analyzeFileAndType(rootPath, nextFile, realTypeName, sourceCodeMap, visited)
+				br.analyzeFileAndType(nextFile, realTypeName)
 			}
 			// 命名空间导入
 			if module.Type == "namespace" {
@@ -68,14 +95,18 @@ func analyzeFileAndType(rootPath, filePath, typeName string, sourceCodeMap map[s
 					replaceTypeName := module.Identifier + "_" + realTypeName
 					// 替换源码
 					key := absFilePath + "_" + typeName
-					if raw, ok := sourceCodeMap[key]; ok {
-						sourceCodeMap[key] = strings.ReplaceAll(raw, typeName, replaceTypeName)
+					if raw, ok := br.SourceCodeMap[key]; ok {
+						br.SourceCodeMap[key] = strings.ReplaceAll(raw, typeName, replaceTypeName)
 					}
-					nextFile := importDecl.Source
-					if !filepath.IsAbs(nextFile) {
-						nextFile = filepath.Join(filepath.Dir(absFilePath), nextFile)
+					sourceData := analyze.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList, br.Alias, br.Extensions)
+
+					nextFile := ""
+					if sourceData.Type == "file" {
+						nextFile = sourceData.FilePath
+					} else {
+						nextFile = br.RootPath + "/node_modules" + importDecl.Source
 					}
-					analyzeFileAndType(rootPath, nextFile, realTypeName, sourceCodeMap, visited)
+					br.analyzeFileAndType(nextFile, realTypeName)
 				}
 			}
 		}
@@ -84,17 +115,16 @@ func analyzeFileAndType(rootPath, filePath, typeName string, sourceCodeMap map[s
 
 // 入口方法
 func GenerateBundle2() {
-	rootPath := "/Users/zxc/Desktop/shopline-live-sale"
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
-	inputAnalyzeType := "Name"
+	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
+	// inputAnalyzeType := "Name"
+	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
+	inputAnalyzeType := "PreloadedState"
 
-	sourceCodeMap := make(map[string]string)
-	visited := make(map[string]bool)
-
-	analyzeFileAndType(rootPath, inputAnalyzeFile, inputAnalyzeType, sourceCodeMap, visited)
+	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
+	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType)
 
 	resultCode := ""
-	for _, value := range sourceCodeMap {
+	for _, value := range br.SourceCodeMap {
 		resultCode += value + "\n"
 	}
 	utils.WriteResultToFile("./ts/output/result.ts", resultCode)

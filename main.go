@@ -5,5 +5,6 @@ import (
 )
 
 func main() {
+	// bundle.GenerateBundle()
 	bundle.GenerateBundle2()
 }

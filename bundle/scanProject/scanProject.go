@@ -34,11 +34,11 @@ func (pr *ProjectResult) GetNpmList() map[string]NpmItem {
 }
 
 func (pr *ProjectResult) ScanProject() {
-	pr.scanNpmList()
-	pr.scanFileList()
+	pr.ScanNpmList()
+	pr.ScanFileList()
 }
 
-func (pr *ProjectResult) scanNpmList() {
+func (pr *ProjectResult) ScanNpmList() {
 	// 定义 package.json 文件路径
 	packageJsonPath := fmt.Sprintf("%s/package.json", pr.Root)
 	// 解析 package.json 文件内容
@@ -52,7 +52,7 @@ func (pr *ProjectResult) scanNpmList() {
 	pr.NpmList = packageJsonMap
 }
 
-func (pr *ProjectResult) scanFileList() {
+func (pr *ProjectResult) ScanFileList() {
 	// 如果 pr.Ignore 为空，则使用默认的忽略规则
 	var Ignore []string
 	if len(pr.Ignore) > 0 {

@@ -2,14 +2,14 @@ package bundle
 
 import (
 	"fmt"
-	analyzeModule "main/bundle/analyze"
+	"main/bundle/analyze"
 	"main/bundle/utils"
 	"path/filepath"
 	"strings"
 )
 
 // 处理引用的逻辑
-func processReference(refName string, parserResult analyzeModule.FileAnalyzeResult, Result map[string]analyzeModule.FileAnalyzeResult, targetPath string, targetTypeName string, sourceCodeMap *map[string]string) {
+func processReference(refName string, parserResult analyze.FileAnalyzeResult, Result map[string]analyze.FileAnalyzeResult, targetPath string, targetTypeName string, sourceCodeMap *map[string]string) {
 	// 在 TypeDeclarations 中查找引用的类型
 	if refTypeDecl, found := parserResult.TypeDeclarations[refName]; found {
 		(*sourceCodeMap)[targetPath+"_"+refName] = refTypeDecl.Raw
@@ -48,7 +48,7 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 
 				// 根据导入路径查找目标文件
 				if _, exists := Result[importDecl.Source.FilePath]; exists {
-					analyze(Result, realRefName, replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
+					analyzeBundle(Result, realRefName, replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
 				}
 			}
 
@@ -64,7 +64,7 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 					(*sourceCodeMap)[targetPath+"_"+targetTypeName] = realTargetTypeRaw
 					// 根据导入路径查找目标文件
 					if _, exists := Result[importDecl.Source.FilePath]; exists {
-						analyze(Result, realRefName, &replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
+						analyzeBundle(Result, realRefName, &replaceTypeName, importDecl.Source.FilePath, sourceCodeMap)
 					}
 				}
 			}
@@ -80,7 +80,7 @@ func processReference(refName string, parserResult analyzeModule.FileAnalyzeResu
 //   - 有值，遍历 Reference, 查找引用的类型
 //   - 1. 在 InterfaceDeclarationResult / TypeDeclarations 中查找
 //   - 2. 在 ImportDeclarations 中查找, 结合继续 1 的步骤
-func analyze(Result map[string]analyzeModule.FileAnalyzeResult, targetTypeName string, replaceTypeName *string, targetPath string, sourceCodeMap *map[string]string) {
+func analyzeBundle(Result map[string]analyze.FileAnalyzeResult, targetTypeName string, replaceTypeName *string, targetPath string, sourceCodeMap *map[string]string) {
 	// 在 Result 中找到 targetPath 的 ParserResult
 	parserResult, exists := Result[targetPath]
 	if !exists {
@@ -120,13 +120,13 @@ func GenerateBundle() {
 	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
 	inputAnalyzeType := "PreloadedState"
 
-	ar := analyzeModule.NewAnalyzeResult(inputAnalyzeDir, nil, nil)
+	ar := analyze.NewAnalyzeResult(inputAnalyzeDir, nil, nil)
 	ar.Analyze()
 	fileData := ar.GetFileData()
 
 	var sourceCodeMap = make(map[string]string)
 	targetPath, _ := filepath.Abs(inputAnalyzeFile)
-	analyze(fileData, inputAnalyzeType, nil, targetPath, &sourceCodeMap)
+	analyzeBundle(fileData, inputAnalyzeType, nil, targetPath, &sourceCodeMap)
 
 	resultCode := ""
 	for _, value := range sourceCodeMap {
