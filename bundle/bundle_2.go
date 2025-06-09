@@ -92,8 +92,12 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				if sourceData.Type == "file" {
 					nextFile = sourceData.FilePath
 				} else {
-					// nextFile = br.RootPath + "/node_modules" + importDecl.Source
-					nextFile = importDecl.Source
+					// TODO： 待优化： npm的case
+					nextFile = br.RootPath + "/node_modules/" + importDecl.Source
+					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
+					if !utils.HasExtension(nextFile) {
+						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
+					}
 				}
 				br.analyzeFileAndType(nextFile, realTypeName, replaceTypeName, typeName)
 			}
@@ -105,8 +109,6 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				realRefName := refNameArr[len(refNameArr)-1] // MerchantData
 				if refNameArr[0] == module.Identifier {      // allTypes
 					var replaceTypeName = module.Identifier + "_" + realRefName // allTypes_MerchantData
-
-					// TODO: 这里有问题, 需要fix
 					// 替换源码的类型，PreloadedState中的 allTypes.MerchantData -> allTypes_MerchantData
 					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+parentTypeName], typeName, replaceTypeName)
 					br.SourceCodeMap[absFilePath+"_"+parentTypeName] = realTargetTypeRaw
@@ -116,7 +118,12 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath
 					} else {
-						nextFile = importDecl.Source
+						// TODO： 待优化： npm的case
+						nextFile = br.RootPath + "/node_modules/" + importDecl.Source
+						// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
+						if !utils.HasExtension(nextFile) {
+							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
+						}
 					}
 					br.analyzeFileAndType(nextFile, realRefName, replaceTypeName, typeName)
 				}
@@ -127,11 +134,11 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 // 入口方法
 func GenerateBundle2() {
-	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
-	// inputAnalyzeType := "Name"
+	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
+	inputAnalyzeType := "Name"
 	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/shopline-order-detail/src/interface/preloadedState/index.ts"
-	inputAnalyzeType := "PreloadedState"
+	// inputAnalyzeType := "PreloadedState"
+
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
 

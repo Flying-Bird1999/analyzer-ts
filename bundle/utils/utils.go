@@ -118,3 +118,23 @@ func WriteResultToFile(filePath string, result string) error {
 func HasExtension(filePath string) bool {
 	return strings.Contains(filepath.Base(filePath), ".")
 }
+
+// 根据基础路径和扩展名列表查找真实存在的文件路径
+func FindRealFilePath(basePath string, extensions []string) string {
+	// 先尝试 basePath + ext
+	for _, ext := range extensions {
+		extendedPath := basePath + ext
+		if _, err := os.Stat(extendedPath); err == nil {
+			return extendedPath
+		}
+	}
+	// 再尝试 basePath + "/index" + ext
+	for _, ext := range extensions {
+		extendedPath := basePath + "/index" + ext
+		if _, err := os.Stat(extendedPath); err == nil {
+			return extendedPath
+		}
+	}
+	// 如果都找不到，返回原始路径
+	return basePath
+}
