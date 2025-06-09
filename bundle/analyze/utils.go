@@ -3,6 +3,7 @@ package analyze
 import (
 	"encoding/json"
 	"fmt"
+	"main/bundle/scanProject"
 	"main/bundle/utils"
 	"os"
 	"path/filepath"
@@ -99,4 +100,84 @@ func removeJSONComments(data string) string {
 	data = emptyLines.ReplaceAllString(data, "")
 
 	return data
+}
+
+// 匹配别名
+func IsMatchAlias(filePath string, rootPath string, Alias map[string]string) (string, bool) {
+	for alias, realPath := range Alias {
+		// 检查路径是否以 alias 开头
+		if strings.HasPrefix(filePath, alias) {
+			// 替换 alias 为绝对路径
+			absolutePath := filepath.Join(rootPath, realPath)
+			return filepath.Join(absolutePath, strings.TrimPrefix(filePath, alias)), true
+		}
+	}
+	return filePath, false // 未命中别名
+}
+
+// 匹配导入的文件路径
+func MatchImportSource(
+	targetPath string, // 目标文件路径
+	filePath string, // 导入的文件路径
+	rootPath string, // 项目根目录
+	Npm map[string]scanProject.NpmItem, // npm列表
+	Alias map[string]string, //	别名映射，key: 别名, value: 实际路径
+	Extensions []string, // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
+) SourceData {
+	// 匹配 npm 包
+	for npmName, npmItem := range Npm {
+		// 检查 filePath 是否包含 npm 包名
+		if strings.HasPrefix(filePath, npmName) {
+			return SourceData{
+				FilePath: filePath,
+				NpmPkg:   npmItem.Name,
+				Type:     "npm",
+			}
+		}
+	}
+
+	realPath := filePath
+
+	// 匹配 alias,替换为真实路径
+	if absolutePath, matched := IsMatchAlias(filePath, rootPath, Alias); matched {
+		realPath = absolutePath
+	} else {
+		// 如果没有匹配到别名，尝试将其视为绝对路径
+		realPath, _ = filepath.Abs(filepath.Join(filepath.Dir(targetPath), realPath))
+	}
+
+	// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
+	if !utils.HasExtension(realPath) {
+		for _, ext := range Extensions {
+			// 尝试直接拼接扩展名
+			extendedPath := realPath + ext
+			if _, err := os.Stat(extendedPath); err == nil {
+				realPath = extendedPath
+				break
+			}
+		}
+		// 如果拼接上扩展名后还是没有找到文件，尝试在目录下查找
+		for _, ext := range Extensions {
+			extendedPath := realPath + "/index" + ext
+			if _, err := os.Stat(extendedPath); err == nil {
+				realPath = extendedPath
+				break
+			}
+		}
+	}
+
+	// 5. 如果存在，则返回 SourceData
+	if _, err := os.Stat(realPath); err == nil {
+		return SourceData{
+			FilePath: realPath,
+			NpmPkg:   "",
+			Type:     "file",
+		}
+	}
+
+	return SourceData{
+		FilePath: filePath,
+		NpmPkg:   "",
+		Type:     "unknown",
+	}
 }

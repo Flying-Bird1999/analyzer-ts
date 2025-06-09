@@ -3,9 +3,7 @@ package analyze
 import (
 	"main/bundle/parser"
 	"main/bundle/scanProject"
-	"main/bundle/utils"
 	"path/filepath"
-	"strings"
 
 	"github.com/samber/lo"
 )
@@ -28,7 +26,7 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 
 	curExtensions := Extensions
 	if Extensions == nil {
-		curExtensions = []string{".ts", ".tsx", ".js", ".jsx"}
+		curExtensions = []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
 	}
 
 	newRootPath, _ := filepath.Abs(rootPath)
@@ -52,15 +50,7 @@ func (ar *AnalyzeResult) GetNpmData() map[string]scanProject.NpmItem {
 
 // 是否命中别名 alias，如果命中则做替换
 func (ar *AnalyzeResult) isMatchAlias(filePath string) (string, bool) {
-	for alias, realPath := range ar.Alias {
-		// 检查路径是否以 alias 开头
-		if strings.HasPrefix(filePath, alias) {
-			// 替换 alias 为绝对路径
-			absolutePath := filepath.Join(ar.RootPath, realPath)
-			return filepath.Join(absolutePath, strings.TrimPrefix(filePath, alias)), true
-		}
-	}
-	return filePath, false // 未命中别名
+	return IsMatchAlias(filePath, ar.RootPath, ar.Alias)
 }
 
 func (ar *AnalyzeResult) Analyze() {
@@ -81,7 +71,7 @@ func (ar *AnalyzeResult) Analyze() {
 
 		// 处理每个 import 声明
 		for _, importDecl := range result.ImportDeclarations {
-			sourceData := ar.matchImportSource(targetPath, importDecl.Source, projectResult.GetFileList())
+			sourceData := MatchImportSource(targetPath, importDecl.Source, ar.RootPath, ar.Npm, ar.Alias, ar.Extensions)
 			importResult = append(importResult, ImportDeclarationResult{
 				ImportModules: lo.Map(importDecl.ImportModules, func(module parser.ImportModule, _ int) ImportModule {
 					return ImportModule{
@@ -100,65 +90,5 @@ func (ar *AnalyzeResult) Analyze() {
 			InterfaceDeclarations: result.InterfaceDeclarations,
 			TypeDeclarations:      result.TypeDeclarations,
 		}
-	}
-}
-
-// 匹配 import 的真实绝对路径
-func (ar *AnalyzeResult) matchImportSource(targetPath string, filePath string, fileList map[string]scanProject.FileItem) SourceData {
-	// 匹配 npm 包
-	for npmName, npmItem := range ar.Npm {
-		// 检查 filePath 是否包含 npm 包名
-		if strings.HasPrefix(filePath, npmName) {
-			return SourceData{
-				FilePath: filePath,
-				NpmPkg:   npmItem.Name,
-				Type:     "npm",
-			}
-		}
-	}
-
-	realPath := filePath
-
-	// 匹配 alias,替换为真实路径
-	if absolutePath, matched := ar.isMatchAlias(filePath); matched {
-		realPath = absolutePath
-	} else {
-		// 如果没有匹配到别名，尝试将其视为绝对路径
-		realPath, _ = filepath.Abs(filepath.Join(filepath.Dir(targetPath), realPath))
-	}
-
-	// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
-	if !utils.HasExtension(realPath) {
-		for _, ext := range ar.Extensions {
-			// 尝试直接拼接扩展名
-			extendedPath := realPath + ext
-			if _, exists := fileList[extendedPath]; exists {
-				realPath = extendedPath
-				break
-			}
-		}
-		// 如果拼接上扩展名后还是没有找到文件，尝试在目录下查找
-		for _, ext := range ar.Extensions {
-			extendedPath := realPath + "/index" + ext
-			if _, exists := fileList[extendedPath]; exists {
-				realPath = extendedPath
-				break
-			}
-		}
-	}
-
-	// 5. 如果存在，则返回 SourceData
-	if _, exists := fileList[realPath]; exists {
-		return SourceData{
-			FilePath: realPath,
-			NpmPkg:   "",
-			Type:     "file",
-		}
-	}
-
-	return SourceData{
-		FilePath: filePath,
-		NpmPkg:   "",
-		Type:     "unknown",
 	}
 }

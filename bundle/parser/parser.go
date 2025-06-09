@@ -67,12 +67,12 @@ func (pr *ParserResult) Traverse() {
 		}
 
 		// 解析 export
-		if node.Kind == ast.KindExportAssignment || node.Kind == ast.KindExportDeclaration || node.Kind == ast.KindNamedExports || node.Kind == ast.KindNamespaceExport || node.Kind == ast.KindExportSpecifier {
-			fmt.Print("export...")
-			edr := NewExportDeclarationResult()
-			edr.analyzeExportDeclaration(node.AsExportDeclaration(), sourceCode)
-			pr.AddExportDeclaration(edr)
-		}
+		// if node.Kind == ast.KindExportAssignment || node.Kind == ast.KindExportDeclaration || node.Kind == ast.KindNamedExports || node.Kind == ast.KindNamespaceExport || node.Kind == ast.KindExportSpecifier {
+		// 	fmt.Print("export...")
+		// 	edr := NewExportDeclarationResult()
+		// 	edr.analyzeExportDeclaration(node.AsExportDeclaration(), sourceCode)
+		// 	pr.AddExportDeclaration(edr)
+		// }
 
 		// 解析 interface
 		if node.Kind == ast.KindInterfaceDeclaration {
