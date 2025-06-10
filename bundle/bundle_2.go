@@ -1,6 +1,10 @@
 package bundle
 
-// 换个思路，这里从入口文件开始解析，递归解析依赖，将依赖的类型、接口、import 都收集起来，最后输出到一个文件中
+// 该文件实现了基于入口文件和类型名的 TypeScript 类型依赖递归收集与输出。
+// 主要流程为：
+// 1. 以入口文件和类型为起点，递归解析类型、接口及 import 依赖，收集所有相关类型声明源码。
+// 2. 支持 alias、npm 包、命名空间导入等常见 TypeScript 导入场景。
+// 3. 最终将所有依赖类型源码合并输出到指定文件。
 
 import (
 	"main/bundle/analyze"
@@ -12,14 +16,15 @@ import (
 )
 
 type BundleResult struct {
-	RootPath   string
-	Alias      map[string]string
-	Extensions []string
-	NpmList    map[string]scanProject.NpmItem
-
-	SourceCodeMap map[string]string
+	RootPath      string                         // 项目根目录
+	Alias         map[string]string              // tsconfig.json 中的路径别名
+	Extensions    []string                       // 支持的文件扩展名
+	NpmList       map[string]scanProject.NpmItem // 依赖列表
+	SourceCodeMap map[string]string              // 已收集的类型源码
 }
 
+// NewBundleResult 构造函数，初始化 BundleResult。
+// 通过入口文件路径自动推断项目根目录、npm 列表、alias、扩展名等信息。
 func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleResult {
 	// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
 	absFilePath, _ := filepath.Abs(inputAnalyzeFile)
@@ -41,8 +46,11 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleRes
 	}
 }
 
-// 递归解析依赖
-// absFilePath必须传入绝对路径
+// analyzeFileAndType 递归解析指定文件中的类型依赖。
+// absFilePath: 当前解析的文件绝对路径
+// typeName: 当前要查找的类型名
+// replaceTypeName: 类型重命名（如 import {A as B}）时的替换名
+// parentTypeName: 父类型名（用于命名空间类型替换）
 func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
 	// 解析当前文件
 	pr := parser.NewParserResult(absFilePath)
