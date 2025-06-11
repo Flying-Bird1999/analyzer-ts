@@ -31,11 +31,11 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleRes
 	rootPath := strings.Split(absFilePath, "/src")[0]
 
 	// 2. 获取 npm 列表
-	pr := scanProject.NewProjectResult(rootPath, []string{})
+	pr := scanProject.NewProjectResult(rootPath, []string{}, false)
 	pr.ScanNpmList()
 
 	// 3. 获取 tsconfig.json 中的 alias 列表
-	ar := analyze.NewAnalyzeResult(rootPath, nil, nil)
+	ar := analyze.NewAnalyzeResult(rootPath, nil, nil, false)
 
 	return BundleResult{
 		RootPath:      rootPath,

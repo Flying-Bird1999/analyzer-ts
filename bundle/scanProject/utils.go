@@ -25,6 +25,7 @@ func GetPackageJson(packageJsonPath string) (map[string]NpmItem, error) {
 
 	// 定义结构体解析 package.json
 	var packageJson struct {
+		Name             string            `json:"name"`
 		Dependencies     map[string]string `json:"dependencies"`
 		DevDependencies  map[string]string `json:"devDependencies"`
 		PeerDependencies map[string]string `json:"peerDependencies"`
@@ -38,13 +39,13 @@ func GetPackageJson(packageJsonPath string) (map[string]NpmItem, error) {
 
 	// 将 npm 包添加到 NpmList
 	for name, version := range packageJson.Dependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "dependencies"}
+		packageJsonMap[name] = NpmItem{Workspace: packageJson.Name, Name: name, Version: version, Type: "dependencies"}
 	}
 	for name, version := range packageJson.DevDependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "devDependencies"}
+		packageJsonMap[name] = NpmItem{Workspace: packageJson.Name, Name: name, Version: version, Type: "devDependencies"}
 	}
 	for name, version := range packageJson.PeerDependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "peerDependencies"}
+		packageJsonMap[name] = NpmItem{Workspace: packageJson.Name, Name: name, Version: version, Type: "peerDependencies"}
 	}
 
 	return packageJsonMap, nil

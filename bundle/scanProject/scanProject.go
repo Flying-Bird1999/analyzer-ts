@@ -9,19 +9,21 @@ import (
 )
 
 type ProjectResult struct {
-	Root   string   // 入口
-	Ignore []string // 指定忽略的文件/文件夹
+	Root       string   // 入口
+	Ignore     []string // 指定忽略的文件/文件夹
+	IsMonorepo bool     // 是否为 monorepo 项目
 
 	FileList map[string]FileItem // 文件列表
 	NpmList  map[string]NpmItem  // npm列表
 }
 
-func NewProjectResult(root string, ignore []string) *ProjectResult {
+func NewProjectResult(root string, ignore []string, IsMonorepo bool) *ProjectResult {
 	return &ProjectResult{
-		Root:     root,
-		Ignore:   ignore,
-		FileList: make(map[string]FileItem),
-		NpmList:  make(map[string]NpmItem),
+		Root:       root,
+		Ignore:     ignore,
+		IsMonorepo: IsMonorepo,
+		FileList:   make(map[string]FileItem),
+		NpmList:    make(map[string]NpmItem),
 	}
 }
 
@@ -39,17 +41,49 @@ func (pr *ProjectResult) ScanProject() {
 }
 
 func (pr *ProjectResult) ScanNpmList() {
-	// 定义 package.json 文件路径
-	packageJsonPath := fmt.Sprintf("%s/package.json", pr.Root)
-	// 解析 package.json 文件内容
-	packageJsonMap, err := GetPackageJson(packageJsonPath)
+	if pr.IsMonorepo {
+		// 扫描项目目录下所有的 package.json 文件
+		err := filepath.Walk(pr.Root, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				fmt.Printf("访问路径 %s 时出错: %s\n", path, err)
+				return nil
+			}
 
-	if err != nil {
-		fmt.Printf("解析 package.json 文件失败: %v\n", err)
-		pr.NpmList = make(map[string]NpmItem)
+			// 明确跳过 node_modules 目录
+			if info.IsDir() && info.Name() == "node_modules" {
+				return filepath.SkipDir // 跳过整个 node_modules 目录
+			}
+
+			// 检查是否是 package.json 文件
+			if info.Name() == "package.json" {
+				// 解析 package.json 文件内容
+				_, err := GetPackageJson(path)
+				if err != nil {
+					fmt.Printf("解析 package.json 文件失败: %v\n", err)
+					return nil
+				}
+				fmt.Printf("扫描到 package.json 文件: %s\n", path)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			fmt.Printf("扫描 package.json 文件时出错: %s\n", err)
+		}
+	} else {
+		// 定义 package.json 文件路径
+		packageJsonPath := fmt.Sprintf("%s/package.json", pr.Root)
+		// 解析 package.json 文件内容
+		packageJsonMap, err := GetPackageJson(packageJsonPath)
+
+		if err != nil {
+			fmt.Printf("解析 package.json 文件失败: %v\n", err)
+			pr.NpmList = make(map[string]NpmItem)
+		}
+
+		pr.NpmList = packageJsonMap
 	}
-
-	pr.NpmList = packageJsonMap
 }
 
 func (pr *ProjectResult) ScanFileList() {
@@ -85,7 +119,8 @@ func (pr *ProjectResult) ScanFileList() {
 
 		// 检查是否匹配忽略规则
 		for _, g := range ignoreGlobs {
-			if g.Match(unixRelPath) {
+			// 多包的case有点问题，这里先手动忽略掉 ode_modules
+			if g.Match(unixRelPath) || info.Name() == "node_modules" {
 				if info.IsDir() {
 					return filepath.SkipDir // 跳过整个目录
 				}

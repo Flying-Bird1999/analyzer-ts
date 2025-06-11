@@ -6,9 +6,9 @@ import (
 )
 
 func Analyze() {
-	inputAnalyzeDir := "/Users/zxc/Desktop/shopline-order-detail"
+	inputAnalyzeDir := "/Users/bird/company/sc1.0/components/nova"
 
-	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil)
+	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, true)
 
 	ar.Analyze()
 	// 定义输出文件路径

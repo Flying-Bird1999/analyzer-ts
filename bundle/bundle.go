@@ -120,7 +120,7 @@ func GenerateBundle() {
 	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
 	inputAnalyzeType := "PreloadedState"
 
-	ar := analyze.NewAnalyzeResult(inputAnalyzeDir, nil, nil)
+	ar := analyze.NewAnalyzeResult(inputAnalyzeDir, nil, nil, false)
 	ar.Analyze()
 	fileData := ar.GetFileData()
 

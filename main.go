@@ -1,10 +1,12 @@
 package main
 
 import (
-	"main/bundle"
+	"main/bundle/analyze"
 )
 
 func main() {
 	// bundle.GenerateBundle()
-	bundle.GenerateBundle2()
+	// bundle.GenerateBundle2()
+
+	analyze.Analyze()
 }
