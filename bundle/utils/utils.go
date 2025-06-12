@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -140,6 +141,72 @@ func FindRealFilePath(basePath string, extensions []string) string {
 }
 
 // 解析npm的真实路径
-func ResolveNpmPath(rootPath string, npmFile string) string {
-	return rootPath + "/node_modules/" + npmFile
+// 1，如果是npm包内部路径，则拼接上 ${rootPath}/node_modules/${npmFile} 即可
+//   - 例如： import { IProductSetSearchParams } from '@sl/sc-product/dist/types/src/ProductSetPicker/type';
+//
+// 2. 如果是从npm包名直接导入，则需要进行依赖分析，找到真实的路径
+//   - 例如： import { IProductSetSearchParams } from '@sl/sc-product';
+//
+// 2.1 找到 @sl/sc-product 对应的 package.json 路径
+// 2.3 如果是查找类型，则检查 package.json 的 types / typing 字段。
+// 2.4 如果是查找模块，则检查 package.json 的 exports 字段（优先），如果没有则查找 main 字段，如果都没有则默认 index.js。
+// 2.3 拼接上入口文件，返回真实路径
+func ResolveNpmPath(rootPath string, npmFile string, isImportTsType bool) string {
+	// 1. 检查是否是 npm 包内部路径
+	if strings.Contains(npmFile, "/") {
+		// 拼接路径 ${rootPath}/node_modules/${npmFile}
+		return filepath.Join(rootPath, "node_modules", npmFile)
+	}
+
+	// 2. 如果是直接导入 npm 包名
+	packageJsonPath := filepath.Join(rootPath, "node_modules", npmFile, "package.json")
+	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
+		// 如果 package.json 不存在，返回默认路径
+		return filepath.Join(rootPath, "node_modules", npmFile)
+	}
+
+	// 2.1 解析 package.json 文件
+	packageJson, err := ReadPackageJson(packageJsonPath)
+	if err != nil {
+		fmt.Printf("解析 package.json 文件失败: %v\n", err)
+		return filepath.Join(rootPath, "node_modules", npmFile)
+	}
+
+	// 2.3 如果是查找类型，检查 types / typings 字段
+	if isImportTsType {
+		if typesPath, exists := packageJson["types"]; exists {
+			return filepath.Join(rootPath, "node_modules", npmFile, typesPath)
+		}
+		if typingsPath, exists := packageJson["typings"]; exists {
+			return filepath.Join(rootPath, "node_modules", npmFile, typingsPath)
+		}
+	}
+
+	// 2.4 如果是查找模块，检查 exports 字段（优先），然后是 main 字段
+	if exportsPath, exists := packageJson["exports"]; exists {
+		return filepath.Join(rootPath, "node_modules", npmFile, exportsPath)
+	}
+
+	if mainPath, exists := packageJson["main"]; exists {
+		return filepath.Join(rootPath, "node_modules", npmFile, mainPath)
+	}
+
+	// 如果都没有，默认返回 index.js
+	return filepath.Join(rootPath, "node_modules", npmFile, "index.js")
+}
+
+// 辅助方法：读取 package.json 文件
+func ReadPackageJson(packageJsonPath string) (map[string]string, error) {
+	file, err := os.Open(packageJsonPath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var packageJson map[string]string
+	if err := json.NewDecoder(file).Decode(&packageJson); err != nil {
+		return nil, err
+	}
+
+	return packageJson, nil
 }

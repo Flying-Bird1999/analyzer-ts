@@ -14,7 +14,6 @@ type PackageJsonInfo struct {
 }
 
 func GetPackageJson(packageJsonPath string) (*PackageJsonInfo, error) {
-
 	// 检查文件是否存在
 	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
 		fmt.Printf("package.json 文件不存在: %s\n", packageJsonPath)

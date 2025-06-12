@@ -100,7 +100,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				if sourceData.Type == "file" {
 					nextFile = sourceData.FilePath
 				} else {
-					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source)
+					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
 					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 					if !utils.HasExtension(nextFile) {
 						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
@@ -125,7 +125,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath
 					} else {
-						nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source)
+						nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
 						// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 						if !utils.HasExtension(nextFile) {
 							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
