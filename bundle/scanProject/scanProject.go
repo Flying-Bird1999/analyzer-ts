@@ -14,7 +14,7 @@ type ProjectResult struct {
 	IsMonorepo bool     // 是否为 monorepo 项目
 
 	FileList map[string]FileItem // 文件列表
-	NpmList  map[string]NpmItem  // npm列表
+	NpmList  ProjectNpmList      // npm列表
 }
 
 func NewProjectResult(root string, ignore []string, IsMonorepo bool) *ProjectResult {
@@ -23,7 +23,7 @@ func NewProjectResult(root string, ignore []string, IsMonorepo bool) *ProjectRes
 		Ignore:     ignore,
 		IsMonorepo: IsMonorepo,
 		FileList:   make(map[string]FileItem),
-		NpmList:    make(map[string]NpmItem),
+		NpmList:    make(ProjectNpmList),
 	}
 }
 
@@ -31,7 +31,7 @@ func (pr *ProjectResult) GetFileList() map[string]FileItem {
 	return pr.FileList
 }
 
-func (pr *ProjectResult) GetNpmList() map[string]NpmItem {
+func (pr *ProjectResult) GetNpmList() ProjectNpmList {
 	return pr.NpmList
 }
 
@@ -57,14 +57,30 @@ func (pr *ProjectResult) ScanNpmList() {
 			// 检查是否是 package.json 文件
 			if info.Name() == "package.json" {
 				// 解析 package.json 文件内容
-				_, err := GetPackageJson(path)
+				packageJsonInfo, err := GetPackageJson(path)
 				if err != nil {
 					fmt.Printf("解析 package.json 文件失败: %v\n", err)
 					return nil
 				}
-				fmt.Printf("扫描到 package.json 文件: %s\n", path)
+				// 如果是最外层的 package.json，位于根目录下，则Workspace为root
+				if filepath.Dir(path) == pr.Root {
+					pr.NpmList["root"] = NpmPackage{
+						Workspace: "root",
+						Path:      path,
+						Namespace: packageJsonInfo.Name,
+						Version:   packageJsonInfo.Version,
+						NpmList:   packageJsonInfo.NpmList,
+					}
+				} else {
+					pr.NpmList[filepath.Base(filepath.Dir(path))] = NpmPackage{
+						Workspace: filepath.Base(filepath.Dir(path)),
+						Path:      path,
+						Namespace: packageJsonInfo.Name,
+						Version:   packageJsonInfo.Version,
+						NpmList:   packageJsonInfo.NpmList,
+					}
+				}
 			}
-
 			return nil
 		})
 
@@ -75,14 +91,22 @@ func (pr *ProjectResult) ScanNpmList() {
 		// 定义 package.json 文件路径
 		packageJsonPath := fmt.Sprintf("%s/package.json", pr.Root)
 		// 解析 package.json 文件内容
-		packageJsonMap, err := GetPackageJson(packageJsonPath)
+		packageJsonInfo, err := GetPackageJson(packageJsonPath)
 
 		if err != nil {
 			fmt.Printf("解析 package.json 文件失败: %v\n", err)
-			pr.NpmList = make(map[string]NpmItem)
+			return
 		}
 
-		pr.NpmList = packageJsonMap
+		pr.NpmList = ProjectNpmList{
+			"root": NpmPackage{
+				Workspace: "root",
+				Path:      packageJsonPath,
+				Namespace: packageJsonInfo.Name,
+				Version:   packageJsonInfo.Version,
+				NpmList:   packageJsonInfo.NpmList,
+			},
+		}
 	}
 }
 

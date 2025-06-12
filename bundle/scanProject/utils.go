@@ -7,20 +7,25 @@ import (
 	"os"
 )
 
-func GetPackageJson(packageJsonPath string) (map[string]NpmItem, error) {
-	packageJsonMap := make(map[string]NpmItem)
+type PackageJsonInfo struct {
+	Name    string
+	Version string
+	NpmList map[string]NpmItem
+}
+
+func GetPackageJson(packageJsonPath string) (*PackageJsonInfo, error) {
 
 	// 检查文件是否存在
 	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
 		fmt.Printf("package.json 文件不存在: %s\n", packageJsonPath)
-		return packageJsonMap, err
+		return nil, err
 	}
 
 	// 读取 package.json 文件内容
 	data, err := utils.ReadFileContent(packageJsonPath)
 	if err != nil {
 		fmt.Printf("读取 package.json 文件失败: %s\n", err)
-		return packageJsonMap, err
+		return nil, err
 	}
 
 	// 定义结构体解析 package.json
@@ -35,19 +40,25 @@ func GetPackageJson(packageJsonPath string) (map[string]NpmItem, error) {
 	// 解析 JSON 数据
 	if err := json.Unmarshal([]byte(data), &packageJson); err != nil {
 		fmt.Printf("解析 package.json 文件失败: %s\n", err)
-		return packageJsonMap, err
+		return nil, err
+	}
+
+	info := &PackageJsonInfo{
+		Name:    packageJson.Name,
+		Version: packageJson.Version,
+		NpmList: make(map[string]NpmItem),
 	}
 
 	// 将 npm 包添加到 NpmList
 	for name, version := range packageJson.Dependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "dependencies"}
+		info.NpmList[name] = NpmItem{Name: name, Version: version, Type: "dependencies"}
 	}
 	for name, version := range packageJson.DevDependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "devDependencies"}
+		info.NpmList[name] = NpmItem{Name: name, Version: version, Type: "devDependencies"}
 	}
 	for name, version := range packageJson.PeerDependencies {
-		packageJsonMap[name] = NpmItem{Name: name, Version: version, Type: "peerDependencies"}
+		info.NpmList[name] = NpmItem{Name: name, Version: version, Type: "peerDependencies"}
 	}
 
-	return packageJsonMap, nil
+	return info, nil
 }

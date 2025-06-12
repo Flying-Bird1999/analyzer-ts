@@ -15,7 +15,7 @@ type AnalyzeResult struct {
 	IsMonorepo bool              // 是否为 monorepo 项目
 
 	File map[string]FileAnalyzeResult
-	Npm  map[string]scanProject.NpmItem
+	Npm  scanProject.ProjectNpmList
 }
 
 func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []string, IsMonorepo bool) *AnalyzeResult {
@@ -40,7 +40,7 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 		Extensions: curExtensions,
 		IsMonorepo: IsMonorepo,
 		File:       make(map[string]FileAnalyzeResult),
-		Npm:        make(map[string]scanProject.NpmItem),
+		Npm:        make(scanProject.ProjectNpmList),
 	}
 }
 
@@ -48,7 +48,7 @@ func (ar *AnalyzeResult) GetFileData() map[string]FileAnalyzeResult {
 	return ar.File
 }
 
-func (ar *AnalyzeResult) GetNpmData() map[string]scanProject.NpmItem {
+func (ar *AnalyzeResult) GetNpmData() scanProject.ProjectNpmList {
 	return ar.Npm
 }
 
@@ -59,7 +59,7 @@ func (ar *AnalyzeResult) isMatchAlias(filePath string) (string, bool) {
 
 func (ar *AnalyzeResult) Analyze() {
 	// 扫描项目
-	projectResult := scanProject.NewProjectResult(ar.RootPath, []string{}, true)
+	projectResult := scanProject.NewProjectResult(ar.RootPath, []string{}, ar.IsMonorepo)
 	projectResult.ScanProject()
 
 	// 赋值扫描的npm列表
@@ -75,7 +75,8 @@ func (ar *AnalyzeResult) Analyze() {
 
 		// 处理每个 import 声明
 		for _, importDecl := range result.ImportDeclarations {
-			sourceData := MatchImportSource(targetPath, importDecl.Source, ar.RootPath, ar.Npm, ar.Alias, ar.Extensions)
+			// TODO: 这里的Npm先传入根目录/最外层的，多包的场景需要先看自身的，再看外层的
+			sourceData := MatchImportSource(targetPath, importDecl.Source, ar.RootPath, ar.Npm["root"].NpmList, ar.Alias, ar.Extensions)
 			importResult = append(importResult, ImportDeclarationResult{
 				ImportModules: lo.Map(importDecl.ImportModules, func(module parser.ImportModule, _ int) ImportModule {
 					return ImportModule{

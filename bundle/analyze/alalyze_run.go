@@ -6,7 +6,7 @@ import (
 )
 
 func Analyze() {
-	inputAnalyzeDir := "/Users/bird/company/sc1.0/components/nova"
+	inputAnalyzeDir := "/Users/zxc/Desktop/nova"
 
 	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, true)
 

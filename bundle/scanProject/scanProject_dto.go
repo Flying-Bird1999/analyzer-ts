@@ -15,7 +15,6 @@ type NpmPackage struct {
 	NpmList   map[string]NpmItem // npm列表，key为包名
 }
 
-// 方便后续扩展字段
 type NpmItem struct {
 	Name    string // 包名
 	Type    string // 包类型: "devDependencies"、“peerDependencies”、“dependencies”
