@@ -138,3 +138,8 @@ func FindRealFilePath(basePath string, extensions []string) string {
 	// 如果都找不到，返回原始路径
 	return basePath
 }
+
+// 解析npm的真实路径
+func ResolveNpmPath(rootPath string, npmFile string) string {
+	return rootPath + "/node_modules/" + npmFile
+}

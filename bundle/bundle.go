@@ -100,8 +100,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				if sourceData.Type == "file" {
 					nextFile = sourceData.FilePath
 				} else {
-					// TODO： 待优化： npm的case
-					nextFile = br.RootPath + "/node_modules/" + importDecl.Source
+					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source)
 					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 					if !utils.HasExtension(nextFile) {
 						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
@@ -126,8 +125,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath
 					} else {
-						// TODO： 待优化： npm的case
-						nextFile = br.RootPath + "/node_modules/" + importDecl.Source
+						nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source)
 						// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 						if !utils.HasExtension(nextFile) {
 							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
@@ -141,11 +139,12 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 }
 
 // 入口方法
-func GenerateBundle2() {
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
-	inputAnalyzeType := "Name"
-	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	// inputAnalyzeType := "PreloadedState"
+func GenerateBundle() {
+	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
+	// inputAnalyzeType := "Name"
+
+	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
+	inputAnalyzeType := "PreloadedState"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
