@@ -99,7 +99,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				nextFile := ""
 				if sourceData.Type == "file" {
 					nextFile = sourceData.FilePath
-				} else {
+				} else if sourceData.Type == "npm" {
 					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
 					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 					if !utils.HasExtension(nextFile) {

@@ -1,42 +1,5 @@
 
 
-export type LanguageKey =
-  | 'en'
-  | 'zh-hant'
-  | 'zh-hk'
-  | 'zh-tw'
-  | 'zh-cn'
-  | 'vi'
-  | 'ms'
-  | 'ja'
-  | 'th'
-  | 'id'
-  | 'de'
-  | 'fr';
-
-
-export interface BaseCurrency {
-  alternate_symbol: string;
-  iso_code: string;
-  symbol_first: boolean;
-}
-
-
-export interface allTypes_CurrentStaff {
-  readonly id: string;
-  readonly name: string;
-  readonly email: string;
-  readonly merchant_ids: string[];
-  readonly organization_ids: string[];
-  readonly role_keys: string[];
-  readonly locale_code: string;
-}
-
-
-export type SupportedLanguages = _SupportedLanguages;
-export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';
-
-
 export default interface PreloadedState {
   currentMerchant: allTypes_MerchantData;
   currentStaff: allTypes_CurrentStaff;
@@ -77,3 +40,40 @@ export interface allTypes_MerchantData {
   readonly sl_payment_merchant_id: string;
   readonly brand_home_url: string;
 }
+
+
+export type LanguageKey =
+  | 'en'
+  | 'zh-hant'
+  | 'zh-hk'
+  | 'zh-tw'
+  | 'zh-cn'
+  | 'vi'
+  | 'ms'
+  | 'ja'
+  | 'th'
+  | 'id'
+  | 'de'
+  | 'fr';
+
+
+export interface BaseCurrency {
+  alternate_symbol: string;
+  iso_code: string;
+  symbol_first: boolean;
+}
+
+
+export interface allTypes_CurrentStaff {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly merchant_ids: string[];
+  readonly organization_ids: string[];
+  readonly role_keys: string[];
+  readonly locale_code: string;
+}
+
+
+export type SupportedLanguages = _SupportedLanguages;
+export type _SupportedLanguages = 'en' | 'zh-cn' | 'zh-hant' | 'vi' | 'th';

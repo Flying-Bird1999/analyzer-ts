@@ -149,7 +149,7 @@ func FindRealFilePath(basePath string, extensions []string) string {
 //
 // 2.1 找到 @sl/sc-product 对应的 package.json 路径
 // 2.3 如果是查找类型，则检查 package.json 的 types / typing 字段。
-// 2.4 如果是查找模块，则检查 package.json 的 exports 字段（优先），如果没有则查找 main 字段，如果都没有则默认 index.js。
+// 2.4 如果是查找模块，则检查 package.json 的 main 字段，如果没有则默认 index.js。
 // 2.3 拼接上入口文件，返回真实路径
 func ResolveNpmPath(rootPath string, npmFile string, isImportTsType bool) string {
 	// 1. 检查是否是 npm 包内部路径
@@ -182,11 +182,7 @@ func ResolveNpmPath(rootPath string, npmFile string, isImportTsType bool) string
 		}
 	}
 
-	// 2.4 如果是查找模块，检查 exports 字段（优先），然后是 main 字段
-	if exportsPath, exists := packageJson["exports"]; exists {
-		return filepath.Join(rootPath, "node_modules", npmFile, exportsPath)
-	}
-
+	// 2.4 如果是查找JS模块，检查 main 字段
 	if mainPath, exists := packageJson["main"]; exists {
 		return filepath.Join(rootPath, "node_modules", npmFile, mainPath)
 	}
