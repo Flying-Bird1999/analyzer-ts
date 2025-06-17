@@ -6,7 +6,7 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// 解析 enum 声明，递归去查找 enum 里边的类型
+// 解析 enum 声明
 type EnumDeclarationResult struct {
 	Name string // 名称
 	Raw  string // 源码

@@ -146,7 +146,7 @@ func MatchImportSource(
 
 	// 替换为真实的绝对路径
 	if matched || !isRelativePath(filePath) {
-		// 如果匹配到别名，基于项目根目录拼接
+		// 如果匹配到别名/非相对路径，基于项目根目录拼接
 		realPath = filepath.Join(rootPath, realPath)
 	} else {
 		// 如果没有匹配到别名，基于当前文件目录进行拼接
