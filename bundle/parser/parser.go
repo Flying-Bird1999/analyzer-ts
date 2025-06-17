@@ -60,7 +60,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 func (pr *ParserResult) Traverse() {
 	sourceCode, err := utils.ReadFileContent(pr.filePath)
 	if err != nil {
-		fmt.Printf("读取文件失败: %v\n", err)
+		fmt.Printf("读取文件失败: %s\n", pr.filePath)
 	}
 
 	sourceFile := utils.ParseTypeScriptFile(pr.filePath, sourceCode)

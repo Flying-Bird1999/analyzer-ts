@@ -26,10 +26,13 @@ type BundleResult struct {
 
 // NewBundleResult 构造函数，初始化 BundleResult。
 // 通过入口文件路径自动推断项目根目录、npm 列表、alias、扩展名等信息。
-func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleResult {
-	// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
-	absFilePath, _ := filepath.Abs(inputAnalyzeFile)
-	rootPath := strings.Split(absFilePath, "/src")[0]
+func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRootPath string) BundleResult {
+	var rootPath string = projectRootPath
+	if projectRootPath == "" {
+		// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
+		absFilePath, _ := filepath.Abs(inputAnalyzeFile)
+		rootPath = strings.Split(absFilePath, "/src")[0]
+	}
 
 	// 2. 获取 npm 列表
 	pr := scanProject.NewProjectResult(rootPath, []string{}, false)
@@ -115,7 +118,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				if sourceData.Type == "file" {
 					nextFile = sourceData.FilePath
 				} else if sourceData.Type == "npm" {
-					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
+					nextFile = utils.ResolveNpmPath(absFilePath, br.RootPath, importDecl.Source, true)
 					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 					if !utils.HasExtension(nextFile, br.Extensions) {
 						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
@@ -140,7 +143,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath
 					} else {
-						nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
+						nextFile = utils.ResolveNpmPath(absFilePath, br.RootPath, importDecl.Source, true)
 						// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
 						if !utils.HasExtension(nextFile, br.Extensions) {
 							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
@@ -158,7 +161,7 @@ func GenerateBundle() {
 	inputAnalyzeFile := "/Users/zxc/Desktop/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
 	inputAnalyzeType := "BroadcastDataType"
 
-	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
+	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
 
 	resultCode := ""

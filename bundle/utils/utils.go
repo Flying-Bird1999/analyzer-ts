@@ -146,55 +146,81 @@ func FindRealFilePath(basePath string, extensions []string) string {
 	return basePath
 }
 
-// 解析npm的真实路径
-// 1，如果是npm包内部路径，则拼接上 ${rootPath}/node_modules/${npmFile} 即可
-//   - 例如： import { IProductSetSearchParams } from '@sl/sc-product/dist/types/src/ProductSetPicker/type';
-//
-// 2. 如果是从npm包名直接导入，则需要进行依赖分析，找到真实的路径
-//   - 例如： import { IProductSetSearchParams } from '@sl/sc-product';
-//
-// 2.1 找到 @sl/sc-product 对应的 package.json 路径
-// 2.3 如果是查找类型，则检查 package.json 的 types / typing 字段。
-// 2.4 如果是查找模块，则检查 package.json 的 main 字段，如果没有则默认 index.js。
-// 2.3 拼接上入口文件，返回真实路径
-func ResolveNpmPath(rootPath string, npmFile string, isImportTsType bool) string {
-	// 1. 检查是否是 npm 包内部路径
+// 向上查找最近的 node_modules 并判断是否含有目标包
+func findNodeModulesWithPackage(startPath string, npmFile string) (string, bool) {
+	currPath := startPath
+	for {
+		nodeModulesPath := filepath.Join(currPath, "node_modules")
+		packagePath := filepath.Join(nodeModulesPath, npmFile)
+		if stat, err := os.Stat(packagePath); err == nil && stat.IsDir() {
+			return nodeModulesPath, true
+		}
+		parent := filepath.Dir(currPath)
+		if parent == currPath {
+			break
+		}
+		currPath = parent
+	}
+	return "", false
+}
+
+// ResolveNpmPath 解析 npm 包的真实路径，支持从当前路径向上查找 node_modules。
+// curPath: 当前文件所在路径，用于向上查找 node_modules。
+// rootPath: 项目根目录路径，作为查找 node_modules 的备用路径。
+// npmFile: 导入的 npm 包名或包内文件路径。
+// isImportTsType: 是否为导入 TypeScript 类型，用于判断查找 package.json 中的 types 或 typings 字段。
+func ResolveNpmPath(curPath string, rootPath string, npmFile string, isImportTsType bool) string {
+	// 先尝试从 curPath 向上查找最近的包含目标 npm 包的 node_modules 目录
+	node_modules_path, found := findNodeModulesWithPackage(curPath, npmFile)
+	if !found {
+		// 若未找到，使用 rootPath 下的 node_modules 目录作为备用
+		node_modules_path = filepath.Join(rootPath, "node_modules")
+	}
+
+	// 1. 检查是否是 npm 包内部路径（即包含斜杠 /）
 	if strings.Contains(npmFile, "/") {
-		// 拼接路径 ${rootPath}/node_modules/${npmFile}
-		return filepath.Join(rootPath, "node_modules", npmFile)
+		// 若是包内部路径，直接拼接 node_modules 路径和 npmFile 并返回
+		return filepath.Join(node_modules_path, npmFile)
 	}
 
 	// 2. 如果是直接导入 npm 包名
-	packageJsonPath := filepath.Join(rootPath, "node_modules", npmFile, "package.json")
+	packageJsonPath := filepath.Join(node_modules_path, npmFile, "package.json")
+	// 检查 package.json 文件是否存在
 	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
-		// 如果 package.json 不存在，返回默认路径
-		return filepath.Join(rootPath, "node_modules", npmFile)
+		// 若 package.json 不存在，返回 node_modules 下该 npm 包的路径
+		return filepath.Join(node_modules_path, npmFile)
 	}
 
-	// 2.1 解析 package.json 文件
+	// 读取 package.json 文件内容
 	packageJson, err := ReadPackageJson(packageJsonPath)
 	if err != nil {
+		// 若读取失败，打印错误信息并返回 node_modules 下该 npm 包的路径
 		fmt.Printf("解析 package.json 文件失败: %v\n", err)
-		return filepath.Join(rootPath, "node_modules", npmFile)
+		return filepath.Join(node_modules_path, npmFile)
 	}
 
-	// 2.3 如果是查找类型，检查 types / typings 字段
+	// 如果是导入 TypeScript 类型
 	if isImportTsType {
+		// 检查 package.json 中的 types 字段
 		if typesPath, exists := packageJson["types"]; exists {
-			return filepath.Join(rootPath, "node_modules", npmFile, typesPath)
+			// 若存在，拼接并返回对应路径
+			return filepath.Join(node_modules_path, npmFile, typesPath)
 		}
+		// 检查 package.json 中的 typings 字段
 		if typingsPath, exists := packageJson["typings"]; exists {
-			return filepath.Join(rootPath, "node_modules", npmFile, typingsPath)
+			// 若存在，拼接并返回对应路径
+			return filepath.Join(node_modules_path, npmFile, typingsPath)
 		}
 	}
 
-	// 2.4 如果是查找JS模块，检查 main 字段
+	// 检查 package.json 中的 main 字段
 	if mainPath, exists := packageJson["main"]; exists {
-		return filepath.Join(rootPath, "node_modules", npmFile, mainPath)
+		// 若存在，拼接并返回对应路径
+		return filepath.Join(node_modules_path, npmFile, mainPath)
 	}
 
-	// 如果都没有，默认返回 index.js
-	return filepath.Join(rootPath, "node_modules", npmFile, "index.js")
+	// 若以上字段都不存在，默认返回 node_modules 下该 npm 包的 index.js 文件路径
+	return filepath.Join(node_modules_path, npmFile, "index.js")
 }
 
 // 辅助方法：读取 package.json 文件
