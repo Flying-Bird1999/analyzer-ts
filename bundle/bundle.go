@@ -7,6 +7,7 @@ package bundle
 // 3. 最终将所有依赖类型源码合并输出到指定文件。
 
 import (
+	"fmt"
 	"main/bundle/analyze"
 	"main/bundle/parser"
 	"main/bundle/scanProject"
@@ -52,12 +53,15 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleRes
 // replaceTypeName: 类型重命名（如 import {A as B}）时的替换名
 // parentTypeName: 父类型名（用于命名空间类型替换）
 func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
+	// TODO: 已经解析过的文件可以做缓存
+	fmt.Printf("开始解析当前文件: %s \n", absFilePath)
+
 	// 解析当前文件
 	pr := parser.NewParserResult(absFilePath)
 	pr.Traverse()
 	parserResult := pr.GetResult()
 
-	// 查找类型声明
+	// 查找类型声明 type
 	if typeDecl, found := parserResult.TypeDeclarations[typeName]; found {
 		realRaw := typeDecl.Raw
 		if replaceTypeName != "" {
@@ -70,7 +74,8 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 		}
 		return
 	}
-	// 查找接口声明
+
+	// 查找接口声明 interface
 	if interfaceDecl, found := parserResult.InterfaceDeclarations[typeName]; found {
 		realRaw := interfaceDecl.Raw
 		if replaceTypeName != "" {
@@ -80,6 +85,16 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 		for ref := range interfaceDecl.Reference {
 			br.analyzeFileAndType(absFilePath, ref, "", typeName)
 		}
+		return
+	}
+
+	// 查找枚举声明 enum
+	if enumDecl, found := parserResult.EnumDeclarations[typeName]; found {
+		realRaw := enumDecl.Raw
+		if replaceTypeName != "" {
+			realRaw = strings.ReplaceAll(enumDecl.Raw, typeName, replaceTypeName)
+		}
+		br.SourceCodeMap[absFilePath+"_"+typeName] = realRaw
 		return
 	}
 

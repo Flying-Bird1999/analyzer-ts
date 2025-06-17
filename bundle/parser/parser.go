@@ -14,6 +14,7 @@ type ParserResult struct {
 	ExportDeclarations    []ExportDeclarationResult
 	InterfaceDeclarations map[string]InterfaceDeclarationResult
 	TypeDeclarations      map[string]TypeDeclarationResult
+	EnumDeclarations      map[string]EnumDeclarationResult
 }
 
 func NewParserResult(filePath string) ParserResult {
@@ -22,6 +23,7 @@ func NewParserResult(filePath string) ParserResult {
 		ImportDeclarations:    []ImportDeclarationResult{},
 		InterfaceDeclarations: make(map[string]InterfaceDeclarationResult),
 		TypeDeclarations:      make(map[string]TypeDeclarationResult),
+		EnumDeclarations:      make(map[string]EnumDeclarationResult),
 	}
 }
 
@@ -41,12 +43,17 @@ func (pr *ParserResult) addTypeDeclaration(tr *TypeDeclarationResult) {
 	pr.TypeDeclarations[tr.Name] = *tr
 }
 
+func (pr *ParserResult) addEnumDeclaration(er *EnumDeclarationResult) {
+	pr.EnumDeclarations[er.Name] = *er
+}
+
 func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
 		ExportDeclarations:    pr.ExportDeclarations,
 		InterfaceDeclarations: pr.InterfaceDeclarations,
 		TypeDeclarations:      pr.TypeDeclarations,
+		EnumDeclarations:      pr.EnumDeclarations,
 	}
 }
 
@@ -86,6 +93,12 @@ func (pr *ParserResult) Traverse() {
 			tr := NewTypeDeclarationResult(node.AsNode(), sourceCode)
 			tr.analyzeTypeDecl(node.AsTypeAliasDeclaration())
 			pr.addTypeDeclaration(tr)
+		}
+
+		// 解析 enum
+		if node.Kind == ast.KindEnumDeclaration {
+			er := NewEnumDeclarationResult(node.AsEnumDeclaration(), sourceCode)
+			pr.addEnumDeclaration(er)
 		}
 	}
 

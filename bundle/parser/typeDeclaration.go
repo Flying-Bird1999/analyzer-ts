@@ -70,6 +70,11 @@ func (tr *TypeDeclarationResult) addTypeReference(typeName string, location stri
 		return
 	}
 
+	// 如果依赖类型 和 自身是同一个，则不用加上了
+	if typeName == tr.Name {
+		return
+	}
+
 	if ref, exists := tr.Reference[typeName]; exists {
 		// 如果类型引用已存在，追加新的位置
 		ref.Location = append(ref.Location, location)
