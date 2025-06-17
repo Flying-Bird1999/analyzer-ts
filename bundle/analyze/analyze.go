@@ -12,17 +12,23 @@ type AnalyzeResult struct {
 	RootPath   string            // 项目根目录
 	Alias      map[string]string // 别名映射，key: 别名, value: 实际路径
 	Extensions []string          // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
+	Ignore     []string          // 指定忽略的文件/文件夹
 	IsMonorepo bool              // 是否为 monorepo 项目
 
 	File map[string]FileAnalyzeResult
 	Npm  scanProject.ProjectNpmList
 }
 
-func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []string, IsMonorepo bool) *AnalyzeResult {
+func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []string, Ignore []string, IsMonorepo bool) *AnalyzeResult {
 	curAlias := FormatAlias(Alias)
 	if Alias == nil {
 		// 如果没有传入 Alias，尝试读取项目中tsconfig.json的 alias
 		curAlias = ReadAliasFromTsConfig(rootPath)
+	}
+
+	curIgnore := Ignore
+	if Ignore == nil {
+		curIgnore = []string{"node_modules", "dist", "build", "public", "static", "docs"}
 	}
 
 	curExtensions := Extensions
@@ -32,12 +38,13 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 
 	newRootPath, _ := filepath.Abs(rootPath)
 
-	// 这里可以再自行检测一下 IsMonorepo
+	// 这里可以再自行检测一下是否为 IsMonorepo
 
 	return &AnalyzeResult{
 		RootPath:   newRootPath,
 		Alias:      curAlias,
 		Extensions: curExtensions,
+		Ignore:     curIgnore,
 		IsMonorepo: IsMonorepo,
 		File:       make(map[string]FileAnalyzeResult),
 		Npm:        make(scanProject.ProjectNpmList),
@@ -52,14 +59,9 @@ func (ar *AnalyzeResult) GetNpmData() scanProject.ProjectNpmList {
 	return ar.Npm
 }
 
-// 是否命中别名 alias，如果命中则做替换
-func (ar *AnalyzeResult) isMatchAlias(filePath string) (string, bool) {
-	return IsMatchAlias(filePath, ar.RootPath, ar.Alias)
-}
-
 func (ar *AnalyzeResult) Analyze() {
 	// 扫描项目
-	projectResult := scanProject.NewProjectResult(ar.RootPath, []string{}, ar.IsMonorepo)
+	projectResult := scanProject.NewProjectResult(ar.RootPath, ar.Ignore, ar.IsMonorepo)
 	projectResult.ScanProject()
 
 	// 赋值扫描的npm列表

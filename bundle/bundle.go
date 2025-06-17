@@ -35,7 +35,7 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string) BundleRes
 	pr.ScanNpmList()
 
 	// 3. 获取 tsconfig.json 中的 alias 列表
-	ar := analyze.NewAnalyzeResult(rootPath, nil, nil, false)
+	ar := analyze.NewAnalyzeResult(rootPath, nil, nil, []string{}, false)
 
 	return BundleResult{
 		RootPath:      rootPath,
@@ -102,7 +102,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 				} else if sourceData.Type == "npm" {
 					nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
 					// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
-					if !utils.HasExtension(nextFile) {
+					if !utils.HasExtension(nextFile, br.Extensions) {
 						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
 					}
 				}
@@ -127,7 +127,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					} else {
 						nextFile = utils.ResolveNpmPath(br.RootPath, importDecl.Source, true)
 						// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
-						if !utils.HasExtension(nextFile) {
+						if !utils.HasExtension(nextFile, br.Extensions) {
 							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
 						}
 					}
@@ -140,11 +140,8 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 // 入口方法
 func GenerateBundle() {
-	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/LiveRoom/components/MainLeft/ProductSet/AddProductSetPicker/index.tsx"
-	// inputAnalyzeType := "Name"
-
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-order-detail/src/interface/preloadedState/index.ts"
-	inputAnalyzeType := "PreloadedState"
+	inputAnalyzeFile := "/Users/zxc/Desktop/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
+	inputAnalyzeType := "BroadcastDataType"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType)
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")

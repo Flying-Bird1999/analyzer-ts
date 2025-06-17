@@ -103,16 +103,21 @@ func removeJSONComments(data string) string {
 }
 
 // 匹配别名
-func IsMatchAlias(filePath string, rootPath string, Alias map[string]string) (string, bool) {
+func IsHitAlias(filePath string, Alias map[string]string) (string, bool) {
 	for alias, realPath := range Alias {
 		// 检查路径是否以 alias 开头
 		if strings.HasPrefix(filePath, alias) {
-			// 替换 alias 为绝对路径
-			absolutePath := filepath.Join(rootPath, realPath)
-			return filepath.Join(absolutePath, strings.TrimPrefix(filePath, alias)), true
+			return strings.Replace(filePath, alias, realPath, 1), true
 		}
 	}
 	return filePath, false // 未命中别名
+}
+
+// 检查路径是否为相对路径
+func isRelativePath(path string) bool {
+	return strings.HasPrefix(path, "./") ||
+		strings.HasPrefix(path, "../") ||
+		(!filepath.IsAbs(path) && !strings.HasPrefix(path, "/"))
 }
 
 // 匹配导入的文件路径
@@ -124,30 +129,32 @@ func MatchImportSource(
 	Alias map[string]string, //	别名映射，key: 别名, value: 实际路径
 	Extensions []string, // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
 ) SourceData {
+	// 匹配 alias，替换为真实的路径
+	realPath, matched := IsHitAlias(filePath, Alias)
+
 	// 匹配 npm 包
 	for npmName, npmItem := range Npm {
-		// 检查 filePath 是否包含 npm 包名
-		if strings.HasPrefix(filePath, npmName) {
+		// 检查 realPath 是否包含 npm 包名
+		if strings.HasPrefix(realPath, npmName) {
 			return SourceData{
-				FilePath: filePath,
+				FilePath: realPath,
 				NpmPkg:   npmItem.Name,
 				Type:     "npm",
 			}
 		}
 	}
 
-	realPath := filePath
-
-	// 匹配 alias,替换为真实路径
-	if absolutePath, matched := IsMatchAlias(filePath, rootPath, Alias); matched {
-		realPath = absolutePath
+	// 替换为真实的绝对路径
+	if matched || !isRelativePath(filePath) {
+		// 如果匹配到别名，基于项目根目录拼接
+		realPath = filepath.Join(rootPath, realPath)
 	} else {
-		// 如果没有匹配到别名，尝试将其视为绝对路径
+		// 如果没有匹配到别名，基于当前文件目录进行拼接
 		realPath, _ = filepath.Abs(filepath.Join(filepath.Dir(targetPath), realPath))
 	}
 
 	// 检查结尾是否有文件后缀，如果没有后缀，需要基于Extensions尝试去匹配
-	if !utils.HasExtension(realPath) {
+	if !utils.HasExtension(realPath, Extensions) {
 		for _, ext := range Extensions {
 			// 尝试直接拼接扩展名
 			extendedPath := realPath + ext

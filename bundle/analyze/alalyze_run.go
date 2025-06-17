@@ -6,9 +6,11 @@ import (
 )
 
 func Analyze() {
-	inputAnalyzeDir := "/Users/zxc/Desktop/nova"
+	// inputAnalyzeDir := "/Users/zxc/Desktop/shopline-live-sale"
+	// ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, false)
 
-	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, true)
+	inputAnalyzeDir := "/Users/zxc/Desktop/message-center/client"
+	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, []string{"node_modules/**", "sc-components/**"}, false)
 
 	ar.Analyze()
 	// 定义输出文件路径

@@ -115,9 +115,15 @@ func WriteResultToFile(filePath string, result string) error {
 	return nil
 }
 
-// 检查路径是否包含后缀
-func HasExtension(filePath string) bool {
-	return strings.Contains(filepath.Base(filePath), ".")
+// 检查路径是否包含已知扩展名
+func HasExtension(filePath string, extensions []string) bool {
+	base := filepath.Base(filePath)
+	for _, ext := range extensions {
+		if strings.HasSuffix(base, ext) {
+			return true
+		}
+	}
+	return false
 }
 
 // 根据基础路径和扩展名列表查找真实存在的文件路径
