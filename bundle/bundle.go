@@ -156,8 +156,14 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 // 入口方法
 func GenerateBundle() {
 	// inputAnalyzeFile := "/Users/zxc/Desktop/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
-	inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
-	inputAnalyzeType := "BroadcastDataType"
+	// inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
+	// inputAnalyzeType := "BroadcastDataType"
+
+	// inputAnalyzeFile := "/Users/bird/company/sc1.0/components/nova/packages/Product/src/AddProductSet/type.ts"
+	// inputAnalyzeType := "ContextState"
+
+	inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/interface/config.ts"
+	inputAnalyzeType := "ConfigCenterType"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
