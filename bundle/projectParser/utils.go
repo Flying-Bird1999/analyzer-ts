@@ -3,7 +3,6 @@ package projectParser
 import (
 	"encoding/json"
 	"fmt"
-	"main/bundle/scanProject"
 	"main/bundle/utils"
 	"os"
 	"path/filepath"
@@ -125,24 +124,24 @@ func MatchImportSource(
 	targetPath string, // 目标文件路径
 	filePath string, // 导入的文件路径
 	rootPath string, // 项目根目录
-	Npm map[string]scanProject.NpmItem, // npm列表
+	// Npm map[string]scanProject.NpmItem, // npm列表
 	Alias map[string]string, //	别名映射，key: 别名, value: 实际路径
 	Extensions []string, // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
 ) SourceData {
 	// 匹配 alias，替换为真实的路径
 	realPath, matched := IsHitAlias(filePath, Alias)
 
-	// 匹配 npm 包
-	for npmName, npmItem := range Npm {
-		// 检查 realPath 是否包含 npm 包名
-		if strings.HasPrefix(realPath, npmName) {
-			return SourceData{
-				FilePath: realPath,
-				NpmPkg:   npmItem.Name,
-				Type:     "npm",
-			}
-		}
-	}
+	// // 匹配 npm 包
+	// for npmName, npmItem := range Npm {
+	// 	// 检查 realPath 是否包含 npm 包名
+	// 	if strings.HasPrefix(realPath, npmName) {
+	// 		return SourceData{
+	// 			FilePath: realPath,
+	// 			NpmPkg:   npmItem.Name,
+	// 			Type:     "npm",
+	// 		}
+	// 	}
+	// }
 
 	// 替换为真实的绝对路径
 	if matched || !isRelativePath(filePath) {
@@ -185,6 +184,92 @@ func MatchImportSource(
 	return SourceData{
 		FilePath: filePath,
 		NpmPkg:   "",
-		Type:     "unknown",
+		Type:     "npm",
 	}
+}
+
+type PackageJsonInfo struct {
+	Name    string
+	Version string
+	NpmList map[string]NpmItem
+}
+
+func GetPackageJson(packageJsonPath string) (*PackageJsonInfo, error) {
+	// 检查文件是否存在
+	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
+		fmt.Printf("package.json 文件不存在: %s\n", packageJsonPath)
+		return nil, err
+	}
+
+	// 读取 package.json 文件内容
+	data, err := utils.ReadFileContent(packageJsonPath)
+	if err != nil {
+		fmt.Printf("读取 package.json 文件失败: %s\n", err)
+		return nil, err
+	}
+
+	// 定义结构体解析 package.json
+	var packageJson struct {
+		Name             string            `json:"name"`
+		Version          string            `json:"version"`
+		Dependencies     map[string]string `json:"dependencies"`
+		DevDependencies  map[string]string `json:"devDependencies"`
+		PeerDependencies map[string]string `json:"peerDependencies"`
+	}
+
+	// 解析 JSON 数据
+	if err := json.Unmarshal([]byte(data), &packageJson); err != nil {
+		fmt.Printf("解析 package.json 文件失败: %s\n", err)
+		return nil, err
+	}
+
+	info := &PackageJsonInfo{
+		Name:    packageJson.Name,
+		Version: packageJson.Version,
+		NpmList: make(map[string]NpmItem),
+	}
+
+	// 将 npm 包添加到 NpmList
+	for name, version := range packageJson.Dependencies {
+		info.NpmList[name] = NpmItem{
+			Name:              name,
+			Type:              "dependencies",
+			Version:           version,
+			NodeModuleVersion: getPackageRealVersion(packageJsonPath, name),
+		}
+	}
+	for name, version := range packageJson.DevDependencies {
+		info.NpmList[name] = NpmItem{
+			Name:              name,
+			Type:              "devDependencies",
+			Version:           version,
+			NodeModuleVersion: getPackageRealVersion(packageJsonPath, name),
+		}
+	}
+	for name, version := range packageJson.PeerDependencies {
+		info.NpmList[name] = NpmItem{
+			Name:              name,
+			Type:              "peerDependencies",
+			Version:           version,
+			NodeModuleVersion: getPackageRealVersion(packageJsonPath, name),
+		}
+	}
+
+	return info, nil
+}
+
+// 根据当前package.json的位置去读取当前目录下的node_modules对应的包的版本号
+func getPackageRealVersion(packageJsonPath string, packageName string) string {
+	nodeModuleVersion := ""
+	packageDir := filepath.Dir(packageJsonPath)
+	nodeModulePkgJson := filepath.Join(packageDir, "node_modules", packageName, "package.json")
+	if data, err := utils.ReadFileContent(nodeModulePkgJson); err == nil {
+		var modPkg struct {
+			Version string `json:"version"`
+		}
+		if err := json.Unmarshal([]byte(data), &modPkg); err == nil {
+			nodeModuleVersion = modPkg.Version
+		}
+	}
+	return nodeModuleVersion
 }

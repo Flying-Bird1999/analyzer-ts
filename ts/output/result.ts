@@ -1,24 +1,5 @@
 
 
-/** 广播 state类型定义 */
-export type BroadcastDataType = {
-  name: string;
-  sendTargets: ESendTarget;
-  fansPages?: { label: string; value: string };
-  platformChannelName?: string;
-  contactTags?: string[];
-  subTemplate?: { label: string; value: string }[];
-  sendExpectCount?: number;
-  contents: ContentType[];
-  bcType?: BroadcastSendType;
-  sendTime?: Dayjs | string;
-  customGroup?: ICustomGroupDetail | null;
-  sendStatus?: ESendStatus;
-  sendSucTargetCount?: number;
-  sendTargetCount?: number;
-};
-
-
 /** 广播联络人类型枚举 */
 export enum ESendTarget {
   /** 24小时内互动过的Facebook联络人 */
@@ -30,6 +11,28 @@ export enum ESendTarget {
   /** 指定标签的Facebook联络人 */
   TAG_WA_CONTACT = 'TAG_SUBED',
 }
+
+
+export enum ComponentType {
+  // 页头
+  Header = 'HEADER',
+  // 正文
+  Body = 'BODY',
+  // 页脚
+  Footer = 'FOOTER',
+  // 按钮
+  Buttons = 'BUTTONS',
+  // 卡片
+  CAROUSEL = 'CAROUSEL',
+}
+
+
+/** 授权模版详情 */
+export type IPayload = {
+  title: string;
+  imageUrl: string;
+  payload?: string;
+};
 
 
 /** 跟进模版详情 */
@@ -61,157 +64,6 @@ export type IAuthTemplateDetail = {
 };
 
 
-/** 广播消息类型 */
-export enum ContentMessageType {
-  /** 文字消息 */
-  words = 'TEXT',
-  /** 图片消息 */
-  picture = 'IMAGE',
-  /** 图文消息 */
-  words_picture = 'TEXT_IMAGE',
-  /** 消息模版 */
-  template = 'TEMPLATE',
-  /** 卡片消息 */
-  card = 'FB_GENERIC_TEMPLATE',
-  /** 授权订阅消息 */
-  subscription = 'FB_MARKETING_TEMPLATE',
-}
-
-
-export enum ComponentType {
-  // 页头
-  Header = 'HEADER',
-  // 正文
-  Body = 'BODY',
-  // 页脚
-  Footer = 'FOOTER',
-  // 按钮
-  Buttons = 'BUTTONS',
-  // 卡片
-  CAROUSEL = 'CAROUSEL',
-}
-
-
-export enum DetailButtonsType {
-  /** 快捷回复 */
-  quick_reply = 'QUICK_REPLY',
-  /** PHONE_NUMBER */
-  phone_number = 'PHONE_NUMBER',
-  /** URL */
-  url = 'URL',
-}
-
-
-export enum QuickReplyButtonEffect {
-  /** 无 */
-  none = '',
-  /** 订阅商家讯息 */
-  subscribe_information = '{{data.subscribe}}',
-  /** 退订商家讯息 */
-  unsubscribe_information = '{{data.unsubscribe}}',
-}
-
-
-/** 广播内容 */
-export type ContentType = {
-  /** 消息类型 */
-  contentType: ContentMessageType;
-  /** 图片 */
-  attachmentUrl: string;
-  /** 文字 */
-  text: string;
-  /** whatsapp制定模版 */
-  template?: {
-    name?: string;
-    customKey?: string;
-    businessKey?: string;
-    templateType?: TemplateDetailType;
-    lang?: LanguageData;
-    auditStatus?: string;
-    score?: string;
-    content: WhatsappTemplateComponentModel[];
-    customParam?: Record<string, string>;
-  };
-  /** fb/ig 授权模板信息 */
-  fbMarketingTemplate?: IAuthTemplateItem;
-  /** fb/ig 卡片 */
-  fbGenericTemplates?: ICardType[];
-};
-/** 授权模版类型定义 */
-export enum ETemplateStructureType {
-  /** 图片 */
-  IMAGE = 'IMAGE',
-  /** 文本 */
-  PLAIN_TEXT = 'PLAIN_TEXT',
-  /** 图文 */
-  IMAGE_TEXT = 'TEXT_IMAGE',
-  /** 卡片 */
-  CARD = 'CARD',
-}
-
-
-/** 模版是否订阅 */
-export enum ESubscribedStatus {
-  /** 订阅 */
-  SUBSCRIPTED = 1,
-  /** 未曾订阅 */
-  NO_SUBSCRIPT = 2,
-  /** 取消订阅（曾经订阅过） */
-  CANCEL_SUBSCRIPT = 0,
-}
-
-
-export interface WhatsappTemplateComponentModel {
-  /**类型
-BODY、HEADER、FOOTER 和 BUTTONS */
-  type?: ComponentType;
-  /**文本内容 */
-  text?: string;
-  /**当type=HEADER时,有以下分类
-类型(TEXT, IMAGE, DOCUMENT, VIDEO) */
-  format?: MessageTitleType;
-  /**type=HEADER时且format!=TEXT时,header的具体内容 */
-  example?: {
-    header_handle?: string[];
-    header_text?: string[];
-    body_text?: string[][];
-  };
-  /**按钮列表 */
-  buttons?: ButtonRespVO[];
-  /** 卡片列表 */
-  cards?: {
-    components: WhatsappTemplateComponentModel[];
-  }[];
-}
-
-
-export interface ButtonRespVO {
-  /**类型(PHONE_NUMBER、URL 和 QUICK_REPLY) */
-  type: DetailButtonsType;
-  /**按钮的文本显示内容 */
-  text: string;
-  /**当type=URL时按钮,填写跳转地址 */
-  url?: string;
-  /**当type=QUICK_REPLY,可填写回传值 */
-  payload?: QuickReplyButtonEffect | string;
-  /**电话 */
-  phone?: string;
-  /**国家 */
-  country?: string;
-  /**带国家编码,如+8618814098372 */
-  phone_number?: string;
-}
-
-
-/** 广播发送时间类型 */
-export enum BroadcastSendType {
-  /** 立即发送 */
-  NOW_SEND = 'REAL_TIME',
-  /** 指定时间发送 */
-  SPECIFY_SEND = 'TIMING',
-}
-
-
 /** 广播发送状态 */
 export enum ESendStatus {
   /** 发送成功 */
@@ -227,25 +79,6 @@ export enum ESendStatus {
   /** 等待再次发送 */
   WAITING = 'WAITING',
 }
-
-
-/** 模版列表 */
-export type IAuthTemplateItem = {
-  id?: string;
-  name: string;
-  payload: IPayload;
-  postback: IAuthTemplateDetail[];
-  messageCount?: number;
-  subscribedStatus?: ESubscribedStatus;
-};
-
-
-/** 授权模版详情 */
-export type IPayload = {
-  title: string;
-  imageUrl: string;
-  payload?: string;
-};
 
 
 export enum TemplateDetailType {
@@ -285,6 +118,16 @@ export enum MessageTitleType {
 }
 
 
+export enum QuickReplyButtonEffect {
+  /** 无 */
+  none = '',
+  /** 订阅商家讯息 */
+  subscribe_information = '{{data.subscribe}}',
+  /** 退订商家讯息 */
+  unsubscribe_information = '{{data.unsubscribe}}',
+}
+
+
 /** 卡片消息类型 */
 export type ICardType = {
   title?: string;
@@ -295,6 +138,24 @@ export type ICardType = {
     url: string;
     title: string;
   }[];
+};
+
+
+/** 广播 state类型定义 */
+export type BroadcastDataType = {
+  name: string;
+  sendTargets: ESendTarget;
+  fansPages?: { label: string; value: string };
+  platformChannelName?: string;
+  contactTags?: string[];
+  subTemplate?: { label: string; value: string }[];
+  sendExpectCount?: number;
+  contents: ContentType[];
+  bcType?: BroadcastSendType;
+  customGroup?: ICustomGroupDetail | null;
+  sendStatus?: ESendStatus;
+  sendSucTargetCount?: number;
+  sendTargetCount?: number;
 };
 
 
@@ -309,6 +170,52 @@ export interface ICustomGroupDetail {
   created_at?: string;
   /** 发送范围 */
   optin?: WaSendTarget;
+}
+
+
+export interface WhatsappTemplateComponentModel {
+  /**类型
+BODY、HEADER、FOOTER 和 BUTTONS */
+  type?: ComponentType;
+  /**文本内容 */
+  text?: string;
+  /**当type=HEADER时,有以下分类
+类型(TEXT, IMAGE, DOCUMENT, VIDEO) */
+  format?: MessageTitleType;
+  /**type=HEADER时且format!=TEXT时,header的具体内容 */
+  example?: {
+    header_handle?: string[];
+    header_text?: string[];
+    body_text?: string[][];
+  };
+  /**按钮列表 */
+  buttons?: ButtonRespVO[];
+  /** 卡片列表 */
+  cards?: {
+    components: WhatsappTemplateComponentModel[];
+  }[];
+}
+
+
+/** 模版列表 */
+export type IAuthTemplateItem = {
+  id?: string;
+  name: string;
+  payload: IPayload;
+  postback: IAuthTemplateDetail[];
+  messageCount?: number;
+  subscribedStatus?: ESubscribedStatus;
+};
+/** 授权模版类型定义 */
+export enum ETemplateStructureType {
+  /** 图片 */
+  IMAGE = 'IMAGE',
+  /** 文本 */
+  PLAIN_TEXT = 'PLAIN_TEXT',
+  /** 图文 */
+  IMAGE_TEXT = 'TEXT_IMAGE',
+  /** 卡片 */
+  CARD = 'CARD',
 }
 
 
@@ -335,4 +242,96 @@ export enum WaSendTarget {
   // 兼容旧数据的展示
   ALL_24_HOUR = 'ALL_24_HOUR',
   PART_24_HOUR = 'PART_24_HOUR',
+}
+
+
+/** 广播内容 */
+export type ContentType = {
+  /** 消息类型 */
+  contentType: ContentMessageType;
+  /** 图片 */
+  attachmentUrl: string;
+  /** 文字 */
+  text: string;
+  /** whatsapp制定模版 */
+  template?: {
+    name?: string;
+    customKey?: string;
+    businessKey?: string;
+    templateType?: TemplateDetailType;
+    lang?: LanguageData;
+    auditStatus?: string;
+    score?: string;
+    content: WhatsappTemplateComponentModel[];
+    customParam?: Record<string, string>;
+  };
+  /** fb/ig 授权模板信息 */
+  fbMarketingTemplate?: IAuthTemplateItem;
+  /** fb/ig 卡片 */
+  fbGenericTemplates?: ICardType[];
+};
+
+
+/** 广播消息类型 */
+export enum ContentMessageType {
+  /** 文字消息 */
+  words = 'TEXT',
+  /** 图片消息 */
+  picture = 'IMAGE',
+  /** 图文消息 */
+  words_picture = 'TEXT_IMAGE',
+  /** 消息模版 */
+  template = 'TEMPLATE',
+  /** 卡片消息 */
+  card = 'FB_GENERIC_TEMPLATE',
+  /** 授权订阅消息 */
+  subscription = 'FB_MARKETING_TEMPLATE',
+}
+
+
+export interface ButtonRespVO {
+  /**类型(PHONE_NUMBER、URL 和 QUICK_REPLY) */
+  type: DetailButtonsType;
+  /**按钮的文本显示内容 */
+  text: string;
+  /**当type=URL时按钮,填写跳转地址 */
+  url?: string;
+  /**当type=QUICK_REPLY,可填写回传值 */
+  payload?: QuickReplyButtonEffect | string;
+  /**电话 */
+  phone?: string;
+  /**国家 */
+  country?: string;
+  /**带国家编码,如+8618814098372 */
+  phone_number?: string;
+}
+
+
+export enum DetailButtonsType {
+  /** 快捷回复 */
+  quick_reply = 'QUICK_REPLY',
+  /** PHONE_NUMBER */
+  phone_number = 'PHONE_NUMBER',
+  /** URL */
+  url = 'URL',
+}
+
+
+/** 模版是否订阅 */
+export enum ESubscribedStatus {
+  /** 订阅 */
+  SUBSCRIPTED = 1,
+  /** 未曾订阅 */
+  NO_SUBSCRIPT = 2,
+  /** 取消订阅（曾经订阅过） */
+  CANCEL_SUBSCRIPT = 0,
+}
+
+
+/** 广播发送时间类型 */
+export enum BroadcastSendType {
+  /** 立即发送 */
+  NOW_SEND = 'REAL_TIME',
+  /** 指定时间发送 */
+  SPECIFY_SEND = 'TIMING',
 }

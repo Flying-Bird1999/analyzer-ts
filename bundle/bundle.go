@@ -10,18 +10,17 @@ import (
 	"fmt"
 	"main/bundle/parser"
 	"main/bundle/projectParser"
-	"main/bundle/scanProject"
 	"main/bundle/utils"
 	"path/filepath"
 	"strings"
 )
 
 type BundleResult struct {
-	RootPath      string                     // 项目根目录
-	Alias         map[string]string          // tsconfig.json 中的路径别名
-	Extensions    []string                   // 支持的文件扩展名
-	NpmList       scanProject.ProjectNpmList // 依赖列表
-	SourceCodeMap map[string]string          // 已收集的类型源码
+	RootPath   string            // 项目根目录
+	Alias      map[string]string // tsconfig.json 中的路径别名
+	Extensions []string          // 支持的文件扩展名
+	// NpmList       scanProject.ProjectNpmList // 依赖列表
+	SourceCodeMap map[string]string // 已收集的类型源码
 }
 
 // NewBundleResult 构造函数，初始化 BundleResult。
@@ -35,17 +34,17 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRo
 	}
 
 	// 2. 获取 npm 列表
-	pr := scanProject.NewProjectResult(rootPath, []string{}, false)
-	pr.ScanNpmList()
+	// pr := scanProject.NewProjectResult(rootPath, []string{}, false)
+	// pr.ScanNpmList()
 
 	// 3. 获取 tsconfig.json 中的 alias 列表
 	ar := projectParser.NewAnalyzeResult(rootPath, nil, nil, []string{}, false)
 
 	return BundleResult{
-		RootPath:      rootPath,
-		Alias:         ar.Alias,
-		Extensions:    ar.Extensions,
-		NpmList:       pr.GetNpmList(),
+		RootPath:   rootPath,
+		Alias:      ar.Alias,
+		Extensions: ar.Extensions,
+		// NpmList:       pr.GetNpmList(),
 		SourceCodeMap: make(map[string]string),
 	}
 }
@@ -112,7 +111,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					realTypeName = module.ImportModule
 					replaceTypeName = typeName
 				}
-				sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
+				sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions)
 
 				nextFile := ""
 				if sourceData.Type == "file" {
@@ -138,7 +137,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+parentTypeName], typeName, replaceTypeName)
 					br.SourceCodeMap[absFilePath+"_"+parentTypeName] = realTargetTypeRaw
 
-					sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
+					sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions)
 					nextFile := ""
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath

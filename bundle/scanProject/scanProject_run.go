@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-func ScanProject() {
+func ScanProject_run() {
 	inputDir := "/Users/bird/company/sc1.0/mc/message-center/client"
 	// 定义输出文件路径
 	outputFilePath := "./bundle/scanProject/scanProject_output.txt"
