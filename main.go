@@ -11,8 +11,8 @@ func main() {
 	// 	fmt.Printf("key: %s, workspace: %s, path: %s, namespace: %s, version: %s\n", k, v.Workspace, v.Path, v.Namespace, v.Version)
 	// }
 
-	// 对项目依赖分析，生成分析结果，bundle/analyze/analyze_output.txt
-	// analyze.Analyze()
+	// 对项目依赖分析，生成分析结果，bundle/projectParser/projectParser_output.txt
+	// projectParser.Analyze()
 
 	// 生成ts bundle结果：ts/output/result.ts
 	bundle.GenerateBundle()

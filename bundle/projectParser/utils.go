@@ -1,4 +1,4 @@
-package analyze
+package projectParser
 
 import (
 	"encoding/json"

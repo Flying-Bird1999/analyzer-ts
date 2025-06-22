@@ -8,8 +8,8 @@ package bundle
 
 import (
 	"fmt"
-	"main/bundle/analyze"
 	"main/bundle/parser"
+	"main/bundle/projectParser"
 	"main/bundle/scanProject"
 	"main/bundle/utils"
 	"path/filepath"
@@ -39,7 +39,7 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRo
 	pr.ScanNpmList()
 
 	// 3. 获取 tsconfig.json 中的 alias 列表
-	ar := analyze.NewAnalyzeResult(rootPath, nil, nil, []string{}, false)
+	ar := projectParser.NewAnalyzeResult(rootPath, nil, nil, []string{}, false)
 
 	return BundleResult{
 		RootPath:      rootPath,
@@ -112,7 +112,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					realTypeName = module.ImportModule
 					replaceTypeName = typeName
 				}
-				sourceData := analyze.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
+				sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
 
 				nextFile := ""
 				if sourceData.Type == "file" {
@@ -138,7 +138,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+parentTypeName], typeName, replaceTypeName)
 					br.SourceCodeMap[absFilePath+"_"+parentTypeName] = realTargetTypeRaw
 
-					sourceData := analyze.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
+					sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.NpmList["root"].NpmList, br.Alias, br.Extensions)
 					nextFile := ""
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath

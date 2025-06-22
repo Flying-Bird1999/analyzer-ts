@@ -1,4 +1,4 @@
-package analyze
+package projectParser
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func Analyze() {
 
 	ar.Analyze()
 	// 定义输出文件路径
-	outputFilePath := "./bundle/analyze/analyze_output.txt"
+	outputFilePath := "./bundle/projectParser/projectParser_output.txt"
 
 	// 打开或创建文件
 	file, err := os.Create(outputFilePath)
