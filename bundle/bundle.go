@@ -27,18 +27,16 @@ type BundleResult struct {
 // 通过入口文件路径自动推断项目根目录、npm 列表、alias、扩展名等信息。
 func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRootPath string) BundleResult {
 	var rootPath string = projectRootPath
+
+	// TODO: 逻辑待优化
+	// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
 	if projectRootPath == "" {
-		// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
 		absFilePath, _ := filepath.Abs(inputAnalyzeFile)
 		rootPath = strings.Split(absFilePath, "/src")[0]
 	}
 
-	// 2. 获取 npm 列表
-	// pr := scanProject.NewProjectResult(rootPath, []string{}, false)
-	// pr.ScanNpmList()
-
-	// 3. 获取 tsconfig.json 中的 alias 列表
-	ar := projectParser.NewAnalyzeResult(rootPath, nil, nil, []string{}, false)
+	// 2. 获取 tsconfig.json 中的 alias 列表
+	ar := projectParser.NewProjectParserResult(rootPath, nil, nil, []string{}, false)
 
 	return BundleResult{
 		RootPath:   rootPath,

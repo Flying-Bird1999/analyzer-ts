@@ -7,12 +7,12 @@ import (
 
 func ProjectParser_run() {
 	// inputDir := "/Users/zxc/Desktop/shopline-live-sale"
-	// ar := NewAnalyzeResult(inputDir, nil, nil, false)
+	// ar := NewProjectParserResult(inputDir, nil, nil, false)
 
 	// inputDir := "/Users/zxc/Desktop/message-center/client"
 	// inputDir := "/Users/bird/company/sc1.0/mc/message-center/client"
 	inputDir := "/Users/bird/company/sc1.0/components/nova"
-	ar := NewAnalyzeResult(inputDir, nil, nil, []string{"node_modules/**", "sc-components/**"}, false)
+	ar := NewProjectParserResult(inputDir, nil, nil, []string{"node_modules/**", "sc-components/**"}, false)
 
 	ar.ProjectParser()
 	// 定义输出文件路径

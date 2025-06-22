@@ -9,7 +9,7 @@ import (
 	"github.com/samber/lo"
 )
 
-type AnalyzeResult struct {
+type ProjectParserResult struct {
 	RootPath   string            // 项目根目录
 	Alias      map[string]string // 别名映射，key: 别名, value: 实际路径
 	Extensions []string          // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
@@ -20,7 +20,7 @@ type AnalyzeResult struct {
 	Package_Data map[string]PackageJsonFileParserResult
 }
 
-func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []string, Ignore []string, IsMonorepo bool) *AnalyzeResult {
+func NewProjectParserResult(rootPath string, Alias map[string]string, Extensions []string, Ignore []string, IsMonorepo bool) *ProjectParserResult {
 	curAlias := FormatAlias(Alias)
 	if Alias == nil {
 		// 如果没有传入 Alias，尝试读取项目中tsconfig.json的 alias
@@ -41,7 +41,7 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 
 	// 这里可以再自行检测一下是否为 IsMonorepo
 
-	return &AnalyzeResult{
+	return &ProjectParserResult{
 		RootPath:   newRootPath,
 		Alias:      curAlias,
 		Extensions: curExtensions,
@@ -53,7 +53,7 @@ func NewAnalyzeResult(rootPath string, Alias map[string]string, Extensions []str
 	}
 }
 
-func (ar *AnalyzeResult) ProjectParser() {
+func (ar *ProjectParserResult) ProjectParser() {
 	// 扫描项目
 	projectResult := scanProject.NewProjectResult(ar.RootPath, ar.Ignore, ar.IsMonorepo)
 	projectResult.ScanProject()
