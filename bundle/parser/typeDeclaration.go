@@ -13,18 +13,18 @@ import (
 // - case2: type Name = { name: string; age: LinearModel; };
 
 type TypeDeclarationResult struct {
-	Name      string // 名称
-	Raw       string // 源码
-	Reference map[string]TypeReference
+	Identifier string // 名称
+	Raw        string // 源码
+	Reference  map[string]TypeReference
 }
 
 func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclarationResult {
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 
 	return &TypeDeclarationResult{
-		Name:      "",
-		Raw:       raw,
-		Reference: make(map[string]TypeReference),
+		Identifier: "",
+		Raw:        raw,
+		Reference:  make(map[string]TypeReference),
 	}
 }
 
@@ -33,7 +33,7 @@ func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclaratio
 // 2. 类型成员（通过 analyzeMember）。
 func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclaration) {
 	typeName := typeDecl.Name().Text()
-	tr.Name = typeName
+	tr.Identifier = typeName
 
 	// 对象字面量类型，分析内部类成员
 	// type Name = { name: string; age: LinearModel; };
@@ -71,7 +71,7 @@ func (tr *TypeDeclarationResult) addTypeReference(typeName string, location stri
 	}
 
 	// 如果依赖类型 和 自身是同一个，则不用加上了
-	if typeName == tr.Name {
+	if typeName == tr.Identifier {
 		return
 	}
 
@@ -82,9 +82,9 @@ func (tr *TypeDeclarationResult) addTypeReference(typeName string, location stri
 	} else {
 		// 如果类型引用不存在，创建新的引用
 		tr.Reference[typeName] = TypeReference{
-			Name:     typeName,
-			Location: []string{location},
-			IsExtend: isExtend,
+			Identifier: typeName,
+			Location:   []string{location},
+			IsExtend:   isExtend,
 		}
 	}
 }

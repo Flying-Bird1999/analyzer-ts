@@ -8,8 +8,8 @@ import (
 
 // 解析 enum 声明
 type EnumDeclarationResult struct {
-	Name string // 名称
-	Raw  string // 源码
+	Identifier string // 名称
+	Raw        string // 源码
 }
 
 func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *EnumDeclarationResult {
@@ -20,12 +20,12 @@ func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *Enu
 	// 如果是标识符节点，返回其文本内容
 	if ast.IsIdentifier(nameNode) {
 		return &EnumDeclarationResult{
-			Name: nameNode.AsIdentifier().Text,
-			Raw:  raw,
+			Identifier: nameNode.AsIdentifier().Text,
+			Raw:        raw,
 		}
 	}
 	return &EnumDeclarationResult{
-		Name: "",
-		Raw:  raw,
+		Identifier: "",
+		Raw:        raw,
 	}
 }

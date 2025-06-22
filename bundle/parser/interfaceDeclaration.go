@@ -13,24 +13,24 @@ import (
 // - 如果有应用到其他的ts语法的也要找出来，比如：extends、omit等
 
 type TypeReference struct {
-	Name     string
-	Location []string // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
-	IsExtend bool     // 是否继承，true表示继承，false表示member中引用的
+	Identifier string   // 名称,唯一标识
+	Location   []string // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
+	IsExtend   bool     // 是否继承，true表示继承，false表示member中引用的
 }
 
 type InterfaceDeclarationResult struct {
-	Name      string // 名称
-	Raw       string // 源码
-	Reference map[string]TypeReference
+	Identifier string                   // 名称,唯一标识
+	Raw        string                   // 源码
+	Reference  map[string]TypeReference // 依赖的其他类型
 }
 
 func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 
 	return &InterfaceDeclarationResult{
-		Name:      "",
-		Raw:       raw,
-		Reference: make(map[string]TypeReference),
+		Identifier: "",
+		Raw:        raw,
+		Reference:  make(map[string]TypeReference),
 	}
 }
 
@@ -40,7 +40,7 @@ func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *Interface
 // 3. 接口成员（通过 analyzeMember）。
 func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
 	interfaceName := interfaceDecl.Name().AsIdentifier().Text
-	inter.Name = interfaceName
+	inter.Identifier = interfaceName
 
 	// 分析接口的继承关系
 	inter.analyzeHeritageClause(interfaceDecl, interfaceName)
@@ -98,7 +98,7 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 	}
 
 	// 如果依赖类型 和 自身是同一个，则不用加上了
-	if typeName == inter.Name {
+	if typeName == inter.Identifier {
 		return
 	}
 
@@ -109,9 +109,9 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 	} else {
 		// 如果类型引用不存在，创建新的引用
 		inter.Reference[typeName] = TypeReference{
-			Name:     typeName,
-			Location: []string{location},
-			IsExtend: isExtend,
+			Identifier: typeName,
+			Location:   []string{location},
+			IsExtend:   isExtend,
 		}
 	}
 }

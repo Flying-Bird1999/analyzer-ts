@@ -36,15 +36,15 @@ func (pr *ParserResult) AddExportDeclaration(edr *ExportDeclarationResult) {
 }
 
 func (pr *ParserResult) AddInterfaceDeclaration(inter *InterfaceDeclarationResult) {
-	pr.InterfaceDeclarations[inter.Name] = *inter
+	pr.InterfaceDeclarations[inter.Identifier] = *inter
 }
 
 func (pr *ParserResult) addTypeDeclaration(tr *TypeDeclarationResult) {
-	pr.TypeDeclarations[tr.Name] = *tr
+	pr.TypeDeclarations[tr.Identifier] = *tr
 }
 
 func (pr *ParserResult) addEnumDeclaration(er *EnumDeclarationResult) {
-	pr.EnumDeclarations[er.Name] = *er
+	pr.EnumDeclarations[er.Identifier] = *er
 }
 
 func (pr *ParserResult) GetResult() ParserResult {
