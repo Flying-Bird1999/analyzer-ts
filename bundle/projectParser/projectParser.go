@@ -16,8 +16,8 @@ type ProjectParserResult struct {
 	Ignore     []string          // 指定忽略的文件/文件夹
 	IsMonorepo bool              // 是否为 monorepo 项目
 
-	Js_Data      map[string]JsFileParserResult
-	Package_Data map[string]PackageJsonFileParserResult
+	Js_Data      map[string]JsFileParserResult          // js/jsx/ts/tsx 数据
+	Package_Data map[string]PackageJsonFileParserResult // package.json -> package 数据
 }
 
 func NewProjectParserResult(rootPath string, Alias map[string]string, Extensions []string, Ignore []string, IsMonorepo bool) *ProjectParserResult {

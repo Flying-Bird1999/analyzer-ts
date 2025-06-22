@@ -6,3 +6,5 @@ export type School2 = {
   area2: string;
 }
 
+
+export default {}
