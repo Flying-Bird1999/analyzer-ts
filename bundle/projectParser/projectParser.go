@@ -59,7 +59,7 @@ func (ar *AnalyzeResult) GetNpmData() scanProject.ProjectNpmList {
 	return ar.Npm
 }
 
-func (ar *AnalyzeResult) Analyze() {
+func (ar *AnalyzeResult) ProjectParser() {
 	// 扫描项目
 	projectResult := scanProject.NewProjectResult(ar.RootPath, ar.Ignore, ar.IsMonorepo)
 	projectResult.ScanProject()
@@ -68,8 +68,8 @@ func (ar *AnalyzeResult) Analyze() {
 	ar.Npm = projectResult.GetNpmList()
 
 	// 扫描文件
-	for targetPath, item := range projectResult.GetFileList() {
-		pr := parser.NewParserResult(item.Path)
+	for targetPath, _ := range projectResult.GetFileList() {
+		pr := parser.NewParserResult(targetPath)
 		pr.Traverse()
 		result := pr.GetResult()
 
@@ -92,7 +92,7 @@ func (ar *AnalyzeResult) Analyze() {
 			})
 		}
 
-		ar.File[item.Path] = FileAnalyzeResult{
+		ar.File[targetPath] = FileAnalyzeResult{
 			ImportDeclarations:    importResult,
 			InterfaceDeclarations: result.InterfaceDeclarations,
 			TypeDeclarations:      result.TypeDeclarations,

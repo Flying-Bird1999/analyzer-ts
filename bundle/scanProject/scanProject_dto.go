@@ -2,7 +2,9 @@ package scanProject
 
 // 方便后续扩展字段
 type FileItem struct {
-	Path string
+	FileName string // 文件名
+	Size     int64  // 大小
+	Ext      string // 后缀
 }
 
 type ProjectNpmList = map[string]NpmPackage // key为 workspace名称，如果不是 monorepo 项目，则为 "root"

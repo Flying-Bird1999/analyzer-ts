@@ -5,14 +5,14 @@ import (
 	"os"
 )
 
-func Analyze() {
+func projectParser() {
 	// inputAnalyzeDir := "/Users/zxc/Desktop/shopline-live-sale"
 	// ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, false)
 
 	inputAnalyzeDir := "/Users/zxc/Desktop/message-center/client"
 	ar := NewAnalyzeResult(inputAnalyzeDir, nil, nil, []string{"node_modules/**", "sc-components/**"}, false)
 
-	ar.Analyze()
+	ar.ProjectParser()
 	// 定义输出文件路径
 	outputFilePath := "./bundle/projectParser/projectParser_output.txt"
 

@@ -1,10 +1,10 @@
-package bundle
-
 // 该文件实现了基于入口文件和类型名的 TypeScript 类型依赖递归收集与输出。
 // 主要流程为：
 // 1. 以入口文件和类型为起点，递归解析类型、接口及 import 依赖，收集所有相关类型声明源码。
 // 2. 支持 alias、npm 包、命名空间导入等常见 TypeScript 导入场景。
 // 3. 最终将所有依赖类型源码合并输出到指定文件。
+
+package bundle
 
 import (
 	"fmt"

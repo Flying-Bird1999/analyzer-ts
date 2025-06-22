@@ -1,3 +1,4 @@
+// 从项目指定入口扫描文件
 package scanProject
 
 import (
@@ -154,7 +155,11 @@ func (pr *ProjectResult) ScanFileList() {
 
 		// 检查是否是文件
 		if !info.IsDir() {
-			pr.FileList[path] = FileItem{Path: path}
+			pr.FileList[path] = FileItem{
+				FileName: info.Name(),
+				Size:     info.Size(),        // 文件大小（字节）
+				Ext:      filepath.Ext(path), // 文件后缀
+			}
 		}
 
 		return nil

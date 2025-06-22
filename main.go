@@ -1,6 +1,8 @@
 package main
 
-import "main/bundle"
+import (
+	"main/bundle/scanProject"
+)
 
 func main() {
 	// 多包npm包扫描调试
@@ -12,8 +14,10 @@ func main() {
 	// }
 
 	// 对项目依赖分析，生成分析结果，bundle/projectParser/projectParser_output.txt
-	// projectParser.Analyze()
+	// projectParser.ProjectParser()
 
 	// 生成ts bundle结果：ts/output/result.ts
-	bundle.GenerateBundle()
+	// bundle.GenerateBundle()
+
+	scanProject.ScanProject()
 }
