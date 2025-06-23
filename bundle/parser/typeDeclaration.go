@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"main/bundle/utils"
 	"strings"
 
@@ -38,6 +39,7 @@ func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclarat
 	// 对象字面量类型，分析内部类成员
 	// type Name = { name: string; age: LinearModel; };
 	if typeDecl.Type.Kind == ast.KindTypeLiteral {
+		fmt.Printf("......")
 		if typeDecl.Type.Members() != nil {
 			for _, member := range typeDecl.Type.Members() {
 				memberTypeName, memberLocation := AnalyzeMember(member, typeName)
@@ -51,7 +53,9 @@ func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclarat
 			}
 		}
 	} else {
-		// type Name3 = LinearModel | Person;
+		fmt.Printf("//////")
+		// case1: type Name3 = LinearModel | Person;
+		// TODO: case2: type Translations = { [key in SupportedLanguages]: string; }
 		memberTypeName, memberLocation := AnalyzeType(typeDecl.Type, typeName)
 		if memberTypeName != "" && memberLocation != "" {
 			memberTypeNameArray := strings.Split(memberTypeName, ",")

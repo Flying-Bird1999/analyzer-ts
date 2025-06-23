@@ -162,8 +162,8 @@ func GenerateBundle() {
 	// inputAnalyzeFile := "/Users/bird/company/sc1.0/components/nova/packages/Product/src/AddProductSet/type.ts"
 	// inputAnalyzeType := "ContextState"
 
-	inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/interface/config.ts"
-	inputAnalyzeType := "ConfigCenterType"
+	inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
+	inputAnalyzeType := "Translations"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")

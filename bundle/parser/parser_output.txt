@@ -1,31 +1,5 @@
-Source: ./type2, Raw: import Bird from './type2';
-  - ImportModule: default, Type: default, Identifier: Bird
+Source: Translations, Raw: 
 
-
-
-Source: ./type, Raw: 
-import * as allTypes from './type';
-  - ImportModule: allTypes, Type: namespace, Identifier: allTypes
-
-
-
-Source: ./school, Raw: 
-import All, { School, School2 } from './school';
-  - ImportModule: default, Type: default, Identifier: All
-  - ImportModule: School, Type: named, Identifier: School
-  - ImportModule: School2, Type: named, Identifier: School2
-
-
-
-Source: ./type, Raw: 
-import type { CurrentRes } from './type';
-  - ImportModule: CurrentRes, Type: named, Identifier: CurrentRes
-
-
-
-Source: ./school, Raw: 
-import { School as NewSchool } from './school';
-  - ImportModule: School, Type: named, Identifier: NewSchool
-
-
-
+type Translations = {
+  [key in SupportedLanguages]: string; // 动态键值对，键为语言代码，值为翻译内容
+};
