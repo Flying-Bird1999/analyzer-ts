@@ -1,5 +1,3 @@
 Source: Translations, Raw: 
 
-type Translations = {
-  [key in SupportedLanguages]: string; // 动态键值对，键为语言代码，值为翻译内容
-};
+type Translations = { [key in SupportedLanguages]: string; }

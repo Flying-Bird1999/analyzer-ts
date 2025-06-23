@@ -242,6 +242,10 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 				locations = append(locations, memberLocation)
 			}
 		}
+
+	// 处理映射类型
+	case typeNode.Kind == ast.KindMappedType:
+		fmt.Print("处理映射类型")
 	}
 	return strings.Join(typeNames, ","), strings.Join(locations, ",")
 }
