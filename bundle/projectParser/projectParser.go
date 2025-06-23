@@ -89,6 +89,7 @@ func (ar *ProjectParserResult) ProjectParser() {
 				ImportDeclarations:    importResult,
 				InterfaceDeclarations: result.InterfaceDeclarations,
 				TypeDeclarations:      result.TypeDeclarations,
+				EnumDeclarations:      result.EnumDeclarations,
 			}
 		}
 

@@ -6,6 +6,7 @@ type JsFileParserResult struct {
 	ImportDeclarations    []ImportDeclarationResult
 	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult
 	TypeDeclarations      map[string]parser.TypeDeclarationResult
+	EnumDeclarations      map[string]parser.EnumDeclarationResult
 }
 
 type PackageJsonFileParserResult struct {

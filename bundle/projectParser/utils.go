@@ -194,6 +194,16 @@ type PackageJsonInfo struct {
 	NpmList map[string]NpmItem
 }
 
+// 解析 package.json 文件，获取包的基本信息和依赖信息
+// GetPackageJson 主要逻辑如下：
+// 1. 检查 package.json 文件是否存在
+// 2. 读取 package.json 文件内容
+// 3. 解析 JSON，获取 name、version、dependencies、devDependencies、peerDependencies 字段
+// 4. 对每个依赖（dependencies/devDependencies/peerDependencies）：
+//   - 读取 node_modules 下对应包的 package.json，获取实际安装的版本号
+//   - 组装 NpmItem，包含依赖名、类型、声明版本、实际安装版本
+//
+// 5. 返回包含所有依赖信息的 PackageJsonInfo 结构体
 func GetPackageJson(packageJsonPath string) (*PackageJsonInfo, error) {
 	// 检查文件是否存在
 	if _, err := os.Stat(packageJsonPath); os.IsNotExist(err) {
