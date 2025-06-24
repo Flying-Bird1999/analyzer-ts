@@ -5,14 +5,15 @@ import type { CurrentRes } from './type';
 import { School as NewSchool } from './school';
 
 
-type Translations = {
-  name: string
-}
 
-type Translations_2 ={
-  age: number
-}
 
-type PersonName = {
-  name: Translations["name"] | Translations_2['age']
-}
+export type MediasItem = {
+  images: {
+    [key in ImagesType]: ImagesAttribute | ImagesAttribute2;
+  };
+  _id: string;
+};
+
+export type TranslationModel = {
+  [key in SupportedLanguages]?: ImagesAttribute | ImagesAttribute2;
+};

@@ -1,33 +1,31 @@
-Source: Translations, Raw: 
+Source: TranslationModel, Raw: 
 
-
-type Translations = {
-  name: string
-}
-
-
-
-
-
-
-Source: Translations_2, Raw: 
-
-type Translations_2 ={
-  age: number
-}
+export type TranslationModel = {
+  [key in SupportedLanguages]?: ImagesAttribute | ImagesAttribute2;
+};
+  - Identifier: SupportedLanguages, Location: []
+  - Identifier: ImagesAttribute, Location: []
+  - Identifier: ImagesAttribute2, Location: []
 
 
 
 
 
 
-Source: PersonName, Raw: 
+Source: MediasItem, Raw: 
 
-type PersonName = {
-  name: Translations["name"] | Translations_2['age']
-}
-  - Identifier: Translations, Location: [PersonName.name]
-  - Identifier: Translations_2, Location: [PersonName.name]
+
+
+
+export type MediasItem = {
+  images: {
+    [key in ImagesType]: ImagesAttribute | ImagesAttribute2;
+  };
+  _id: string;
+};
+  - Identifier: ImagesType, Location: []
+  - Identifier: ImagesAttribute, Location: []
+  - Identifier: ImagesAttribute2, Location: []
 
 
 

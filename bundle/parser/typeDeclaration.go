@@ -62,6 +62,7 @@ func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclarat
 				memberTypeName, _ := AnalyzeType(typeParam.Constraint, "")
 				tr.addTypeReference(memberTypeName, "", false)
 			}
+
 			// 提取值类型
 			if typeParam.Type != nil {
 				memberTypeName, memberLocation := AnalyzeType(mappedTypeNode.Type, "")
@@ -73,6 +74,7 @@ func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclarat
 					}
 				}
 			}
+
 		}
 	} else {
 		// type Name3 = LinearModel | Person;

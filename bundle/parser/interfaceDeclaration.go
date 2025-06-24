@@ -250,8 +250,25 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 			typeNames = append(typeNames, elemTypeName)
 			locations = append(locations, elemLocation)
 		}
-	default:
-		fmt.Printf("没有兼容的Type Case: %s", typeNode.Kind)
+	// 处理映射类型: image: [key in ImagesType]: ImagesAttribute | ImagesAttribute2
+	case typeNode.Kind == ast.KindMappedType:
+		mappedTypeNode := typeNode.AsMappedTypeNode()
+		if mappedTypeNode.TypeParameter != nil {
+			typeParam := mappedTypeNode.TypeParameter.AsTypeParameter()
+			// 类型参数名称 typeParam.Name().AsIdentifier().Text，暂时不提取
+			// 提取约束类型 (in 后面的类型)
+			if typeParam.Constraint != nil {
+				elemTypeName, elemLocation := AnalyzeType(typeParam.Constraint, "")
+				typeNames = append(typeNames, elemTypeName)
+				locations = append(locations, elemLocation)
+			}
+			// 提取值类型
+			if typeParam.Type != nil {
+				elemTypeName, elemLocation := AnalyzeType(mappedTypeNode.Type, "")
+				typeNames = append(typeNames, elemTypeName)
+				locations = append(locations, elemLocation)
+			}
+		}
 	}
 	return strings.Join(typeNames, ","), strings.Join(locations, ",")
 }
