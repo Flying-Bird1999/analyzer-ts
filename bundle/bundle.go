@@ -159,11 +159,13 @@ func GenerateBundle() {
 	// inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
 	// inputAnalyzeType := "BroadcastDataType"
 
+	// inputAnalyzeFile := "/Users/zxc/Desktop/nova/packages/Product/src/AddProductSet/type.ts"
 	// inputAnalyzeFile := "/Users/bird/company/sc1.0/components/nova/packages/Product/src/AddProductSet/type.ts"
 	// inputAnalyzeType := "ContextState"
 
-	inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
-	inputAnalyzeType := "Translations"
+	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
+	// inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
+	inputAnalyzeType := "ConfigCenterType"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")

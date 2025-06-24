@@ -1,6 +1,8 @@
 package main
 
-import "main/bundle/parser"
+import (
+	"main/bundle/parser"
+)
 
 func main() {
 

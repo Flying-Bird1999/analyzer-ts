@@ -1,3 +1,36 @@
 Source: Translations, Raw: 
 
-type Translations = { [key in SupportedLanguages]: string; }
+
+type Translations = {
+  name: string
+}
+
+
+
+
+
+
+Source: Translations_2, Raw: 
+
+type Translations_2 ={
+  age: number
+}
+
+
+
+
+
+
+Source: PersonName, Raw: 
+
+type PersonName = {
+  name: Translations["name"] | Translations_2['age']
+}
+  - Identifier: Translations, Location: [PersonName.name]
+  - Identifier: Translations_2, Location: [PersonName.name]
+
+
+
+
+
+

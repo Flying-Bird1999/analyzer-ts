@@ -242,10 +242,16 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 				locations = append(locations, memberLocation)
 			}
 		}
-
-	// 处理映射类型
-	case typeNode.Kind == ast.KindMappedType:
-		fmt.Print("处理映射类型")
+	// 处理索引访问类型: Translations["name"]
+	case typeNode.Kind == ast.KindIndexedAccessType:
+		indexedAccessType := typeNode.AsIndexedAccessTypeNode()
+		elemTypeName, elemLocation := AnalyzeType(indexedAccessType.ObjectType, location)
+		if elemTypeName != "" {
+			typeNames = append(typeNames, elemTypeName)
+			locations = append(locations, elemLocation)
+		}
+	default:
+		fmt.Printf("没有兼容的Type Case: %s", typeNode.Kind)
 	}
 	return strings.Join(typeNames, ","), strings.Join(locations, ",")
 }

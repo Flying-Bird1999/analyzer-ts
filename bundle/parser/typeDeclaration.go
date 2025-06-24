@@ -50,9 +50,31 @@ func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclarat
 				}
 			}
 		}
+	} else if typeDecl.Type.Kind == ast.KindMappedType {
+		// 映射类型：type Translations = { [key in SupportedLanguages]: string; }
+		mappedTypeNode := typeDecl.Type.AsMappedTypeNode()
+		if mappedTypeNode.TypeParameter != nil {
+			typeParam := mappedTypeNode.TypeParameter.AsTypeParameter()
+			// 类型参数名称 typeParam.Name().AsIdentifier().Text，暂时不提取
+			// 提取约束类型 (in 后面的类型)
+			if typeParam.Constraint != nil {
+				memberTypeName, _ := AnalyzeType(typeParam.Constraint, "")
+				tr.addTypeReference(memberTypeName, "", false)
+			}
+			// 提取值类型
+			if typeParam.Type != nil {
+				memberTypeName, memberLocation := AnalyzeType(mappedTypeNode.Type, "")
+				if memberTypeName != "" && memberLocation != "" {
+					memberTypeNameArray := strings.Split(memberTypeName, ",")
+					memberLocationArray := strings.Split(memberLocation, ",")
+					for i, typeName := range memberTypeNameArray {
+						tr.addTypeReference(typeName, memberLocationArray[i], false)
+					}
+				}
+			}
+		}
 	} else {
-		// case1: type Name3 = LinearModel | Person;
-		// TODO: case2: type Translations = { [key in SupportedLanguages]: string; }
+		// type Name3 = LinearModel | Person;
 		memberTypeName, memberLocation := AnalyzeType(typeDecl.Type, typeName)
 		if memberTypeName != "" && memberLocation != "" {
 			memberTypeNameArray := strings.Split(memberTypeName, ",")

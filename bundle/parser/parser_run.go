@@ -6,7 +6,8 @@ import (
 )
 
 func Parser_run() {
-	inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts/import.ts"
+	// inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts/import.ts"
+	inputDir := "/Users/zxc/Desktop/analyzer-ts/ts/import.ts"
 
 	// 解析当前文件
 	pr := NewParserResult(inputDir)
@@ -41,5 +42,7 @@ func Parser_run() {
 		for _, specifier := range v.Reference {
 			file.WriteString(fmt.Sprintf("  - Identifier: %s, Location: %s\n", specifier.Identifier, specifier.Location))
 		}
+		file.WriteString(fmt.Sprintf("\n\n\n\n\n\n"))
+
 	}
 }
