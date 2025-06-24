@@ -11,6 +11,7 @@ import (
 // - 如果有引用外部类型的就找出来
 // - case1: type Name3 = LinearModel | Person;
 // - case2: type Name = { name: string; age: LinearModel; };
+// - case3: type Translations = { [key in SupportedLanguages]: string; }
 
 type TypeDeclarationResult struct {
 	Identifier string // 名称
