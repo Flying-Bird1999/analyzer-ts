@@ -12,6 +12,7 @@ import (
 	"main/bundle/projectParser"
 	"main/bundle/utils"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -163,16 +164,61 @@ func GenerateBundle() {
 	// inputAnalyzeFile := "/Users/bird/company/sc1.0/components/nova/packages/Product/src/AddProductSet/type.ts"
 	// inputAnalyzeType := "ContextState"
 
-	inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/HostPanelPage/types/index.ts"
+	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/HostPanelPage/types/index.ts"
+	// // inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
+	// inputAnalyzeType := "HostPanelProductRes"
+
+	inputAnalyzeFile := "/Users/zxc/Desktop/analyzer-ts/ts/bundle/index1.ts"
 	// inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
-	inputAnalyzeType := "HostPanelProductRes"
+	inputAnalyzeType := "Class"
 
 	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
 	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
 
-	resultCode := ""
-	for _, value := range br.SourceCodeMap {
-		resultCode += value + "\n"
+	// result := EasyBundle(br.SourceCodeMap)
+	// utils.WriteResultToFile("./ts/output/result.ts", result)
+
+	Bundle2(br.SourceCodeMap)
+}
+
+// 假设 sourceCodeMap: map[string]string，key: filePath_typeName，value: type源码
+func EasyBundle(sourceCodeMap map[string]string) string {
+	// 1. 生成唯一类型名映射
+	uniqueTypeMap := make(map[string]string) // key: 原始key, value: 新类型名
+	for key := range sourceCodeMap {
+		// key 形如 /path/to/file.ts_TypeName
+		parts := strings.Split(key, "_")
+		if len(parts) < 2 {
+			continue
+		}
+		filePath := parts[0]
+		typeName := parts[1]
+		// 用文件名（不含扩展名）+类型名做唯一名
+		fileBase := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
+		uniqueType := fileBase + "_" + typeName
+		uniqueTypeMap[key] = uniqueType
 	}
-	utils.WriteResultToFile("./ts/output/result.ts", resultCode)
+
+	// 2. 替换类型声明和引用
+	result := ""
+	for key, raw := range sourceCodeMap {
+		uniqueType := uniqueTypeMap[key]
+		// 替换声明
+		parts := strings.Split(key, "_")
+		if len(parts) < 2 {
+			continue
+		}
+		typeName := parts[1]
+		// 替换声明（如 type TypeName => type File_TypeName）
+		reDecl := regexp.MustCompile(`(\btype|\binterface|\benum)\s+` + typeName + `\b`)
+		raw = reDecl.ReplaceAllString(raw, "${1} "+uniqueType)
+		// 替换所有引用（全局替换，防止误替换可加\b边界）
+		for _, otherUnique := range uniqueTypeMap {
+			otherType := strings.Split(otherUnique, "_")[1]
+			reRef := regexp.MustCompile(`\b` + otherType + `\b`)
+			raw = reRef.ReplaceAllString(raw, uniqueTypeMap[key])
+		}
+		result += raw + "\n"
+	}
+	return result
 }

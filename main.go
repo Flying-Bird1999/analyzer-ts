@@ -1,8 +1,6 @@
 package main
 
-import (
-	"main/bundle"
-)
+import "main/bundle"
 
 func main() {
 
