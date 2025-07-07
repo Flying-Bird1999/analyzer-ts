@@ -1,6 +1,6 @@
 package projectParser
 
-import "main/bundle/parser"
+import "main/analyzer/parser"
 
 type JsFileParserResult struct {
 	ImportDeclarations    []ImportDeclarationResult

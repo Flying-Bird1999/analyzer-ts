@@ -15,3 +15,5 @@ go run main.go
 5. ✅ [keyinSupportedLanguages]?:string[] |string;
 6. ✅ typePersonName=Translations["name"]
 7. 声明在 .d.ts
+8. export { Package_Name as Package_Name_export };
+9. export default Package_Name;

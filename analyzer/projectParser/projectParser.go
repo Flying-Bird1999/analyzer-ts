@@ -2,8 +2,8 @@ package projectParser
 
 import (
 	"fmt"
-	"main/bundle/parser"
-	"main/bundle/scanProject"
+	"main/analyzer/parser"
+	"main/analyzer/scanProject"
 	"path/filepath"
 
 	"github.com/samber/lo"

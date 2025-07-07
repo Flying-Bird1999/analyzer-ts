@@ -1,54 +1,29 @@
-package bundle
+// TypeScript 类型声明打包工具（TypeBundler），用于将多个 TS 文件中的类型声明（interface/type/class/enum）合并为一个 bundle 文件，并解决跨文件同名类型冲突、类型引用正确性等问题。其核心设计思路如下：
 
-// 核心设计思路
-// 这个方案的设计围绕着一个关键挑战：如何在保持类型引用正确性的前提下，解决来自不同文件的同名类型冲突。
+// 分离式处理架构
 
-// 1. 分离式处理架构
-// 方案采用了分离式处理的核心思想，将名称解析和内容更新完全分开：
+// 首先收集所有类型声明，检测同名冲突，确定每个类型的最终名称（如有冲突则加后缀）。
+// 然后基于名称映射，一次性更新所有类型声明和引用，避免重复替换和错误引用。
+// 智能冲突解决
 
-// 第一阶段：收集所有类型声明，检测冲突，确定最终名称
-// 第二阶段：基于确定的名称映射，一次性更新所有代码内容
-// 这种设计避免了增量式替换可能导致的重复替换问题（如 Package_index2_index2_index2）。
+// 第一个遇到的类型保持原名，后续冲突类型基于文件名生成唯一后缀（如 Package_index2）。
+// 全局唯一性保证：所有类型最终名称唯一，避免命名污染。
+// 上下文感知的引用更新
 
-// 2. 智能冲突解决策略
-// 借鉴 TypeScript-Go 的名称生成器设计，方案实现了智能的冲突解决：
+// 只替换类型引用，不替换类型声明。
+// 优先引用本文件的同名类型，否则引用全局唯一版本。
+// 精确的字符串替换机制
 
-// 优先级规则：第一个遇到的类型保持原名（如果没有其他冲突）
-// 文件路径后缀：基于文件路径生成唯一标识符（如 Package_index2）
-// 全局唯一性：确保生成的名称在整个 bundle 中唯一
-// 3. 上下文感知的引用更新
-// 方案的关键创新在于上下文感知的引用替换：
+// 通过正则和上下文判断，区分类型声明和类型引用，避免误替换。
+// 数据结构设计
 
-// func (b *TypeBundler) shouldReplaceReference(currentDecl, referencedDecl *TypeDeclaration, allDeclarations []*TypeDeclaration) bool
-// 这个函数实现了智能的引用解析逻辑：
+// TypeDeclaration：封装类型声明的所有信息（文件路径、原名、最终名、源码）。
+// TypeBundler：管理类型名映射、已用名、原始名等。
 
-// 同文件优先：如果当前文件中有同名类型，优先引用本文件的版本
-// 原名保持：如果没有本地同名类型，引用保持原名的版本
-// 避免错误替换：防止第一个文件中的 Package 引用被错误替换为 Package_index2
-// 4. 精确的字符串替换机制
-// 由于 Go 的 regexp 包不支持负向前瞻，方案采用了两步替换策略：
-
-// 声明替换：只替换类型声明语句（如 interface Package → interface Package_index2）
-// 引用替换：通过上下文检查，只替换类型引用，避免重复替换声明
-// func (b *TypeBundler) isTypeDeclaration(text string, start, end int, typeName string) bool
-// 这个函数通过检查匹配位置前的关键字来判断是否为类型声明。
-
-// 5. 数据结构设计
-// 方案使用了清晰的数据结构来管理复杂的映射关系：
-
-// finalNameMap：存储原始名称到最终名称的映射
-// usedNames：跟踪已使用的名称，避免冲突
-// TypeDeclaration：封装类型声明的所有信息，包括原始名称和最终名称
-// 设计优势
-// 可预测性：分离式处理确保了结果的一致性和可预测性
-// 扩展性：基于文件路径的命名策略可以处理任意数量的同名冲突
-// 正确性：上下文感知的引用解析确保了类型引用的语义正确性
-// 性能：一次性替换避免了多次遍历和重复处理
-// 这个方案的设计充分考虑了 TypeScript 类型系统的复杂性，通过借鉴 TypeScript-Go 编译器的成熟设计模式，实现了一个既健壮又高效的类型依赖打包解决方案。
+package ts_bundle
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -68,7 +43,6 @@ type TypeDeclaration struct {
 	TypeName     string
 	OriginalName string
 	SourceCode   string
-	Kind         string
 	FinalName    string // 最终确定的名称
 }
 
@@ -94,6 +68,7 @@ func (b *TypeBundler) Bundle(typeMap map[string]string) (string, error) {
 	return b.generateBundle(declarations), nil
 }
 
+// parseTypeMap 解析类型声明map为 TypeDeclaration 列表
 func (b *TypeBundler) parseTypeMap(typeMap map[string]string) []*TypeDeclaration {
 	var declarations []*TypeDeclaration
 
@@ -112,7 +87,6 @@ func (b *TypeBundler) parseTypeMap(typeMap map[string]string) []*TypeDeclaration
 			TypeName:     typeName,
 			OriginalName: typeName,
 			SourceCode:   sourceCode,
-			Kind:         b.detectTypeKind(sourceCode),
 		}
 
 		declarations = append(declarations, decl)
@@ -124,29 +98,7 @@ func (b *TypeBundler) parseTypeMap(typeMap map[string]string) []*TypeDeclaration
 	return declarations
 }
 
-func (b *TypeBundler) detectTypeKind(sourceCode string) string {
-	trimmed := strings.TrimSpace(sourceCode)
-
-	patterns := map[string]string{
-		`^\s*export\s+interface\s+`: "interface",
-		`^\s*interface\s+`:          "interface",
-		`^\s*export\s+type\s+`:      "type",
-		`^\s*type\s+`:               "type",
-		`^\s*export\s+class\s+`:     "class",
-		`^\s*class\s+`:              "class",
-		`^\s*export\s+enum\s+`:      "enum",
-		`^\s*enum\s+`:               "enum",
-	}
-
-	for pattern, kind := range patterns {
-		if matched, _ := regexp.MatchString(pattern, trimmed); matched {
-			return kind
-		}
-	}
-
-	return "unknown"
-}
-
+// resolveAllNameConflicts 检测所有类型声明的同名冲突并生成最终名称
 func (b *TypeBundler) resolveAllNameConflicts(declarations []*TypeDeclaration) {
 	// 按类型名称分组
 	typeGroups := make(map[string][]*TypeDeclaration)
@@ -169,6 +121,7 @@ func (b *TypeBundler) resolveAllNameConflicts(declarations []*TypeDeclaration) {
 	}
 }
 
+// resolveConflictingGroup 处理同名类型冲突，生成唯一名称
 func (b *TypeBundler) resolveConflictingGroup(baseName string, decls []*TypeDeclaration) {
 	// 按文件路径排序，确保一致性
 	sort.Slice(decls, func(i, j int) bool {
@@ -192,6 +145,7 @@ func (b *TypeBundler) resolveConflictingGroup(baseName string, decls []*TypeDecl
 	}
 }
 
+// generateUniqueName 基于文件路径生成唯一后缀，确保类型名唯一
 func (b *TypeBundler) generateUniqueName(baseName string, decl *TypeDeclaration) string {
 	// 基于文件路径生成后缀
 	pathParts := strings.Split(decl.FilePath, "/")
@@ -223,97 +177,27 @@ func (b *TypeBundler) generateUniqueName(baseName string, decl *TypeDeclaration)
 	return finalName
 }
 
+// getUniqueKey 生成唯一key（文件路径+类型名）
 func (b *TypeBundler) getUniqueKey(decl *TypeDeclaration) string {
 	return fmt.Sprintf("%s:%s", decl.FilePath, decl.OriginalName)
 }
 
-func (b *TypeBundler) updateSingleDeclaration(sourceCode, originalName, finalName string, replacementMap map[string]string) string {
-	updatedCode := sourceCode
-
-	// 第一步：更新当前类型的声明
-	if finalName != originalName {
-		declarationPatterns := []string{
-			fmt.Sprintf(`\binterface\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\btype\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\bclass\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\benum\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\bexport\s+interface\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\bexport\s+type\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\bexport\s+class\s+%s\b`, regexp.QuoteMeta(originalName)),
-			fmt.Sprintf(`\bexport\s+enum\s+%s\b`, regexp.QuoteMeta(originalName)),
-		}
-
-		declarationReplacements := []string{
-			fmt.Sprintf("interface %s", finalName),
-			fmt.Sprintf("type %s", finalName),
-			fmt.Sprintf("class %s", finalName),
-			fmt.Sprintf("enum %s", finalName),
-			fmt.Sprintf("export interface %s", finalName),
-			fmt.Sprintf("export type %s", finalName),
-			fmt.Sprintf("export class %s", finalName),
-			fmt.Sprintf("export enum %s", finalName),
-		}
-
-		for i, pattern := range declarationPatterns {
-			re := regexp.MustCompile(pattern)
-			updatedCode = re.ReplaceAllString(updatedCode, declarationReplacements[i])
-		}
-	}
-
-	// 第二步：更新其他类型的引用（排除当前类型）
-	for originalRef, finalRef := range replacementMap {
-		if originalRef != originalName {
-			// 使用单词边界确保精确匹配
-			pattern := fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta(originalRef))
-			re := regexp.MustCompile(pattern)
-			updatedCode = re.ReplaceAllString(updatedCode, finalRef)
-		}
-	}
-
-	return updatedCode
-}
-
+// generateBundle 生成最终 bundle 文件内容（带来源注释）
 func (b *TypeBundler) generateBundle(declarations []*TypeDeclaration) string {
 	var result strings.Builder
-
 	// 文件头
 	result.WriteString("// Auto-generated bundle file\n")
 	result.WriteString("// This file contains bundled type declarations\n\n")
 
-	// 按类型分组
-	var interfaces, types, classes, enums, unknowns []*TypeDeclaration
-
-	for _, decl := range declarations {
-		switch decl.Kind {
-		case "interface":
-			interfaces = append(interfaces, decl)
-		case "type":
-			types = append(types, decl)
-		case "class":
-			classes = append(classes, decl)
-		case "enum":
-			enums = append(enums, decl)
-		default:
-			unknowns = append(unknowns, decl)
-		}
-	}
-
-	// 按顺序输出
-	b.writeDeclarations(&result, "// Enums\n", enums)
-	b.writeDeclarations(&result, "// Interfaces\n", interfaces)
-	b.writeDeclarations(&result, "// Type Aliases\n", types)
-	b.writeDeclarations(&result, "// Classes\n", classes)
-	b.writeDeclarations(&result, "// Other Declarations\n", unknowns)
-
+	b.writeDeclarations(&result, declarations)
 	return result.String()
 }
 
-func (b *TypeBundler) writeDeclarations(result *strings.Builder, header string, decls []*TypeDeclaration) {
+// writeDeclarations 写入所有类型声明到 bundle
+func (b *TypeBundler) writeDeclarations(result *strings.Builder, decls []*TypeDeclaration) {
 	if len(decls) == 0 {
 		return
 	}
-
-	result.WriteString(header)
 
 	// 按最终名称排序
 	sort.Slice(decls, func(i, j int) bool {
@@ -322,7 +206,7 @@ func (b *TypeBundler) writeDeclarations(result *strings.Builder, header string, 
 
 	for _, decl := range decls {
 		// 添加来源注释
-		result.WriteString(fmt.Sprintf("// From: %s (original: %s)\n", decl.FilePath, decl.OriginalName))
+		result.WriteString(fmt.Sprintf("// From: %s (original: %s)", decl.FilePath, decl.OriginalName))
 
 		// 输出更新后的代码
 		result.WriteString(decl.SourceCode)
@@ -330,10 +214,12 @@ func (b *TypeBundler) writeDeclarations(result *strings.Builder, header string, 
 		if !strings.HasSuffix(decl.SourceCode, "\n") {
 			result.WriteString("\n")
 		}
+
 		result.WriteString("\n")
 	}
 }
 
+// updateAllTypeReferences 更新所有类型声明中的类型引用
 func (b *TypeBundler) updateAllTypeReferences(declarations []*TypeDeclaration) {
 	// 为每个声明单独处理类型引用更新
 	for _, decl := range declarations {
@@ -341,6 +227,7 @@ func (b *TypeBundler) updateAllTypeReferences(declarations []*TypeDeclaration) {
 	}
 }
 
+// updateSingleDeclarationReferences 更新单个类型声明中的类型引用
 func (b *TypeBundler) updateSingleDeclarationReferences(currentDecl *TypeDeclaration, allDeclarations []*TypeDeclaration) string {
 	updatedCode := currentDecl.SourceCode
 
@@ -394,7 +281,7 @@ func (b *TypeBundler) updateSingleDeclarationReferences(currentDecl *TypeDeclara
 	return updatedCode
 }
 
-// 辅助函数：只替换类型引用，不替换声明
+// replaceTypeReferencesOnly 只替换类型引用，不替换声明
 func (b *TypeBundler) replaceTypeReferencesOnly(text string, re *regexp.Regexp, oldName, newName string) string {
 	// 找到所有匹配的位置
 	matches := re.FindAllStringIndex(text, -1)
@@ -419,7 +306,7 @@ func (b *TypeBundler) replaceTypeReferencesOnly(text string, re *regexp.Regexp, 
 	return result
 }
 
-// 检查匹配位置是否是类型声明
+// isTypeDeclaration 判断匹配位置是否为类型声明（而不是引用）
 func (b *TypeBundler) isTypeDeclaration(text string, start, end int, typeName string) bool {
 	// 获取匹配位置前的文本，检查是否是声明关键字
 	beforeMatch := ""
@@ -456,6 +343,7 @@ func (b *TypeBundler) isTypeDeclaration(text string, start, end int, typeName st
 	return false
 }
 
+// shouldReplaceReference 判断是否需要替换类型引用（上下文感知）
 func (b *TypeBundler) shouldReplaceReference(currentDecl, referencedDecl *TypeDeclaration, allDeclarations []*TypeDeclaration) bool {
 	// 如果被引用的类型没有重命名，不需要替换
 	if referencedDecl.FinalName == referencedDecl.OriginalName {
@@ -497,28 +385,4 @@ func (b *TypeBundler) shouldReplaceReference(currentDecl, referencedDecl *TypeDe
 	})
 
 	return sameNameDecls[0] == referencedDecl
-}
-
-// 使用示例
-func Bundle2(typeMap map[string]string) {
-	bundler := NewTypeBundler()
-	bundledContent, err := bundler.Bundle(typeMap)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Bundle error: %v\n", err)
-		return
-	}
-
-	// 输出到文件
-	outputFile := "./ts/output/result.ts"
-	err = os.WriteFile(outputFile, []byte(bundledContent), 0644)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Write error: %v\n", err)
-		return
-	}
-
-	fmt.Printf("Bundle completed: %s\n", outputFile)
-	fmt.Printf("\nName mappings:\n")
-	for key, finalName := range bundler.finalNameMap {
-		fmt.Printf("  %s -> %s\n", key, finalName)
-	}
 }

@@ -4,19 +4,18 @@
 // 2. 支持 alias、npm 包、命名空间导入等常见 TypeScript 导入场景。
 // 3. 最终将所有依赖类型源码合并输出到指定文件。
 
-package bundle
+package ts_bundle
 
 import (
 	"fmt"
-	"main/bundle/parser"
-	"main/bundle/projectParser"
-	"main/bundle/utils"
+	"main/analyzer/parser"
+	"main/analyzer/projectParser"
+	"main/analyzer/utils"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
-type BundleResult struct {
+type CollectResult struct {
 	RootPath   string            // 项目根目录
 	Alias      map[string]string // tsconfig.json 中的路径别名
 	Extensions []string          // 支持的文件扩展名
@@ -24,9 +23,9 @@ type BundleResult struct {
 	SourceCodeMap map[string]string // 已收集的类型源码
 }
 
-// NewBundleResult 构造函数，初始化 BundleResult。
+// NewCollectResult 构造函数，初始化 CollectResult。
 // 通过入口文件路径自动推断项目根目录、npm 列表、alias、扩展名等信息。
-func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRootPath string) BundleResult {
+func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectRootPath string) CollectResult {
 	var rootPath string = projectRootPath
 
 	// TODO: 逻辑待优化
@@ -39,7 +38,7 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRo
 	// 2. 获取 tsconfig.json 中的 alias 列表
 	ar := projectParser.NewProjectParserResult(rootPath, nil, nil, []string{}, false)
 
-	return BundleResult{
+	return CollectResult{
 		RootPath:   rootPath,
 		Alias:      ar.Alias,
 		Extensions: ar.Extensions,
@@ -48,12 +47,12 @@ func NewBundleResult(inputAnalyzeFile string, inputAnalyzeType string, projectRo
 	}
 }
 
-// analyzeFileAndType 递归解析指定文件中的类型依赖。
+// collectFileType 递归解析指定文件中的类型依赖。
 // absFilePath: 当前解析的文件绝对路径
 // typeName: 当前要查找的类型名
 // replaceTypeName: 类型重命名（如 import {A as B}）时的替换名
 // parentTypeName: 父类型名（用于命名空间类型替换）
-func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
+func (br *CollectResult) collectFileType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
 	// TODO: 已经解析过的文件可以做缓存
 	fmt.Printf("开始解析当前文件: %s \n", absFilePath)
 
@@ -71,7 +70,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 
 		br.SourceCodeMap[absFilePath+"_"+typeName] = realRaw
 		for ref := range typeDecl.Reference {
-			br.analyzeFileAndType(absFilePath, ref, "", typeName)
+			br.collectFileType(absFilePath, ref, "", typeName)
 		}
 		return
 	}
@@ -84,7 +83,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 		}
 		br.SourceCodeMap[absFilePath+"_"+typeName] = realRaw
 		for ref := range interfaceDecl.Reference {
-			br.analyzeFileAndType(absFilePath, ref, "", typeName)
+			br.collectFileType(absFilePath, ref, "", typeName)
 		}
 		return
 	}
@@ -122,7 +121,7 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 						nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
 					}
 				}
-				br.analyzeFileAndType(nextFile, realTypeName, replaceTypeName, typeName)
+				br.collectFileType(nextFile, realTypeName, replaceTypeName, typeName)
 			}
 
 			// case: import * as allTypes from './type';
@@ -147,78 +146,9 @@ func (br *BundleResult) analyzeFileAndType(absFilePath string, typeName string, 
 							nextFile = utils.FindRealFilePath(nextFile, br.Extensions)
 						}
 					}
-					br.analyzeFileAndType(nextFile, realRefName, replaceTypeName, typeName)
+					br.collectFileType(nextFile, realRefName, replaceTypeName, typeName)
 				}
 			}
 		}
 	}
-}
-
-// 入口方法
-func GenerateBundle() {
-	// inputAnalyzeFile := "/Users/zxc/Desktop/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
-	// inputAnalyzeFile := "/Users/bird/company/sc1.0/mc/message-center/client/src/feature/Broadcast/views/BroadcastEditor/constant/fbAndIgBroadcast.ts"
-	// inputAnalyzeType := "BroadcastDataType"
-
-	// inputAnalyzeFile := "/Users/zxc/Desktop/nova/packages/Product/src/AddProductSet/type.ts"
-	// inputAnalyzeFile := "/Users/bird/company/sc1.0/components/nova/packages/Product/src/AddProductSet/type.ts"
-	// inputAnalyzeType := "ContextState"
-
-	// inputAnalyzeFile := "/Users/zxc/Desktop/shopline-live-sale/src/feature/HostPanelPage/types/index.ts"
-	// // inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
-	// inputAnalyzeType := "HostPanelProductRes"
-
-	inputAnalyzeFile := "/Users/zxc/Desktop/analyzer-ts/ts/bundle/index1.ts"
-	// inputAnalyzeFile := "/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ShopCart/services/productsApi.ts"
-	inputAnalyzeType := "Class"
-
-	br := NewBundleResult(inputAnalyzeFile, inputAnalyzeType, "")
-	br.analyzeFileAndType(inputAnalyzeFile, inputAnalyzeType, "", "")
-
-	// result := EasyBundle(br.SourceCodeMap)
-	// utils.WriteResultToFile("./ts/output/result.ts", result)
-
-	Bundle2(br.SourceCodeMap)
-}
-
-// 假设 sourceCodeMap: map[string]string，key: filePath_typeName，value: type源码
-func EasyBundle(sourceCodeMap map[string]string) string {
-	// 1. 生成唯一类型名映射
-	uniqueTypeMap := make(map[string]string) // key: 原始key, value: 新类型名
-	for key := range sourceCodeMap {
-		// key 形如 /path/to/file.ts_TypeName
-		parts := strings.Split(key, "_")
-		if len(parts) < 2 {
-			continue
-		}
-		filePath := parts[0]
-		typeName := parts[1]
-		// 用文件名（不含扩展名）+类型名做唯一名
-		fileBase := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
-		uniqueType := fileBase + "_" + typeName
-		uniqueTypeMap[key] = uniqueType
-	}
-
-	// 2. 替换类型声明和引用
-	result := ""
-	for key, raw := range sourceCodeMap {
-		uniqueType := uniqueTypeMap[key]
-		// 替换声明
-		parts := strings.Split(key, "_")
-		if len(parts) < 2 {
-			continue
-		}
-		typeName := parts[1]
-		// 替换声明（如 type TypeName => type File_TypeName）
-		reDecl := regexp.MustCompile(`(\btype|\binterface|\benum)\s+` + typeName + `\b`)
-		raw = reDecl.ReplaceAllString(raw, "${1} "+uniqueType)
-		// 替换所有引用（全局替换，防止误替换可加\b边界）
-		for _, otherUnique := range uniqueTypeMap {
-			otherType := strings.Split(otherUnique, "_")[1]
-			reRef := regexp.MustCompile(`\b` + otherType + `\b`)
-			raw = reRef.ReplaceAllString(raw, uniqueTypeMap[key])
-		}
-		result += raw + "\n"
-	}
-	return result
 }

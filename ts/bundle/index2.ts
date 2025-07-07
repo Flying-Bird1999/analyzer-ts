@@ -16,3 +16,11 @@ export type Package = {
   name: string;
   version: string;
 }
+
+type Package_Name = {
+  name: string;
+  version: string;
+  location: string;
+}
+
+export default Package_Name;

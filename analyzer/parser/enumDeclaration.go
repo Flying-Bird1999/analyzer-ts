@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"main/bundle/utils"
+	"main/analyzer/utils"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )

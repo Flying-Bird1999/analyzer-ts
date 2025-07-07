@@ -1,6 +1,6 @@
 package main
 
-import "main/bundle"
+import "main/ts_bundle"
 
 func main() {
 
@@ -11,5 +11,5 @@ func main() {
 	// parser.Parser_run()
 
 	// 生成ts bundle结果：ts/output/result.ts
-	bundle.GenerateBundle()
+	ts_bundle.GenerateBundle()
 }

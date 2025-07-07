@@ -3,7 +3,7 @@ package projectParser
 import (
 	"encoding/json"
 	"fmt"
-	"main/bundle/utils"
+	"main/analyzer/utils"
 	"os"
 	"path/filepath"
 	"regexp"
