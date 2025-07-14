@@ -7,7 +7,7 @@ import (
 
 func Parser_run() {
 	// inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts/import.ts"
-	inputDir := "/Users/zxc/Desktop/analyzer-ts/ts/import.ts"
+	inputDir := "/Users/zxc/Desktop/analyzer-ts/ts_example/import.ts"
 
 	// 解析当前文件
 	pr := NewParserResult(inputDir)

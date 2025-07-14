@@ -8,7 +8,7 @@ import (
 
 // 入口方法
 func GenerateBundle() {
-	inputAnalyzeFile, _ := filepath.Abs("ts/bundle/index1.ts")
+	inputAnalyzeFile, _ := filepath.Abs("ts_example/bundle/index1.ts")
 	inputAnalyzeType := "Class"
 
 	br := NewCollectResult(inputAnalyzeFile, inputAnalyzeType, "")
@@ -18,7 +18,7 @@ func GenerateBundle() {
 	bundledContent, _ := bundler.Bundle(br.SourceCodeMap)
 
 	// 输出到文件
-	outputFile := "./ts/output/result.ts"
+	outputFile := "./ts_example/output/result.ts"
 	err := os.WriteFile(outputFile, []byte(bundledContent), 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Write error: %v\n", err)
