@@ -16,6 +16,7 @@ type ParserResult struct {
 	InterfaceDeclarations map[string]InterfaceDeclarationResult
 	TypeDeclarations      map[string]TypeDeclarationResult
 	EnumDeclarations      map[string]EnumDeclarationResult
+	VariableDeclarations  []VariableDeclaration
 }
 
 func NewParserResult(filePath string) ParserResult {
@@ -25,6 +26,7 @@ func NewParserResult(filePath string) ParserResult {
 		InterfaceDeclarations: make(map[string]InterfaceDeclarationResult),
 		TypeDeclarations:      make(map[string]TypeDeclarationResult),
 		EnumDeclarations:      make(map[string]EnumDeclarationResult),
+		VariableDeclarations:  []VariableDeclaration{},
 	}
 }
 
@@ -48,6 +50,10 @@ func (pr *ParserResult) addEnumDeclaration(er *EnumDeclarationResult) {
 	pr.EnumDeclarations[er.Identifier] = *er
 }
 
+func (pr *ParserResult) addVariableDeclaration(vd *VariableDeclaration) {
+	pr.VariableDeclarations = append(pr.VariableDeclarations, *vd)
+}
+
 func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
@@ -55,6 +61,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 		InterfaceDeclarations: pr.InterfaceDeclarations,
 		TypeDeclarations:      pr.TypeDeclarations,
 		EnumDeclarations:      pr.EnumDeclarations,
+		VariableDeclarations:  pr.VariableDeclarations,
 	}
 }
 
@@ -100,6 +107,13 @@ func (pr *ParserResult) Traverse() {
 		if node.Kind == ast.KindEnumDeclaration {
 			er := NewEnumDeclarationResult(node.AsEnumDeclaration(), sourceCode)
 			pr.addEnumDeclaration(er)
+		}
+
+		// 解析变量声明
+		if node.Kind == ast.KindVariableStatement {
+			vd := NewVariableDeclaration(node.AsVariableStatement(), sourceCode)
+			vd.analyzeVariableDeclaration(node.AsVariableStatement(), sourceCode, sourceFile)
+			pr.addVariableDeclaration(vd)
 		}
 	}
 
