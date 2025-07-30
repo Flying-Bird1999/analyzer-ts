@@ -115,6 +115,31 @@
   },
   {
     "exported": false,
+    "kind": "let",
+    "declarators": [
+      {
+        "identifier": " { host, port }",
+        "initValue": " { host: 'localhost', port: 8080 }"
+      },
+      {
+        "identifier": " [theme]",
+        "initValue": " ['dark']"
+      }
+    ],
+    "raw": "\n\nlet {\n  config: { host, port },\n  settings: [theme],\n} = { config: { host: 'localhost', port: 8080 }, settings: ['dark'] };",
+    "sourceLocation": {
+      "Start": {
+        "Line": 212,
+        "Column": 0
+      },
+      "End": {
+        "Line": 337,
+        "Column": 0
+      }
+    }
+  },
+  {
+    "exported": false,
     "kind": "const",
     "declarators": [
       {
@@ -122,14 +147,14 @@
         "initValue": " () =\u003e {\n  console.log('sayHi')\n}"
       }
     ],
-    "raw": "\n\n// let {\n//   config: { host, port },\n//   settings: [theme],\n// } = { config: { host: 'localhost', port: 8080 }, settings: ['dark'] };\n\nconst sayHi = () =\u003e {\n  console.log('sayHi')\n}",
+    "raw": "\n\nconst sayHi = () =\u003e {\n  console.log('sayHi')\n}",
     "sourceLocation": {
       "Start": {
-        "Line": 212,
+        "Line": 337,
         "Column": 0
       },
       "End": {
-        "Line": 397,
+        "Line": 385,
         "Column": 0
       }
     }

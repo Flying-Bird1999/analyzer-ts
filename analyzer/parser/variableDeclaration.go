@@ -186,26 +186,56 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 						continue
 					}
 					bindingElement := element.AsBindingElement()
-					identifier := bindingElement.Name().AsIdentifier().Text
-					var lookupName string
-					if bindingElement.PropertyName != nil {
-						// Handle aliasing e.g. { name: myName }
-						propNameNode := bindingElement.PropertyName
-						if ast.IsIdentifier(propNameNode) {
-							lookupName = propNameNode.AsIdentifier().Text
-						} else {
-							lookupName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
-						}
-					} else {
-						lookupName = identifier
-					}
+					nameNode := bindingElement.Name()
 
-					initValue, ok := propertyValues[lookupName]
-					if !ok && bindingElement.Initializer != nil {
-						initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+					// Handle nested destructuring by checking if the name is an identifier or another pattern
+					if ast.IsIdentifier(nameNode) {
+						identifier := nameNode.AsIdentifier().Text
+						var lookupName string
+						if bindingElement.PropertyName != nil {
+							// Handle aliasing e.g. { name: myName }
+							propNameNode := bindingElement.PropertyName
+							if ast.IsIdentifier(propNameNode) {
+								lookupName = propNameNode.AsIdentifier().Text
+							} else {
+								lookupName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+							}
+						} else {
+							lookupName = identifier
+						}
+
+						initValue, ok := propertyValues[lookupName]
+						if !ok && bindingElement.Initializer != nil {
+							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						}
+						declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
+						vd.Declarators = append(vd.Declarators, declarator)
+					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+						// This is a nested pattern.
+						// We will treat the entire nested pattern as a single "identifier" for now.
+						// A more advanced implementation would recursively parse this.
+						identifier := utils.GetNodeText(nameNode.AsNode(), sourceCode)
+						var lookupName string
+						if bindingElement.PropertyName != nil {
+							propNameNode := bindingElement.PropertyName
+							if ast.IsIdentifier(propNameNode) {
+								lookupName = propNameNode.AsIdentifier().Text
+							} else {
+								lookupName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+							}
+						} else {
+							// This case should be syntactically invalid in JS for nested patterns, but we handle it defensively.
+							lookupName = identifier
+						}
+
+						initValue, ok := propertyValues[lookupName]
+						if !ok && bindingElement.Initializer != nil {
+							// If there's a default value for the whole nested pattern
+							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						}
+						declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
+						vd.Declarators = append(vd.Declarators, declarator)
 					}
-					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
-					vd.Declarators = append(vd.Declarators, declarator)
 				}
 			} else {
 				// Case 2: Initializer is not an object literal, e.g. {a, b} = someObject
