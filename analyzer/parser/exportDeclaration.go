@@ -14,17 +14,19 @@ import (
 //  	- export const name = "bird"
 //  	- export function name() {}
 
+// ExportModule 导出模块
 type ExportModule struct {
-	ImportModule string // 模块名, 对应实际导出的内容模块
-	Type         string // 默认导出: default、命名导出:named、unknown
-	Identifier   string // 唯一标识
+	ImportModule string `json:"importModule"` // 模块名, 对应实际导出的内容模块
+	Type         string `json:"type"`         // 默认导出: default、命名导出:named、unknown
+	Identifier   string `json:"identifier"`   // 唯一标识
 }
 
+// ExportDeclarationResult 导出声明结果
 type ExportDeclarationResult struct {
-	ExportModules []ExportModule // 导出的模块内容
-	Raw           string         // 源码
-	Source        string         // 源文件路径  case: export { a } from "../index.ts"
-	Type          string         // 类型, 预留字段，代表导出的类型，例如：变量/函数/类型等
+	ExportModules []ExportModule `json:"exportModules"` // 导出的模块内容
+	Raw           string         `json:"raw"`           // 源码
+	Source        string         `json:"source"`        // 源文件路径  case: export { a } from "../index.ts"
+	Type          string         `json:"type"`          // 类型, 预留字段，代表导出的类型，例如：变量/函数/类型等
 }
 
 func NewExportDeclarationResult() *ExportDeclarationResult {

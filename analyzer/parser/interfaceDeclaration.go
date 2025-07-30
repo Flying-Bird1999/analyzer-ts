@@ -12,16 +12,18 @@ import (
 // - 如果有引用外部类型的就找出来
 // - 如果有应用到其他的ts语法的也要找出来，比如：extends、omit等
 
+// TypeReference 类型引用
 type TypeReference struct {
-	Identifier string   // 名称,唯一标识
-	Location   []string // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
-	IsExtend   bool     // 是否继承，true表示继承，false表示member中引用的
+	Identifier string   `json:"identifier"` // 名称,唯一标识
+	Location   []string `json:"location"`   // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
+	IsExtend   bool     `json:"isExtend"`   // 是否继承，true表示继承，false表示member中引用的
 }
 
+// InterfaceDeclarationResult 接口声明结果
 type InterfaceDeclarationResult struct {
-	Identifier string                   // 名称,唯一标识
-	Raw        string                   // 源码
-	Reference  map[string]TypeReference // 依赖的其他类型
+	Identifier string                   `json:"identifier"` // 名称,唯一标识
+	Raw        string                   `json:"raw"`        // 源码
+	Reference  map[string]TypeReference `json:"reference"`  // 依赖的其他类型
 }
 
 func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {

@@ -13,10 +13,11 @@ import (
 // - case2: type Name = { name: string; age: LinearModel; };
 // - case3: type Translations = { [key in SupportedLanguages]: string; }
 
+// TypeDeclarationResult 类型声明结果
 type TypeDeclarationResult struct {
-	Identifier string // 名称
-	Raw        string // 源码
-	Reference  map[string]TypeReference
+	Identifier string                   `json:"identifier"` // 名称
+	Raw        string                   `json:"raw"`        // 源码
+	Reference  map[string]TypeReference `json:"reference"`  // 依赖的其他类型
 }
 
 func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclarationResult {

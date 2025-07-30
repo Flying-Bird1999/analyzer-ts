@@ -29,21 +29,23 @@ import (
 	"strings"
 )
 
+// TypeBundler 类型打包器
 type TypeBundler struct {
 	// 存储原始名称到最终名称的映射
-	finalNameMap map[string]string
+	finalNameMap map[string]string `json:"finalNameMap"`
 	// 存储已使用的名称，避免冲突
-	usedNames map[string]bool
+	usedNames map[string]bool `json:"usedNames"`
 	// 存储每个文件路径中的原始类型名称
-	originalNames map[string]string
+	originalNames map[string]string `json:"originalNames"`
 }
 
+// TypeDeclaration 类型声明
 type TypeDeclaration struct {
-	FilePath     string
-	TypeName     string
-	OriginalName string
-	SourceCode   string
-	FinalName    string // 最终确定的名称
+	FilePath     string `json:"filePath"`     // 文件路径
+	TypeName     string `json:"typeName"`     // 类型名称
+	OriginalName string `json:"originalName"` // 原始名称
+	SourceCode   string `json:"sourceCode"`   // 源码
+	FinalName    string `json:"finalName"`    // 最终确定的名称
 }
 
 func NewTypeBundler() *TypeBundler {

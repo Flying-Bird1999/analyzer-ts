@@ -8,8 +8,8 @@ import (
 
 // 解析 enum 声明
 type EnumDeclarationResult struct {
-	Identifier string // 名称
-	Raw        string // 源码
+	Identifier string `json:"identifier"` // 名称
+	Raw        string `json:"raw"`        // 源码
 }
 
 func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *EnumDeclarationResult {

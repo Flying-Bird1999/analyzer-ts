@@ -17,29 +17,30 @@ const (
 
 // VariableDeclarator 代表一个独立的变量声明
 type VariableDeclarator struct {
-	Identifier string `json:"identifier,omitempty"`
-	Type       string `json:"type,omitempty"`
-	InitValue  string `json:"initValue,omitempty"`
+	Identifier string `json:"identifier,omitempty"` // 标识符
+	Type       string `json:"type,omitempty"`       // 类型
+	InitValue  string `json:"initValue,omitempty"`  // 初始值
 }
 
 // NodePosition 用于记录代码中的位置信息
 type NodePosition struct {
-	Line   int // 行号
-	Column int // 列号
+	Line   int `json:"line"`   // 行号
+	Column int `json:"column"` // 列号
 }
 
+// SourceLocation 源码位置
 type SourceLocation struct {
-	Start NodePosition // 节点起始位置
-	End   NodePosition // 节点结束位置
+	Start NodePosition `json:"start"` // 节点起始位置
+	End   NodePosition `json:"end"`   // 节点结束位置
 }
 
 // VariableDeclaration 代表一个完整的变量声明语句
 type VariableDeclaration struct {
-	Exported       bool                  `json:"exported"`
-	Kind           DeclarationKind       `json:"kind"`
-	Declarators    []*VariableDeclarator `json:"declarators"`
-	Raw            string                `json:"raw,omitempty"`
-	SourceLocation SourceLocation        `json:"sourceLocation"`
+	Exported       bool                  `json:"exported"`       // 是否导出
+	Kind           DeclarationKind       `json:"kind"`           // 声明类型
+	Declarators    []*VariableDeclarator `json:"declarators"`    // 声明的变量
+	Raw            string                `json:"raw,omitempty"`    // 源码
+	SourceLocation SourceLocation        `json:"sourceLocation"` // 源码位置
 }
 
 func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *VariableDeclaration {
