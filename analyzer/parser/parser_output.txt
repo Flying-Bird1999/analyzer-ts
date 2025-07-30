@@ -68,10 +68,12 @@
     "kind": "const",
     "declarators": [
       {
-        "identifier": "name"
+        "identifier": "name",
+        "initValue": " 'bird'"
       },
       {
-        "identifier": "age"
+        "identifier": "age",
+        "initValue": " 20"
       }
     ],
     "raw": "\n\nexport const { name, age } = { name: 'bird', age: 20 };",
@@ -91,10 +93,12 @@
     "kind": "const",
     "declarators": [
       {
-        "identifier": "first"
+        "identifier": "first",
+        "initValue": "1"
       },
       {
-        "identifier": "second"
+        "identifier": "second",
+        "initValue": " 2"
       }
     ],
     "raw": "\n\nconst [first, second] = [1, 2];",
