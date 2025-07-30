@@ -48,7 +48,7 @@ func ProjectParser_run() {
 	// inputDir := "/Users/zxc/Desktop/message-center/client"
 	// inputDir := "/Users/bird/company/sc1.0/mc/message-center/client"
 	inputDir := "/Users/bird/company/sc1.0/live/shopline-live-sale"
-	ar := NewProjectParserResult(inputDir, nil, nil, []string{"node_modules/**"}, false)
+	ar := NewProjectParserResult(inputDir, nil, nil, []string{"node_modules/**", "bffApiDoc/**"}, false)
 
 	ar.ProjectParser()
 
