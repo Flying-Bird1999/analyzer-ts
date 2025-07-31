@@ -27,7 +27,7 @@ func GenerateBundle() {
 
 	fmt.Printf("Bundle completed: %s\n", outputFile)
 	fmt.Printf("\nName mappings:\n")
-	for key, finalName := range bundler.finalNameMap {
+	for key, finalName := range bundler.FinalNameMap {
 		fmt.Printf("  %s -> %s\n", key, finalName)
 	}
 }

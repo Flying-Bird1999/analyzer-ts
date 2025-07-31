@@ -32,11 +32,11 @@ import (
 // TypeBundler 类型打包器
 type TypeBundler struct {
 	// 存储原始名称到最终名称的映射
-	finalNameMap map[string]string `json:"finalNameMap"`
+	FinalNameMap map[string]string `json:"finalNameMap"`
 	// 存储已使用的名称，避免冲突
-	usedNames map[string]bool `json:"usedNames"`
+	UsedNames map[string]bool `json:"usedNames"`
 	// 存储每个文件路径中的原始类型名称
-	originalNames map[string]string `json:"originalNames"`
+	OriginalNames map[string]string `json:"originalNames"`
 }
 
 // TypeDeclaration 类型声明
@@ -50,9 +50,9 @@ type TypeDeclaration struct {
 
 func NewTypeBundler() *TypeBundler {
 	return &TypeBundler{
-		finalNameMap:  make(map[string]string),
-		usedNames:     make(map[string]bool),
-		originalNames: make(map[string]string),
+		FinalNameMap:  make(map[string]string),
+		UsedNames:     make(map[string]bool),
+		OriginalNames: make(map[string]string),
 	}
 }
 
@@ -94,7 +94,7 @@ func (b *TypeBundler) parseTypeMap(typeMap map[string]string) []*TypeDeclaration
 		declarations = append(declarations, decl)
 
 		// 记录原始名称
-		b.originalNames[key] = typeName
+		b.OriginalNames[key] = typeName
 	}
 
 	return declarations
@@ -114,8 +114,8 @@ func (b *TypeBundler) resolveAllNameConflicts(declarations []*TypeDeclaration) {
 			// 没有冲突，使用原名
 			finalName := typeName
 			decls[0].FinalName = finalName
-			b.finalNameMap[b.getUniqueKey(decls[0])] = finalName
-			b.usedNames[finalName] = true
+			b.FinalNameMap[b.getUniqueKey(decls[0])] = finalName
+			b.UsedNames[finalName] = true
 		} else {
 			// 有冲突，需要重命名
 			b.resolveConflictingGroup(typeName, decls)
@@ -133,7 +133,7 @@ func (b *TypeBundler) resolveConflictingGroup(baseName string, decls []*TypeDecl
 	for i, decl := range decls {
 		var finalName string
 
-		if i == 0 && !b.usedNames[baseName] {
+		if i == 0 && !b.UsedNames[baseName] {
 			// 第一个保持原名（如果可能）
 			finalName = baseName
 		} else {
@@ -142,8 +142,8 @@ func (b *TypeBundler) resolveConflictingGroup(baseName string, decls []*TypeDecl
 		}
 
 		decl.FinalName = finalName
-		b.finalNameMap[b.getUniqueKey(decl)] = finalName
-		b.usedNames[finalName] = true
+		b.FinalNameMap[b.getUniqueKey(decl)] = finalName
+		b.UsedNames[finalName] = true
 	}
 }
 
@@ -171,7 +171,7 @@ func (b *TypeBundler) generateUniqueName(baseName string, decl *TypeDeclaration)
 	// 确保名称唯一
 	counter := 1
 	finalName := candidateName
-	for b.usedNames[finalName] {
+	for b.UsedNames[finalName] {
 		finalName = fmt.Sprintf("%s_%d", candidateName, counter)
 		counter++
 	}
