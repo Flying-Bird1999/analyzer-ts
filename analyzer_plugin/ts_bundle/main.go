@@ -3,22 +3,17 @@ package ts_bundle
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 )
 
 // 入口方法
-func GenerateBundle() {
-	inputAnalyzeFile, _ := filepath.Abs("ts_example/bundle/index1.ts")
-	inputAnalyzeType := "Class"
-
-	br := NewCollectResult(inputAnalyzeFile, inputAnalyzeType, "")
+func GenerateBundle(inputAnalyzeFile string, inputAnalyzeType string, outputFile string, projectRoot string) {
+	br := NewCollectResult(inputAnalyzeFile, inputAnalyzeType, projectRoot)
 	br.collectFileType(inputAnalyzeFile, inputAnalyzeType, "", "")
 
 	bundler := NewTypeBundler()
 	bundledContent, _ := bundler.Bundle(br.SourceCodeMap)
 
 	// 输出到文件
-	outputFile := "./ts_example/output/result.ts"
 	err := os.WriteFile(outputFile, []byte(bundledContent), 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Write error: %v\n", err)

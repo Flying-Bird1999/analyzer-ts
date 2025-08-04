@@ -47,7 +47,7 @@ func parseTsConfig(configPath, rootPath string, alias *map[string]string) {
 
 	// 解析 JSON 数据
 	if err := json.Unmarshal([]byte(data), &tsConfig); err != nil {
-		fmt.Printf("解析 tsconfig.json 失败: %v\n", err)
+		fmt.Printf("解析 tsconfig.json 失败: 文件路径:%s, err: %v\n", configPath, err)
 		return
 	}
 
