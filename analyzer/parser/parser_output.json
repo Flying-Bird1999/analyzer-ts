@@ -1,0 +1,99 @@
+{
+  "variableDeclarations": [
+    {
+      "exported": false,
+      "kind": "const",
+      "source": " NewSelect",
+      "declarators": [
+        {
+          "identifier": "SingleSelect2",
+          "propName": "SingleSelect"
+        }
+      ],
+      "raw": "\n\nconst { SingleSelect: SingleSelect2 } = NewSelect;",
+      "sourceLocation": {
+        "start": {
+          "line": 71,
+          "column": 0
+        },
+        "end": {
+          "line": 123,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": false,
+      "kind": "const",
+      "declarators": [
+        {
+          "identifier": "age",
+          "initValue": " 1"
+        }
+      ],
+      "raw": "\n    const age = 1",
+      "sourceLocation": {
+        "start": {
+          "line": 177,
+          "column": 0
+        },
+        "end": {
+          "line": 195,
+          "column": 0
+        }
+      }
+    }
+  ],
+  "callExpressions": [
+    {
+      "identifier": "log",
+      "argLen": 1,
+      "type": "call",
+      "raw": "\n    log(age)",
+      "sourceLocation": {
+        "start": {
+          "line": 195,
+          "column": 0
+        },
+        "end": {
+          "line": 208,
+          "column": 0
+        }
+      }
+    },
+    {
+      "identifier": "console",
+      "property": "log",
+      "argLen": 1,
+      "type": "member",
+      "raw": "\n    console.log(1)",
+      "sourceLocation": {
+        "start": {
+          "line": 209,
+          "column": 0
+        },
+        "end": {
+          "line": 228,
+          "column": 0
+        }
+      }
+    },
+    {
+      "identifier": "message",
+      "property": "success",
+      "argLen": 1,
+      "type": "member",
+      "raw": "\n    message.success('success')",
+      "sourceLocation": {
+        "start": {
+          "line": 229,
+          "column": 0
+        },
+        "end": {
+          "line": 260,
+          "column": 0
+        }
+      }
+    }
+  ]
+}

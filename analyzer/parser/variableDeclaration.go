@@ -18,6 +18,7 @@ const (
 // VariableDeclarator 代表一个独立的变量声明
 type VariableDeclarator struct {
 	Identifier string `json:"identifier,omitempty"` // 标识符
+	PropName   string `json:"propName,omitempty"`   // 属性名(别名)
 	Type       string `json:"type,omitempty"`       // 类型
 	InitValue  string `json:"initValue,omitempty"`  // 初始值
 }
@@ -36,11 +37,12 @@ type SourceLocation struct {
 
 // VariableDeclaration 代表一个完整的变量声明语句
 type VariableDeclaration struct {
-	Exported       bool                  `json:"exported"`       // 是否导出
-	Kind           DeclarationKind       `json:"kind"`           // 声明类型
-	Declarators    []*VariableDeclarator `json:"declarators"`    // 声明的变量
+	Exported       bool                  `json:"exported"`         // 是否导出
+	Kind           DeclarationKind       `json:"kind"`             // 声明类型
+	Source         string                `json:"source,omitempty"` // 解构赋值的源，这里先记录下源码，因为可能为比较复杂的变量，比如 const { name } = user.profile； const { id } = getResponse().data;等
+	Declarators    []*VariableDeclarator `json:"declarators"`      // 声明的变量
 	Raw            string                `json:"raw,omitempty"`    // 源码
-	SourceLocation SourceLocation        `json:"sourceLocation"` // 源码位置
+	SourceLocation SourceLocation        `json:"sourceLocation"`   // 源码位置
 }
 
 func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *VariableDeclaration {
@@ -115,6 +117,9 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 
 		// 数组解构
 		if ast.IsArrayBindingPattern(nameNode) {
+			if initializerNode != nil && initializerNode.Kind != ast.KindArrayLiteralExpression {
+				vd.Source = utils.GetNodeText(initializerNode.AsNode(), sourceCode)
+			}
 			arrayBinding := nameNode.AsBindingPattern()
 			// Case 1: Initializer is an ArrayLiteralExpression, e.g. [a, b] = [1, 2]
 			if initializerNode != nil && initializerNode.Kind == ast.KindArrayLiteralExpression {
@@ -157,6 +162,9 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 
 		// 对象解构
 		if ast.IsObjectBindingPattern(nameNode) {
+			if initializerNode != nil && initializerNode.Kind != ast.KindObjectLiteralExpression {
+				vd.Source = utils.GetNodeText(initializerNode.AsNode(), sourceCode)
+			}
 			objectBinding := nameNode.AsBindingPattern()
 			// Case 1: Initializer is an ObjectLiteralExpression, e.g. {a, b} = {a: 1, b: 2}
 			if initializerNode != nil && initializerNode.Kind == ast.KindObjectLiteralExpression {
@@ -209,7 +217,7 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 						if !ok && bindingElement.Initializer != nil {
 							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
 						}
-						declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
+						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
 					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
 						// This is a nested pattern.
@@ -234,7 +242,7 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 							// If there's a default value for the whole nested pattern
 							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
 						}
-						declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
+						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
 					}
 				}
@@ -246,13 +254,54 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 						continue
 					}
 					bindingElement := element.AsBindingElement()
-					identifier := bindingElement.Name().AsIdentifier().Text
-					var initValue string
-					if bindingElement.Initializer != nil {
-						initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+					nameNode := bindingElement.Name()
+
+					// Handle nested destructuring by checking if the name is an identifier or another pattern
+					if ast.IsIdentifier(nameNode) {
+						identifier := nameNode.AsIdentifier().Text
+						var propName string
+						if bindingElement.PropertyName != nil {
+							// Handle aliasing e.g. { name: myName }
+							propNameNode := bindingElement.PropertyName
+							if ast.IsIdentifier(propNameNode) {
+								propName = propNameNode.AsIdentifier().Text
+							} else {
+								propName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+							}
+						} else {
+							propName = identifier
+						}
+
+						var initValue string
+						if bindingElement.Initializer != nil {
+							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						}
+						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
+						vd.Declarators = append(vd.Declarators, declarator)
+					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+						// This is a nested pattern.
+						identifier := utils.GetNodeText(nameNode.AsNode(), sourceCode)
+						var propName string
+						if bindingElement.PropertyName != nil {
+							propNameNode := bindingElement.PropertyName
+							if ast.IsIdentifier(propNameNode) {
+								propName = propNameNode.AsIdentifier().Text
+							} else {
+								propName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+							}
+						} else {
+							// This case should be syntactically invalid in JS for nested patterns, but we handle it defensively.
+							propName = identifier
+						}
+
+						var initValue string
+						if bindingElement.Initializer != nil {
+							// If there's a default value for the whole nested pattern
+							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						}
+						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
+						vd.Declarators = append(vd.Declarators, declarator)
 					}
-					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
-					vd.Declarators = append(vd.Declarators, declarator)
 				}
 			}
 			continue

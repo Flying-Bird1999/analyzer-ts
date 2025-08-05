@@ -17,6 +17,7 @@ type ParserResult struct {
 	TypeDeclarations      map[string]TypeDeclarationResult
 	EnumDeclarations      map[string]EnumDeclarationResult
 	VariableDeclarations  []VariableDeclaration
+	CallExpressions       []CallExpression
 }
 
 func NewParserResult(filePath string) ParserResult {
@@ -27,6 +28,7 @@ func NewParserResult(filePath string) ParserResult {
 		TypeDeclarations:      make(map[string]TypeDeclarationResult),
 		EnumDeclarations:      make(map[string]EnumDeclarationResult),
 		VariableDeclarations:  []VariableDeclaration{},
+		CallExpressions:       []CallExpression{},
 	}
 }
 
@@ -54,6 +56,10 @@ func (pr *ParserResult) addVariableDeclaration(vd *VariableDeclaration) {
 	pr.VariableDeclarations = append(pr.VariableDeclarations, *vd)
 }
 
+func (pr *ParserResult) addCallExpression(ce *CallExpression) {
+	pr.CallExpressions = append(pr.CallExpressions, *ce)
+}
+
 func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
@@ -62,59 +68,65 @@ func (pr *ParserResult) GetResult() ParserResult {
 		TypeDeclarations:      pr.TypeDeclarations,
 		EnumDeclarations:      pr.EnumDeclarations,
 		VariableDeclarations:  pr.VariableDeclarations,
+		CallExpressions:       pr.CallExpressions,
 	}
 }
 
 func (pr *ParserResult) Traverse() {
 	sourceCode, err := utils.ReadFileContent(pr.filePath)
 	if err != nil {
-		fmt.Printf("读取文件失败: %s\n", pr.filePath)
+		fmt.Printf("Failed to read file: %s\n", pr.filePath)
+		return
 	}
 
 	sourceFile := utils.ParseTypeScriptFile(pr.filePath, sourceCode)
 
-	for _, node := range sourceFile.Statements.Nodes {
-		// 解析 import
-		if node.Kind == ast.KindImportDeclaration {
+	var walk func(node *ast.Node)
+	walk = func(node *ast.Node) {
+		if node == nil {
+			return
+		}
+
+		switch node.Kind {
+		case ast.KindImportDeclaration:
 			idr := NewImportDeclarationResult()
 			idr.analyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
 			pr.AddImportDeclaration(idr)
-		}
+			// Stop recursion for imports
+			return
 
-		// 解析 export
-		// if node.Kind == ast.KindExportAssignment || node.Kind == ast.KindExportDeclaration || node.Kind == ast.KindNamedExports || node.Kind == ast.KindNamespaceExport || node.Kind == ast.KindExportSpecifier {
-		// 	fmt.Print("export...")
-		// 	edr := NewExportDeclarationResult()
-		// 	edr.analyzeExportDeclaration(node.AsExportDeclaration(), sourceCode)
-		// 	pr.AddExportDeclaration(edr)
-		// }
-
-		// 解析 interface
-		if node.Kind == ast.KindInterfaceDeclaration {
-			inter := NewInterfaceDeclarationResult(node.AsNode(), sourceCode)
+		case ast.KindInterfaceDeclaration:
+			inter := NewInterfaceDeclarationResult(node, sourceCode)
 			inter.analyzeInterfaces(node.AsInterfaceDeclaration())
 			pr.AddInterfaceDeclaration(inter)
-		}
 
-		// 解析 type
-		if node.Kind == ast.KindTypeAliasDeclaration {
-			tr := NewTypeDeclarationResult(node.AsNode(), sourceCode)
+		case ast.KindTypeAliasDeclaration:
+			tr := NewTypeDeclarationResult(node, sourceCode)
 			tr.analyzeTypeDecl(node.AsTypeAliasDeclaration())
 			pr.addTypeDeclaration(tr)
-		}
 
-		// 解析 enum
-		if node.Kind == ast.KindEnumDeclaration {
+		case ast.KindEnumDeclaration:
 			er := NewEnumDeclarationResult(node.AsEnumDeclaration(), sourceCode)
 			pr.addEnumDeclaration(er)
-		}
 
-		// 解析变量声明
-		if node.Kind == ast.KindVariableStatement {
+		case ast.KindVariableStatement:
 			vd := NewVariableDeclaration(node.AsVariableStatement(), sourceCode)
 			vd.analyzeVariableDeclaration(node.AsVariableStatement(), sourceCode, sourceFile)
 			pr.addVariableDeclaration(vd)
+
+		case ast.KindCallExpression:
+			callExpr := node.AsCallExpression()
+			ce := NewCallExpression(callExpr, sourceCode)
+			ce.analyzeCallExpression(callExpr, sourceCode)
+			pr.addCallExpression(ce)
 		}
+
+		// Correctly recurse using the library's ForEachChild method
+		node.ForEachChild(func(child *ast.Node) bool {
+			walk(child)
+			return false // continue traversal
+		})
 	}
 
+	walk(sourceFile.AsNode())
 }
