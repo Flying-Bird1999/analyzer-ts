@@ -20,6 +20,18 @@ type ParserResult struct {
 	CallExpressions       []CallExpression
 }
 
+// NodePosition 用于记录代码中的位置信息
+type NodePosition struct {
+	Line   int `json:"line"`   // 行号
+	Column int `json:"column"` // 列号
+}
+
+// SourceLocation 源码位置
+type SourceLocation struct {
+	Start NodePosition `json:"start"` // 节点起始位置
+	End   NodePosition `json:"end"`   // 节点结束位置
+}
+
 func NewParserResult(filePath string) ParserResult {
 	return ParserResult{
 		filePath:              filePath,

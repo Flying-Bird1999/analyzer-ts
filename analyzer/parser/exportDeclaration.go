@@ -23,35 +23,33 @@ type ExportModule struct {
 
 // ExportDeclarationResult 导出声明结果
 type ExportDeclarationResult struct {
-	ExportModules []ExportModule `json:"exportModules"` // 导出的模块内容
-	Raw           string         `json:"raw"`           // 源码
-	Source        string         `json:"source"`        // 源文件路径  case: export { a } from "../index.ts"
-	Type          string         `json:"type"`          // 类型, 预留字段，代表导出的类型，例如：变量/函数/类型等
+	ExportModules  []ExportModule `json:"exportModules"` // 导出的模块内容
+	Raw            string         `json:"raw"`           // 源码
+	Source         string         `json:"source"`        // 源文件路径  case: export { a } from "../index.ts"
+	Type           string         `json:"type"`          // 类型, 预留字段，代表导出的类型，例如：变量/函数/类型等
+	SourceLocation SourceLocation `json:"sourceLocation"`
 }
 
-func NewExportDeclarationResult() *ExportDeclarationResult {
+func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationResult {
+	pos, end := node.Pos(), node.End()
 	return &ExportDeclarationResult{
 		ExportModules: make([]ExportModule, 0),
 		Raw:           "",
 		Type:          "",
+		SourceLocation: SourceLocation{
+			Start: NodePosition{Line: pos, Column: 0},
+			End:   NodePosition{Line: end, Column: 0},
+		},
 	}
 }
 
 func (edr *ExportDeclarationResult) analyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) {
-	initExportModule := ExportDeclarationResult{
-		ExportModules: make([]ExportModule, 0),
-		Raw:           "",
-		Type:          "",
-	}
-
 	// ✅ 解析 import 的源代码
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	initExportModule.Raw = raw
+	edr.Raw = raw
 
 	// 解析export的模块内容
-	//
+	// TODO: Implement the logic to analyze the export declaration details
 
-	edr.ExportModules = initExportModule.ExportModules
-	edr.Raw = initExportModule.Raw
 	edr.Type = ""
 }

@@ -86,9 +86,10 @@ type ImportModule struct {
 
 // ImportDeclarationResult 导入声明结果
 type ImportDeclarationResult struct {
-	ImportModules []ImportModule `json:"importModules"` // 导入的模块内容
-	Raw           string         `json:"raw"`           // 源码
-	Source        string         `json:"source"`        // 路径
+	ImportModules  []ImportModule `json:"importModules"` // 导入的模块内容
+	Raw            string         `json:"raw"`           // 源码
+	Source         string         `json:"source"`        // 路径
+	SourceLocation SourceLocation `json:"sourceLocation"`
 }
 
 func NewImportDeclarationResult() *ImportDeclarationResult {
@@ -100,19 +101,20 @@ func NewImportDeclarationResult() *ImportDeclarationResult {
 }
 
 func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
-	initImportModule := ImportDeclarationResult{
-		ImportModules: make([]ImportModule, 0),
-		Raw:           "",
-		Source:        "",
+	// Set source location
+	pos, end := node.Pos(), node.End()
+	idr.SourceLocation = SourceLocation{
+		Start: NodePosition{Line: pos, Column: 0},
+		End:   NodePosition{Line: end, Column: 0},
 	}
 
 	// ✅ 解析 import 的源代码
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	initImportModule.Raw = raw
+	idr.Raw = raw
 
 	// ✅ 解析 import 的模块路径
 	moduleSpecifier := node.ModuleSpecifier
-	initImportModule.Source = moduleSpecifier.Text()
+	idr.Source = moduleSpecifier.Text()
 
 	if node.ImportClause != nil {
 		// ✅ 解析 import 的模块内容
@@ -121,7 +123,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 		// 默认导入: import Bird from './type2';
 		if ast.IsDefaultImport(node.AsNode()) {
 			Name := importClause.Name().Text()
-			initImportModule.ImportModules = append(initImportModule.ImportModules, ImportModule{
+			idr.ImportModules = append(idr.ImportModules, ImportModule{
 				ImportModule: "default",
 				Type:         "default",
 				Identifier:   Name,
@@ -132,7 +134,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 		namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
 		if namespaceNode != nil {
 			Name := namespaceNode.Name().Text()
-			initImportModule.ImportModules = append(initImportModule.ImportModules, ImportModule{
+			idr.ImportModules = append(idr.ImportModules, ImportModule{
 				ImportModule: Name,
 				Type:         "namespace",
 				Identifier:   Name,
@@ -151,7 +153,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 					// import { School as NewSchool } from './school';
 					Name := importSpecifier.PropertyName.Text()
 					Alias := importSpecifier.Name().Text()
-					initImportModule.ImportModules = append(initImportModule.ImportModules, ImportModule{
+					idr.ImportModules = append(idr.ImportModules, ImportModule{
 						ImportModule: Name,
 						Type:         "named",
 						Identifier:   Alias,
@@ -161,7 +163,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 					// import { School, School2 } from './school';
 					// import type { CurrentRes } from './type';
 					Name := importSpecifier.Name().Text()
-					initImportModule.ImportModules = append(initImportModule.ImportModules, ImportModule{
+					idr.ImportModules = append(idr.ImportModules, ImportModule{
 						ImportModule: Name,
 						Type:         "named",
 						Identifier:   Name,
@@ -171,7 +173,7 @@ func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDec
 		}
 	}
 
-	idr.ImportModules = initImportModule.ImportModules
-	idr.Raw = initImportModule.Raw
-	idr.Source = initImportModule.Source
+	idr.ImportModules = idr.ImportModules
+	idr.Raw = idr.Raw
+	idr.Source = idr.Source
 }

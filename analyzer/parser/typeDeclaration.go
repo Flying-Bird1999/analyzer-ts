@@ -15,18 +15,24 @@ import (
 
 // TypeDeclarationResult 类型声明结果
 type TypeDeclarationResult struct {
-	Identifier string                   `json:"identifier"` // 名称
-	Raw        string                   `json:"raw"`        // 源码
-	Reference  map[string]TypeReference `json:"reference"`  // 依赖的其他类型
+	Identifier     string                   `json:"identifier"` // 名称
+	Raw            string                   `json:"raw"`        // 源码
+	Reference      map[string]TypeReference `json:"reference"`  // 依赖的其他类型
+	SourceLocation SourceLocation           `json:"sourceLocation"`
 }
 
 func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclarationResult {
-	raw := utils.GetNodeText(node.AsNode(), sourceCode)
+	raw := utils.GetNodeText(node, sourceCode)
+	pos, end := node.Pos(), node.End()
 
 	return &TypeDeclarationResult{
 		Identifier: "",
 		Raw:        raw,
 		Reference:  make(map[string]TypeReference),
+		SourceLocation: SourceLocation{
+			Start: NodePosition{Line: pos, Column: 0},
+			End:   NodePosition{Line: end, Column: 0},
+		},
 	}
 }
 

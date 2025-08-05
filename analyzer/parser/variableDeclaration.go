@@ -23,18 +23,6 @@ type VariableDeclarator struct {
 	InitValue  string `json:"initValue,omitempty"`  // 初始值
 }
 
-// NodePosition 用于记录代码中的位置信息
-type NodePosition struct {
-	Line   int `json:"line"`   // 行号
-	Column int `json:"column"` // 列号
-}
-
-// SourceLocation 源码位置
-type SourceLocation struct {
-	Start NodePosition `json:"start"` // 节点起始位置
-	End   NodePosition `json:"end"`   // 节点结束位置
-}
-
 // VariableDeclaration 代表一个完整的变量声明语句
 type VariableDeclaration struct {
 	Exported       bool                  `json:"exported"`         // 是否导出
@@ -100,11 +88,11 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 			identifier := nameNode.AsIdentifier().Text
 			var varType string
 			if variableDecl.Type != nil {
-				varType = utils.GetNodeText(variableDecl.Type.AsNode(), sourceCode)
+				varType = utils.GetNodeText(variableDecl.Type, sourceCode)
 			}
 			var initValue string
 			if initializerNode != nil {
-				initValue = utils.GetNodeText(initializerNode.AsNode(), sourceCode)
+				initValue = utils.GetNodeText(initializerNode, sourceCode)
 			}
 			declarator := &VariableDeclarator{
 				Identifier: identifier,
@@ -118,10 +106,10 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 		// 数组解构
 		if ast.IsArrayBindingPattern(nameNode) {
 			if initializerNode != nil && initializerNode.Kind != ast.KindArrayLiteralExpression {
-				vd.Source = utils.GetNodeText(initializerNode.AsNode(), sourceCode)
+				vd.Source = utils.GetNodeText(initializerNode, sourceCode)
 			}
 			arrayBinding := nameNode.AsBindingPattern()
-			// Case 1: Initializer is an ArrayLiteralExpression, e.g. [a, b] = [1, 2]
+			// 情况1: 初始化器是数组字面量表达式, 例如 [a, b] = [1, 2]
 			if initializerNode != nil && initializerNode.Kind == ast.KindArrayLiteralExpression {
 				arrayLiteral := initializerNode.AsArrayLiteralExpression()
 				for i, element := range arrayBinding.Elements.Nodes {
@@ -132,17 +120,18 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 					identifier := bindingElement.Name().AsIdentifier().Text
 					var initValue string
 					if i < len(arrayLiteral.Elements.Nodes) && arrayLiteral.Elements.Nodes[i] != nil {
-						// Get value from RHS array literal
-						initValue = utils.GetNodeText(arrayLiteral.Elements.Nodes[i].AsNode(), sourceCode)
+						// 从右侧数组字面量获取值
+						initValue = utils.GetNodeText(arrayLiteral.Elements.Nodes[i], sourceCode)
 					} else if bindingElement.Initializer != nil {
-						// Get default value
-						initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						// 获取默认值
+						initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 					}
 					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
 					vd.Declarators = append(vd.Declarators, declarator)
 				}
-			} else { // Case 2: Initializer is not an array literal, e.g. [a, b] = someArray
-				// Fallback to original behavior: only capture default values
+			} else {
+				// 情况2: 初始化器不是数组字面量, 例如 [a, b] = someArray
+				// 回退到原始行为：只捕获默认值
 				for _, element := range arrayBinding.Elements.Nodes {
 					if element.Kind != ast.KindBindingElement {
 						continue
@@ -151,7 +140,7 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 					identifier := bindingElement.Name().AsIdentifier().Text
 					var initValue string
 					if bindingElement.Initializer != nil {
-						initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+						initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 					}
 					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
 					vd.Declarators = append(vd.Declarators, declarator)
@@ -163,10 +152,10 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 		// 对象解构
 		if ast.IsObjectBindingPattern(nameNode) {
 			if initializerNode != nil && initializerNode.Kind != ast.KindObjectLiteralExpression {
-				vd.Source = utils.GetNodeText(initializerNode.AsNode(), sourceCode)
+				vd.Source = utils.GetNodeText(initializerNode, sourceCode)
 			}
 			objectBinding := nameNode.AsBindingPattern()
-			// Case 1: Initializer is an ObjectLiteralExpression, e.g. {a, b} = {a: 1, b: 2}
+			// 情况1: 初始化器是对象字面量表达式, 例如 {a, b} = {a: 1, b: 2}
 			if initializerNode != nil && initializerNode.Kind == ast.KindObjectLiteralExpression {
 				objectLiteral := initializerNode.AsObjectLiteralExpression()
 				propertyValues := make(map[string]string)
@@ -180,12 +169,12 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 						} else {
 							propName = utils.GetNodeText(name, sourceCode)
 						}
-						propValue := utils.GetNodeText(propAssignment.Initializer.AsNode(), sourceCode)
+						propValue := utils.GetNodeText(propAssignment.Initializer, sourceCode)
 						propertyValues[propName] = propValue
 					} else if prop.Kind == ast.KindShorthandPropertyAssignment {
 						shorthand := prop.AsShorthandPropertyAssignment()
 						propName := shorthand.Name().Text()
-						// The value is the name itself (as an identifier)
+						// 值就是名称本身（作为标识符）
 						propertyValues[propName] = propName
 					}
 				}
@@ -197,17 +186,17 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 					bindingElement := element.AsBindingElement()
 					nameNode := bindingElement.Name()
 
-					// Handle nested destructuring by checking if the name is an identifier or another pattern
+					// 通过检查名称是标识符还是其他模式来处理嵌套解构
 					if ast.IsIdentifier(nameNode) {
 						identifier := nameNode.AsIdentifier().Text
 						var lookupName string
 						if bindingElement.PropertyName != nil {
-							// Handle aliasing e.g. { name: myName }
+							// 处理别名, 例如 { name: myName }
 							propNameNode := bindingElement.PropertyName
 							if ast.IsIdentifier(propNameNode) {
 								lookupName = propNameNode.AsIdentifier().Text
 							} else {
-								lookupName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+								lookupName = utils.GetNodeText(propNameNode, sourceCode)
 							}
 						} else {
 							lookupName = identifier
@@ -215,40 +204,40 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 
 						initValue, ok := propertyValues[lookupName]
 						if !ok && bindingElement.Initializer != nil {
-							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 						}
 						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
 					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-						// This is a nested pattern.
-						// We will treat the entire nested pattern as a single "identifier" for now.
-						// A more advanced implementation would recursively parse this.
-						identifier := utils.GetNodeText(nameNode.AsNode(), sourceCode)
+						// 这是一个嵌套模式
+						// 我们暂时将整个嵌套模式视为单个“标识符”
+						// 更高级的实现会递归地解析它
+						identifier := utils.GetNodeText(nameNode, sourceCode)
 						var lookupName string
 						if bindingElement.PropertyName != nil {
 							propNameNode := bindingElement.PropertyName
 							if ast.IsIdentifier(propNameNode) {
 								lookupName = propNameNode.AsIdentifier().Text
 							} else {
-								lookupName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+								lookupName = utils.GetNodeText(propNameNode, sourceCode)
 							}
 						} else {
-							// This case should be syntactically invalid in JS for nested patterns, but we handle it defensively.
+							// 对于嵌套模式，这种情况在JS中应该是语法无效的，但我们进行防御性处理
 							lookupName = identifier
 						}
 
 						initValue, ok := propertyValues[lookupName]
 						if !ok && bindingElement.Initializer != nil {
-							// If there's a default value for the whole nested pattern
-							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+							// 如果整个嵌套模式有默认值
+							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 						}
 						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
 					}
 				}
 			} else {
-				// Case 2: Initializer is not an object literal, e.g. {a, b} = someObject
-				// Fallback to original behavior: only capture default values
+				// 情况2: 初始化器不是对象字面量, 例如 {a, b} = someObject
+				// 回退到原始行为：只捕获默认值
 				for _, element := range objectBinding.Elements.Nodes {
 					if element.Kind != ast.KindBindingElement {
 						continue
@@ -256,17 +245,17 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 					bindingElement := element.AsBindingElement()
 					nameNode := bindingElement.Name()
 
-					// Handle nested destructuring by checking if the name is an identifier or another pattern
+					// 通过检查名称是标识符还是其他模式来处理嵌套解构
 					if ast.IsIdentifier(nameNode) {
 						identifier := nameNode.AsIdentifier().Text
 						var propName string
 						if bindingElement.PropertyName != nil {
-							// Handle aliasing e.g. { name: myName }
+							// 处理别名, 例如 { name: myName }
 							propNameNode := bindingElement.PropertyName
 							if ast.IsIdentifier(propNameNode) {
 								propName = propNameNode.AsIdentifier().Text
 							} else {
-								propName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+								propName = utils.GetNodeText(propNameNode, sourceCode)
 							}
 						} else {
 							propName = identifier
@@ -274,30 +263,30 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 
 						var initValue string
 						if bindingElement.Initializer != nil {
-							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 						}
 						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
 					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-						// This is a nested pattern.
-						identifier := utils.GetNodeText(nameNode.AsNode(), sourceCode)
+						// 这是一个嵌套模式
+						identifier := utils.GetNodeText(nameNode, sourceCode)
 						var propName string
 						if bindingElement.PropertyName != nil {
 							propNameNode := bindingElement.PropertyName
 							if ast.IsIdentifier(propNameNode) {
 								propName = propNameNode.AsIdentifier().Text
 							} else {
-								propName = utils.GetNodeText(propNameNode.AsNode(), sourceCode)
+								propName = utils.GetNodeText(propNameNode, sourceCode)
 							}
 						} else {
-							// This case should be syntactically invalid in JS for nested patterns, but we handle it defensively.
+							// 对于嵌套模式，这种情况在JS中应该是语法无效的，但我们进行防御性处理
 							propName = identifier
 						}
 
 						var initValue string
 						if bindingElement.Initializer != nil {
-							// If there's a default value for the whole nested pattern
-							initValue = utils.GetNodeText(bindingElement.Initializer.AsNode(), sourceCode)
+							// 如果整个嵌套模式有默认值
+							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
 						}
 						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
 						vd.Declarators = append(vd.Declarators, declarator)
