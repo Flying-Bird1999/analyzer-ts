@@ -104,11 +104,18 @@
       "attrs": [
         {
           "name": "type",
-          "value": "primary"
+          "value": "primary",
+          "isSpread": false
         },
         {
           "name": "onClick",
-          "value": "onClick"
+          "value": "onClick",
+          "isSpread": false
+        },
+        {
+          "name": "...props",
+          "value": "",
+          "isSpread": true
         }
       ],
       "raw": "\u003cButton type=\"primary\" onClick={onClick} {...props}\u003e\n        123\n      \u003c/Button\u003e",
@@ -130,7 +137,8 @@
       "attrs": [
         {
           "name": "type",
-          "value": "bb"
+          "value": "bb",
+          "isSpread": false
         }
       ],
       "raw": "\u003cNewSelect.SingleSelect type={'bb'} /\u003e",
@@ -152,7 +160,8 @@
       "attrs": [
         {
           "name": "type",
-          "value": "bb"
+          "value": "bb",
+          "isSpread": false
         }
       ],
       "raw": "\u003cNewSelect.SingleSelect type={'bb'}\u003e\u003c/NewSelect.SingleSelect\u003e",
