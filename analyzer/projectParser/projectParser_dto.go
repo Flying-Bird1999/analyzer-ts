@@ -4,10 +4,13 @@ import "main/analyzer/parser"
 
 // JsFileParserResult JS 文件解析结果
 type JsFileParserResult struct {
-	ImportDeclarations    []ImportDeclarationResult                      `json:"importDeclarations"`    // 导入声明
+	ImportDeclarations    []ImportDeclarationResult                    `json:"importDeclarations"`    // 导入声明
 	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult `json:"interfaceDeclarations"` // 接口声明
 	TypeDeclarations      map[string]parser.TypeDeclarationResult      `json:"typeDeclarations"`      // 类型声明
 	EnumDeclarations      map[string]parser.EnumDeclarationResult      `json:"enumDeclarations"`      // 枚举声明
+	VariableDeclarations  []parser.VariableDeclaration                 `json:"variableDeclarations"`  // 变量声明
+	CallExpressions       []parser.CallExpression                      `json:"callExpressions"`       // 函数调用
+	JsxElements           []parser.JSXElement                          `json:"jsxElements"`           // JSX 元素
 }
 
 // PackageJsonFileParserResult package.json 文件解析结果

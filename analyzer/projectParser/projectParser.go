@@ -90,6 +90,9 @@ func (ar *ProjectParserResult) ProjectParser() {
 				InterfaceDeclarations: result.InterfaceDeclarations,
 				TypeDeclarations:      result.TypeDeclarations,
 				EnumDeclarations:      result.EnumDeclarations,
+				VariableDeclarations:  result.VariableDeclarations,
+				CallExpressions:       result.CallExpressions,
+				JsxElements:           result.JsxElements,
 			}
 		}
 
