@@ -31,14 +31,14 @@
           "initValue": " 1"
         }
       ],
-      "raw": "\n    const age = 1",
+      "raw": "\n    const age = 1;",
       "sourceLocation": {
         "start": {
-          "line": 177,
+          "line": 186,
           "column": 0
         },
         "end": {
-          "line": 195,
+          "line": 205,
           "column": 0
         }
       }
@@ -52,11 +52,11 @@
       "raw": "\n    log(age)",
       "sourceLocation": {
         "start": {
-          "line": 195,
+          "line": 205,
           "column": 0
         },
         "end": {
-          "line": 208,
+          "line": 218,
           "column": 0
         }
       }
@@ -69,11 +69,11 @@
       "raw": "\n    console.log(1)",
       "sourceLocation": {
         "start": {
-          "line": 209,
+          "line": 219,
           "column": 0
         },
         "end": {
-          "line": 228,
+          "line": 238,
           "column": 0
         }
       }
@@ -86,11 +86,83 @@
       "raw": "\n    message.success('success')",
       "sourceLocation": {
         "start": {
-          "line": 229,
+          "line": 239,
           "column": 0
         },
         "end": {
-          "line": 260,
+          "line": 270,
+          "column": 0
+        }
+      }
+    }
+  ],
+  "jsxNodes": [
+    {
+      "type": "JSXIdentifier",
+      "moduleIdentifier": "Button",
+      "propertyIdentifier": "",
+      "attrs": [
+        {
+          "name": "type",
+          "value": "primary"
+        },
+        {
+          "name": "onClick",
+          "value": "onClick"
+        }
+      ],
+      "raw": "\u003cButton type=\"primary\" onClick={onClick} {...props}\u003e\n        123\n      \u003c/Button\u003e",
+      "sourceLocation": {
+        "start": {
+          "line": 301,
+          "column": 0
+        },
+        "end": {
+          "line": 381,
+          "column": 0
+        }
+      }
+    },
+    {
+      "type": "JSXMemberExpression",
+      "moduleIdentifier": "NewSelect",
+      "propertyIdentifier": "SingleSelect",
+      "attrs": [
+        {
+          "name": "type",
+          "value": "bb"
+        }
+      ],
+      "raw": "\u003cNewSelect.SingleSelect type={'bb'} /\u003e",
+      "sourceLocation": {
+        "start": {
+          "line": 388,
+          "column": 0
+        },
+        "end": {
+          "line": 426,
+          "column": 0
+        }
+      }
+    },
+    {
+      "type": "JSXMemberExpression",
+      "moduleIdentifier": "NewSelect",
+      "propertyIdentifier": "SingleSelect",
+      "attrs": [
+        {
+          "name": "type",
+          "value": "bb"
+        }
+      ],
+      "raw": "\u003cNewSelect.SingleSelect type={'bb'}\u003e\u003c/NewSelect.SingleSelect\u003e",
+      "sourceLocation": {
+        "start": {
+          "line": 433,
+          "column": 0
+        },
+        "end": {
+          "line": 494,
           "column": 0
         }
       }

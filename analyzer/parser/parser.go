@@ -18,6 +18,7 @@ type ParserResult struct {
 	EnumDeclarations      map[string]EnumDeclarationResult
 	VariableDeclarations  []VariableDeclaration
 	CallExpressions       []CallExpression
+	JsxNodes              []JSXNode
 }
 
 // NodePosition 用于记录代码中的位置信息
@@ -41,6 +42,7 @@ func NewParserResult(filePath string) ParserResult {
 		EnumDeclarations:      make(map[string]EnumDeclarationResult),
 		VariableDeclarations:  []VariableDeclaration{},
 		CallExpressions:       []CallExpression{},
+		JsxNodes:              []JSXNode{},
 	}
 }
 
@@ -72,6 +74,10 @@ func (pr *ParserResult) addCallExpression(ce *CallExpression) {
 	pr.CallExpressions = append(pr.CallExpressions, *ce)
 }
 
+func (pr *ParserResult) addJsxNode(jsxNode *JSXNode) {
+	pr.JsxNodes = append(pr.JsxNodes, *jsxNode)
+}
+
 func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
@@ -81,6 +87,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 		EnumDeclarations:      pr.EnumDeclarations,
 		VariableDeclarations:  pr.VariableDeclarations,
 		CallExpressions:       pr.CallExpressions,
+		JsxNodes:              pr.JsxNodes,
 	}
 }
 
@@ -131,6 +138,10 @@ func (pr *ParserResult) Traverse() {
 			ce := NewCallExpression(callExpr, sourceCode)
 			ce.analyzeCallExpression(callExpr, sourceCode)
 			pr.addCallExpression(ce)
+
+		case ast.KindJsxElement, ast.KindJsxSelfClosingElement:
+			jsxNode := NewJSXNode(*node, sourceCode)
+			pr.addJsxNode(jsxNode)
 		}
 
 		// Correctly recurse using the library's ForEachChild method

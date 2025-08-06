@@ -29,9 +29,11 @@ func Parser_run() {
 	output := struct {
 		VariableDeclarations []VariableDeclaration `json:"variableDeclarations"`
 		CallExpressions      []CallExpression      `json:"callExpressions"`
+		JsxNodes             []JSXNode             `json:"jsxNodes"`
 	}{
 		VariableDeclarations: parserResult.VariableDeclarations,
 		CallExpressions:      parserResult.CallExpressions,
+		JsxNodes:             parserResult.JsxNodes,
 	}
 
 	// 将整个 output 结构体序列化为 JSON
