@@ -1,3 +1,5 @@
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// 本文件（interfaceDeclaration.go）专门负责处理和解析接口（Interface）声明及其复杂的类型依赖关系。
 package parser
 
 import (
@@ -8,25 +10,23 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// 解析 interface 声明，递归去查找interface里边的类型
-// - 如果有引用外部类型的就找出来
-// - 如果有应用到其他的ts语法的也要找出来，比如：extends、omit等
-
-// TypeReference 类型引用
+// TypeReference 代表一个类型引用。
+// 它记录了在接口中引用的其他类型（非基础类型）的信息。
 type TypeReference struct {
-	Identifier string   `json:"identifier"` // 名称,唯一标识
-	Location   []string `json:"location"`   // 保留设计，类型的位置，用.隔开引用的位置，例如：School.student.name
-	IsExtend   bool     `json:"isExtend"`   // 是否继承，true表示继承，false表示member中引用的
+	Identifier string   `json:"identifier"` // 被引用的类型名称，例如 `User`。
+	Location   []string `json:"location"`   // 类型被引用的具体位置路径，例如 `School.student.name`。
+	IsExtend   bool     `json:"isExtend"`   // 标记此引用是否来自 `extends` 子句。
 }
 
-// InterfaceDeclarationResult 接口声明结果
+// InterfaceDeclarationResult 存储一个完整的接口声明的解析结果。
 type InterfaceDeclarationResult struct {
-	Identifier     string                   `json:"identifier"` // 名称,唯一标识
-	Raw            string                   `json:"raw"`        // 源码
-	Reference      map[string]TypeReference `json:"reference"`  // 依赖的其他类型
-	SourceLocation SourceLocation           `json:"sourceLocation"`
+	Identifier     string                   `json:"identifier"` // 接口的名称。
+	Raw            string                   `json:"raw"`        // 节点在源码中的原始文本。
+	Reference      map[string]TypeReference `json:"reference"`  // 接口所依赖的其他类型的映射，以类型名作为 key。
+	SourceLocation SourceLocation           `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
+// NewInterfaceDeclarationResult 基于 AST 节点创建一个新的 InterfaceDeclarationResult 实例。
 func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *InterfaceDeclarationResult {
 	raw := utils.GetNodeText(node, sourceCode)
 	pos, end := node.Pos(), node.End()
@@ -42,22 +42,22 @@ func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *Interface
 	}
 }
 
-// 分析接口的主要结构，包括：
-// 1. 接口名称。
-// 2. 继承关系（通过 analyzeHeritageClause）。
-// 3. 接口成员（通过 analyzeMember）。
+// analyzeInterfaces 是分析接口声明的入口函数。
+// 它负责提取接口名称，并分别调用函数处理继承关系和成员属性。
 func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
 	interfaceName := interfaceDecl.Name().AsIdentifier().Text
 	inter.Identifier = interfaceName
 
-	// 分析接口的继承关系
+	// 分析接口的 `extends` 继承关系。
 	inter.analyzeHeritageClause(interfaceDecl, interfaceName)
 
-	// 分析接口的成员
+	// 遍历并分析接口的所有成员（属性、方法等）。
 	if interfaceDecl.Members != nil {
 		for _, member := range interfaceDecl.Members.Nodes {
 			memberTypeName, memberLocation := AnalyzeMember(member, interfaceName)
+			// 如果成员分析返回了有效的类型名和位置，则将其添加到引用中。
 			if memberTypeName != "" && memberLocation != "" {
+				// 一个成员可能依赖多个类型（例如联合类型 A | B），因此需要分割处理。
 				for i, typeName := range strings.Split(memberTypeName, ",") {
 					inter.addTypeReference(typeName, strings.Split(memberLocation, ",")[i], false)
 				}
@@ -66,30 +66,27 @@ func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.In
 	}
 }
 
-// 分析接口的继承子句（extends）。
-// 1. 找出接口继承的其他接口。
-// 2. 提取继承的接口名称及其类型参数。
+// analyzeHeritageClause 分析接口的 `extends` 子句，提取所有被继承的类型。
 func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *ast.InterfaceDeclaration, interfaceName string) {
-	// 获取 extends 子句元素
 	extendsElements := ast.GetExtendsHeritageClauseElements(interfaceDecl.AsNode())
 
-	// 处理每个 extends 元素
 	for _, node := range extendsElements {
 		expression := node.Expression()
+		// Case 1: 简单标识符继承, e.g., `extends MyInterface`
 		if ast.IsIdentifier(expression) {
 			name := expression.AsIdentifier().Text
-			// 如果不是工具类型，直接添加到依赖列表
+			// 忽略 TypeScript 的内置工具类型（如 Omit, Pick），但仍会分析其泛型参数。
 			if !(utils.IsUtilityType(name)) {
 				inter.addTypeReference(name, "", true)
 			}
+		// Case 2: 带命名空间的继承, e.g., `extends MyNamespace.MyInterface`
 		} else if ast.IsPropertyAccessExpression(expression) {
-			// 属性访问表达式，如 "module.Interface"
 			name := entityNameToString(expression)
 			inter.addTypeReference(name, "", true)
 		}
 
-		// 处理类型参数，无论是否是工具类型都提取参数中的依赖
-		if node.TypeArguments != nil {
+		// 分析 `extends` 中的泛型参数, e.g., `extends MyGeneric<TypeA, TypeB>`
+			if node.TypeArguments != nil {
 			for _, typeArg := range node.TypeArguments() {
 				name, _ := AnalyzeType(typeArg, "")
 				inter.addTypeReference(name, "", true)
@@ -98,24 +95,24 @@ func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *as
 	}
 }
 
-// 填充数据
+// addTypeReference 是一个辅助函数，用于向结果的 Reference 映射中添加或更新类型引用。
 func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, location string, isExtend bool) {
-	// 排除基本类型和已知的内置类型
+	// 忽略基础类型（string, number, boolean 等）和已知的内置类型。
 	if utils.IsBasicType(typeName) {
 		return
 	}
 
-	// 如果依赖类型 和 自身是同一个，则不用加上了
+	// 忽略对接口自身的引用。
 	if typeName == inter.Identifier {
 		return
 	}
 
+	// 如果引用已存在，则追加新的位置信息。
 	if ref, exists := inter.Reference[typeName]; exists {
-		// 如果类型引用已存在，追加新的位置
 		ref.Location = append(ref.Location, location)
 		inter.Reference[typeName] = ref
 	} else {
-		// 如果类型引用不存在，创建新的引用
+		// 否则，创建一个新的类型引用条目。
 		inter.Reference[typeName] = TypeReference{
 			Identifier: typeName,
 			Location:   []string{location},
@@ -124,27 +121,26 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 	}
 }
 
-// 分析接口的成员属性类型
+// AnalyzeMember 分析接口中的单个成员（通常是属性签名），并返回其引用的类型名称和位置。
 func AnalyzeMember(member *ast.Node, interfaceName string) (string, string) {
-	// 大多数情况下，成员是属性签名
 	if ast.IsPropertySignatureDeclaration(member) {
 		propSig := member.AsPropertySignatureDeclaration()
-		// 提取属性名称
 		var propName string
-		if propSig.Name().Kind == ast.KindIdentifier {
-			// 常规：interface Person { name: string; };
+		// 确定属性名称，处理常规标识符、字符串/数字字面量和计算属性名。
+		switch propSig.Name().Kind {
+		case ast.KindIdentifier: // e.g., `name: string;`
 			propName = propSig.Name().Text()
-		} else if propSig.Name().Kind == ast.KindStringLiteral || propSig.Name().Kind == ast.KindNumericLiteral {
-			// 字符串/数字 字面量：interface Person { 0: string;  1: number; };
+		case ast.KindStringLiteral, ast.KindNumericLiteral: // e.g., `'0': string;`
 			propName = propSig.Name().Text()
-		} else if propSig.Name().Kind == ast.KindComputedPropertyName {
-			// 计算属性名 interface Person { ["sss111"]: string; }
+		case ast.KindComputedPropertyName: // e.g., `[myVar]: string;`
 			expr := propSig.Name().AsComputedPropertyName().Expression
 			if ast.IsStringOrNumericLiteralLike(expr) {
 				propName = expr.Text()
 			}
 		}
+		// 构建属性的访问路径。
 		location := fmt.Sprintf("%s.%s", interfaceName, propName)
+		// 递归分析属性的类型。
 		if propSig.Type != nil {
 			return AnalyzeType(propSig.Type, location)
 		}
@@ -152,9 +148,8 @@ func AnalyzeMember(member *ast.Node, interfaceName string) (string, string) {
 	return "", ""
 }
 
-// 递归分析类型节点。
-// 根据类型节点的种类（如类型引用、数组类型、联合类型、交叉类型等）进行不同的处理。
-// 如果类型是外部引用，则记录下来返回。
+// AnalyzeType 是一个核心的递归函数，用于深度分析类型节点，找出所有非基础类型的引用。
+// 它能够处理各种复杂的 TypeScript 类型，如泛型、数组、联合/交叉类型、元组、内联对象、索引访问和映射类型。
 func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 	if typeNode == nil {
 		return "", ""
@@ -163,54 +158,39 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 	var locations []string
 
 	switch {
-	// 处理类型引用
+	// Case: 类型引用, e.g., `User`, `MyNamespace.User`, `Promise<User>`
 	case ast.IsTypeReferenceNode(typeNode):
 		typeRef := typeNode.AsTypeReferenceNode()
 		if ast.IsIdentifier(typeRef.TypeName) {
 			typeName := typeRef.TypeName.AsIdentifier().Text
-			// 排除基本类型
 			if !utils.IsBasicType(typeName) {
 				typeNames = append(typeNames, typeName)
 				locations = append(locations, location)
 			}
-
-			// 分析类型参数 (泛型场景)
+			// 递归分析泛型参数。
 			if typeRef.TypeArguments != nil {
 				for _, typeArg := range typeRef.TypeArguments.Nodes {
-					argTypeName, argLocation := AnalyzeType(typeArg, location+"<>")
+					argTypeName, argLocation := AnalyzeType(typeArg, location+"<>") // 使用 <> 标记泛型位置
 					if argTypeName != "" {
 						typeNames = append(typeNames, argTypeName)
 						locations = append(locations, argLocation)
 					}
 				}
 			}
-		} else if ast.IsQualifiedName(typeRef.TypeName) {
-			// 处理 namespace.Type
+		} else if ast.IsQualifiedName(typeRef.TypeName) { // e.g., `Namespace.Type`
 			typeNames = append(typeNames, entityNameToString(typeRef.TypeName))
 			locations = append(locations, location)
 		}
-	// 处理数组类型
+	// Case: 数组类型, e.g., `User[]`
 	case typeNode.Kind == ast.KindArrayType:
 		arrayType := typeNode.AsArrayTypeNode()
-		if ast.IsTypeReferenceNode(arrayType.ElementType) {
-			elemTypeRef := arrayType.ElementType.AsTypeReferenceNode()
-			if ast.IsIdentifier(elemTypeRef.TypeName) {
-				typeName := elemTypeRef.TypeName.AsIdentifier().Text
-				if !utils.IsBasicType(typeName) {
-					typeNames = append(typeNames, typeName)
-					locations = append(locations, location)
-				}
-			}
-
-		} else {
-			// 递归处理数组元素类型
-			memberTypeName, memberLocation := AnalyzeType(arrayType.ElementType, location)
-			if memberTypeName != "" {
-				typeNames = append(typeNames, memberTypeName)
-				locations = append(locations, memberLocation)
-			}
+		// 递归分析数组成员的类型。
+		memberTypeName, memberLocation := AnalyzeType(arrayType.ElementType, location)
+		if memberTypeName != "" {
+			typeNames = append(typeNames, memberTypeName)
+			locations = append(locations, memberLocation)
 		}
-	// 处理联合类型
+	// Case: 联合类型, e.g., `string | User | null`
 	case typeNode.Kind == ast.KindUnionType:
 		unionType := typeNode.AsUnionTypeNode()
 		for _, unionMember := range unionType.Types.Nodes {
@@ -220,7 +200,7 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 				locations = append(locations, memberLocation)
 			}
 		}
-	// 处理交叉类型
+	// Case: 交叉类型, e.g., `User & { id: number }`
 	case typeNode.Kind == ast.KindIntersectionType:
 		intersectionType := typeNode.AsIntersectionTypeNode()
 		for _, intersectionMember := range intersectionType.Types.Nodes {
@@ -230,7 +210,7 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 				locations = append(locations, memberLocation)
 			}
 		}
-	// 处理元组类型
+	// Case: 元组类型, e.g., `[string, number, User]`
 	case ast.IsTupleTypeNode(typeNode):
 		tupleType := typeNode.AsTupleTypeNode()
 		for i, elemType := range tupleType.Elements.Nodes {
@@ -240,57 +220,60 @@ func AnalyzeType(typeNode *ast.Node, location string) (string, string) {
 				locations = append(locations, elemLocation)
 			}
 		}
-	// 处理内联类型，持续递归调用 {a: {b: c:number}}
+	// Case: 内联类型/对象字面量类型, e.g., `{ name: string; data: User }`
 	case ast.IsTypeLiteralNode(typeNode):
 		typeLiteral := typeNode.AsTypeLiteralNode()
 		for _, member := range typeLiteral.Members.Nodes {
+			// location 作为父级路径传入，AnalyzeMember 会拼接自己的属性名。
 			memberTypeName, memberLocation := AnalyzeMember(member, location)
 			if memberTypeName != "" {
 				typeNames = append(typeNames, memberTypeName)
 				locations = append(locations, memberLocation)
 			}
 		}
-	// 处理索引访问类型: Translations["name"]
+	// Case: 索引访问类型, e.g., `Translations["name"]`
 	case typeNode.Kind == ast.KindIndexedAccessType:
 		indexedAccessType := typeNode.AsIndexedAccessTypeNode()
+		// 分析被索引的对象类型。
 		elemTypeName, elemLocation := AnalyzeType(indexedAccessType.ObjectType, location)
 		if elemTypeName != "" {
 			typeNames = append(typeNames, elemTypeName)
 			locations = append(locations, elemLocation)
 		}
-	// 处理映射类型: image: [key in ImagesType]: ImagesAttribute | ImagesAttribute2
+	// Case: 映射类型, e.g., `[key in ImagesType]: ImagesAttribute`
 	case typeNode.Kind == ast.KindMappedType:
 		mappedTypeNode := typeNode.AsMappedTypeNode()
 		if mappedTypeNode.TypeParameter != nil {
 			typeParam := mappedTypeNode.TypeParameter.AsTypeParameter()
-			// 类型参数名称 typeParam.Name().AsIdentifier().Text，暂时不提取
-			// 提取约束类型 (in 后面的类型)
+			// 分析 `in` 后面的约束类型。
 			if typeParam.Constraint != nil {
 				elemTypeName, elemLocation := AnalyzeType(typeParam.Constraint, "")
 				typeNames = append(typeNames, elemTypeName)
 				locations = append(locations, elemLocation)
 			}
-			// 提取值类型
-			if typeParam.Type != nil {
+			// 分析映射的值类型。
+			if mappedTypeNode.Type != nil {
 				elemTypeName, elemLocation := AnalyzeType(mappedTypeNode.Type, "")
 				typeNames = append(typeNames, elemTypeName)
 				locations = append(locations, elemLocation)
 			}
 		}
 	}
+	// 将收集到的所有类型和位置用逗号连接成字符串返回。
 	return strings.Join(typeNames, ","), strings.Join(locations, ",")
 }
 
-// typescript-go内部方法，从实体名称节点获取完整的字符串表示
+// entityNameToString 将一个实体名称节点（可能是一个标识符或一个属性访问表达式）转换为一个点分隔的字符串。
+// 例如，`a.b.c` 节点会被转换为字符串 "a.b.c"。
 func entityNameToString(name *ast.Node) string {
 	switch name.Kind {
 	case ast.KindThisKeyword:
 		return "this"
 	case ast.KindIdentifier, ast.KindPrivateIdentifier:
 		return name.Text()
-	case ast.KindQualifiedName:
+	case ast.KindQualifiedName: // e.g., `A.B`
 		return entityNameToString(name.AsQualifiedName().Left) + "." + entityNameToString(name.AsQualifiedName().Right)
-	case ast.KindPropertyAccessExpression:
+	case ast.KindPropertyAccessExpression: // e.g., `a.b`
 		return entityNameToString(name.AsPropertyAccessExpression().Expression) + "." + entityNameToString(name.AsPropertyAccessExpression().Name())
 	}
 	return fmt.Sprintf("UnknownExpression(%s)", name.Kind)

@@ -1,3 +1,5 @@
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// 本文件（importDeclaration.go）专门负责处理和解析导入（Import）声明。
 package parser
 
 import (
@@ -6,92 +8,24 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// 解析导入模块
-// - 默认导入: import Bird from './type2';
-// - 命名空间导入: import * as allTypes from './type';
-// - 命名导入: import { School, School2 } from './school';
-// 					- import type { CurrentRes } from './type';
-//      		- import { School as NewSchool } from './school';
-
-// ==> 解析结果:
-// [
-//   {
-//     "modules": [
-//       {
-//         "module": "default",
-//         "type": "default",
-//         "identifier": "Bird"
-//       }
-//     ],
-//     "raw": "import Bird from './type2';",
-//     "source": "./type2"
-//   },
-//   {
-//     "modules": [
-//       {
-//         "module": "allTypes",
-//         "type": "namespace",
-//         "identifier": "allTypes"
-//       }
-//     ],
-//     "raw": "import * as allTypes from './type';",
-//     "source": "./type"
-//   },
-//   {
-//     "modules": [
-//       {
-//         "module": "School",
-//         "type": "named",
-//         "identifier": "School"
-//       },
-//       {
-//         "module": "School2",
-//         "type": "named",
-//         "identifier": "School2"
-//       }
-//     ],
-//     "raw": "import { School, School2 } from './school';",
-//     "source": "./school"
-//   },
-//   {
-//     "modules": [
-//       {
-//         "module": "CurrentRes",
-//         "type": "named",
-//         "identifier": "CurrentRes"
-//       }
-//     ],
-//     "raw": "import type { CurrentRes } from './type';",
-//     "source": "./type"
-//   },
-//   {
-//     "modules": [
-//       {
-//         "module": "School",
-//         "type": "named",
-//         "identifier": "NewSchool"
-//       }
-//     ],
-//     "raw": "import { School as NewSchool } from './school';",
-//     "source": "./school"
-//   }
-// ]
-
-// ImportModule 导入模块
+// ImportModule 代表一个被导入的独立实体。
+// 它用于表示默认导入、命名导入或命名空间导入中的具体项。
 type ImportModule struct {
-	ImportModule string `json:"importModule"` // 模块名, 对应实际导出的内容模块
-	Type         string `json:"type"`         // 默认导入: default、命名空间导入: namespace、命名导入:named、unknown
-	Identifier   string `json:"identifier"`   //唯一标识
+	ImportModule string `json:"importModule"` // 原始模块名。对于 `import { a as b }` 是 `a`；对于默认导入是 `default`；对于命名空间导入是命名空间名称。
+	Type         string `json:"type"`         // 导入类型: `default`, `namespace`, `named`。
+	Identifier   string `json:"identifier"`   // 在当前文件中使用的标识符。对于 `import { a as b }` 是 `b`；对于 `import a` 是 `a`。
 }
 
-// ImportDeclarationResult 导入声明结果
+// ImportDeclarationResult 存储一个完整的导入声明的解析结果。
+// 一个导入声明（例如 `import a, { b } from './mod'`) 可能包含多个导入的模块。
 type ImportDeclarationResult struct {
-	ImportModules  []ImportModule `json:"importModules"` // 导入的模块内容
-	Raw            string         `json:"raw"`           // 源码
-	Source         string         `json:"source"`        // 路径
-	SourceLocation SourceLocation `json:"sourceLocation"`
+	ImportModules  []ImportModule `json:"importModules"`  // 该导入声明中包含的所有导入模块的列表。
+	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
+	Source         string         `json:"source"`         // 导入来源的模块路径，例如 `'./school'`。
+	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
+// NewImportDeclarationResult 创建并初始化一个 ImportDeclarationResult 实例。
 func NewImportDeclarationResult() *ImportDeclarationResult {
 	return &ImportDeclarationResult{
 		ImportModules: make([]ImportModule, 0),
@@ -100,80 +34,74 @@ func NewImportDeclarationResult() *ImportDeclarationResult {
 	}
 }
 
+// analyzeImportDeclaration 从给定的 ast.ImportDeclaration 节点中提取详细信息。
+// 它能够处理默认导入、命名空间导入和命名导入（包括带别名的导入）。
 func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
-	// Set source location
+	// 设置节点的源码位置信息。
 	pos, end := node.Pos(), node.End()
 	idr.SourceLocation = SourceLocation{
 		Start: NodePosition{Line: pos, Column: 0},
 		End:   NodePosition{Line: end, Column: 0},
 	}
 
-	// ✅ 解析 import 的源代码
+	// 提取节点在源码中的原始文本。
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 	idr.Raw = raw
 
-	// ✅ 解析 import 的模块路径
+	// 提取导入来源的模块路径。
 	moduleSpecifier := node.ModuleSpecifier
 	idr.Source = moduleSpecifier.Text()
 
+	// `ImportClause` 包含了关于导入内容的具体信息。
 	if node.ImportClause != nil {
-		// ✅ 解析 import 的模块内容
 		importClause := node.ImportClause.AsImportClause()
 
-		// 默认导入: import Bird from './type2';
+		// Case 1: 默认导入, 例如: `import Bird from './type2';`
 		if ast.IsDefaultImport(node.AsNode()) {
-			Name := importClause.Name().Text()
+			name := importClause.Name().Text()
 			idr.ImportModules = append(idr.ImportModules, ImportModule{
-				ImportModule: "default",
+				ImportModule: "default", // 默认导入的模块名固定为 'default'。
 				Type:         "default",
-				Identifier:   Name,
+				Identifier:   name,
 			})
 		}
 
-		// - 命名空间导入: import * as allTypes from './type';
+		// Case 2: 命名空间导入, 例如: `import * as allTypes from './type';`
 		namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
 		if namespaceNode != nil {
-			Name := namespaceNode.Name().Text()
+			name := namespaceNode.Name().Text()
 			idr.ImportModules = append(idr.ImportModules, ImportModule{
-				ImportModule: Name,
+				ImportModule: name, // 对于命名空间导入，模块名和标识符是相同的。
 				Type:         "namespace",
-				Identifier:   Name,
+				Identifier:   name,
 			})
 		}
 
-		// - 命名导入: import { School, School2 } from './school';
-		// 					- import type { CurrentRes } from './type';
-		//      		- import { School as NewSchool } from './school';
+		// Case 3: 命名导入, 例如: `import { School, School2 as NewSchool } from './school';`
 		if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
 			namedImports := importClause.NamedBindings.AsNamedImports()
 			for _, element := range namedImports.Elements.Nodes {
 				importSpecifier := element.AsImportSpecifier()
 
+				// 处理带别名的命名导入: `import { School as NewSchool } from './school';`
 				if importSpecifier.PropertyName != nil {
-					// import { School as NewSchool } from './school';
-					Name := importSpecifier.PropertyName.Text()
-					Alias := importSpecifier.Name().Text()
+					name := importSpecifier.PropertyName.Text() // 原始名称 `School`
+					alias := importSpecifier.Name().Text()      // 别名 `NewSchool`
 					idr.ImportModules = append(idr.ImportModules, ImportModule{
-						ImportModule: Name,
+						ImportModule: name,
 						Type:         "named",
-						Identifier:   Alias,
+						Identifier:   alias,
 					})
-
 				} else {
-					// import { School, School2 } from './school';
-					// import type { CurrentRes } from './type';
-					Name := importSpecifier.Name().Text()
+					// 处理普通的命名导入: `import { School } from './school';`
+					name := importSpecifier.Name().Text() // 名称 `School`
 					idr.ImportModules = append(idr.ImportModules, ImportModule{
-						ImportModule: Name,
+						ImportModule: name,
 						Type:         "named",
-						Identifier:   Name,
+						Identifier:   name,
 					})
 				}
 			}
 		}
 	}
-
-	idr.ImportModules = idr.ImportModules
-	idr.Raw = idr.Raw
-	idr.Source = idr.Source
 }

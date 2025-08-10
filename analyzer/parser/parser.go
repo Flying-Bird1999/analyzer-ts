@@ -1,4 +1,4 @@
-// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象抽象语法树）解析的功能。
 // 本文件（parser.go）是解析器的核心，定义了主解析结构、遍历逻辑和结果收集。
 package parser
 
