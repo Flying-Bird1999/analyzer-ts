@@ -1,3 +1,5 @@
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// 本文件（variableDeclaration.go）专门负责处理和解析变量声明。
 package parser
 
 import (
@@ -6,7 +8,7 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// DeclarationKind 用于表示变量声明的类型 (const, let, var)
+// DeclarationKind 用于表示变量声明的类型 (const, let, var)。
 type DeclarationKind string
 
 const (
@@ -15,44 +17,175 @@ const (
 	VarDeclaration   DeclarationKind = "var"
 )
 
-// VariableDeclarator 代表一个独立的变量声明
+// VariableValue 用于结构化地表示变量的类型、初始值或解构源。
+// 它取代了之前使用简单字符串的方式，提供了更丰富、更精确的 AST 信息。
+type VariableValue struct {
+	// Type 字段用于标识值的具体类型，例如 "stringLiteral", "identifier", "callExpression", "objectLiteral" 等。
+	Type string `json:"type"`
+
+	// Expression 字段存储了节点在源码中的原始文本，主要用于展示或简单分析。
+	Expression string `json:"expression"`
+
+	// Data 字段用于存储解析后的结构化数据，提供了比原始文本更丰富的信息。
+	Data interface{} `json:"data,omitempty"`
+}
+
+// VariableDeclarator 代表一个独立的变量声明器。
+// 在 `const a = 1, b = 2` 中，`a = 1` 和 `b = 2` 分别是两个声明器。
 type VariableDeclarator struct {
-	Identifier string `json:"identifier,omitempty"` // 标识符
-	PropName   string `json:"propName,omitempty"`   // 属性名(别名)
-	Type       string `json:"type,omitempty"`       // 类型
-	InitValue  string `json:"initValue,omitempty"`  // 初始值
+	// Identifier 是声明的变量名（在解构中是绑定的本地变量名）。
+	Identifier string `json:"identifier,omitempty"`
+
+	// PropName 是解构赋值时的属性名（源属性名）。如果存在别名，Identifier 是别名，PropName 是原名。
+	// 例如 `const { name: myName } = user` 中，Identifier 是 `myName`，PropName 是 `name`。
+	// 如果没有别名，则与 Identifier 相同。
+	PropName string `json:"propName,omitempty"`
+
+	// Type 是变量的类型注解的结构化表示。
+	Type *VariableValue `json:"type,omitempty"`
+
+	// InitValue 是变量初始值的结构化表示。
+	InitValue *VariableValue `json:"initValue,omitempty"`
 }
 
-// VariableDeclaration 代表一个完整的变量声明语句
+// VariableDeclaration 代表一个完整的变量声明语句，例如 `export const a = 1;`。
 type VariableDeclaration struct {
-	Exported       bool                  `json:"exported"`         // 是否导出
-	Kind           DeclarationKind       `json:"kind"`             // 声明类型
-	Source         string                `json:"source,omitempty"` // 解构赋值的源，这里先记录下源码，因为可能为比较复杂的变量，比如 const { name } = user.profile； const { id } = getResponse().data;等
-	Declarators    []*VariableDeclarator `json:"declarators"`      // 声明的变量
-	Raw            string                `json:"raw,omitempty"`    // 源码
-	SourceLocation SourceLocation        `json:"sourceLocation"`   // 源码位置
+	// Exported 标记此变量声明是否被导出。
+	Exported bool `json:"exported"`
+
+	// Kind 表示声明的类型 (const, let, var)。
+	Kind DeclarationKind `json:"kind"`
+
+	// Source 是解构赋值的源的结构化表示。
+	// 例如 `const { name } = user` 中，Source 代表 `user`。
+	Source *VariableValue `json:"source,omitempty"`
+
+	// Declarators 包含此语句中所有的变量声明器。
+	Declarators []*VariableDeclarator `json:"declarators"`
+
+	// Raw 存储了该节点在源码中的原始文本。
+	Raw string `json:"raw,omitempty"`
+
+	// SourceLocation 记录了该节点在源码中的精确位置。
+	SourceLocation SourceLocation `json:"sourceLocation"`
 }
 
+// NewVariableDeclaration 是创建和解析 VariableDeclaration 实例的工厂函数。
 func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *VariableDeclaration {
 	pos, end := node.Pos(), node.End()
-	return &VariableDeclaration{
+	vd := &VariableDeclaration{
 		Declarators: make([]*VariableDeclarator, 0),
+		Raw:         utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation: SourceLocation{
 			Start: NodePosition{Line: pos, Column: 0},
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
+	vd.analyzeVariableDeclaration(node, sourceCode)
+	return vd
 }
 
-// analyzeVariableDeclaration 解析变量声明语句
-func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStatement, sourceCode string, sourceFile *ast.SourceFile) {
+// analyzeVariableValueNode 是一个核心辅助函数，用于从 AST 节点中解析出结构化的值信息。
+func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue {
+	if node == nil {
+		return nil
+	}
+
+	value := &VariableValue{
+		Expression: utils.GetNodeText(node.AsNode(), sourceCode),
+	}
+
+	switch node.Kind {
+	case ast.KindStringLiteral:
+		value.Type = "stringLiteral"
+		value.Data = node.AsStringLiteral().Text
+	case ast.KindNumericLiteral:
+		value.Type = "numericLiteral"
+		value.Data = node.AsNumericLiteral().Text
+	case ast.KindIdentifier:
+		value.Type = "identifier"
+		value.Data = node.AsIdentifier().Text
+	case ast.KindPropertyAccessExpression:
+		value.Type = "propertyAccess"
+	case ast.KindCallExpression:
+		value.Type = "callExpression"
+	case ast.KindArrowFunction:
+		value.Type = "arrowFunction"
+	case ast.KindObjectLiteralExpression:
+		value.Type = "objectLiteral"
+	case ast.KindArrayLiteralExpression:
+		value.Type = "arrayLiteral"
+	case ast.KindNewExpression:
+		value.Type = "newExpression"
+	case ast.KindTrueKeyword, ast.KindFalseKeyword:
+		value.Type = "booleanLiteral"
+	default:
+		if ast.IsTypeNode(node) {
+			value.Type = "typeNode"
+		} else {
+			value.Type = "other"
+		}
+	}
+
+	return value
+}
+
+// analyzeBindingPattern 是一个递归函数，用于解析（可能嵌套的）解构模式。
+// 它会将解析出的所有变量声明器追加到 vd.Declarators 中。
+func (vd *VariableDeclaration) analyzeBindingPattern(node *ast.Node, sourceCode string) {
 	if node == nil {
 		return
 	}
 
-	// 检查是否有 export 修饰符
-	modifiers := node.Modifiers()
-	if modifiers != nil {
+	// 使用通用的 AsBindingPattern 获取元素列表
+	bindingPattern := node.AsBindingPattern()
+	if bindingPattern == nil || bindingPattern.Elements == nil {
+		return
+	}
+	elements := bindingPattern.Elements.Nodes
+
+	// 遍历所有解构元素
+	for _, element := range elements {
+		bindingElement := element.AsBindingElement()
+		if bindingElement == nil {
+			continue
+		}
+
+		nameNode := bindingElement.Name()
+		if nameNode == nil {
+			continue
+		}
+
+		// 如果解构的元素本身又是一个解构模式（嵌套解构），则递归调用
+		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+			vd.analyzeBindingPattern(nameNode, sourceCode)
+		} else if ast.IsIdentifier(nameNode) {
+			// 如果是最终的标识符，则创建并添加声明器
+			identifier := nameNode.AsIdentifier().Text
+			propName := identifier // 默认情况下，属性名和标识符相同
+
+			// 处理别名: `const { name: myName } = user`
+			if propertyNameNode := bindingElement.PropertyName; propertyNameNode != nil {
+				if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
+					propName = propIdentifier.Text
+				}
+			}
+
+			declarator := &VariableDeclarator{
+				Identifier: identifier,
+				PropName:   propName,
+				// 处理默认值: `const { name = "guest" } = user`
+				InitValue: analyzeVariableValueNode(bindingElement.Initializer, sourceCode),
+			}
+			vd.Declarators = append(vd.Declarators, declarator)
+		}
+	}
+}
+
+// analyzeVariableDeclaration 是解析变量声明语句的核心逻辑。
+func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStatement, sourceCode string) {
+	// 1. 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
 		for _, modifier := range modifiers.Nodes {
 			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
 				vd.Exported = true
@@ -61,7 +194,7 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 		}
 	}
 
-	// 解析声明类型 (const, let, var)
+	// 2. 解析声明类型 (const, let, var)
 	declarationList := node.DeclarationList
 	if declarationList == nil {
 		return
@@ -74,227 +207,33 @@ func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStat
 		vd.Kind = VarDeclaration
 	}
 
-	// 遍历所有声明
+	// 3. 遍历所有声明器
 	for _, decl := range declarationList.AsVariableDeclarationList().Declarations.Nodes {
-		if decl.Kind != ast.KindVariableDeclaration {
+		variableDecl := decl.AsVariableDeclaration()
+		if variableDecl == nil {
 			continue
 		}
-		variableDecl := decl.AsVariableDeclaration()
+
 		nameNode := variableDecl.Name()
 		initializerNode := variableDecl.Initializer
 
-		// 常规变量声明
+		// 3.1. 处理常规变量声明 (e.g., `const a = 1`)
 		if ast.IsIdentifier(nameNode) {
-			identifier := nameNode.AsIdentifier().Text
-			var varType string
-			if variableDecl.Type != nil {
-				varType = utils.GetNodeText(variableDecl.Type, sourceCode)
-			}
-			var initValue string
-			if initializerNode != nil {
-				initValue = utils.GetNodeText(initializerNode, sourceCode)
-			}
 			declarator := &VariableDeclarator{
-				Identifier: identifier,
-				Type:       varType,
-				InitValue:  initValue,
+				Identifier: nameNode.AsIdentifier().Text,
+				Type:       analyzeVariableValueNode(variableDecl.Type, sourceCode),
+				InitValue:  analyzeVariableValueNode(initializerNode, sourceCode),
 			}
 			vd.Declarators = append(vd.Declarators, declarator)
 			continue
 		}
 
-		// 数组解构
-		if ast.IsArrayBindingPattern(nameNode) {
-			if initializerNode != nil && initializerNode.Kind != ast.KindArrayLiteralExpression {
-				vd.Source = utils.GetNodeText(initializerNode, sourceCode)
-			}
-			arrayBinding := nameNode.AsBindingPattern()
-			// 情况1: 初始化器是数组字面量表达式, 例如 [a, b] = [1, 2]
-			if initializerNode != nil && initializerNode.Kind == ast.KindArrayLiteralExpression {
-				arrayLiteral := initializerNode.AsArrayLiteralExpression()
-				for i, element := range arrayBinding.Elements.Nodes {
-					if element.Kind != ast.KindBindingElement {
-						continue
-					}
-					bindingElement := element.AsBindingElement()
-					identifier := bindingElement.Name().AsIdentifier().Text
-					var initValue string
-					if i < len(arrayLiteral.Elements.Nodes) && arrayLiteral.Elements.Nodes[i] != nil {
-						// 从右侧数组字面量获取值
-						initValue = utils.GetNodeText(arrayLiteral.Elements.Nodes[i], sourceCode)
-					} else if bindingElement.Initializer != nil {
-						// 获取默认值
-						initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-					}
-					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
-					vd.Declarators = append(vd.Declarators, declarator)
-				}
-			} else {
-				// 情况2: 初始化器不是数组字面量, 例如 [a, b] = someArray
-				// 回退到原始行为：只捕获默认值
-				for _, element := range arrayBinding.Elements.Nodes {
-					if element.Kind != ast.KindBindingElement {
-						continue
-					}
-					bindingElement := element.AsBindingElement()
-					identifier := bindingElement.Name().AsIdentifier().Text
-					var initValue string
-					if bindingElement.Initializer != nil {
-						initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-					}
-					declarator := &VariableDeclarator{Identifier: identifier, InitValue: initValue}
-					vd.Declarators = append(vd.Declarators, declarator)
-				}
-			}
-			continue
-		}
-
-		// 对象解构
-		if ast.IsObjectBindingPattern(nameNode) {
-			if initializerNode != nil && initializerNode.Kind != ast.KindObjectLiteralExpression {
-				vd.Source = utils.GetNodeText(initializerNode, sourceCode)
-			}
-			objectBinding := nameNode.AsBindingPattern()
-			// 情况1: 初始化器是对象字面量表达式, 例如 {a, b} = {a: 1, b: 2}
-			if initializerNode != nil && initializerNode.Kind == ast.KindObjectLiteralExpression {
-				objectLiteral := initializerNode.AsObjectLiteralExpression()
-				propertyValues := make(map[string]string)
-				for _, prop := range objectLiteral.Properties.Nodes {
-					if prop.Kind == ast.KindPropertyAssignment {
-						propAssignment := prop.AsPropertyAssignment()
-						name := propAssignment.Name()
-						var propName string
-						if ast.IsIdentifier(name) {
-							propName = name.AsIdentifier().Text
-						} else {
-							propName = utils.GetNodeText(name, sourceCode)
-						}
-						propValue := utils.GetNodeText(propAssignment.Initializer, sourceCode)
-						propertyValues[propName] = propValue
-					} else if prop.Kind == ast.KindShorthandPropertyAssignment {
-						shorthand := prop.AsShorthandPropertyAssignment()
-						propName := shorthand.Name().Text()
-						// 值就是名称本身（作为标识符）
-						propertyValues[propName] = propName
-					}
-				}
-
-				for _, element := range objectBinding.Elements.Nodes {
-					if element.Kind != ast.KindBindingElement {
-						continue
-					}
-					bindingElement := element.AsBindingElement()
-					nameNode := bindingElement.Name()
-
-					// 通过检查名称是标识符还是其他模式来处理嵌套解构
-					if ast.IsIdentifier(nameNode) {
-						identifier := nameNode.AsIdentifier().Text
-						var lookupName string
-						if bindingElement.PropertyName != nil {
-							// 处理别名, 例如 { name: myName }
-							propNameNode := bindingElement.PropertyName
-							if ast.IsIdentifier(propNameNode) {
-								lookupName = propNameNode.AsIdentifier().Text
-							} else {
-								lookupName = utils.GetNodeText(propNameNode, sourceCode)
-							}
-						} else {
-							lookupName = identifier
-						}
-
-						initValue, ok := propertyValues[lookupName]
-						if !ok && bindingElement.Initializer != nil {
-							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-						}
-						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
-						vd.Declarators = append(vd.Declarators, declarator)
-					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-						// 这是一个嵌套模式
-						// 我们暂时将整个嵌套模式视为单个“标识符”
-						// 更高级的实现会递归地解析它
-						identifier := utils.GetNodeText(nameNode, sourceCode)
-						var lookupName string
-						if bindingElement.PropertyName != nil {
-							propNameNode := bindingElement.PropertyName
-							if ast.IsIdentifier(propNameNode) {
-								lookupName = propNameNode.AsIdentifier().Text
-							} else {
-								lookupName = utils.GetNodeText(propNameNode, sourceCode)
-							}
-						} else {
-							// 对于嵌套模式，这种情况在JS中应该是语法无效的，但我们进行防御性处理
-							lookupName = identifier
-						}
-
-						initValue, ok := propertyValues[lookupName]
-						if !ok && bindingElement.Initializer != nil {
-							// 如果整个嵌套模式有默认值
-							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-						}
-						declarator := &VariableDeclarator{Identifier: identifier, PropName: lookupName, InitValue: initValue}
-						vd.Declarators = append(vd.Declarators, declarator)
-					}
-				}
-			} else {
-				// 情况2: 初始化器不是对象字面量, 例如 {a, b} = someObject
-				// 回退到原始行为：只捕获默认值
-				for _, element := range objectBinding.Elements.Nodes {
-					if element.Kind != ast.KindBindingElement {
-						continue
-					}
-					bindingElement := element.AsBindingElement()
-					nameNode := bindingElement.Name()
-
-					// 通过检查名称是标识符还是其他模式来处理嵌套解构
-					if ast.IsIdentifier(nameNode) {
-						identifier := nameNode.AsIdentifier().Text
-						var propName string
-						if bindingElement.PropertyName != nil {
-							// 处理别名, 例如 { name: myName }
-							propNameNode := bindingElement.PropertyName
-							if ast.IsIdentifier(propNameNode) {
-								propName = propNameNode.AsIdentifier().Text
-							} else {
-								propName = utils.GetNodeText(propNameNode, sourceCode)
-							}
-						} else {
-							propName = identifier
-						}
-
-						var initValue string
-						if bindingElement.Initializer != nil {
-							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-						}
-						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
-						vd.Declarators = append(vd.Declarators, declarator)
-					} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-						// 这是一个嵌套模式
-						identifier := utils.GetNodeText(nameNode, sourceCode)
-						var propName string
-						if bindingElement.PropertyName != nil {
-							propNameNode := bindingElement.PropertyName
-							if ast.IsIdentifier(propNameNode) {
-								propName = propNameNode.AsIdentifier().Text
-							} else {
-								propName = utils.GetNodeText(propNameNode, sourceCode)
-							}
-						} else {
-							// 对于嵌套模式，这种情况在JS中应该是语法无效的，但我们进行防御性处理
-							propName = identifier
-						}
-
-						var initValue string
-						if bindingElement.Initializer != nil {
-							// 如果整个嵌套模式有默认值
-							initValue = utils.GetNodeText(bindingElement.Initializer, sourceCode)
-						}
-						declarator := &VariableDeclarator{Identifier: identifier, PropName: propName, InitValue: initValue}
-						vd.Declarators = append(vd.Declarators, declarator)
-					}
-				}
-			}
-			continue
+		// 3.2. 处理解构声明 (e.g., `const {a, b: c} = {a: 1, b: 2}`)
+		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+			// 解析解构的源
+			vd.Source = analyzeVariableValueNode(initializerNode, sourceCode)
+			// 使用新的递归函数来解析解构模式
+			vd.analyzeBindingPattern(nameNode, sourceCode)
 		}
 	}
-	vd.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
 }

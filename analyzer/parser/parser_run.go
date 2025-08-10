@@ -7,7 +7,7 @@ import (
 )
 
 func Parser_run() {
-	inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/react.tsx"
+	inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/variable.ts"
 
 	// 解析当前文件
 	pr := NewParserResult(inputDir)
@@ -28,12 +28,12 @@ func Parser_run() {
 	// 创建一个包含所有你想要输出的结果的结构体
 	output := struct {
 		VariableDeclarations []VariableDeclaration `json:"variableDeclarations"`
-		CallExpressions      []CallExpression      `json:"callExpressions"`
-		JsxElements          []JSXElement          `json:"jsxElements"`
+		// CallExpressions      []CallExpression      `json:"callExpressions"`
+		JsxElements []JSXElement `json:"jsxElements"`
 	}{
 		VariableDeclarations: parserResult.VariableDeclarations,
-		CallExpressions:      parserResult.CallExpressions,
-		JsxElements:          parserResult.JsxElements,
+		// CallExpressions:      parserResult.CallExpressions,
+		JsxElements: parserResult.JsxElements,
 	}
 
 	// 将整个 output 结构体序列化为 JSON

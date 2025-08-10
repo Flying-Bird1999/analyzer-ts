@@ -10,14 +10,14 @@ import (
 )
 
 type ProjectParserResult struct {
-	RootPath   string            // 项目根目录
-	Alias      map[string]string // 别名映射，key: 别名, value: 实际路径
-	Extensions []string          // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
-	Ignore     []string          // 指定忽略的文件/文件夹
-	IsMonorepo bool              // 是否为 monorepo 项目
+	RootPath   string            `json:"rootPath"`   // 项目根目录
+	Alias      map[string]string `json:"alias"`      // 别名映射，key: 别名, value: 实际路径
+	Extensions []string          `json:"extensions"` // 扩展名列表，例如: [".ts", ".tsx",".js", ".jsx"]
+	Ignore     []string          `json:"ignore"`     // 指定忽略的文件/文件夹
+	IsMonorepo bool              `json:"isMonorepo"` // 是否为 monorepo 项目
 
-	Js_Data      map[string]JsFileParserResult          // js/jsx/ts/tsx 数据
-	Package_Data map[string]PackageJsonFileParserResult // package.json -> package 数据
+	Js_Data      map[string]JsFileParserResult          `json:"jsData"`      // js/jsx/ts/tsx 数据
+	Package_Data map[string]PackageJsonFileParserResult `json:"packageData"` // package.json -> package 数据
 }
 
 func NewProjectParserResult(rootPath string, Alias map[string]string, Extensions []string, Ignore []string, IsMonorepo bool) *ProjectParserResult {

@@ -1,5 +1,6 @@
 // package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
-// 本文件（jsxDeclaration.go）专门负责处理和解析 JSX 相关的节点。
+// 本文件（jsxDeclaration.go）专门负责处理和解析 JSX 相关的节点，
+// 例如 <div className="App"></div> 或 <Component {...props} /> 等。
 package parser
 
 import (
@@ -8,27 +9,65 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// JSXAttribute 表示 JSX 元素中的一个属性，例如在 <div className="App"> 中，className="App" 就是一个属性。
+// JSXAttributeValue 用于结构化地表示 JSX 属性的值。
+// 由于属性值可以是字符串、变量、函数调用或更复杂的表达式，
+// 使用此结构体可以更精确地描述值的类型和内容。
+type JSXAttributeValue struct {
+	// Type 字段用于标识属性值的具体类型。
+	// 例如："stringLiteral", "identifier", "propertyAccess", "callExpression" 等。
+	Type string `json:"type"`
+
+	// Expression 字段存储了属性值在源码中的原始文本，主要用于展示或简单分析。
+	Expression string `json:"expression"`
+
+	// Data 字段用于存储解析后的结构化数据，提供了比原始文本更丰富的信息。
+	// 例如，如果 Type 是 "stringLiteral"，Data 会存储不带引号的字符串值。
+	// 对于复杂的表达式，未来可以扩展此字段以存储更详细的结构。
+	Data interface{} `json:"data,omitempty"`
+}
+
+// JSXAttribute 表示 JSX 元素中的一个属性。
+// 它可以是一个常规的键值对属性（如 `className="App"`），
+// 一个布尔属性（如 `disabled`），或一个展开属性（如 `{...props}`）。
 type JSXAttribute struct {
-	Name     string `json:"name"`     // 属性名，例如 "className" 或在展开属性中为 "...props"。
-	Value    string `json:"value"`    // 属性值，例如 "App"。对于布尔属性（如 `disabled`）或展开属性，此字段可能为空。
-	IsSpread bool   `json:"isSpread"` // 标记该属性是否为展开属性（Spread Attribute），例如 <Component {...props} /> 中的 {...props}。
+	// Name 是属性的名称。对于展开属性，名称会以 "..." 开头，后跟展开的表达式文本。
+	Name string `json:"name"`
+
+	// Value 是一个指向 JSXAttributeValue 的指针，用于存储属性值的结构化信息。
+	// 对于布尔属性（例如 `<Button disabled />`）或展开属性，此字段为 nil。
+	Value *JSXAttributeValue `json:"value"`
+
+	// IsSpread 标记该属性是否为展开属性（Spread Attribute）。
+	IsSpread bool `json:"isSpread"`
 }
 
-// JSXElement 代表一个解析后的 JSX 节点，包括其类型、标识符、属性和源码位置等信息。
+// JSXElement 代表一个解析后的 JSX 节点，包含了关于该元素的全面信息。
 type JSXElement struct {
-	Type               string         `json:"type"`               // 节点类型，用于区分是简单标识符还是成员表达式。值为 "JSXIdentifier" 或 "JSXMemberExpression"。
-	ModuleIdentifier   string         `json:"moduleIdentifier"`   // 模块标识符，仅在成员表达式（如 <Antd.Button />）中有效，此例中为 "Antd"。
-	PropertyIdentifier string         `json:"propertyIdentifier"` // 属性或组件标识符。例如在 <Button /> 中为 "Button"，在 <Antd.Button /> 中也为 "Button"。
-	Attrs              []JSXAttribute `json:"attrs"`              // JSX 属性列表，存储该元素的所有属性。
-	Raw                string         `json:"raw"`                // 节点在源码中的原始文本。
-	SourceLocation     SourceLocation `json:"sourceLocation"`     // 节点在源码中的精确位置（起始和结束的行列号）。
+	// Type 表示 JSX 元素的类型，通常是 "JSXIdentifier"（简单标签，如 `<div>`）
+	// 或 "JSXMemberExpression"（成员表达式标签，如 `<Antd.Button>`）。
+	Type string `json:"type"`
+
+	// ModuleIdentifier 仅在 Type 为 "JSXMemberExpression" 时有效，
+	// 用于存储成员表达式的模块部分（例如，`Antd`）。
+	ModuleIdentifier string `json:"moduleIdentifier"`
+
+	// PropertyIdentifier 用于存储标签的最终名称。
+	// 例如，在 `<div>` 中是 "div"，在 `<Antd.Button>` 中是 "Button"。
+	PropertyIdentifier string `json:"propertyIdentifier"`
+
+	// Attrs 是一个切片，包含了该 JSX 元素上定义的所有属性。
+	Attrs []JSXAttribute `json:"attrs"`
+
+	// Raw 存储了该节点在源码中的原始文本。
+	Raw string `json:"raw"`
+
+	// SourceLocation 记录了该节点在源码中的精确位置（起始和结束的行列号）。
+	SourceLocation SourceLocation `json:"sourceLocation"`
 }
 
-// NewJSXNode 是创建 JSXElement 实例的工厂函数。
-// 它接收一个通用的 ast.Node 和源码字符串，首先提取节点的原始文本和源码位置。
-// 然后根据节点的具体类型（ast.KindJsxElement 或 ast.KindJsxSelfClosingElement），
-// 调用相应的分析函数来填充 JSXElement 的详细信息。
+// NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。
+// 它接收一个 AST 节点和文件源码作为输入，根据节点的具体类型
+//（自闭合标签或非自闭合标签）分发给相应的解析函数，并返回一个填充好信息的 JSXElement 实例。
 func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
 	pos, end := node.Pos(), node.End()
 	jsxNode := &JSXElement{
@@ -38,6 +77,7 @@ func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
+
 	if node.Kind == ast.KindJsxElement {
 		// 处理非自闭合的 JSX 元素, 例如 <div>...</div>
 		jsxNode.analyzeJsxElement(node.AsJsxElement(), sourceCode)
@@ -48,111 +88,142 @@ func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
 	return jsxNode
 }
 
-// analyzeJsxElement 处理非自闭合的 JSX 元素（例如 <div>...</div>）。
+// analyzeJsxElement 处理非自闭合的 JSX 元素（例如 `<div>...</div>`）。
 // 它主要关注元素的开标签（OpeningElement），因此直接将分析任务委托给 analyzeJsxOpeningElement。
 func (j *JSXElement) analyzeJsxElement(node *ast.JsxElement, sourceCode string) {
 	j.analyzeJsxOpeningElement(node.OpeningElement, sourceCode)
 }
 
-// analyzeJsxOpeningElement 负责分析 JSX 开标签（<...>）或自闭合元素标签的内部结构。
-// 1. 分析标签名（TagName）：
-//    - 如果是简单标识符（ast.KindIdentifier），如 <Button>，则 Type 为 "JSXIdentifier"，PropertyIdentifier 为 "Button"。
-//    - 如果是属性访问表达式（ast.KindPropertyAccessExpression），如 <Antd.Button>，则 Type 为 "JSXMemberExpression"，
-//      ModuleIdentifier 为 "Antd"，PropertyIdentifier 为 "Button"。
-// 2. 分析属性（Attributes）：
-//    - 遍历所有属性节点。
-//    - 如果是普通属性（ast.KindJsxAttribute），则提取其名称和值，并设置 IsSpread 为 false。
-//    - 如果是展开属性（ast.KindJsxSpreadAttribute），如 {...props}，则提取表达式文本（如 "props"），
-//      并将其作为 Name（前面加上 "..." 以便区分），同时设置 IsSpread 为 true。
-func (j *JSXElement) analyzeJsxOpeningElement(node *ast.Node, sourceCode string) {
-	openingElement := node.AsJsxOpeningElement()
-
-	// 分析标签名
-	switch openingElement.TagName.Kind {
+// analyzeTagName 从 JSX 元素的标签名节点中解析出模块和属性标识符。
+// 例如，对于 `<Antd.Button>`，它会将 Type 设置为 "JSXMemberExpression"，
+// ModuleIdentifier 设置为 "Antd"，PropertyIdentifier 设置为 "Button"。
+// 对于 `<Button>`，它会将 Type 设置为 "JSXIdentifier"，PropertyIdentifier 设置为 "Button"。
+func (j *JSXElement) analyzeTagName(tagNameNode *ast.Node) {
+	switch tagNameNode.Kind {
 	case ast.KindIdentifier:
 		j.Type = "JSXIdentifier"
-		j.ModuleIdentifier = openingElement.TagName.AsIdentifier().Text
+		j.PropertyIdentifier = tagNameNode.AsIdentifier().Text
 	case ast.KindPropertyAccessExpression:
-		expr := openingElement.TagName.AsPropertyAccessExpression()
-		if expr.Expression.Kind == ast.KindIdentifier {
-			j.Type = "JSXMemberExpression"
-			j.ModuleIdentifier = expr.Expression.AsIdentifier().Text
-			j.PropertyIdentifier = expr.Name().Text()
+		j.Type = "JSXMemberExpression"
+		expr := tagNameNode.AsPropertyAccessExpression()
+		// 从属性访问表达式中提取对象（模块）和属性（组件名）
+		if obj := expr.Expression.AsIdentifier(); obj != nil {
+			j.ModuleIdentifier = obj.Text
+		}
+		j.PropertyIdentifier = expr.Name().Text()
+	}
+}
+
+// analyzeAttributeValue 从属性的 AST 节点中解析出其结构化信息。
+// 这是实现“从 AST 直接采集数据”的核心函数，取代了旧的、依赖源码字符串的方法。
+// node: 属性的初始值节点 (Initializer)。
+// sourceCode: 完整的文件源码，用于获取节点原始文本。
+// 返回一个填充好的 JSXAttributeValue 实例。
+func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue {
+	// 对于布尔属性，其 Initializer 节点为 nil。
+	if node == nil {
+		return nil
+	}
+
+	value := &JSXAttributeValue{
+		// 首先，无论值的类型是什么，都记录其原始文本表达式。
+		Expression: utils.GetNodeText(node.AsNode(), sourceCode),
+	}
+
+	// 属性值通常被包裹在 JsxExpression 中（例如 `attr={...}`），
+	// 我们需要解开这层包裹，获取真正的表达式节点。
+	actualValueNode := node
+	if node.Kind == ast.KindJsxExpression {
+		if expr := node.AsJsxExpression(); expr.Expression != nil {
+			actualValueNode = expr.Expression
 		}
 	}
 
-	// 分析属性列表
+	// 根据真实值节点的类型，填充 Type 和 Data 字段。
+	switch actualValueNode.Kind {
+	case ast.KindStringLiteral:
+		value.Type = "stringLiteral"
+		value.Data = actualValueNode.AsStringLiteral().Text // 存储不带引号的纯字符串
+	case ast.KindIdentifier:
+		value.Type = "identifier"
+		value.Data = actualValueNode.AsIdentifier().Text // 存储变量名
+	case ast.KindPropertyAccessExpression:
+		value.Type = "propertyAccess"
+		// 未来可以扩展，例如将 `styles.foo` 解析为 { object: "styles", property: "foo" } 并存入 Data 字段。
+	case ast.KindCallExpression:
+		value.Type = "callExpression"
+	case ast.KindArrowFunction:
+		value.Type = "arrowFunction"
+	case ast.KindTemplateExpression:
+		value.Type = "templateExpression"
+	case ast.KindNumericLiteral:
+		value.Type = "numericLiteral"
+	case ast.KindTrueKeyword, ast.KindFalseKeyword:
+		value.Type = "booleanLiteral"
+	default:
+		value.Type = "other" // 其他未覆盖的复杂类型
+	}
+
+	return value
+}
+
+// analyzeJsxOpeningElement 负责分析 JSX 开标签（`<...>`）的内部结构。
+// 它会依次解析标签名和所有属性。
+func (j *JSXElement) analyzeJsxOpeningElement(node *ast.Node, sourceCode string) {
+	openingElement := node.AsJsxOpeningElement()
+	j.analyzeTagName(openingElement.TagName)
+
+	// 遍历并解析所有属性
 	if attributes := openingElement.Attributes; attributes != nil {
 		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
 			for _, attr := range jsxAttrs.Properties.Nodes {
 				if attr.Kind == ast.KindJsxAttribute {
+					// 处理常规属性：name="value" 或 name={expression}
 					jsxAttr := attr.AsJsxAttribute()
-					name := jsxAttr.Name().Text()
-					var value string
-					if jsxAttr.Initializer != nil {
-						value = getTextFromNode(jsxAttr.Initializer)
-					}
-					j.Attrs = append(j.Attrs, JSXAttribute{Name: name, Value: value, IsSpread: false})
+					j.Attrs = append(j.Attrs, JSXAttribute{
+						Name:     jsxAttr.Name().Text(),
+						Value:    analyzeAttributeValue(jsxAttr.Initializer, sourceCode),
+						IsSpread: false,
+					})
 				} else if attr.Kind == ast.KindJsxSpreadAttribute {
+					// 处理展开属性：{...props}
 					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					// 对于展开属性，名称记录为 `...` 加上表达式的文本
-					name := "..." + jsxSpreadAttr.Expression.Text()
-					j.Attrs = append(j.Attrs, JSXAttribute{Name: name, IsSpread: true})
+					j.Attrs = append(j.Attrs, JSXAttribute{
+						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, sourceCode),
+						Value:    nil, // 展开属性没有独立的 Value
+						IsSpread: true,
+					})
 				}
 			}
 		}
 	}
 }
 
-// analyzeJsxSelfClosingElement 负责分析自闭合的 JSX 元素（例如 <Component />）。
+// analyzeJsxSelfClosingElement 负责分析自闭合的 JSX 元素（例如 `<Component />`）。
 // 其逻辑与 analyzeJsxOpeningElement 非常相似，同样需要分析标签名和属性列表。
 func (j *JSXElement) analyzeJsxSelfClosingElement(node *ast.JsxSelfClosingElement, sourceCode string) {
-	// 分析标签名
-	switch node.TagName.Kind {
-	case ast.KindIdentifier:
-		j.Type = "JSXIdentifier"
-		j.PropertyIdentifier = node.TagName.AsIdentifier().Text
-	case ast.KindPropertyAccessExpression:
-		expr := node.TagName.AsPropertyAccessExpression()
-		if expr.Expression.Kind == ast.KindIdentifier {
-			j.Type = "JSXMemberExpression"
-			j.ModuleIdentifier = expr.Expression.AsIdentifier().Text
-			j.PropertyIdentifier = expr.Name().Text()
-		}
-	}
+	j.analyzeTagName(node.TagName)
 
-	// 分析属性列表
+	// 遍历并解析所有属性
 	if attributes := node.Attributes; attributes != nil {
 		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
 			for _, attr := range jsxAttrs.Properties.Nodes {
 				if attr.Kind == ast.KindJsxAttribute {
 					jsxAttr := attr.AsJsxAttribute()
-					name := jsxAttr.Name().Text()
-					var value string
-					if jsxAttr.Initializer != nil {
-						value = getTextFromNode(jsxAttr.Initializer)
-					}
-					j.Attrs = append(j.Attrs, JSXAttribute{Name: name, Value: value, IsSpread: false})
+					j.Attrs = append(j.Attrs, JSXAttribute{
+						Name:     jsxAttr.Name().Text(),
+						Value:    analyzeAttributeValue(jsxAttr.Initializer, sourceCode),
+						IsSpread: false,
+					})
 				} else if attr.Kind == ast.KindJsxSpreadAttribute {
 					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					// 对于展开属性，名称记录为 `...` 加上表达式的文本
-					name := "..." + jsxSpreadAttr.Expression.Text()
-					j.Attrs = append(j.Attrs, JSXAttribute{Name: name, IsSpread: true})
+					j.Attrs = append(j.Attrs, JSXAttribute{
+						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, sourceCode),
+						Value:    nil,
+						IsSpread: true,
+					})
 				}
 			}
 		}
 	}
-}
-
-// getTextFromNode 是一个辅助函数，用于从 AST 节点中提取文本值。
-// 它特别处理了 JSX 表达式（ast.KindJsxExpression），例如在 attr={value} 中，它会提取 `value` 的文本。
-// 对于其他类型的节点（如字符串字面量），它直接返回节点的原始文本。
-func getTextFromNode(node *ast.Node) string {
-	if node.Kind == ast.KindJsxExpression {
-		if expr := node.AsJsxExpression(); expr.Expression != nil {
-			return expr.Expression.Text()
-		}
-		return ""
-	}
-	return node.Text()
 }

@@ -8,80 +8,11 @@ import (
 	"path/filepath"
 )
 
-// FlatImport represents a single flattened import declaration.
-type FlatImport struct {
-	SourceFile     string `json:"sourceFile"`
-	ImportedModule string `json:"importedModule"`
-	Identifier     string `json:"identifier"`
-	ImportType     string `json:"importType"`
-	Source         string `json:"source"`
-	SourceType     string `json:"sourceType"`
-	Raw            string `json:"raw"`
-}
-
-// FlatPackageDependency represents a single flattened package dependency.
-type FlatPackageDependency struct {
-	PackageJsonPath   string `json:"packageJsonPath"`
-	Name              string `json:"name"`
-	Version           string `json:"version"`
-	NodeModuleVersion string `json:"nodeModuleVersion"`
-	Type              string `json:"type"`
-	Workspace         string `json:"workspace"`
-}
-
-// FlatOutput is the final structure to be marshalled to JSON.
-type FlatOutput struct {
-	Imports  []FlatImport            `json:"imports"`
-	Packages []FlatPackageDependency `json:"packages"`
-}
-
 func AnalyzeProject(rootPath string, outputDir string, alias map[string]string, extensions []string, ignore []string, isMonorepo bool) {
 	ar := projectParser.NewProjectParserResult(rootPath, alias, extensions, ignore, isMonorepo)
-
 	ar.ProjectParser()
 
-	// Create the flattened data structure
-	flatOutput := FlatOutput{
-		Imports:  []FlatImport{},
-		Packages: []FlatPackageDependency{},
-	}
-
-	// Process Js_Data
-	for filePath, jsData := range ar.Js_Data {
-		// Flatten ImportDeclarations
-		for _, importDecl := range jsData.ImportDeclarations {
-			for _, module := range importDecl.ImportModules {
-				flatImport := FlatImport{
-					SourceFile:     filePath,
-					ImportedModule: module.ImportModule,
-					Identifier:     module.Identifier,
-					ImportType:     module.Type,
-					Source:         importDecl.Source.FilePath,
-					SourceType:     importDecl.Source.Type,
-					Raw:            importDecl.Raw,
-				}
-				flatOutput.Imports = append(flatOutput.Imports, flatImport)
-			}
-		}
-	}
-
-	// Process Package_Data
-	for pkgPath, pkgData := range ar.Package_Data {
-		for _, npmItem := range pkgData.NpmList {
-			flatPkg := FlatPackageDependency{
-				PackageJsonPath:   pkgPath,
-				Name:              npmItem.Name,
-				Version:           npmItem.Version,
-				NodeModuleVersion: npmItem.NodeModuleVersion,
-				Type:              npmItem.Type,
-				Workspace:         pkgData.Workspace,
-			}
-			flatOutput.Packages = append(flatOutput.Packages, flatPkg)
-		}
-	}
-
-	// Marshal the data to JSON
-	jsonData, err := json.MarshalIndent(flatOutput, "", "  ")
+	jsonData, err := json.MarshalIndent(ar, "", "  ")
 	if err != nil {
 		fmt.Printf("Error marshalling to JSON: %s\n", err)
 		return

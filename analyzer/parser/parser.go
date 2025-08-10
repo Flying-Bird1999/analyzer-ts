@@ -159,7 +159,6 @@ func (pr *ParserResult) Traverse() {
 		// 匹配变量声明语句，例如: const a = 1; let b = '2';
 		case ast.KindVariableStatement:
 			vd := NewVariableDeclaration(node.AsVariableStatement(), sourceCode)
-			vd.analyzeVariableDeclaration(node.AsVariableStatement(), sourceCode, sourceFile)
 			pr.addVariableDeclaration(vd)
 
 		// 匹配函数或方法调用，例如: myFunction(); obj.myMethod();

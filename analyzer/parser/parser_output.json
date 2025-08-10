@@ -1,23 +1,55 @@
 {
   "variableDeclarations": [
     {
-      "exported": false,
+      "exported": true,
       "kind": "const",
-      "source": " NewSelect",
       "declarators": [
         {
-          "identifier": "SingleSelect2",
-          "propName": "SingleSelect"
+          "identifier": "PI",
+          "type": {
+            "type": "typeNode",
+            "expression": " number"
+          },
+          "initValue": {
+            "type": "numericLiteral",
+            "expression": " 3.14",
+            "data": "3.14"
+          }
         }
       ],
-      "raw": "\n\nconst { SingleSelect: SingleSelect2 } = NewSelect;",
+      "raw": "export const PI: number = 3.14;",
       "sourceLocation": {
         "start": {
-          "line": 71,
+          "line": 0,
           "column": 0
         },
         "end": {
-          "line": 123,
+          "line": 31,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": false,
+      "kind": "let",
+      "declarators": [
+        {
+          "identifier": "dynamicValue",
+          "initValue": {
+            "type": "stringLiteral",
+            "expression": " 'hello world'",
+            "data": "hello world"
+          }
+        }
+      ],
+      "raw": "\n\nlet dynamicValue = 'hello world';",
+      "sourceLocation": {
+        "start": {
+          "line": 31,
+          "column": 0
+        },
+        "end": {
+          "line": 66,
           "column": 0
         }
       }
@@ -26,155 +58,150 @@
       "exported": false,
       "kind": "const",
       "declarators": [
+        {
+          "identifier": "appName",
+          "type": {
+            "type": "typeNode",
+            "expression": " string"
+          },
+          "initValue": {
+            "type": "stringLiteral",
+            "expression": " 'Gemini AI'",
+            "data": "Gemini AI"
+          }
+        }
+      ],
+      "raw": "\n\n// This is a line comment\nconst appName: string = 'Gemini AI';",
+      "sourceLocation": {
+        "start": {
+          "line": 66,
+          "column": 0
+        },
+        "end": {
+          "line": 130,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": true,
+      "kind": "const",
+      "source": {
+        "type": "objectLiteral",
+        "expression": " { name: 'bird', age: 20 }"
+      },
+      "declarators": [
+        {
+          "identifier": "name2",
+          "propName": "name"
+        },
         {
           "identifier": "age",
-          "initValue": " 1"
+          "propName": "age"
         }
       ],
-      "raw": "\n    const age = 1;",
+      "raw": "\n\nexport const { name: name2, age } = { name: 'bird', age: 20 };",
       "sourceLocation": {
         "start": {
-          "line": 186,
+          "line": 130,
           "column": 0
         },
         "end": {
-          "line": 205,
+          "line": 194,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": false,
+      "kind": "const",
+      "source": {
+        "type": "arrayLiteral",
+        "expression": " [1, 2, 3]"
+      },
+      "declarators": [
+        {
+          "identifier": "first",
+          "propName": "first"
+        },
+        {
+          "identifier": "second",
+          "propName": "second"
+        },
+        {
+          "identifier": "reset",
+          "propName": "reset"
+        }
+      ],
+      "raw": "\n\nconst [first, second, ...reset] = [1, 2, 3];",
+      "sourceLocation": {
+        "start": {
+          "line": 194,
+          "column": 0
+        },
+        "end": {
+          "line": 240,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": false,
+      "kind": "let",
+      "source": {
+        "type": "objectLiteral",
+        "expression": " { config: { host: 'localhost', port: 8080 }, settings: ['dark'] }"
+      },
+      "declarators": [
+        {
+          "identifier": "host",
+          "propName": "host"
+        },
+        {
+          "identifier": "port",
+          "propName": "port"
+        },
+        {
+          "identifier": "theme",
+          "propName": "theme"
+        }
+      ],
+      "raw": "\n\nlet {\n  config: { host, port },\n  settings: [theme],\n} = { config: { host: 'localhost', port: 8080 }, settings: ['dark'] };",
+      "sourceLocation": {
+        "start": {
+          "line": 240,
+          "column": 0
+        },
+        "end": {
+          "line": 365,
+          "column": 0
+        }
+      }
+    },
+    {
+      "exported": false,
+      "kind": "const",
+      "declarators": [
+        {
+          "identifier": "sayHi",
+          "initValue": {
+            "type": "arrowFunction",
+            "expression": " () =\u003e {\n  console.log('sayHi')\n}"
+          }
+        }
+      ],
+      "raw": "\n\nconst sayHi = () =\u003e {\n  console.log('sayHi')\n}",
+      "sourceLocation": {
+        "start": {
+          "line": 365,
+          "column": 0
+        },
+        "end": {
+          "line": 413,
           "column": 0
         }
       }
     }
   ],
-  "callExpressions": [
-    {
-      "identifier": "log",
-      "argLen": 1,
-      "type": "call",
-      "raw": "\n    log(age)",
-      "sourceLocation": {
-        "start": {
-          "line": 205,
-          "column": 0
-        },
-        "end": {
-          "line": 218,
-          "column": 0
-        }
-      }
-    },
-    {
-      "identifier": "console",
-      "property": "log",
-      "argLen": 1,
-      "type": "member",
-      "raw": "\n    console.log(1)",
-      "sourceLocation": {
-        "start": {
-          "line": 219,
-          "column": 0
-        },
-        "end": {
-          "line": 238,
-          "column": 0
-        }
-      }
-    },
-    {
-      "identifier": "message",
-      "property": "success",
-      "argLen": 1,
-      "type": "member",
-      "raw": "\n    message.success('success')",
-      "sourceLocation": {
-        "start": {
-          "line": 239,
-          "column": 0
-        },
-        "end": {
-          "line": 270,
-          "column": 0
-        }
-      }
-    }
-  ],
-  "jsxNodes": [
-    {
-      "type": "JSXIdentifier",
-      "moduleIdentifier": "Button",
-      "propertyIdentifier": "",
-      "attrs": [
-        {
-          "name": "type",
-          "value": "primary",
-          "isSpread": false
-        },
-        {
-          "name": "onClick",
-          "value": "onClick",
-          "isSpread": false
-        },
-        {
-          "name": "...props",
-          "value": "",
-          "isSpread": true
-        }
-      ],
-      "raw": "\u003cButton type=\"primary\" onClick={onClick} {...props}\u003e\n        123\n      \u003c/Button\u003e",
-      "sourceLocation": {
-        "start": {
-          "line": 301,
-          "column": 0
-        },
-        "end": {
-          "line": 381,
-          "column": 0
-        }
-      }
-    },
-    {
-      "type": "JSXMemberExpression",
-      "moduleIdentifier": "NewSelect",
-      "propertyIdentifier": "SingleSelect",
-      "attrs": [
-        {
-          "name": "type",
-          "value": "bb",
-          "isSpread": false
-        }
-      ],
-      "raw": "\u003cNewSelect.SingleSelect type={'bb'} /\u003e",
-      "sourceLocation": {
-        "start": {
-          "line": 388,
-          "column": 0
-        },
-        "end": {
-          "line": 426,
-          "column": 0
-        }
-      }
-    },
-    {
-      "type": "JSXMemberExpression",
-      "moduleIdentifier": "NewSelect",
-      "propertyIdentifier": "SingleSelect",
-      "attrs": [
-        {
-          "name": "type",
-          "value": "bb",
-          "isSpread": false
-        }
-      ],
-      "raw": "\u003cNewSelect.SingleSelect type={'bb'}\u003e\u003c/NewSelect.SingleSelect\u003e",
-      "sourceLocation": {
-        "start": {
-          "line": 433,
-          "column": 0
-        },
-        "end": {
-          "line": 494,
-          "column": 0
-        }
-      }
-    }
-  ]
+  "jsxElements": []
 }

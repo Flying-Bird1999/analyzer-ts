@@ -7,6 +7,5 @@ import (
 
 func main() {
 	cmd.Execute()
-
 	parser.Parser_run()
 }

@@ -3,11 +3,11 @@ export const PI: number = 3.14;
 let dynamicValue = 'hello world';
 
 // This is a line comment
-const appName = 'Gemini AI';
+const appName: string = 'Gemini AI';
 
-export const { name, age } = { name: 'bird', age: 20 };
+export const { name: name2, age } = { name: 'bird', age: 20 };
 
-const [first, second] = [1, 2];
+const [first, second, ...reset] = [1, 2, 3];
 
 let {
   config: { host, port },
