@@ -7,7 +7,9 @@ export default function (props: any) {
     const age = 1;
     log(age);
     console.log(1);
-    message.success('success');
+    console.log.apply.bind(1);
+    message.success.call.bind(1);
+    message.success.call.bind({name: '123'}, 1, [1.4,5]);
   }
 
   return (
@@ -17,6 +19,8 @@ export default function (props: any) {
       </Button>
       <NewSelect.SingleSelect type={'bb'} />
       <NewSelect.SingleSelect type={'bb'}></NewSelect.SingleSelect>
+      <myComponent.Name.SingleSelect a:b="1" />
+      <Button a:b="1">111</Button>
     </>
   );
 }

@@ -16,7 +16,7 @@ import (
 // 4. 将生成的 JSON 写入到指定的输出文件（`parser_output.json`）中。
 func Parser_run() {
 	// 定义要解析的目标文件路径。
-	inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/variable.ts"
+	inputDir := "/Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/react.tsx"
 
 	// 创建一个新的解析器结果实例并启动遍历解析过程。
 	pr := NewParserResult(inputDir)
@@ -39,12 +39,12 @@ func Parser_run() {
 	// 这样可以灵活地控制最终输出的内容。
 	output := struct {
 		VariableDeclarations []VariableDeclaration `json:"variableDeclarations"`
-		// CallExpressions      []CallExpression      `json:"callExpressions"` // 此处被注释掉，不会输出到 JSON 中
-		JsxElements []JSXElement `json:"jsxElements"`
+		CallExpressions      []CallExpression      `json:"callExpressions"` // 此处被注释掉，不会输出到 JSON 中
+		JsxElements          []JSXElement          `json:"jsxElements"`
 	}{
 		VariableDeclarations: parserResult.VariableDeclarations,
-		// CallExpressions:      parserResult.CallExpressions,
-		JsxElements: parserResult.JsxElements,
+		CallExpressions:      parserResult.CallExpressions,
+		JsxElements:          parserResult.JsxElements,
 	}
 
 	// 将 output 结构体序列化为易于阅读的、带缩进的 JSON 格式。

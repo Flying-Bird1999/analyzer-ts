@@ -41,27 +41,14 @@ type JSXAttribute struct {
 	IsSpread bool `json:"isSpread"`
 }
 
-// JSXElement 代表一个解析后的 JSX 节点，包含了关于该元素的全面信息。
+// JSXElement 代表一个解析后的 JSX 节点。
 type JSXElement struct {
-	// Type 表示 JSX 元素的类型，通常是 "JSXIdentifier"（简单标签，如 `<div>`）
-	// 或 "JSXMemberExpression"（成员表达式标签，如 `<Antd.Button>`）。
-	Type string `json:"type"`
-
-	// ModuleIdentifier 仅在 Type 为 "JSXMemberExpression" 时有效，
-	// 用于存储成员表达式的模块部分（例如，`Antd`）。
-	ModuleIdentifier string `json:"moduleIdentifier"`
-
-	// PropertyIdentifier 用于存储标签的最终名称。
-	// 例如，在 `<div>` 中是 "div"，在 `<Antd.Button>` 中是 "Button"。
-	PropertyIdentifier string `json:"propertyIdentifier"`
-
-	// Attrs 是一个切片，包含了该 JSX 元素上定义的所有属性。
-	Attrs []JSXAttribute `json:"attrs"`
-
-	// Raw 存储了该节点在源码中的原始文本。
-	Raw string `json:"raw"`
-
-	// SourceLocation 记录了该节点在源码中的精确位置（起始和结束的行列号）。
+	// ComponentChain 表示组件的完整路径。
+	// 例如 <myComponent.Name.SingleSelect /> 会被解析为 ["myComponent", "Name", "SingleSelect"]。
+	// 对于简单标签如 <div />，则为 ["div"]。
+	ComponentChain []string       `json:"componentChain"`
+	Attrs          []JSXAttribute `json:"attrs"`
+	Raw            string         `json:"raw"`
 	SourceLocation SourceLocation `json:"sourceLocation"`
 }
 
@@ -94,24 +81,29 @@ func (j *JSXElement) analyzeJsxElement(node *ast.JsxElement, sourceCode string) 
 	j.analyzeJsxOpeningElement(node.OpeningElement, sourceCode)
 }
 
-// analyzeTagName 从 JSX 元素的标签名节点中解析出模块和属性标识符。
-// 例如，对于 `<Antd.Button>`，它会将 Type 设置为 "JSXMemberExpression"，
-// ModuleIdentifier 设置为 "Antd"，PropertyIdentifier 设置为 "Button"。
-// 对于 `<Button>`，它会将 Type 设置为 "JSXIdentifier"，PropertyIdentifier 设置为 "Button"。
-func (j *JSXElement) analyzeTagName(tagNameNode *ast.Node) {
-	switch tagNameNode.Kind {
-	case ast.KindIdentifier:
-		j.Type = "JSXIdentifier"
-		j.PropertyIdentifier = tagNameNode.AsIdentifier().Text
-	case ast.KindPropertyAccessExpression:
-		j.Type = "JSXMemberExpression"
-		expr := tagNameNode.AsPropertyAccessExpression()
-		// 从属性访问表达式中提取对象（模块）和属性（组件名）
-		if obj := expr.Expression.AsIdentifier(); obj != nil {
-			j.ModuleIdentifier = obj.Text
-		}
-		j.PropertyIdentifier = expr.Name().Text()
+// reconstructJSXName 从 JSX 标签名节点递归地构建一个组件调用链。
+func reconstructJSXName(node *ast.Node) []string {
+	if node == nil {
+		return nil
 	}
+	switch node.Kind {
+	case ast.KindIdentifier:
+		return []string{node.AsIdentifier().Text}
+	case ast.KindPropertyAccessExpression:
+		propAccess := node.AsPropertyAccessExpression()
+		// 递归地构建左侧部分的调用链
+		left := reconstructJSXName(propAccess.Expression)
+		// 将右侧的名称追加到链上
+		return append(left, propAccess.Name().Text())
+	default:
+		// 对于非预期的节点类型，返回一个空切片
+		return []string{}
+	}
+}
+
+// analyzeTagName 从 JSX 元素的标签名节点中解析出组件调用链。
+func (j *JSXElement) analyzeTagName(tagNameNode *ast.Node) {
+	j.ComponentChain = reconstructJSXName(tagNameNode)
 }
 
 // analyzeAttributeValue 从属性的 AST 节点中解析出其结构化信息。
