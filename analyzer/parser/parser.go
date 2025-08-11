@@ -134,7 +134,7 @@ func (pr *ParserResult) Traverse() {
 		// 匹配导入声明，例如: import { a } from 'b'
 		case ast.KindImportDeclaration:
 			idr := NewImportDeclarationResult()
-			idr.analyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
+			idr.AnalyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
 			pr.AddImportDeclaration(idr)
 			// 导入声明通常不需要深入遍历其子节点，因此在此处返回。
 			return
@@ -142,13 +142,13 @@ func (pr *ParserResult) Traverse() {
 		// 匹配接口声明，例如: interface MyInterface { ... }
 		case ast.KindInterfaceDeclaration:
 			inter := NewInterfaceDeclarationResult(node, sourceCode)
-			inter.analyzeInterfaces(node.AsInterfaceDeclaration())
+			inter.AnalyzeInterfaces(node.AsInterfaceDeclaration())
 			pr.AddInterfaceDeclaration(inter)
 
 		// 匹配类型别名声明，例如: type MyType = string;
 		case ast.KindTypeAliasDeclaration:
 			tr := NewTypeDeclarationResult(node, sourceCode)
-			tr.analyzeTypeDecl(node.AsTypeAliasDeclaration())
+			tr.AnalyzeTypeDecl(node.AsTypeAliasDeclaration())
 			pr.addTypeDeclaration(tr)
 
 		// 匹配枚举声明，例如: enum MyEnum { ... }
@@ -165,7 +165,7 @@ func (pr *ParserResult) Traverse() {
 		case ast.KindCallExpression:
 			callExpr := node.AsCallExpression()
 			ce := NewCallExpression(callExpr, sourceCode)
-			ce.analyzeCallExpression(callExpr, sourceCode)
+			ce.AnalyzeCallExpression(callExpr, sourceCode)
 			pr.addCallExpression(ce)
 
 		// 匹配 JSX 元素，包括自闭合和非自闭合的，例如: <MyComponent /> 或 <div>...</div>

@@ -4,6 +4,7 @@ package parser
 
 import (
 	"main/analyzer/utils"
+	"strings"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -81,7 +82,7 @@ func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *Var
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
-	vd.analyzeVariableDeclaration(node, sourceCode)
+	vd.AnalyzeVariableDeclaration(node, sourceCode)
 	return vd
 }
 
@@ -92,7 +93,7 @@ func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue 
 	}
 
 	value := &VariableValue{
-		Expression: utils.GetNodeText(node.AsNode(), sourceCode),
+		Expression: strings.TrimSpace(utils.GetNodeText(node.AsNode(), sourceCode)),
 	}
 
 	switch node.Kind {
@@ -183,7 +184,7 @@ func (vd *VariableDeclaration) analyzeBindingPattern(node *ast.Node, sourceCode 
 }
 
 // analyzeVariableDeclaration 是解析变量声明语句的核心逻辑。
-func (vd *VariableDeclaration) analyzeVariableDeclaration(node *ast.VariableStatement, sourceCode string) {
+func (vd *VariableDeclaration) AnalyzeVariableDeclaration(node *ast.VariableStatement, sourceCode string) {
 	// 1. 检查导出关键字
 	if modifiers := node.Modifiers(); modifiers != nil {
 		for _, modifier := range modifiers.Nodes {

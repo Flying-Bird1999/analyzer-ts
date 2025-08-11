@@ -36,7 +36,7 @@ func NewImportDeclarationResult() *ImportDeclarationResult {
 
 // analyzeImportDeclaration 从给定的 ast.ImportDeclaration 节点中提取详细信息。
 // 它能够处理默认导入、命名空间导入和命名导入（包括带别名的导入）。
-func (idr *ImportDeclarationResult) analyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
+func (idr *ImportDeclarationResult) AnalyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
 	// 设置节点的源码位置信息。
 	pos, end := node.Pos(), node.End()
 	idr.SourceLocation = SourceLocation{

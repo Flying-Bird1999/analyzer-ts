@@ -48,7 +48,7 @@ func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationR
 
 // analyzeExportDeclaration 从给定的 ast.ExportDeclaration 节点中提取信息。
 // 注意：当前的实现是基础的，并且有待完善。
-func (edr *ExportDeclarationResult) analyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) {
+func (edr *ExportDeclarationResult) AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) {
 	// 提取节点在源码中的原始文本。
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 	edr.Raw = raw

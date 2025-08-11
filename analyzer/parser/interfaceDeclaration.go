@@ -20,9 +20,9 @@ type TypeReference struct {
 
 // InterfaceDeclarationResult 存储一个完整的接口声明的解析结果。
 type InterfaceDeclarationResult struct {
-	Identifier     string                   `json:"identifier"` // 接口的名称。
-	Raw            string                   `json:"raw"`        // 节点在源码中的原始文本。
-	Reference      map[string]TypeReference `json:"reference"`  // 接口所依赖的其他类型的映射，以类型名作为 key。
+	Identifier     string                   `json:"identifier"`     // 接口的名称。
+	Raw            string                   `json:"raw"`            // 节点在源码中的原始文本。
+	Reference      map[string]TypeReference `json:"reference"`      // 接口所依赖的其他类型的映射，以类型名作为 key。
 	SourceLocation SourceLocation           `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
@@ -44,7 +44,7 @@ func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *Interface
 
 // analyzeInterfaces 是分析接口声明的入口函数。
 // 它负责提取接口名称，并分别调用函数处理继承关系和成员属性。
-func (inter *InterfaceDeclarationResult) analyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
+func (inter *InterfaceDeclarationResult) AnalyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
 	interfaceName := interfaceDecl.Name().AsIdentifier().Text
 	inter.Identifier = interfaceName
 
@@ -79,14 +79,14 @@ func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *as
 			if !(utils.IsUtilityType(name)) {
 				inter.addTypeReference(name, "", true)
 			}
-		// Case 2: 带命名空间的继承, e.g., `extends MyNamespace.MyInterface`
+			// Case 2: 带命名空间的继承, e.g., `extends MyNamespace.MyInterface`
 		} else if ast.IsPropertyAccessExpression(expression) {
 			name := entityNameToString(expression)
 			inter.addTypeReference(name, "", true)
 		}
 
 		// 分析 `extends` 中的泛型参数, e.g., `extends MyGeneric<TypeA, TypeB>`
-			if node.TypeArguments != nil {
+		if len(node.TypeArguments()) > 0 {
 			for _, typeArg := range node.TypeArguments() {
 				name, _ := AnalyzeType(typeArg, "")
 				inter.addTypeReference(name, "", true)

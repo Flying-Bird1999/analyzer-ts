@@ -82,7 +82,7 @@ func getArgumentType(node *ast.Node) string {
 
 // analyzeCallExpression 从给定的 ast.CallExpression 节点中提取详细信息，并填充到 CallExpression 结构体中。
 // 它能区分简单的函数调用（如 `myFunc()`）和成员方法调用（如 `myObj.myMethod()`）。
-func (ce *CallExpression) analyzeCallExpression(node *ast.CallExpression, sourceCode string) {
+func (ce *CallExpression) AnalyzeCallExpression(node *ast.CallExpression, sourceCode string) {
 	if node == nil {
 		return
 	}
@@ -92,7 +92,7 @@ func (ce *CallExpression) analyzeCallExpression(node *ast.CallExpression, source
 	for i, argNode := range node.Arguments.Nodes {
 		ce.Arguments[i] = Argument{
 			Type: getArgumentType(argNode.AsNode()),
-			Text: utils.GetNodeText(argNode.AsNode(), sourceCode),
+			Text: strings.TrimSpace(utils.GetNodeText(argNode.AsNode(), sourceCode)),
 		}
 	}
 

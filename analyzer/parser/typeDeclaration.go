@@ -36,7 +36,7 @@ func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclaratio
 
 // analyzeTypeDecl 是分析 `type` 别名声明的入口函数。
 // 它能根据别名的具体定义（对象字面量、映射类型、联合类型等）进行分发处理。
-func (tr *TypeDeclarationResult) analyzeTypeDecl(typeDecl *ast.TypeAliasDeclaration) {
+func (tr *TypeDeclarationResult) AnalyzeTypeDecl(typeDecl *ast.TypeAliasDeclaration) {
 	typeName := typeDecl.Name().Text()
 	tr.Identifier = typeName
 
