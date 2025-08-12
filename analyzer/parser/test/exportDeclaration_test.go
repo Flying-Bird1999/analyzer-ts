@@ -23,22 +23,51 @@ func TestAnalyzeExportDeclaration(t *testing.T) {
 	}{
 		{
 			name: "Named Export",
-			code: "export { name1, name2 };",
+			code: "export { name1, name2 as alias };",
 			expectedResult: expectedResult{
-				ExportModules: []parser.ExportModule{},
-				Raw:           "export { name1, name2 };",
-				Source:        "",
-				Type:          "",
+				ExportModules: []parser.ExportModule{
+					{ModuleName: "name1", Type: "named", Identifier: "name1"},
+					{ModuleName: "name2", Type: "named", Identifier: "alias"},
+				},
+				Raw:    "export { name1, name2 as alias };",
+				Source: "",
+				Type:   "named-export",
 			},
 		},
 		{
 			name: "Re-export from module",
-			code: "export { name1 } from \"./mod\";",
+			code: `export { name1 } from "./mod";`,
 			expectedResult: expectedResult{
-				ExportModules: []parser.ExportModule{},
-				Raw:           "export { name1 } from \"./mod\";",
-				Source:        "",
-				Type:          "",
+				ExportModules: []parser.ExportModule{
+					{ModuleName: "name1", Type: "named", Identifier: "name1"},
+				},
+				Raw:    "export { name1 } from \"./mod\";",
+				Source: "./mod",
+				Type:   "re-export",
+			},
+		},
+		{
+			name: "Wildcard re-export",
+			code: `export * from "./mod";`,
+			expectedResult: expectedResult{
+				ExportModules: []parser.ExportModule{
+					{ModuleName: "*", Type: "namespace", Identifier: "*"},
+				},
+				Raw:    "export * from \"./mod\";",
+				Source: "./mod",
+				Type:   "re-export",
+			},
+		},
+		{
+			name: "Namespace re-export",
+			code: `export * as ns from "./mod";`,
+			expectedResult: expectedResult{
+				ExportModules: []parser.ExportModule{
+					{ModuleName: "*", Type: "namespace", Identifier: "ns"},
+				},
+				Raw:    "export * as ns from \"./mod\";",
+				Source: "./mod",
+				Type:   "re-export",
 			},
 		},
 	}

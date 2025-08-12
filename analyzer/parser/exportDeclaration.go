@@ -16,9 +16,9 @@ import (
 // - `export { School2 as NewSchool2 };` (带别名的命名导出)
 // - `export const name = "bird";` (导出变量)
 type ExportModule struct {
-	ImportModule string `json:"importModule"` // 模块名, 对应实际导出的内容模块。例如 `export { a as b }` 中的 `a`。
-	Type         string `json:"type"`         // 导出类型。可以是 `default` (默认导出), `named` (命名导出), 或 `unknown`。
-	Identifier   string `json:"identifier"`   // 导出的标识符。例如 `export { a as b }` 中的 `b`，或者 `export default A` 中的 `A`。
+	ModuleName string `json:"moduleName"` // 模块名, 对应实际导出的内容模块。例如 `export { a as b }` 中的 `a`。
+	Type       string `json:"type"`       // 导出类型: `named` (命名导出), `namespace` (命名空间导出)。
+	Identifier string `json:"identifier"` // 导出的标识符。例如 `export { a as b }` 中的 `b`。
 }
 
 // ExportDeclarationResult 存储一个完整的导出声明的解析结果。
@@ -27,12 +27,11 @@ type ExportDeclarationResult struct {
 	ExportModules  []ExportModule `json:"exportModules"`  // 该导出声明中包含的所有导出模块的列表。
 	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
 	Source         string         `json:"source"`         // 导出来源的模块路径。例如 `export { a } from "../index.ts"` 中的 `"../index.ts"`。
-	Type           string         `json:"type"`           // 预留字段，未来可用于表示导出的具体类型（如：变量、函数、类等）。
+	Type           string         `json:"type"`           // 导出类型: `re-export` (重导出) 或 `named-export` (命名导出)。
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
 // NewExportDeclarationResult 基于 AST 节点创建一个新的 ExportDeclarationResult 实例。
-// 它初始化了结果结构体，并设置了源码位置。
 func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationResult {
 	pos, end := node.Pos(), node.End()
 	return &ExportDeclarationResult{
@@ -46,20 +45,56 @@ func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationR
 	}
 }
 
-// analyzeExportDeclaration 从给定的 ast.ExportDeclaration 节点中提取信息。
-// 注意：当前的实现是基础的，并且有待完善。
+// AnalyzeExportDeclaration 从给定的 ast.ExportDeclaration 节点中提取信息。
 func (edr *ExportDeclarationResult) AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) {
-	// 提取节点在源码中的原始文本。
-	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	edr.Raw = raw
+	edr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
 
-	// TODO: 实现完整的导出声明分析逻辑。
-	// 需要处理以下几种情况：
-	// 1. 命名导出: `export { name1, name2 as alias }`
-	// 2. 默认导出: `export default myExpression`
-	// 3. 重导出: `export * from './module'` 或 `export { name } from './module'`
-	// 4. 导出声明: `export const a = 1;` 或 `export function b() {}` (这部分可能在 `Traverse` 的其他 case 中处理)
+	// 检查是否存在模块说明符（即 `from './module'`），如果存在，说明是重导出。
+	if node.ModuleSpecifier != nil {
+		edr.Source = node.ModuleSpecifier.Text()
+		edr.Type = "re-export"
+	} else {
+		edr.Type = "named-export"
+	}
 
-	// 预留类型字段，当前未实现。
-	edr.Type = ""
+	// `ExportClause` 包含了具体的导出项，例如 `{ a, b as c }`。
+	if node.ExportClause != nil {
+		// Case 1: 处理命名导出 `export { ... }`
+		if node.ExportClause.Kind == ast.KindNamedExports {
+			namedExports := node.ExportClause.AsNamedExports()
+			for _, element := range namedExports.Elements.Nodes {
+				specifier := element.AsExportSpecifier()
+				identifier := specifier.Name().Text()
+				moduleName := identifier
+				// 如果 PropertyName 存在，说明是带别名的导出，例如 `a as b`
+				if specifier.PropertyName != nil {
+					moduleName = specifier.PropertyName.Text()
+				}
+				edr.ExportModules = append(edr.ExportModules, ExportModule{
+					ModuleName: moduleName,
+					Type:       "named",
+					Identifier: identifier,
+				})
+			}
+			// Case 2: 处理命名空间导出 `export * as ns from './mod'`
+		} else if node.ExportClause.Kind == ast.KindNamespaceExport {
+			namespaceExport := node.ExportClause.AsNamespaceExport()
+			identifier := namespaceExport.Name().Text()
+			edr.ExportModules = append(edr.ExportModules, ExportModule{
+				ModuleName: "*",
+				Type:       "namespace",
+				Identifier: identifier,
+			})
+		}
+	} else {
+		// Case 3: 处理通配符重导出 `export * from './mod'`
+		// 这种情况下，ExportClause 为 nil，但 ModuleSpecifier 存在。
+		if edr.Source != "" {
+			edr.ExportModules = append(edr.ExportModules, ExportModule{
+				ModuleName: "*",
+				Type:       "namespace",
+				Identifier: "*",
+			})
+		}
+	}
 }

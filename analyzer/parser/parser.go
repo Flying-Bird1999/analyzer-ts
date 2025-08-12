@@ -17,6 +17,7 @@ type ParserResult struct {
 	// 以下字段存储了文件中提取出的所有声明和表达式。
 	ImportDeclarations    []ImportDeclarationResult             // 文件中所有的导入声明
 	ExportDeclarations    []ExportDeclarationResult             // 文件中所有的导出声明
+	ExportAssignments     []ExportAssignmentResult              // 文件中所有的 `export default` 声明
 	InterfaceDeclarations map[string]InterfaceDeclarationResult // 文件中所有的接口声明，以接口名作为 key
 	TypeDeclarations      map[string]TypeDeclarationResult      // 文件中所有的类型别名声明，以类型名作为 key
 	EnumDeclarations      map[string]EnumDeclarationResult      // 文件中所有的枚举声明，以枚举名作为 key
@@ -43,6 +44,8 @@ func NewParserResult(filePath string) ParserResult {
 	return ParserResult{
 		filePath:              filePath,
 		ImportDeclarations:    []ImportDeclarationResult{},
+		ExportDeclarations:    []ExportDeclarationResult{},
+		ExportAssignments:     []ExportAssignmentResult{},
 		InterfaceDeclarations: make(map[string]InterfaceDeclarationResult),
 		TypeDeclarations:      make(map[string]TypeDeclarationResult),
 		EnumDeclarations:      make(map[string]EnumDeclarationResult),
@@ -60,6 +63,11 @@ func (pr *ParserResult) AddImportDeclaration(idr *ImportDeclarationResult) {
 // AddExportDeclaration 向结果中添加一个解析后的导出声明。
 func (pr *ParserResult) AddExportDeclaration(edr *ExportDeclarationResult) {
 	pr.ExportDeclarations = append(pr.ExportDeclarations, *edr)
+}
+
+// AddExportAssignment 向结果中添加一个解析后的 `export default` 声明。
+func (pr *ParserResult) AddExportAssignment(ear *ExportAssignmentResult) {
+	pr.ExportAssignments = append(pr.ExportAssignments, *ear)
 }
 
 // AddInterfaceDeclaration 向结果中添加一个解析后的接口声明。
@@ -97,6 +105,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 	return ParserResult{
 		ImportDeclarations:    pr.ImportDeclarations,
 		ExportDeclarations:    pr.ExportDeclarations,
+		ExportAssignments:     pr.ExportAssignments,
 		InterfaceDeclarations: pr.InterfaceDeclarations,
 		TypeDeclarations:      pr.TypeDeclarations,
 		EnumDeclarations:      pr.EnumDeclarations,
@@ -137,6 +146,20 @@ func (pr *ParserResult) Traverse() {
 			idr.AnalyzeImportDeclaration(node.AsImportDeclaration(), sourceCode)
 			pr.AddImportDeclaration(idr)
 			// 导入声明通常不需要深入遍历其子节点，因此在此处返回。
+			return
+
+		// 匹配 `export {...}` 形式的导出
+		case ast.KindExportDeclaration:
+			edr := NewExportDeclarationResult(node.AsExportDeclaration())
+			edr.AnalyzeExportDeclaration(node.AsExportDeclaration(), sourceCode)
+			pr.AddExportDeclaration(edr)
+			return
+
+		// 匹配 `export default ...` 形式的导出
+		case ast.KindExportAssignment:
+			ear := NewExportAssignmentResult(node.AsExportAssignment())
+			ear.AnalyzeExportAssignment(node.AsExportAssignment(), sourceCode)
+			pr.AddExportAssignment(ear)
 			return
 
 		// 匹配接口声明，例如: interface MyInterface { ... }
