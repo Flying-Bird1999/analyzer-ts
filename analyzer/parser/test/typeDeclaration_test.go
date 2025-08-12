@@ -70,6 +70,45 @@ func TestAnalyzeTypeDecl(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Mapped Type",
+			code: `type MappedType = { [key in SupportedLanguages]?: string[] | string }`,
+			expectedResult: expectedResult{
+				Identifier: "MappedType",
+				Raw:        "type MappedType = { [key in SupportedLanguages]?: string[] | string }",
+				Reference: map[string]parser.TypeReference{
+					"SupportedLanguages": {
+						Identifier: "SupportedLanguages",
+						Location:   []string{""},
+						IsExtend:   false,
+					},
+				},
+			},
+		},
+		{
+			name: "Indexed Access Type",
+			code: `type PersonName = Translations["name"];`,
+			expectedResult: expectedResult{
+				Identifier: "PersonName",
+				Raw:        "type PersonName = Translations[\"name\"];",
+				Reference: map[string]parser.TypeReference{
+					"Translations": {
+						Identifier: "Translations",
+						Location:   []string{"PersonName"},
+						IsExtend:   false,
+					},
+				},
+			},
+		},
+		{
+			name: "Type with String Key",
+			code: `type A = { "name": string };`,
+			expectedResult: expectedResult{
+				Identifier: "A",
+				Raw:        "type A = { \"name\": string };",
+				Reference:  map[string]parser.TypeReference{},
+			},
+		},
 	}
 
 	findNode := func(sourceFile *ast.SourceFile) *ast.TypeAliasDeclaration {

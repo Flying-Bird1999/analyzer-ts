@@ -1,4 +1,3 @@
-
 package parser_test
 
 import (
@@ -11,8 +10,8 @@ import (
 
 func TestAnalyzeInterfaces(t *testing.T) {
 	type expectedResult struct {
-		Identifier string                            `json:"identifier"`
-		Raw        string                            `json:"raw"`
+		Identifier string                          `json:"identifier"`
+		Raw        string                          `json:"raw"`
 		Reference  map[string]parser.TypeReference `json:"reference"`
 	}
 
@@ -60,6 +59,70 @@ func TestAnalyzeInterfaces(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Complex Interface",
+			code: `interface Class extends A {
+				name: string;
+				age: number | Class3;
+				// 学校
+				school: School;
+				['class2']: Class2;
+				pack: allTypes.Size;
+			}`,
+			expectedResult: expectedResult{
+				Identifier: "Class",
+				Raw: `interface Class extends A {
+				name: string;
+				age: number | Class3;
+				// 学校
+				school: School;
+				['class2']: Class2;
+				pack: allTypes.Size;
+			}`,
+				Reference: map[string]parser.TypeReference{
+					"A": {
+						Identifier: "A",
+						Location:   []string{""},
+						IsExtend:   true,
+					},
+					"Class3": {
+						Identifier: "Class3",
+						Location:   []string{"Class.age"},
+						IsExtend:   false,
+					},
+					"School": {
+						Identifier: "School",
+						Location:   []string{"Class.school"},
+						IsExtend:   false,
+					},
+					"Class2": {
+						Identifier: "Class2",
+						Location:   []string{"Class.class2"},
+						IsExtend:   false,
+					},
+					"allTypes.Size": {
+						Identifier: "allTypes.Size",
+						Location:   []string{"Class.pack"},
+						IsExtend:   false,
+					},
+				},
+			},
+		},
+		{
+			name: "Extends with Utility Type",
+			code: `interface Class8 extends Omit<Class2, 'age'> {name:string}`,
+			expectedResult: expectedResult{
+				Identifier: "Class8",
+				Raw:        "interface Class8 extends Omit<Class2, 'age'> {name:string}",
+				Reference: map[string]parser.TypeReference{
+					"Class2": {
+						Identifier: "Class2",
+						Location:   []string{""},
+						IsExtend:   true,
+					},
+				},
+			},
+		},
 	}
 
 	findNode := func(sourceFile *ast.SourceFile) *ast.InterfaceDeclaration {
@@ -79,8 +142,8 @@ func TestAnalyzeInterfaces(t *testing.T) {
 
 	marshal := func(result *parser.InterfaceDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
-			Identifier string                            `json:"identifier"`
-			Raw        string                            `json:"raw"`
+			Identifier string                          `json:"identifier"`
+			Raw        string                          `json:"raw"`
 			Reference  map[string]parser.TypeReference `json:"reference"`
 		}{
 			Identifier: result.Identifier,
