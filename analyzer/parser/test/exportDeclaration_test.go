@@ -9,30 +9,37 @@ import (
 )
 
 func TestAnalyzeExportDeclaration(t *testing.T) {
+	type expectedResult struct {
+		ExportModules []parser.ExportModule `json:"exportModules"`
+		Raw           string                `json:"raw"`
+		Source        string                `json:"source"`
+		Type          string                `json:"type"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Named Export",
 			code: "export { name1, name2 };",
-			expectedJSON: `{
-				"exportModules": [],
-				"raw": "export { name1, name2 };",
-				"source": "",
-				"type": ""
-			}`,
+			expectedResult: expectedResult{
+				ExportModules: []parser.ExportModule{},
+				Raw:           "export { name1, name2 };",
+				Source:        "",
+				Type:          "",
+			},
 		},
 		{
 			name: "Re-export from module",
 			code: "export { name1 } from \"./mod\";",
-			expectedJSON: `{
-				"exportModules": [],
-				"raw": "export { name1 } from \"./mod\";",
-				"source": "",
-				"type": ""
-			}`,
+			expectedResult: expectedResult{
+				ExportModules: []parser.ExportModule{},
+				Raw:           "export { name1 } from \"./mod\";",
+				Source:        "",
+				Type:          "",
+			},
 		},
 	}
 
@@ -67,7 +74,11 @@ func TestAnalyzeExportDeclaration(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }

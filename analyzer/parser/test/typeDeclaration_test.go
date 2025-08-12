@@ -10,59 +10,65 @@ import (
 )
 
 func TestAnalyzeTypeDecl(t *testing.T) {
+	type expectedResult struct {
+		Identifier string                            `json:"identifier"`
+		Raw        string                            `json:"raw"`
+		Reference  map[string]parser.TypeReference `json:"reference"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Simple Type Alias",
 			code: `type MyString = string;`,
-			expectedJSON: `{
-				"identifier": "MyString",
-				"raw": "type MyString = string;",
-				"reference": {}
-			}`,
+			expectedResult: expectedResult{
+				Identifier: "MyString",
+				Raw:        "type MyString = string;",
+				Reference:  map[string]parser.TypeReference{},
+			},
 		},
 		{
 			name: "Type Alias with Custom Type",
 			code: `type UserResponse = Response<User>;`,
-			expectedJSON: `{
-				"identifier": "UserResponse",
-				"raw": "type UserResponse = Response<User>;",
-				"reference": {
+			expectedResult: expectedResult{
+				Identifier: "UserResponse",
+				Raw:        "type UserResponse = Response<User>;",
+				Reference: map[string]parser.TypeReference{
 					"Response": {
-						"identifier": "Response",
-						"location": ["UserResponse"],
-						"isExtend": false
+						Identifier: "Response",
+						Location:   []string{"UserResponse"},
+						IsExtend:   false,
 					},
 					"User": {
-						"identifier": "User",
-						"location": ["UserResponse<>"],
-						"isExtend": false
-					}
-				}
-			}`,
+						Identifier: "User",
+						Location:   []string{"UserResponse<>"},
+						IsExtend:   false,
+					},
+				},
+			},
 		},
 		{
 			name: "Type Alias with Union",
 			code: `type MyUnion = TypeA | TypeB;`,
-			expectedJSON: `{
-				"identifier": "MyUnion",
-				"raw": "type MyUnion = TypeA | TypeB;",
-				"reference": {
+			expectedResult: expectedResult{
+				Identifier: "MyUnion",
+				Raw:        "type MyUnion = TypeA | TypeB;",
+				Reference: map[string]parser.TypeReference{
 					"TypeA": {
-						"identifier": "TypeA",
-						"location": ["MyUnion"],
-						"isExtend": false
+						Identifier: "TypeA",
+						Location:   []string{"MyUnion"},
+						IsExtend:   false,
 					},
 					"TypeB": {
-						"identifier": "TypeB",
-						"location": ["MyUnion"],
-						"isExtend": false
-					}
-				}
-			}`,
+						Identifier: "TypeB",
+						Location:   []string{"MyUnion"},
+						IsExtend:   false,
+					},
+				},
+			},
 		},
 	}
 
@@ -95,7 +101,11 @@ func TestAnalyzeTypeDecl(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }

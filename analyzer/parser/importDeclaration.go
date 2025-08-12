@@ -1,4 +1,4 @@
-// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象抽象语法树）解析的功能。
 // 本文件（importDeclaration.go）专门负责处理和解析导入（Import）声明。
 package parser
 
@@ -29,79 +29,62 @@ type ImportDeclarationResult struct {
 func NewImportDeclarationResult() *ImportDeclarationResult {
 	return &ImportDeclarationResult{
 		ImportModules: make([]ImportModule, 0),
-		Raw:           "",
-		Source:        "",
 	}
 }
 
-// analyzeImportDeclaration 从给定的 ast.ImportDeclaration 节点中提取详细信息。
+// addModule 是一个辅助函数，用于向 ImportDeclarationResult 添加一个新的导入模块。
+func (idr *ImportDeclarationResult) addModule(moduleType, importModule, identifier string) {
+	idr.ImportModules = append(idr.ImportModules, ImportModule{
+		Type:         moduleType,
+		ImportModule: importModule,
+		Identifier:   identifier,
+	})
+}
+
+// AnalyzeImportDeclaration 从给定的 ast.ImportDeclaration 节点中提取详细信息。
 // 它能够处理默认导入、命名空间导入和命名导入（包括带别名的导入）。
 func (idr *ImportDeclarationResult) AnalyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
-	// 设置节点的源码位置信息。
+	// 提取基本信息：原始文本、来源和位置。
+	idr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
+	idr.Source = node.ModuleSpecifier.Text()
 	pos, end := node.Pos(), node.End()
 	idr.SourceLocation = SourceLocation{
 		Start: NodePosition{Line: pos, Column: 0},
 		End:   NodePosition{Line: end, Column: 0},
 	}
 
-	// 提取节点在源码中的原始文本。
-	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	idr.Raw = raw
+	// `ImportClause` 为 nil 表示这是一个纯副作用导入，例如 `import './setup';`，直接返回。
+	if node.ImportClause == nil {
+		return
+	}
 
-	// 提取导入来源的模块路径。
-	moduleSpecifier := node.ModuleSpecifier
-	idr.Source = moduleSpecifier.Text()
+	importClause := node.ImportClause.AsImportClause()
 
-	// `ImportClause` 包含了关于导入内容的具体信息。
-	if node.ImportClause != nil {
-		importClause := node.ImportClause.AsImportClause()
+	// Case 1: 默认导入, 例如: `import Bird from './type2';`
+	if ast.IsDefaultImport(node.AsNode()) {
+		name := importClause.Name().Text()
+		idr.addModule("default", "default", name)
+	}
 
-		// Case 1: 默认导入, 例如: `import Bird from './type2';`
-		if ast.IsDefaultImport(node.AsNode()) {
-			name := importClause.Name().Text()
-			idr.ImportModules = append(idr.ImportModules, ImportModule{
-				ImportModule: "default", // 默认导入的模块名固定为 'default'。
-				Type:         "default",
-				Identifier:   name,
-			})
-		}
+	// Case 2: 命名空间导入, 例如: `import * as allTypes from './type';`
+	if namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode()); namespaceNode != nil {
+		name := namespaceNode.Name().Text()
+		idr.addModule("namespace", name, name)
+	}
 
-		// Case 2: 命名空间导入, 例如: `import * as allTypes from './type';`
-		namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode())
-		if namespaceNode != nil {
-			name := namespaceNode.Name().Text()
-			idr.ImportModules = append(idr.ImportModules, ImportModule{
-				ImportModule: name, // 对于命名空间导入，模块名和标识符是相同的。
-				Type:         "namespace",
-				Identifier:   name,
-			})
-		}
+	// Case 3: 命名导入, 例如: `import { School, School2 as NewSchool } from './school';`
+	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
+		namedImports := importClause.NamedBindings.AsNamedImports()
+		for _, element := range namedImports.Elements.Nodes {
+			importSpecifier := element.AsImportSpecifier()
 
-		// Case 3: 命名导入, 例如: `import { School, School2 as NewSchool } from './school';`
-		if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
-			namedImports := importClause.NamedBindings.AsNamedImports()
-			for _, element := range namedImports.Elements.Nodes {
-				importSpecifier := element.AsImportSpecifier()
-
-				// 处理带别名的命名导入: `import { School as NewSchool } from './school';`
-				if importSpecifier.PropertyName != nil {
-					name := importSpecifier.PropertyName.Text() // 原始名称 `School`
-					alias := importSpecifier.Name().Text()      // 别名 `NewSchool`
-					idr.ImportModules = append(idr.ImportModules, ImportModule{
-						ImportModule: name,
-						Type:         "named",
-						Identifier:   alias,
-					})
-				} else {
-					// 处理普通的命名导入: `import { School } from './school';`
-					name := importSpecifier.Name().Text() // 名称 `School`
-					idr.ImportModules = append(idr.ImportModules, ImportModule{
-						ImportModule: name,
-						Type:         "named",
-						Identifier:   name,
-					})
-				}
+			identifier := importSpecifier.Name().Text()
+			importModule := identifier
+			// 如果 PropertyName 存在，说明是带别名的导入，原始模块名为 PropertyName。
+			if importSpecifier.PropertyName != nil {
+				importModule = importSpecifier.PropertyName.Text()
 			}
+			idr.addModule("named", importModule, identifier)
 		}
 	}
 }

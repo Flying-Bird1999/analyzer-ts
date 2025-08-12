@@ -9,73 +9,80 @@ import (
 )
 
 func TestNewVariableDeclaration(t *testing.T) {
+	type expectedResult struct {
+		Exported    bool                         `json:"exported"`
+		Kind        parser.DeclarationKind       `json:"kind"`
+		Source      *parser.VariableValue        `json:"source,omitempty"`
+		Declarators []*parser.VariableDeclarator `json:"declarators"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Simple const declaration",
 			code: `const myVar = "hello";`,
-			expectedJSON: `{
-				"exported": false,
-				"kind": "const",
-				"declarators": [
+			expectedResult: expectedResult{
+				Exported: false,
+				Kind:     "const",
+				Declarators: []*parser.VariableDeclarator{
 					{
-						"identifier": "myVar",
-						"initValue": {
-							"type": "stringLiteral",
-							"expression": "\"hello\"",
-							"data": "hello"
-						}
-					}
-				]
-			}`,
+						Identifier: "myVar",
+						InitValue: &parser.VariableValue{
+							Type:       "stringLiteral",
+							Expression: "\"hello\"",
+							Data:       "hello",
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "Export let declaration",
 			code: `export let myVar: number = 123;`,
-			expectedJSON: `{
-				"exported": true,
-				"kind": "let",
-				"declarators": [
+			expectedResult: expectedResult{
+				Exported: true,
+				Kind:     "let",
+				Declarators: []*parser.VariableDeclarator{
 					{
-						"identifier": "myVar",
-						"type": {
-							"type": "typeNode",
-							"expression": "number"
+						Identifier: "myVar",
+						Type: &parser.VariableValue{
+							Type:       "typeNode",
+							Expression: "number",
 						},
-						"initValue": {
-							"type": "numericLiteral",
-							"expression": "123",
-							"data": "123"
-						}
-					}
-				]
-			}`,
+						InitValue: &parser.VariableValue{
+							Type:       "numericLiteral",
+							Expression: "123",
+							Data:       "123",
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "Object destructuring",
 			code: `const { a, b: myB } = myObj;`,
-			expectedJSON: `{
-				"exported": false,
-				"kind": "const",
-				"source": {
-					"type": "identifier",
-					"expression": "myObj",
-					"data": "myObj"
+			expectedResult: expectedResult{
+				Exported: false,
+				Kind:     "const",
+				Source: &parser.VariableValue{
+					Type:       "identifier",
+					Expression: "myObj",
+					Data:       "myObj",
 				},
-				"declarators": [
+				Declarators: []*parser.VariableDeclarator{
 					{
-						"identifier": "a",
-						"propName": "a"
+						Identifier: "a",
+						PropName:   "a",
 					},
 					{
-						"identifier": "myB",
-						"propName": "b"
-					}
-				]
-			}`,
+						Identifier: "myB",
+						PropName:   "b",
+					},
+				},
+			},
 		},
 	}
 
@@ -108,7 +115,11 @@ func TestNewVariableDeclaration(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }

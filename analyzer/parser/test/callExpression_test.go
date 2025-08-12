@@ -9,53 +9,59 @@ import (
 )
 
 func TestAnalyzeCallExpression(t *testing.T) {
+	type expectedResult struct {
+		CallChain []string          `json:"callChain"`
+		Arguments []parser.Argument `json:"arguments"`
+		Type      string            `json:"type"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Simple function call",
 			code: `myFunction();`,
-			expectedJSON: `{
-				"callChain": ["myFunction"],
-				"arguments": [],
-				"type": "call"
-			}`,
+			expectedResult: expectedResult{
+				CallChain: []string{"myFunction"},
+				Arguments: []parser.Argument{},
+				Type:      "call",
+			},
 		},
 		{
 			name: "Call with arguments",
 			code: `myFunction(1, "hello", true, myVar);`,
-			expectedJSON: `{
-				"callChain": ["myFunction"],
-				"arguments": [
-					{"type": "number", "text": "1"},
-					{"type": "string", "text": "\"hello\""},
-					{"type": "boolean", "text": "true"},
-					{"type": "identifier", "text": "myVar"}
-				],
-				"type": "call"
-			}`,
+			expectedResult: expectedResult{
+				CallChain: []string{"myFunction"},
+				Arguments: []parser.Argument{
+					{Type: "number", Text: "1"},
+					{Type: "string", Text: "\"hello\""},
+					{Type: "boolean", Text: "true"},
+					{Type: "identifier", Text: "myVar"},
+				},
+				Type: "call",
+			},
 		},
 		{
 			name: "Member access call",
 			code: `myObj.myMethod();`,
-			expectedJSON: `{
-				"callChain": ["myObj", "myMethod"],
-				"arguments": [],
-				"type": "member"
-			}`,
+			expectedResult: expectedResult{
+				CallChain: []string{"myObj", "myMethod"},
+				Arguments: []parser.Argument{},
+				Type:      "member",
+			},
 		},
 		{
 			name: "Chained member access call",
 			code: `this.a.b.c(123);`,
-			expectedJSON: `{
-				"callChain": ["this", "a", "b", "c"],
-				"arguments": [
-					{"type": "number", "text": "123"}
-				],
-				"type": "member"
-			}`,
+			expectedResult: expectedResult{
+				CallChain: []string{"this", "a", "b", "c"},
+				Arguments: []parser.Argument{
+					{Type: "number", Text: "123"},
+				},
+				Type: "member",
+			},
 		},
 	}
 
@@ -99,7 +105,11 @@ func TestAnalyzeCallExpression(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }

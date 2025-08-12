@@ -10,49 +10,55 @@ import (
 )
 
 func TestAnalyzeInterfaces(t *testing.T) {
+	type expectedResult struct {
+		Identifier string                            `json:"identifier"`
+		Raw        string                            `json:"raw"`
+		Reference  map[string]parser.TypeReference `json:"reference"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Simple Interface",
 			code: `interface MyInterface { name: string; age: number; }`,
-			expectedJSON: `{
-				"identifier": "MyInterface",
-				"raw": "interface MyInterface { name: string; age: number; }",
-				"reference": {}
-			}`,
+			expectedResult: expectedResult{
+				Identifier: "MyInterface",
+				Raw:        "interface MyInterface { name: string; age: number; }",
+				Reference:  map[string]parser.TypeReference{},
+			},
 		},
 		{
 			name: "Interface with Custom Type",
 			code: `interface MyInterface { user: User; }`,
-			expectedJSON: `{
-				"identifier": "MyInterface",
-				"raw": "interface MyInterface { user: User; }",
-				"reference": {
+			expectedResult: expectedResult{
+				Identifier: "MyInterface",
+				Raw:        "interface MyInterface { user: User; }",
+				Reference: map[string]parser.TypeReference{
 					"User": {
-						"identifier": "User",
-						"location": ["MyInterface.user"],
-						"isExtend": false
-					}
-				}
-			}`,
+						Identifier: "User",
+						Location:   []string{"MyInterface.user"},
+						IsExtend:   false,
+					},
+				},
+			},
 		},
 		{
 			name: "Interface with Extends",
 			code: `interface MyInterface extends AnotherInterface { id: number; }`,
-			expectedJSON: `{
-				"identifier": "MyInterface",
-				"raw": "interface MyInterface extends AnotherInterface { id: number; }",
-				"reference": {
+			expectedResult: expectedResult{
+				Identifier: "MyInterface",
+				Raw:        "interface MyInterface extends AnotherInterface { id: number; }",
+				Reference: map[string]parser.TypeReference{
 					"AnotherInterface": {
-						"identifier": "AnotherInterface",
-						"location": [""],
-						"isExtend": true
-					}
-				}
-			}`,
+						Identifier: "AnotherInterface",
+						Location:   []string{""},
+						IsExtend:   true,
+					},
+				},
+			},
 		},
 	}
 
@@ -85,7 +91,11 @@ func TestAnalyzeInterfaces(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }

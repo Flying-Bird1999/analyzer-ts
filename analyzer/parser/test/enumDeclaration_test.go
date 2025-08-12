@@ -9,26 +9,31 @@ import (
 )
 
 func TestNewEnumDeclarationResult(t *testing.T) {
+	type expectedResult struct {
+		Identifier string `json:"identifier"`
+		Raw        string `json:"raw"`
+	}
+
 	testCases := []struct {
-		name         string
-		code         string
-		expectedJSON string
+		name           string
+		code           string
+		expectedResult expectedResult
 	}{
 		{
 			name: "Simple Enum",
 			code: `enum Color { Red, Green, Blue }`,
-			expectedJSON: `{
-				"identifier": "Color",
-				"raw": "enum Color { Red, Green, Blue }"
-			}`,
+			expectedResult: expectedResult{
+				Identifier: "Color",
+				Raw:        "enum Color { Red, Green, Blue }",
+			},
 		},
 		{
 			name: "Enum with Initializer",
 			code: `enum Direction { Up = 1, Down, Left, Right }`,
-			expectedJSON: `{
-				"identifier": "Direction",
-				"raw": "enum Direction { Up = 1, Down, Left, Right }"
-			}`,
+			expectedResult: expectedResult{
+				Identifier: "Direction",
+				Raw:        "enum Direction { Up = 1, Down, Left, Right }",
+			},
 		},
 	}
 
@@ -57,7 +62,11 @@ func TestNewEnumDeclarationResult(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
+			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
+			if err != nil {
+				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+			}
+			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
 }
