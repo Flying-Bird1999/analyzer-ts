@@ -3,13 +3,9 @@ package parser_test
 import (
 	"encoding/json"
 	"main/analyzer/parser"
-	"main/analyzer/utils"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalyzeImportDeclaration(t *testing.T) {
@@ -99,45 +95,36 @@ func TestAnalyzeImportDeclaration(t *testing.T) {
 		},
 	}
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current working directory")
-	// The parser requires an absolute path, so we create a dummy one.
-	dummyPath := filepath.Join(wd, "test.ts")
+	findNode := func(sourceFile *ast.SourceFile) *ast.ImportDeclaration {
+		for _, stmt := range sourceFile.Statements.Nodes {
+			if stmt.Kind == ast.KindImportDeclaration {
+				return stmt.AsImportDeclaration()
+			}
+		}
+		return nil
+	}
+
+	testParser := func(node *ast.ImportDeclaration, code string) *parser.ImportDeclarationResult {
+		result := parser.NewImportDeclarationResult()
+		result.AnalyzeImportDeclaration(node, code)
+		return result
+	}
+
+	marshal := func(result *parser.ImportDeclarationResult) ([]byte, error) {
+		return json.MarshalIndent(struct {
+			ImportModules []parser.ImportModule `json:"importModules"`
+			Raw           string                `json:"raw"`
+			Source        string                `json:"source"`
+		}{
+			ImportModules: result.ImportModules,
+			Raw:           result.Raw,
+			Source:        result.Source,
+		}, "", "\t")
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceFile := utils.ParseTypeScriptFile(dummyPath, tc.code)
-			rootNode := sourceFile.AsNode()
-
-			var importNode *ast.ImportDeclaration
-			rootNode.ForEachChild(func(child *ast.Node) bool {
-				if child.Kind == ast.KindImportDeclaration {
-					importNode = child.AsImportDeclaration()
-					return true // Stop traversal
-				}
-				return false // Continue traversal
-			})
-
-			assert.NotNil(t, importNode, "Import node should not be nil")
-
-			// Call the exported functions from the parser package
-			result := parser.NewImportDeclarationResult()
-			result.AnalyzeImportDeclaration(importNode, tc.code)
-
-			// Marshal the result to JSON for comparison, ignoring the SourceLocation field.
-			resultJSON, err := json.MarshalIndent(struct {
-				ImportModules []parser.ImportModule `json:"importModules"`
-				Raw           string                `json:"raw"`
-				Source        string                `json:"source"`
-			}{
-				ImportModules: result.ImportModules,
-				Raw:           result.Raw,
-				Source:        result.Source,
-			}, "", "	")
-			assert.NoError(t, err, "Failed to marshal result to JSON")
-
-			// Compare the actual JSON with the expected JSON.
-			assert.JSONEq(t, tc.expectedJSON, string(resultJSON), "The generated JSON should match the expected JSON")
+			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
 		})
 	}
 }

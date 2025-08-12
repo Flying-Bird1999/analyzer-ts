@@ -4,13 +4,9 @@ package parser_test
 import (
 	"encoding/json"
 	"main/analyzer/parser"
-	"main/analyzer/utils"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalyzeInterfaces(t *testing.T) {
@@ -60,40 +56,36 @@ func TestAnalyzeInterfaces(t *testing.T) {
 		},
 	}
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current working directory")
-	dummyPath := filepath.Join(wd, "test.ts")
+	findNode := func(sourceFile *ast.SourceFile) *ast.InterfaceDeclaration {
+		for _, stmt := range sourceFile.Statements.Nodes {
+			if stmt.Kind == ast.KindInterfaceDeclaration {
+				return stmt.AsInterfaceDeclaration()
+			}
+		}
+		return nil
+	}
+
+	testParser := func(node *ast.InterfaceDeclaration, code string) *parser.InterfaceDeclarationResult {
+		result := parser.NewInterfaceDeclarationResult(node.AsNode(), code)
+		result.AnalyzeInterfaces(node)
+		return result
+	}
+
+	marshal := func(result *parser.InterfaceDeclarationResult) ([]byte, error) {
+		return json.MarshalIndent(struct {
+			Identifier string                            `json:"identifier"`
+			Raw        string                            `json:"raw"`
+			Reference  map[string]parser.TypeReference `json:"reference"`
+		}{
+			Identifier: result.Identifier,
+			Raw:        result.Raw,
+			Reference:  result.Reference,
+		}, "", "\t")
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceFile := utils.ParseTypeScriptFile(dummyPath, tc.code)
-
-			var interfaceNode *ast.InterfaceDeclaration
-			for _, stmt := range sourceFile.Statements.Nodes {
-				if stmt.Kind == ast.KindInterfaceDeclaration {
-					interfaceNode = stmt.AsInterfaceDeclaration()
-					break
-				}
-			}
-
-			assert.NotNil(t, interfaceNode, "Interface node should not be nil")
-
-			result := parser.NewInterfaceDeclarationResult(interfaceNode.AsNode(), tc.code)
-			result.AnalyzeInterfaces(interfaceNode)
-
-			// Marshal the result to JSON for comparison, ignoring the SourceLocation field.
-			resultJSON, err := json.MarshalIndent(struct {
-				Identifier string                            `json:"identifier"`
-				Raw        string                            `json:"raw"`
-				Reference  map[string]parser.TypeReference `json:"reference"`
-			}{
-				Identifier: result.Identifier,
-				Raw:        result.Raw,
-				Reference:  result.Reference,
-			}, "", "	")
-			assert.NoError(t, err, "Failed to marshal result to JSON")
-
-			assert.JSONEq(t, tc.expectedJSON, string(resultJSON), "The generated JSON should match the expected JSON")
+			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
 		})
 	}
 }

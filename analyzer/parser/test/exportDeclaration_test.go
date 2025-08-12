@@ -1,17 +1,11 @@
-
-
 package parser_test
 
 import (
 	"encoding/json"
 	"main/analyzer/parser"
-	"main/analyzer/utils"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAnalyzeExportDeclaration(t *testing.T) {
@@ -42,43 +36,38 @@ func TestAnalyzeExportDeclaration(t *testing.T) {
 		},
 	}
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current working directory")
-	dummyPath := filepath.Join(wd, "test.ts")
+	findNode := func(sourceFile *ast.SourceFile) *ast.ExportDeclaration {
+		for _, stmt := range sourceFile.Statements.Nodes {
+			if stmt.Kind == ast.KindExportDeclaration {
+				return stmt.AsExportDeclaration()
+			}
+		}
+		return nil
+	}
+
+	testParser := func(node *ast.ExportDeclaration, code string) *parser.ExportDeclarationResult {
+		result := parser.NewExportDeclarationResult(node)
+		result.AnalyzeExportDeclaration(node, code)
+		return result
+	}
+
+	marshal := func(result *parser.ExportDeclarationResult) ([]byte, error) {
+		return json.MarshalIndent(struct {
+			ExportModules []parser.ExportModule `json:"exportModules"`
+			Raw           string                `json:"raw"`
+			Source        string                `json:"source"`
+			Type          string                `json:"type"`
+		}{
+			ExportModules: result.ExportModules,
+			Raw:           result.Raw,
+			Source:        result.Source,
+			Type:          result.Type,
+		}, "", "\t")
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceFile := utils.ParseTypeScriptFile(dummyPath, tc.code)
-
-			var exportNode *ast.ExportDeclaration
-			for _, stmt := range sourceFile.Statements.Nodes {
-				if stmt.Kind == ast.KindExportDeclaration {
-					exportNode = stmt.AsExportDeclaration()
-					break
-				}
-			}
-
-			assert.NotNil(t, exportNode, "Export node should not be nil")
-
-			result := parser.NewExportDeclarationResult(exportNode)
-			result.AnalyzeExportDeclaration(exportNode, tc.code)
-
-			// Marshal the result to JSON for comparison, ignoring the SourceLocation field.
-			resultJSON, err := json.MarshalIndent(struct {
-				ExportModules []parser.ExportModule `json:"exportModules"`
-				Raw           string                `json:"raw"`
-				Source        string                `json:"source"`
-				Type          string                `json:"type"`
-			}{
-				ExportModules: result.ExportModules,
-				Raw:           result.Raw,
-				Source:        result.Source,
-				Type:          result.Type,
-			}, "", "\t")
-			assert.NoError(t, err, "Failed to marshal result to JSON")
-
-			assert.JSONEq(t, tc.expectedJSON, string(resultJSON), "The generated JSON should match the expected JSON")
+			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
 		})
 	}
 }
-

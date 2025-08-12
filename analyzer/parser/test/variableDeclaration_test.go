@@ -3,13 +3,9 @@ package parser_test
 import (
 	"encoding/json"
 	"main/analyzer/parser"
-	"main/analyzer/utils"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewVariableDeclaration(t *testing.T) {
@@ -83,41 +79,36 @@ func TestNewVariableDeclaration(t *testing.T) {
 		},
 	}
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err, "Failed to get current working directory")
-	dummyPath := filepath.Join(wd, "test.ts")
+	findNode := func(sourceFile *ast.SourceFile) *ast.VariableStatement {
+		for _, stmt := range sourceFile.Statements.Nodes {
+			if stmt.Kind == ast.KindVariableStatement {
+				return stmt.AsVariableStatement()
+			}
+		}
+		return nil
+	}
+
+	testParser := func(node *ast.VariableStatement, code string) *parser.VariableDeclaration {
+		return parser.NewVariableDeclaration(node, code)
+	}
+
+	marshal := func(result *parser.VariableDeclaration) ([]byte, error) {
+		return json.MarshalIndent(struct {
+			Exported    bool                         `json:"exported"`
+			Kind        parser.DeclarationKind       `json:"kind"`
+			Source      *parser.VariableValue        `json:"source,omitempty"`
+			Declarators []*parser.VariableDeclarator `json:"declarators"`
+		}{
+			Exported:    result.Exported,
+			Kind:        result.Kind,
+			Source:      result.Source,
+			Declarators: result.Declarators,
+		}, "", "\t")
+	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceFile := utils.ParseTypeScriptFile(dummyPath, tc.code)
-
-			var varNode *ast.VariableStatement
-			for _, stmt := range sourceFile.Statements.Nodes {
-				if stmt.Kind == ast.KindVariableStatement {
-					varNode = stmt.AsVariableStatement()
-					break
-				}
-			}
-
-			assert.NotNil(t, varNode, "VariableStatement node should not be nil")
-
-			result := parser.NewVariableDeclaration(varNode, tc.code)
-
-			// Marshal the result to JSON for comparison, ignoring Raw and SourceLocation fields.
-			resultJSON, err := json.MarshalIndent(struct {
-				Exported    bool                         `json:"exported"`
-				Kind        parser.DeclarationKind       `json:"kind"`
-				Source      *parser.VariableValue        `json:"source,omitempty"`
-				Declarators []*parser.VariableDeclarator `json:"declarators"`
-			}{
-				Exported:    result.Exported,
-				Kind:        result.Kind,
-				Source:      result.Source,
-				Declarators: result.Declarators,
-			}, "", "\t")
-			assert.NoError(t, err, "Failed to marshal result to JSON")
-
-			assert.JSONEq(t, tc.expectedJSON, string(resultJSON), "The generated JSON should match the expected JSON")
+			RunTest(t, tc.code, tc.expectedJSON, findNode, testParser, marshal)
 		})
 	}
 }
