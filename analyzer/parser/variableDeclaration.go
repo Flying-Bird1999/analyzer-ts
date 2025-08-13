@@ -167,8 +167,26 @@ func (vd *VariableDeclaration) analyzeBindingPattern(node *ast.Node, sourceCode 
 
 			// 处理别名: `const { name: myName } = user`
 			if propertyNameNode := bindingElement.PropertyName; propertyNameNode != nil {
-				if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
-					propName = propIdentifier.Text
+				// 支持 Identifier、StringLiteral、NumericLiteral、ComputedPropertyName
+				switch propertyNameNode.Kind {
+				case ast.KindIdentifier:
+					if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
+						propName = propIdentifier.Text
+					}
+				case ast.KindStringLiteral:
+					if strLit := propertyNameNode.AsStringLiteral(); strLit != nil {
+						propName = strLit.Text
+					}
+				case ast.KindNumericLiteral:
+					if numLit := propertyNameNode.AsNumericLiteral(); numLit != nil {
+						propName = numLit.Text
+					}
+				case ast.KindComputedPropertyName:
+					// 计算属性名，直接用源码文本
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
+				default:
+					// 其它类型，直接用源码文本
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
 				}
 			}
 

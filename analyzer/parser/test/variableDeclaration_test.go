@@ -84,6 +84,25 @@ func TestNewVariableDeclaration(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Object destructuring with computed property",
+			code: `const { [key]: value } = obj;`,
+			expectedResult: expectedResult{
+				Exported: false,
+				Kind:     "const",
+				Source: &parser.VariableValue{
+					Type:       "identifier",
+					Expression: "obj",
+					Data:       "obj",
+				},
+				Declarators: []*parser.VariableDeclarator{
+					{
+						Identifier: "value",
+						PropName:   "[key]",
+					},
+				},
+			},
+		},
 	}
 
 	findNode := func(sourceFile *ast.SourceFile) *ast.VariableStatement {
