@@ -87,6 +87,8 @@ func (ar *ProjectParserResult) ProjectParser() {
 
 			ar.Js_Data[targetPath] = JsFileParserResult{
 				ImportDeclarations:    importResult,
+				ExportDeclarations:    result.ExportDeclarations,
+				ExportAssignments:     result.ExportAssignments,
 				InterfaceDeclarations: result.InterfaceDeclarations,
 				TypeDeclarations:      result.TypeDeclarations,
 				EnumDeclarations:      result.EnumDeclarations,
