@@ -9,7 +9,8 @@ import (
 )
 
 func AnalyzeProject(rootPath string, outputDir string, alias map[string]string, extensions []string, ignore []string, isMonorepo bool) {
-	ar := projectParser.NewProjectParserResult(rootPath, alias, extensions, ignore, isMonorepo)
+	config := projectParser.NewProjectParserConfig(rootPath, alias, extensions, ignore, isMonorepo)
+	ar := projectParser.NewProjectParserResult(config)
 	ar.ProjectParser()
 
 	jsonData, err := json.MarshalIndent(ar, "", "  ")

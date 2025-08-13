@@ -36,19 +36,20 @@ func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectR
 	}
 
 	// 2. 获取 tsconfig.json 中的 alias 列表
-	ar := projectParser.NewProjectParserResult(rootPath, nil, nil, []string{}, false)
+	config := projectParser.NewProjectParserConfig(rootPath, nil, nil, []string{}, false)
+	ar := projectParser.NewProjectParserResult(config)
 
 	return CollectResult{
 		RootPath:   rootPath,
-		Alias:      ar.Alias,
-		Extensions: ar.Extensions,
+		Alias:      ar.Config.RootAlias,
+		Extensions: ar.Config.Extensions,
 		// NpmList:       pr.GetNpmList(),
 		SourceCodeMap: make(map[string]string),
 	}
 }
 
 // collectFileType 递归解析指定文件中的类型依赖。
-// absFilePath: 当前解析的文件绝对路径
+// absFilePath: 当前解析的文件绝对路径path:/Users/bird/Desktop/sp/smart-push-new/tsconfig.base.json
 // typeName: 当前要查找的类型名
 // replaceTypeName: 类型重命名（如 import {A as B}）时的替换名
 // parentTypeName: 父类型名（用于命名空间类型替换）
