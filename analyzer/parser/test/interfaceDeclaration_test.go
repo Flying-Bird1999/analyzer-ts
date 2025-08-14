@@ -8,20 +8,23 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
+// TestAnalyzeInterfaces 测试分析接口声明的功能
 func TestAnalyzeInterfaces(t *testing.T) {
+	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
-		Identifier string                          `json:"identifier"`
-		Raw        string                          `json:"raw"`
-		Reference  map[string]parser.TypeReference `json:"reference"`
+		Identifier string                          `json:"identifier"` // 接口的标识符
+		Raw        string                          `json:"raw"`        // 原始代码文本
+		Reference  map[string]parser.TypeReference `json:"reference"`  // 类型引用
 	}
 
+	// testCases 定义了一系列的测试用例
 	testCases := []struct {
-		name           string
-		code           string
-		expectedResult expectedResult
+		name           string         // 测试用例名称
+		code           string         // 需要被解析的代码
+		expectedResult expectedResult // 期望的解析结果
 	}{
 		{
-			name: "Simple Interface",
+			name: "简单的接口",
 			code: `interface MyInterface { name: string; age: number; }`,
 			expectedResult: expectedResult{
 				Identifier: "MyInterface",
@@ -30,7 +33,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "Interface with Custom Type",
+			name: "带自定义类型的接口",
 			code: `interface MyInterface { user: User; }`,
 			expectedResult: expectedResult{
 				Identifier: "MyInterface",
@@ -45,7 +48,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "Interface with Extends",
+			name: "带继承的接口",
 			code: `interface MyInterface extends AnotherInterface { id: number; }`,
 			expectedResult: expectedResult{
 				Identifier: "MyInterface",
@@ -60,7 +63,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "Complex Interface",
+			name: "复杂的接口",
 			code: `interface Class extends A {
 				name: string;
 				age: number | Class3;
@@ -109,7 +112,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 			},
 		},
 		{
-			name: "Extends with Utility Type",
+			name: "继承了工具类型的接口",
 			code: `interface Class8 extends Omit<Class2, 'age'> {name:string}`,
 			expectedResult: expectedResult{
 				Identifier: "Class8",
@@ -125,6 +128,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 		},
 	}
 
+	// findNode 是一个辅助函数，用于在 AST 中查找第一个接口声明节点
 	findNode := func(sourceFile *ast.SourceFile) *ast.InterfaceDeclaration {
 		for _, stmt := range sourceFile.Statements.Nodes {
 			if stmt.Kind == ast.KindInterfaceDeclaration {
@@ -134,12 +138,14 @@ func TestAnalyzeInterfaces(t *testing.T) {
 		return nil
 	}
 
+	// testParser 是一个辅助函数，用于执行解析操作
 	testParser := func(node *ast.InterfaceDeclaration, code string) *parser.InterfaceDeclarationResult {
 		result := parser.NewInterfaceDeclarationResult(node.AsNode(), code)
 		result.AnalyzeInterfaces(node)
 		return result
 	}
 
+	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
 	marshal := func(result *parser.InterfaceDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			Identifier string                          `json:"identifier"`
@@ -152,12 +158,15 @@ func TestAnalyzeInterfaces(t *testing.T) {
 		}, "", "\t")
 	}
 
+	// 遍历所有测试用例并执行测试
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// 将期望结果序列化为 JSON
 			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
 			if err != nil {
-				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
+			// 运行测试
 			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}

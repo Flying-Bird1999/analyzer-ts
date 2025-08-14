@@ -86,7 +86,7 @@ func parseSingleTsConfig(configPath string) (map[string]string, string) {
 		return nil, ""
 	}
 
-	// data = sanitizeJson(data)
+	data = sanitizeJson(data)
 
 	// 定义一个结构体来匹配 tsconfig.json 的关键字段。
 	var tsConfig struct {
@@ -133,7 +133,7 @@ func FormatAlias(alias map[string]string) map[string]string {
 // 使得非标准的 JSON 文件（如 tsconfig.json）也能被成功解析。
 func sanitizeJson(data string) string {
 	// 移除多行注释 (/*...*/)
-	multiLineComment := regexp.MustCompile(`/*[\s\S]*?\*/`)
+	multiLineComment := regexp.MustCompile(`\/\*[\s\S]*?\*\/`)
 	data = multiLineComment.ReplaceAllString(data, "")
 
 	// 移除单行注释 (//...)
@@ -159,11 +159,11 @@ func sanitizeJson(data string) string {
 // 2. 相对路径 (Relative Path)
 // 3. NPM 包 (NPM Package)
 func MatchImportSource(
-	importerPath string,      // 包含导入语句的文件的绝对路径
-	importPath string,      // 导入语句中的原始路径 (e.g., "@/components/Button", "./utils", "react")
-	basePath string,        // 用于解析路径别名的基准目录 (通常是 tsconfig.json 所在的目录)
+	importerPath string, // 包含导入语句的文件的绝对路径
+	importPath string, // 导入语句中的原始路径 (e.g., "@/components/Button", "./utils", "react")
+	basePath string, // 用于解析路径别名的基准目录 (通常是 tsconfig.json 所在的目录)
 	alias map[string]string, // 从 tsconfig.json 解析出的路径别名映射
-	extensions []string,     // 需要尝试的文件扩展名列表 (e.g., [".ts", ".tsx"])
+	extensions []string, // 需要尝试的文件扩展名列表 (e.g., [".ts", ".tsx"])
 ) SourceData {
 	// 1. 尝试解析为路径别名
 	resolvedPath, isAliasMatch := resolveAlias(importPath, alias)

@@ -8,20 +8,23 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
+// TestAnalyzeCallExpression 测试分析调用表达式的功能
 func TestAnalyzeCallExpression(t *testing.T) {
+	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
-		CallChain []string          `json:"callChain"`
-		Arguments []parser.Argument `json:"arguments"`
-		Type      string            `json:"type"`
+		CallChain []string          `json:"callChain"` // 调用链
+		Arguments []parser.Argument `json:"arguments"` // 参数
+		Type      string            `json:"type"`      // 类型
 	}
 
+	// testCases 定义了一系列的测试用例
 	testCases := []struct {
-		name           string
-		code           string
-		expectedResult expectedResult
+		name           string         // 测试用例名称
+		code           string         // 需要被解析的代码
+		expectedResult expectedResult // 期望的解析结果
 	}{
 		{
-			name: "Simple function call",
+			name: "简单的函数调用",
 			code: `myFunction();`,
 			expectedResult: expectedResult{
 				CallChain: []string{"myFunction"},
@@ -30,7 +33,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 			},
 		},
 		{
-			name: "Call with arguments",
+			name: "带参数的函数调用",
 			code: `myFunction(1, "hello", true, myVar);`,
 			expectedResult: expectedResult{
 				CallChain: []string{"myFunction"},
@@ -44,7 +47,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 			},
 		},
 		{
-			name: "Member access call",
+			name: "成员访问调用",
 			code: `myObj.myMethod();`,
 			expectedResult: expectedResult{
 				CallChain: []string{"myObj", "myMethod"},
@@ -53,7 +56,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 			},
 		},
 		{
-			name: "Chained member access call",
+			name: "链式成员访问调用",
 			code: `this.a.b.c(123);`,
 			expectedResult: expectedResult{
 				CallChain: []string{"this", "a", "b", "c"},
@@ -65,6 +68,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 		},
 	}
 
+	// findNode 是一个辅助函数，用于在 AST 中查找第一个调用表达式节点
 	findNode := func(sourceFile *ast.SourceFile) *ast.CallExpression {
 		var callNode *ast.CallExpression
 		var walk func(node *ast.Node)
@@ -85,12 +89,14 @@ func TestAnalyzeCallExpression(t *testing.T) {
 		return callNode
 	}
 
+	// testParser 是一个辅助函数，用于执行解析操作
 	testParser := func(node *ast.CallExpression, code string) *parser.CallExpression {
 		result := parser.NewCallExpression(node, code)
 		result.AnalyzeCallExpression(node, code)
 		return result
 	}
 
+	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
 	marshal := func(result *parser.CallExpression) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			CallChain []string          `json:"callChain"`
@@ -103,12 +109,15 @@ func TestAnalyzeCallExpression(t *testing.T) {
 		}, "", "\t")
 	}
 
+	// 遍历所有测试用例并执行测试
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			// 将期望结果序列化为 JSON
 			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
 			if err != nil {
-				t.Fatalf("Failed to marshal expected result to JSON: %v", err)
+				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
+			// 运行测试
 			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
 		})
 	}
