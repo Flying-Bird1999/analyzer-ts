@@ -1,9 +1,9 @@
 package cmd
 
 // example:
-// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
-
 // go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts -x "examples/**" -x "tests/**"
+
+// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
 
 // go run main.go analyze -i /Users/bird/Desktop/sp/smart-push-new -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -m true
 // go run main.go analyze -i /Users/bird/Desktop/sp/fe-lib -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -m true

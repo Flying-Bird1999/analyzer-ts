@@ -8,8 +8,9 @@ import (
 	"main/analyzer/utils"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
+
+	"github.com/tidwall/jsonc"
 )
 
 // FindAllTsConfigsAndAliases 在给定的根路径下查找所有名为 "tsconfig.json" 的文件，
@@ -86,7 +87,8 @@ func parseSingleTsConfig(configPath string) (map[string]string, string) {
 		return nil, ""
 	}
 
-	data = sanitizeJson(data)
+	// 将JSONC（带注释的JSON）转换为标准JSON
+	jsonData := jsonc.ToJSON([]byte(data))
 
 	// 定义一个结构体来匹配 tsconfig.json 的关键字段。
 	var tsConfig struct {
@@ -96,9 +98,8 @@ func parseSingleTsConfig(configPath string) (map[string]string, string) {
 		}
 	}
 
-	// 解析 JSON 数据。注意：为了简化，这里假设 JSON 是标准的，没有注释。
-	// 一个更健壮的实现会先使用 sanitizeJson 清理 JSON。
-	if err := json.Unmarshal([]byte(data), &tsConfig); err != nil {
+	// 解析 JSON 数据。
+	if err := json.Unmarshal(jsonData, &tsConfig); err != nil {
 		fmt.Printf("解析 tsconfig.json 失败: path:%s, err: %v\n", configPath, err)
 		return nil, ""
 	}
@@ -126,29 +127,6 @@ func FormatAlias(alias map[string]string) map[string]string {
 		formattedAlias[key] = path
 	}
 	return formattedAlias
-}
-
-// sanitizeJson (当前未使用) 是一个工具函数，用于清理 JSON 字符串。
-// 它可以移除多行注释、单行注释以及对象和数组中末尾多余的逗号，
-// 使得非标准的 JSON 文件（如 tsconfig.json）也能被成功解析。
-func sanitizeJson(data string) string {
-	// 移除多行注释 (/*...*/)
-	multiLineComment := regexp.MustCompile(`\/\*[\s\S]*?\*\/`)
-	data = multiLineComment.ReplaceAllString(data, "")
-
-	// 移除单行注释 (//...)
-	singleLineComment := regexp.MustCompile(`(?m)//.*$`)
-	data = singleLineComment.ReplaceAllString(data, "")
-
-	// 移除对象中末尾的逗号
-	trailingCommaObject := regexp.MustCompile(`,\s*}`)
-	data = trailingCommaObject.ReplaceAllString(data, "}")
-
-	// 移除数组中末尾的逗号
-	trailingCommaArray := regexp.MustCompile(`,\s*]`)
-	data = trailingCommaArray.ReplaceAllString(data, "]")
-
-	return data
 }
 
 // --- 导入路径解析 ---
