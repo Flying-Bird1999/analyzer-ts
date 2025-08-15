@@ -191,15 +191,17 @@ func isRelativePath(path string) bool {
 // b) 路径 + 列表中的每个扩展名。
 // c) 将路径视为目录，并尝试其下的 index 文件（路径/index + 扩展名）。
 func resolveAsFile(path string, extensions []string) (string, bool) {
-	// a) 检查路径本身
-	if _, err := os.Stat(path); err == nil {
+	// a) 检查路径本身是否是文件
+	// 如果路径已经有扩展名，或者它是一个不带扩展名的有效文件路径
+	info, err := os.Stat(path)
+	if err == nil && !info.IsDir() {
 		return path, true
 	}
 
-	// b) 尝试添加扩展名
+	// b) 尝试为路径添加扩展名
 	for _, ext := range extensions {
 		fullPath := path + ext
-		if _, err := os.Stat(fullPath); err == nil {
+		if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
 			return fullPath, true
 		}
 	}
@@ -207,7 +209,7 @@ func resolveAsFile(path string, extensions []string) (string, bool) {
 	// c) 尝试作为目录下的 index 文件
 	for _, ext := range extensions {
 		fullPath := filepath.Join(path, "index"+ext)
-		if _, err := os.Stat(fullPath); err == nil {
+		if info, err := os.Stat(fullPath); err == nil && !info.IsDir() {
 			return fullPath, true
 		}
 	}

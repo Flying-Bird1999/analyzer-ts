@@ -1,9 +1,15 @@
 package cmd
 
 // example:
-// go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts -x "examples/**" -x "tests/**"
+// go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "examples/**" -x "tests/**"
 
 // go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
+
+// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-post-center -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
+
+// go run main.go analyze -i /Users/bird/company/sc1.0/mc/message-center/client -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**" -x "sc-components/**"
+
+// go run main.go analyze -i /Users/bird/company/sc1.0/components/sc-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result
 
 // go run main.go analyze -i /Users/bird/Desktop/sp/smart-push-new -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -m true
 // go run main.go analyze -i /Users/bird/Desktop/sp/fe-lib -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -m true
@@ -43,7 +49,7 @@ func init() {
 	analyzeCmd.Flags().StringVarP(&analyzeInputDir, "input", "i", "", "Input directory path (required)")
 	analyzeCmd.Flags().StringVarP(&analyzeOutputDir, "output", "o", ".", "Output directory path")
 	analyzeCmd.Flags().StringToStringVarP(&analyzeAlias, "alias", "a", nil, "Path aliases (e.g., --alias @/components=src/components)")
-	analyzeCmd.Flags().StringSliceVarP(&analyzeExtensions, "extensions", "e", []string{".ts", ".tsx", ".js", ".jsx"}, "File extensions to include")
+	analyzeCmd.Flags().StringSliceVarP(&analyzeExtensions, "extensions", "e", []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}, "File extensions to include")
 	analyzeCmd.Flags().StringSliceVarP(&analyzeIgnore, "ignore", "x", []string{}, "Gglob patterns to ignore")
 	analyzeCmd.Flags().BoolVarP(&analyzeIsMonorepo, "monorepo", "m", false, "Whether the project is a monorepo")
 }

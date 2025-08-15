@@ -38,7 +38,7 @@ func TestMatchImportSource(t *testing.T) {
 	importerPath := filepath.Join(tmpDir, "src", "main.ts")
 	basePath := tmpDir
 	alias := map[string]string{"@": "src"}
-	extensions := []string{".ts", ".tsx"}
+	extensions := []string{".ts", ".tsx", ".d.ts"}
 
 	// 测试路径别名匹配
 	sourceData := MatchImportSource(importerPath, "@/App", basePath, alias, extensions)
@@ -69,6 +69,20 @@ func TestMatchImportSource(t *testing.T) {
 	if sourceData.Type != "npm" || sourceData.NpmPkg != "@angular/core" {
 		t.Errorf("预期的带作用域的 npm 匹配应解析为 '@angular/core', 得到类型 %s 和包 %s", sourceData.Type, sourceData.NpmPkg)
 	}
+
+	// 测试 .d.ts 文件的别名解析
+	dtsPath := filepath.Join(tmpDir, "src", "feature", "LiveRoom", "components", "MainRight", "components", "Comments")
+	if err := os.MkdirAll(dtsPath, 0755); err != nil {
+		t.Fatal(err)
+	}
+	dtsFile := filepath.Join(dtsPath, "type.d.ts")
+	if err := os.WriteFile(dtsFile, []byte("export type MyType = string;"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	sourceData = MatchImportSource(importerPath, "@/feature/LiveRoom/components/MainRight/components/Comments/type", basePath, alias, extensions)
+	if sourceData.Type != "file" || sourceData.FilePath != dtsFile {
+		t.Errorf("预期的 .d.ts 别名匹配应解析为 %s, 得到类型 %s 和路径 %s", dtsFile, sourceData.Type, sourceData.FilePath)
+	}
 }
 
 // TestExtractNpmPackageName 测试 extractNpmPackageName 函数。
@@ -80,8 +94,10 @@ func TestExtractNpmPackageName(t *testing.T) {
 	}{
 		{"react", "react"},
 		{"react/jsx-runtime", "react"},
-		{"@angular/core", "@angular/core"},
-		{"@angular/core/testing", "@angular/core"},
+		{"@abc/core", "@abc/core"},
+		{"@abc/core/testing", "@abc/core"},
+		{"@yy/sl-admin-components/es/SLAntd/components/date-picker/generatePicker", "@yy/sl-admin-components"},
+		{"@sl/sc-components/src/aaa", "@sl/sc-components"},
 		{"", ""},
 	}
 
@@ -145,4 +161,3 @@ func TestGetPackageJson(t *testing.T) {
 		t.Errorf("React 依赖信息不正确: %+v", reactDep)
 	}
 }
-
