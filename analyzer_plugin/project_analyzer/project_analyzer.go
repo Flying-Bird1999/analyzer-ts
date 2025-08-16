@@ -60,15 +60,15 @@ type FilteredExportDeclaration struct {
 }
 
 type FilteredJsFileParserResult struct {
-	ImportDeclarations    []FilteredImportDeclaration                   `json:"importDeclarations"`
-	ExportDeclarations    []FilteredExportDeclaration                   `json:"exportDeclarations"`
-	ExportAssignments     []FilteredExportAssignmentResult              `json:"exportAssignments"`
-	InterfaceDeclarations map[string]FilteredInterfaceDeclarationResult `json:"interfaceDeclarations"`
-	TypeDeclarations      map[string]FilteredTypeDeclarationResult      `json:"typeDeclarations"`
-	EnumDeclarations      map[string]FilteredEnumDeclarationResult      `json:"enumDeclarations"`
-	VariableDeclarations  []FilteredVariableDeclaration                 `json:"variableDeclarations"`
-	CallExpressions       []FilteredCallExpression                      `json:"callExpressions"`
-	JsxElements           []FilteredJSXElement                          `json:"jsxElements"`
+	ImportDeclarations []FilteredImportDeclaration      `json:"importDeclarations"`
+	ExportDeclarations []FilteredExportDeclaration      `json:"exportDeclarations"`
+	ExportAssignments  []FilteredExportAssignmentResult `json:"exportAssignments"`
+	// InterfaceDeclarations map[string]FilteredInterfaceDeclarationResult `json:"interfaceDeclarations"`
+	// TypeDeclarations      map[string]FilteredTypeDeclarationResult      `json:"typeDeclarations"`
+	// EnumDeclarations      map[string]FilteredEnumDeclarationResult      `json:"enumDeclarations"`
+	VariableDeclarations []FilteredVariableDeclaration `json:"variableDeclarations"`
+	CallExpressions      []FilteredCallExpression      `json:"callExpressions"`
+	JsxElements          []FilteredJSXElement          `json:"jsxElements"`
 }
 
 type FilteredProjectParserResult struct {
@@ -108,15 +108,15 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 			ExportAssignments: lo.Map(jsData.ExportAssignments, func(assign parser.ExportAssignmentResult, _ int) FilteredExportAssignmentResult {
 				return FilteredExportAssignmentResult{Expression: assign.Expression}
 			}),
-			InterfaceDeclarations: lo.MapValues(jsData.InterfaceDeclarations, func(inter parser.InterfaceDeclarationResult, _ string) FilteredInterfaceDeclarationResult {
-				return FilteredInterfaceDeclarationResult{Identifier: inter.Identifier, Reference: inter.Reference}
-			}),
-			TypeDeclarations: lo.MapValues(jsData.TypeDeclarations, func(typeDecl parser.TypeDeclarationResult, _ string) FilteredTypeDeclarationResult {
-				return FilteredTypeDeclarationResult{Identifier: typeDecl.Identifier, Reference: typeDecl.Reference}
-			}),
-			EnumDeclarations: lo.MapValues(jsData.EnumDeclarations, func(enumDecl parser.EnumDeclarationResult, _ string) FilteredEnumDeclarationResult {
-				return FilteredEnumDeclarationResult{Identifier: enumDecl.Identifier}
-			}),
+			// InterfaceDeclarations: lo.MapValues(jsData.InterfaceDeclarations, func(inter parser.InterfaceDeclarationResult, _ string) FilteredInterfaceDeclarationResult {
+			// 	return FilteredInterfaceDeclarationResult{Identifier: inter.Identifier, Reference: inter.Reference}
+			// }),
+			// TypeDeclarations: lo.MapValues(jsData.TypeDeclarations, func(typeDecl parser.TypeDeclarationResult, _ string) FilteredTypeDeclarationResult {
+			// 	return FilteredTypeDeclarationResult{Identifier: typeDecl.Identifier, Reference: typeDecl.Reference}
+			// }),
+			// EnumDeclarations: lo.MapValues(jsData.EnumDeclarations, func(enumDecl parser.EnumDeclarationResult, _ string) FilteredEnumDeclarationResult {
+			// 	return FilteredEnumDeclarationResult{Identifier: enumDecl.Identifier}
+			// }),
 			VariableDeclarations: lo.Map(jsData.VariableDeclarations, func(decl parser.VariableDeclaration, _ int) FilteredVariableDeclaration {
 				return FilteredVariableDeclaration{Exported: decl.Exported, Kind: decl.Kind, Source: decl.Source, Declarators: decl.Declarators}
 			}),

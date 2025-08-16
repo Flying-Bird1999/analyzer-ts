@@ -44,11 +44,11 @@ type ProjectParserResult struct {
 func NewProjectParserConfig(rootPath string, alias map[string]string, extensions []string, ignore []string, isMonorepo bool) ProjectParserConfig {
 	absRootPath, _ := filepath.Abs(rootPath)
 
-	if ignore == nil {
-		ignore = []string{"node_modules", "dist", "build", "public", "static", "docs", ".git", ".vscode"}
+	if ignore == nil || len(ignore) == 0 {
+		ignore = []string{"**/node_modules/**", "**/dist/**", "**/build/**", "**/test/**", "**/public/**", "**/static/**"}
 	}
 
-	if extensions == nil {
+	if extensions == nil || len(extensions) == 0 {
 		extensions = []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
 	}
 
