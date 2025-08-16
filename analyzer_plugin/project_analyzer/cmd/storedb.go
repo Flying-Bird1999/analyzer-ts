@@ -1,6 +1,6 @@
 package cmd
 
-// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
+// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result_db -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"crypto/rand"
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"main/analyzer/projectParser"
+	"main/cmd"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,7 +65,7 @@ func init() {
 	storeDbCmd.Flags().BoolP("monorepo", "m", false, "如果要分析的是 monorepo，则设置为 true")
 	storeDbCmd.MarkFlagRequired("input")
 	storeDbCmd.MarkFlagRequired("output")
-	rootCmd.AddCommand(storeDbCmd)
+	cmd.RootCmd.AddCommand(storeDbCmd)
 }
 
 // storeInDatabase 负责将所有分析数据存入数据库

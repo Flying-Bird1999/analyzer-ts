@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"main/analyzer_plugin/ts_bundle"
+	"main/cmd"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ var bundleCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(bundleCmd)
+	cmd.RootCmd.AddCommand(bundleCmd)
 
 	bundleCmd.Flags().StringVarP(&inputFile, "input", "i", "", "入口文件路径 (必需)")
 	bundleCmd.Flags().StringVarP(&inputType, "type", "t", "", "要分析的类型名称 (必需)")

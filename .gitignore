@@ -1,1 +1,2 @@
-analyzer_plugin/project_analyzer/analyzer_result/**
+analyzer_plugin/project_analyzer/analyzer_result_json/**
+analyzer_plugin/project_analyzer/analyzer_result_db/**
