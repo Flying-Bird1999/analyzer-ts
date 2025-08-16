@@ -5,6 +5,8 @@ package cmd
 
 // go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
 
+// go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
+
 // go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-post-center -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**"
 
 // go run main.go analyze -i /Users/bird/company/sc1.0/mc/message-center/client -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result -x "node_modules/**" -x "bffApiDoc/**" -x "sc-components/**"
