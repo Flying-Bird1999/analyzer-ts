@@ -23,34 +23,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var analyzeInputDir string
-var analyzeOutputDir string
-var analyzeAlias map[string]string
-var analyzeExtensions []string
-var analyzeIgnore []string
-var analyzeIsMonorepo bool
+var (
+	analyzeInputDir   string
+	analyzeOutputDir  string
+	analyzeIsMonorepo bool
+	analyzeExclude    []string
+)
 
 var analyzeCmd = &cobra.Command{
 	Use:   "analyze",
-	Short: "Analyze a TypeScript project",
-	Long:  `Analyzes a TypeScript project, flattens the data, and outputs it as a JSON file.`,
+	Short: "分析 TypeScript 项目并将结果输出为 JSON 文件。",
+	Long:  `分析一个 TypeScript 项目，解析所有相关文件以构建每个文件的 AST。然后将结构化数据作为单独的 JSON 文件输出到一个目录中。`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if analyzeInputDir == "" {
-			fmt.Println("Usage: analyzer-ts analyze --input <directory>")
+		if analyzeInputDir == "" || analyzeOutputDir == "" {
+			fmt.Println("分析需要输入和输出路径。")
 			cmd.Help()
 			os.Exit(1)
 		}
-		project_analyzer.AnalyzeProject(analyzeInputDir, analyzeOutputDir, analyzeAlias, analyzeExtensions, analyzeIgnore, analyzeIsMonorepo)
+		// 注意：原始代码传递了更多参数，如别名和扩展名。
+		// 为简单起见，此版本中未将它们公开为标志，但如果需要可以加回来。
+		project_analyzer.AnalyzeProject(analyzeInputDir, analyzeOutputDir, analyzeExclude, analyzeIsMonorepo)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(analyzeCmd)
 
-	analyzeCmd.Flags().StringVarP(&analyzeInputDir, "input", "i", "", "Input directory path (required)")
-	analyzeCmd.Flags().StringVarP(&analyzeOutputDir, "output", "o", ".", "Output directory path")
-	analyzeCmd.Flags().StringToStringVarP(&analyzeAlias, "alias", "a", nil, "Path aliases (e.g., --alias @/components=src/components)")
-	analyzeCmd.Flags().StringSliceVarP(&analyzeExtensions, "extensions", "e", []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}, "File extensions to include")
-	analyzeCmd.Flags().StringSliceVarP(&analyzeIgnore, "ignore", "x", []string{}, "Gglob patterns to ignore")
-	analyzeCmd.Flags().BoolVarP(&analyzeIsMonorepo, "monorepo", "m", false, "Whether the project is a monorepo")
+	analyzeCmd.Flags().StringVarP(&analyzeInputDir, "input", "i", "", "要分析的 TypeScript 项目目录的路径")
+	analyzeCmd.Flags().StringVarP(&analyzeOutputDir, "output", "o", "", "用于存储 JSON 输出文件的目录路径")
+	analyzeCmd.Flags().StringSliceVarP(&analyzeExclude, "exclude", "x", []string{}, "要从分析中排除的 Glob 模式")
+	analyzeCmd.Flags().BoolVarP(&analyzeIsMonorepo, "monorepo", "m", false, "如果要分析的是 monorepo，则设置为 true")
+
+	analyzeCmd.MarkFlagRequired("input")
+	analyzeCmd.MarkFlagRequired("output")
 }

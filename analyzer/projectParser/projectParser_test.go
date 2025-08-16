@@ -1,4 +1,3 @@
-
 package projectParser
 
 import (
@@ -91,7 +90,7 @@ func TestNewProjectParserConfig(t *testing.T) {
 	defer cleanup()
 
 	// 测试非 monorepo 模式
-	config := NewProjectParserConfig(rootPath, nil, nil, nil, false)
+	config := NewProjectParserConfig(rootPath, nil, false)
 	if config.RootPath != rootPath {
 		t.Errorf("预期的 RootPath 是 %s, 得到 %s", rootPath, config.RootPath)
 	}
@@ -104,7 +103,7 @@ func TestNewProjectParserConfig(t *testing.T) {
 	}
 
 	// 测试 monorepo 模式
-	configMono := NewProjectParserConfig(rootPath, nil, nil, nil, true)
+	configMono := NewProjectParserConfig(rootPath, nil, true)
 	if len(configMono.PackageAliasMaps) == 0 {
 		t.Errorf("当 isMonorepo 为 true 时，预期的 PackageAliasMaps 不为空")
 	}
@@ -124,7 +123,7 @@ func TestGetAliasForFile(t *testing.T) {
 	rootPath, cleanup := setupTestProject(t)
 	defer cleanup()
 
-	config := NewProjectParserConfig(rootPath, nil, nil, nil, true)
+	config := NewProjectParserConfig(rootPath, nil, true)
 	ppr := NewProjectParserResult(config)
 
 	// 测试根目录中的文件
@@ -157,7 +156,7 @@ func TestTransformImportDeclarations(t *testing.T) {
 	rootPath, cleanup := setupTestProject(t)
 	defer cleanup()
 
-	config := NewProjectParserConfig(rootPath, nil, nil, nil, false)
+	config := NewProjectParserConfig(rootPath, nil, false)
 	ppr := NewProjectParserResult(config)
 
 	importerPath := filepath.Join(rootPath, "src", "main.ts")
@@ -192,7 +191,7 @@ func TestProjectParser(t *testing.T) {
 	rootPath, cleanup := setupTestProject(t)
 	defer cleanup()
 
-	config := NewProjectParserConfig(rootPath, nil, []string{".ts"}, nil, true)
+	config := NewProjectParserConfig(rootPath, nil, true)
 	ppr := NewProjectParserResult(config)
 	ppr.ProjectParser()
 

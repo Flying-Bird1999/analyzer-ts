@@ -36,7 +36,7 @@ func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectR
 	}
 
 	// 2. 获取 tsconfig.json 中的 alias 列表
-	config := projectParser.NewProjectParserConfig(rootPath, nil, nil, []string{}, false)
+	config := projectParser.NewProjectParserConfig(rootPath, []string{}, false)
 	ar := projectParser.NewProjectParserResult(config)
 
 	return CollectResult{

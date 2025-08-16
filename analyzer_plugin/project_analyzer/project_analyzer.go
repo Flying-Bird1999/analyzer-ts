@@ -135,8 +135,8 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 	}
 }
 
-func AnalyzeProject(rootPath string, outputDir string, alias map[string]string, extensions []string, ignore []string, isMonorepo bool) {
-	config := projectParser.NewProjectParserConfig(rootPath, alias, extensions, ignore, isMonorepo)
+func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
+	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
 	ar.ProjectParser()
 

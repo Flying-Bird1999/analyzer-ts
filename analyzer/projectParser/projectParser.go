@@ -41,21 +41,13 @@ type ProjectParserResult struct {
 
 // NewProjectParserConfig 创建并初始化一个项目解析器的配置对象。
 // 它会设置默认值，并根据项目类型（是否为 monorepo）解析路径别名。
-func NewProjectParserConfig(rootPath string, alias map[string]string, extensions []string, ignore []string, isMonorepo bool) ProjectParserConfig {
+func NewProjectParserConfig(rootPath string, ignore []string, isMonorepo bool) ProjectParserConfig {
 	absRootPath, _ := filepath.Abs(rootPath)
+	extensions := []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
+	rootAlias := ReadAliasFromTsConfig(absRootPath)
 
 	if ignore == nil || len(ignore) == 0 {
 		ignore = []string{"**/node_modules/**", "**/dist/**", "**/build/**", "**/test/**", "**/public/**", "**/static/**"}
-	}
-
-	if extensions == nil || len(extensions) == 0 {
-		extensions = []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
-	}
-
-	// 如果用户没有提供别名，则从 tsconfig.json 中解析。
-	rootAlias := alias
-	if rootAlias == nil {
-		rootAlias = ReadAliasFromTsConfig(absRootPath)
 	}
 
 	// 为 monorepo 项目查找所有子包的 tsconfig 别名。

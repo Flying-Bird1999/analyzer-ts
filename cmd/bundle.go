@@ -1,6 +1,6 @@
 package cmd
 
-// example:
+// 示例:
 // go run main.go bundle -i /Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/bundle/index1.ts -t Class -o /Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/output/result.ts
 
 import (
@@ -16,19 +16,13 @@ var inputType string
 var outputFile string
 var projectRoot string
 
-var rootCmd = &cobra.Command{
-	Use:   "analyzer-ts",
-	Short: "A CLI tool for analyzing TypeScript projects",
-	Long:  `analyzer-ts is a powerful CLI tool designed to help you analyze and understand your TypeScript projects.`,
-}
-
 var bundleCmd = &cobra.Command{
 	Use:   "bundle",
-	Short: "Bundle TypeScript type declarations",
-	Long:  `Recursively collects all referenced type declarations from a given entry file and bundles them into a single file.`,
+	Short: "打包 TypeScript 类型声明",
+	Long:  `从给定的入口文件递归收集所有引用的类型声明，并将它们打包到一个单独的文件中。`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if inputFile == "" || inputType == "" {
-			fmt.Println("Usage: analyzer-ts bundle --input <entry file> --type <type name>")
+			fmt.Println("用法: analyzer-ts bundle --input <入口文件> --type <类型名称>")
 			cmd.Help()
 			os.Exit(1)
 		}
@@ -39,15 +33,8 @@ var bundleCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(bundleCmd)
 
-	bundleCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Entry file path (required)")
-	bundleCmd.Flags().StringVarP(&inputType, "type", "t", "", "Type name to analyze (required)")
-	bundleCmd.Flags().StringVarP(&outputFile, "output", "o", "./output.ts", "Output file path")
-	bundleCmd.Flags().StringVarP(&projectRoot, "root", "r", "", "Project root path")
-}
-
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	bundleCmd.Flags().StringVarP(&inputFile, "input", "i", "", "入口文件路径 (必需)")
+	bundleCmd.Flags().StringVarP(&inputType, "type", "t", "", "要分析的类型名称 (必需)")
+	bundleCmd.Flags().StringVarP(&outputFile, "output", "o", "./output.ts", "输出文件路径")
+	bundleCmd.Flags().StringVarP(&projectRoot, "root", "r", "", "项目根路径")
 }
