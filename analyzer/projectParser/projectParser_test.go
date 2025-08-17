@@ -95,31 +95,31 @@ func TestNewProjectParserConfig(t *testing.T) {
 		t.Errorf("预期的 RootPath 是 %s, 得到 %s", rootPath, config.RootPath)
 	}
 	expectedRootAlias := map[string]string{"@": "src"}
-	if !reflect.DeepEqual(config.RootAlias, expectedRootAlias) {
-		t.Errorf("预期的 RootAlias 是 %+v, 得到 %+v", expectedRootAlias, config.RootAlias)
+	if !reflect.DeepEqual(config.RootTsConfig.Alias, expectedRootAlias) {
+		t.Errorf("预期的 RootTsConfig.Alias 是 %+v, 得到 %+v", expectedRootAlias, config.RootTsConfig.Alias)
 	}
-	if len(config.PackageAliasMaps) != 0 {
-		t.Errorf("当 isMonorepo 为 false 时，预期的 PackageAliasMaps 为空, 得到 %d 个项目", len(config.PackageAliasMaps))
+	if len(config.PackageTsConfigMaps) != 0 {
+		t.Errorf("当 isMonorepo 为 false 时，预期的 PackageTsConfigMaps 为空, 得到 %d 个项目", len(config.PackageTsConfigMaps))
 	}
 
 	// 测试 monorepo 模式
 	configMono := NewProjectParserConfig(rootPath, nil, true)
-	if len(configMono.PackageAliasMaps) == 0 {
-		t.Errorf("当 isMonorepo 为 true 时，预期的 PackageAliasMaps 不为空")
+	if len(configMono.PackageTsConfigMaps) == 0 {
+		t.Errorf("当 isMonorepo 为 true 时，预期的 PackageTsConfigMaps 不为空")
 	}
 	subProjectDir := filepath.Join(rootPath, "packages", "sub")
-	if _, ok := configMono.PackageAliasMaps[subProjectDir]; !ok {
+	if _, ok := configMono.PackageTsConfigMaps[subProjectDir]; !ok {
 		t.Errorf("预期在 %s 找到子项目的别名", subProjectDir)
 	}
 	expectedSubAlias := map[string]string{"@": "src", "@sub": "./lib"}
-	if !reflect.DeepEqual(configMono.PackageAliasMaps[subProjectDir], expectedSubAlias) {
-		t.Errorf("预期的子项目别名是 %+v, 得到 %+v", expectedSubAlias, configMono.PackageAliasMaps[subProjectDir])
+	if !reflect.DeepEqual(configMono.PackageTsConfigMaps[subProjectDir].Alias, expectedSubAlias) {
+		t.Errorf("预期的子项目别名是 %+v, 得到 %+v", expectedSubAlias, configMono.PackageTsConfigMaps[subProjectDir].Alias)
 	}
 }
 
-// TestGetAliasForFile 测试 getAliasForFile 方法的正确性。
+// TestGetTsConfigForFile 测试 getTsConfigForFile 方法的正确性。
 // 它验证该方法是否能为给定路径的文件（无论是位于根目录还是子项目）找到最匹配的路径别名配置。
-func TestGetAliasForFile(t *testing.T) {
+func TestGetTsConfigForFile(t *testing.T) {
 	rootPath, cleanup := setupTestProject(t)
 	defer cleanup()
 
@@ -128,7 +128,7 @@ func TestGetAliasForFile(t *testing.T) {
 
 	// 测试根目录中的文件
 	rootFile := filepath.Join(rootPath, "src", "main.ts")
-	alias, dir := ppr.getAliasForFile(rootFile)
+	alias, dir, baseUrl := ppr.getTsConfigForFile(rootFile)
 	expectedRootAlias := map[string]string{"@": "src"}
 	if !reflect.DeepEqual(alias, expectedRootAlias) {
 		t.Errorf("预期根目录文件的别名是 %+v, 得到 %+v", expectedRootAlias, alias)
@@ -136,10 +136,13 @@ func TestGetAliasForFile(t *testing.T) {
 	if dir != rootPath {
 		t.Errorf("预期根目录文件的目录是 %s, 得到 %s", rootPath, dir)
 	}
+	if baseUrl != "." {
+		t.Errorf("预期根目录文件的 baseUrl 是 '.', 得到 %s", baseUrl)
+	}
 
 	// 测试子项目中的文件
 	subFile := filepath.Join(rootPath, "packages", "sub", "lib", "component.ts")
-	alias, dir = ppr.getAliasForFile(subFile)
+	alias, dir, baseUrl = ppr.getTsConfigForFile(subFile)
 	expectedSubAlias := map[string]string{"@": "src", "@sub": "./lib"}
 	if !reflect.DeepEqual(alias, expectedSubAlias) {
 		t.Errorf("预期子项目文件的别名是 %+v, 得到 %+v", expectedSubAlias, alias)
@@ -147,6 +150,10 @@ func TestGetAliasForFile(t *testing.T) {
 	subProjectDir := filepath.Join(rootPath, "packages", "sub")
 	if dir != subProjectDir {
 		t.Errorf("预期子项目文件的目录是 %s, 得到 %s", subProjectDir, dir)
+	}
+	// baseUrl should be inherited from root
+	if baseUrl != "." {
+		t.Errorf("预期子项目文件的 baseUrl 是 '.', 得到 %s", baseUrl)
 	}
 }
 
@@ -169,7 +176,7 @@ func TestTransformImportDeclarations(t *testing.T) {
 		},
 	}
 
-	transformed := ppr.transformImportDeclarations(importerPath, decls, ppr.Config.RootAlias, ppr.Config.RootPath)
+	transformed := ppr.transformImportDeclarations(importerPath, decls, ppr.Config.RootTsConfig.Alias, ppr.Config.RootPath, ppr.Config.RootTsConfig.BaseUrl)
 
 	if len(transformed) != 1 {
 		t.Fatalf("预期转换后有 1 个声明, 得到 %d", len(transformed))

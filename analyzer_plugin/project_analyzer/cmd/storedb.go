@@ -1,6 +1,6 @@
 package cmd
 
-// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/analyzer_result_db -x "node_modules/**" -x "bffApiDoc/**"
+// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_db -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"crypto/rand"

@@ -91,7 +91,7 @@ type ExportDeclarationResult struct {
 type ExportModule struct {
 	// ModuleName 是导出的模块的原始名称。
 	// - 对于命名导出 `export { a as b }`，它是 `a`。
-	// - 对于命名空间导出 `export * as ns from ...`，它是 `*`。
+	// - 对于命名空间导入 `export * as ns from ...`，它是 `*`。
 	ModuleName string `json:"moduleName"`
 	// Type 表示导出的类型，可以是 "named"（命名导出）或 "namespace"（命名空间导出）。
 	Type string `json:"type"`
@@ -108,4 +108,11 @@ type SourceData struct {
 	NpmPkg string `json:"npmPkg"`
 	// Type 表示来源的类型，可以是 "file"（本地文件）, "npm"（NPM包）, 或 "unknown"（未知）。
 	Type string `json:"type"`
+}
+
+// TsConfig holds the parsed information from a tsconfig.json file,
+// including path aliases and the base URL for module resolution.
+type TsConfig struct {
+	Alias   map[string]string `json:"alias"`
+	BaseUrl string            `json:"baseUrl"`
 }

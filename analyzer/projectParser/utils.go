@@ -16,8 +16,8 @@ import (
 // FindAllTsConfigsAndAliases 在给定的根路径下查找所有名为 "tsconfig.json" 的文件，
 // 并为每一个文件解析其路径别名配置。
 // 它会利用 scanProject 的能力来智能地忽略被 ignore 规则匹配的目录。
-func FindAllTsConfigsAndAliases(rootPath string, ignore []string) map[string]map[string]string {
-	allAliases := make(map[string]map[string]string)
+func FindAllTsConfigsAndAliases(rootPath string, ignore []string) map[string]TsConfig {
+	allConfigs := make(map[string]TsConfig)
 
 	// 使用 scanProject 来获取所有未被忽略的文件列表
 	scanner := scanProject.NewProjectResult(rootPath, ignore, true) // isMonorepo is true
@@ -28,63 +28,69 @@ func FindAllTsConfigsAndAliases(rootPath string, ignore []string) map[string]map
 	for path, fileDetail := range fileList {
 		if fileDetail.FileName == "tsconfig.json" {
 			// 解析该 tsconfig 文件及其 `extends` 链
-			aliases := readAliasRecursive(path, rootPath)
-			if len(aliases) > 0 {
+			config := readAliasRecursive(path, rootPath)
+			if len(config.Alias) > 0 || config.BaseUrl != "" {
 				// 使用 tsconfig 文件所在的目录作为键
 				dir := filepath.Dir(path)
-				allAliases[dir] = aliases
+				allConfigs[dir] = config
 			}
 		}
 	}
 
-	return allAliases
+	return allConfigs
 }
 
 // --- tsconfig.json 路径别名解析 ---
 
 // ReadAliasFromTsConfig 是解析路径别名的入口函数。
 // 它从项目根目录下的 tsconfig.json 开始，递归地读取和合并所有 `extends` 链上的路径别名配置。
-func ReadAliasFromTsConfig(rootPath string) map[string]string {
+func ReadAliasFromTsConfig(rootPath string) TsConfig {
 	return readAliasRecursive(filepath.Join(rootPath, "tsconfig.json"), rootPath)
 }
 
 // readAliasRecursive 递归地解析 tsconfig.json 文件。
 // 它首先解析父配置文件（通过 `extends` 字段指定），然后将当前文件的别名配置覆盖到父配置之上。
-func readAliasRecursive(configPath, rootPath string) map[string]string {
+func readAliasRecursive(configPath, rootPath string) TsConfig {
 	// 检查 tsconfig.json 文件是否存在，如果不存在则返回空映射。
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return make(map[string]string)
+		return TsConfig{Alias: make(map[string]string)}
 	}
 
 	// 解析当前 tsconfig 文件，获取其 `paths` 和 `extends` 字段。
-	paths, extendsFile := parseSingleTsConfig(configPath)
+	paths, extendsFile, baseUrl := parseSingleTsConfig(configPath)
 
 	// 如果 `extends` 字段存在，则递归解析父配置文件。
-	parentAlias := make(map[string]string)
+	parentConfig := TsConfig{Alias: make(map[string]string)}
 	if extendsFile != "" {
 		extendsPath := extendsFile
 		// 将 `extends` 的相对路径转换为绝对路径。
 		if !filepath.IsAbs(extendsPath) {
 			extendsPath = filepath.Join(filepath.Dir(configPath), extendsFile)
 		}
-		parentAlias = readAliasRecursive(filepath.Clean(extendsPath), rootPath)
+		parentConfig = readAliasRecursive(filepath.Clean(extendsPath), rootPath)
 	}
 
 	// 将当前文件的别名合并到父别名中。子配置会覆盖父配置中的同名别名。
 	for key, path := range paths {
-		parentAlias[key] = path
+		parentConfig.Alias[key] = path
+	}
+
+	// 如果当前 tsconfig.json 中定义了 baseUrl，则使用它。否则，继承父配置的。
+	if baseUrl != "" {
+		parentConfig.BaseUrl = baseUrl
 	}
 
 	// 格式化最终的别名映射，移除路径中的星号。
-	return FormatAlias(parentAlias)
+	parentConfig.Alias = FormatAlias(parentConfig.Alias)
+	return parentConfig
 }
 
 // parseSingleTsConfig 解析单个 tsconfig.json 文件。
-// 它不处理递归 `extends`，仅返回当前文件的 `paths` 别名和 `extends` 字段值。
-func parseSingleTsConfig(configPath string) (map[string]string, string) {
+// 它不处理递归 `extends`，仅返回当前文件的 `paths` 别名、`extends` 字段值和 `baseUrl`。
+func parseSingleTsConfig(configPath string) (map[string]string, string, string) {
 	data, err := utils.ReadFileContent(configPath)
 	if err != nil {
-		return nil, ""
+		return nil, "", ""
 	}
 
 	// 将JSONC（带注释的JSON）转换为标准JSON
@@ -94,14 +100,15 @@ func parseSingleTsConfig(configPath string) (map[string]string, string) {
 	var tsConfig struct {
 		Extends         string `json:"extends"`
 		CompilerOptions struct {
-			Paths map[string][]string `json:"paths"`
+			BaseUrl string              `json:"baseUrl"`
+			Paths   map[string][]string `json:"paths"`
 		}
 	}
 
 	// 解析 JSON 数据。
 	if err := json.Unmarshal(jsonData, &tsConfig); err != nil {
 		fmt.Printf("解析 tsconfig.json 失败: path:%s, err: %v\n", configPath, err)
-		return nil, ""
+		return nil, "", ""
 	}
 
 	// `paths` 的值是一个数组，这里我们只取每个别名对应的第一个路径。
@@ -112,7 +119,7 @@ func parseSingleTsConfig(configPath string) (map[string]string, string) {
 		}
 	}
 
-	return paths, tsConfig.Extends
+	return paths, tsConfig.Extends, tsConfig.CompilerOptions.BaseUrl
 }
 
 // FormatAlias 格式化路径别名映射。
@@ -135,13 +142,15 @@ func FormatAlias(alias map[string]string) map[string]string {
 // 它接收一个导入语句的路径，并尝试按照以下顺序将其解析为最终的来源信息：
 // 1. 路径别名 (Alias)
 // 2. 相对路径 (Relative Path)
-// 3. NPM 包 (NPM Package)
+// 3. 基于 baseUrl 的路径
+// 4. NPM 包 (NPM Package)
 func MatchImportSource(
 	importerPath string, // 包含导入语句的文件的绝对路径
 	importPath string, // 导入语句中的原始路径 (e.g., "@/components/Button", "./utils", "react")
 	basePath string, // 用于解析路径别名的基准目录 (通常是 tsconfig.json 所在的目录)
 	alias map[string]string, // 从 tsconfig.json 解析出的路径别名映射
 	extensions []string, // 需要尝试的文件扩展名列表 (e.g., [".ts", ".tsx"])
+	baseUrl string, // 从 tsconfig.json 解析出的 baseUrl
 ) SourceData {
 	// 1. 尝试解析为路径别名
 	resolvedPath, isAliasMatch := resolveAlias(importPath, alias)
@@ -161,7 +170,16 @@ func MatchImportSource(
 		}
 	}
 
-	// 3. 如果既不是别名也不是相对路径，则假定为 NPM 包。
+	// 3. 尝试基于 baseUrl 解析
+	if baseUrl != "" {
+		absBaseUrl := filepath.Join(basePath, baseUrl)
+		absPath := filepath.Join(absBaseUrl, importPath)
+		if finalPath, ok := resolveAsFile(absPath, extensions); ok {
+			return SourceData{FilePath: finalPath, Type: "file"}
+		}
+	}
+
+	// 4. 如果以上都失败，则假定为 NPM 包。
 	return SourceData{
 		FilePath: importPath, // 对于NPM包，保留原始路径
 		NpmPkg:   extractNpmPackageName(importPath),
@@ -180,9 +198,9 @@ func resolveAlias(filePath string, alias map[string]string) (string, bool) {
 	return filePath, false
 }
 
-// isRelativePath 检查路径是否是相对路径（以 "./" 或 "../" 开头）。
+// isRelativePath 检查路径是否是相对路径（以 "./" 或 "../" 开头，或就是 ".." 或 "."）。
 func isRelativePath(path string) bool {
-	return strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../")
+	return strings.HasPrefix(path, "./") || strings.HasPrefix(path, "../") || path == ".." || path == "."
 }
 
 // resolveAsFile 尝试将一个基本路径解析为一个实际存在的文件。

@@ -41,7 +41,7 @@ func TestMatchImportSource(t *testing.T) {
 	extensions := []string{".ts", ".tsx", ".d.ts"}
 
 	// 测试路径别名匹配
-	sourceData := MatchImportSource(importerPath, "@/App", basePath, alias, extensions)
+	sourceData := MatchImportSource(importerPath, "@/App", basePath, alias, extensions, "")
 	expectedPath := filepath.Join(tmpDir, "src", "App.ts")
 	if sourceData.Type != "file" || sourceData.FilePath != expectedPath {
 		t.Errorf("预期的别名匹配应解析为 %s, 得到类型 %s 和路径 %s", expectedPath, sourceData.Type, sourceData.FilePath)
@@ -52,20 +52,20 @@ func TestMatchImportSource(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(tmpDir, "src/utils.ts"), []byte{}, 0644); err != nil {
 		t.Fatal(err)
 	}
-	sourceData = MatchImportSource(importerPath, "./utils", basePath, alias, extensions)
+	sourceData = MatchImportSource(importerPath, "./utils", basePath, alias, extensions, "")
 	expectedPath = filepath.Join(tmpDir, "src", "utils.ts")
 	if sourceData.Type != "file" || sourceData.FilePath != expectedPath {
 		t.Errorf("预期的相对路径匹配应解析为 %s, 得到类型 %s 和路径 %s", expectedPath, sourceData.Type, sourceData.FilePath)
 	}
 
 	// 测试 NPM 包匹配
-	sourceData = MatchImportSource(importerPath, "react", basePath, alias, extensions)
+	sourceData = MatchImportSource(importerPath, "react", basePath, alias, extensions, "")
 	if sourceData.Type != "npm" || sourceData.NpmPkg != "react" {
 		t.Errorf("预期的 npm 匹配应解析为 'react', 得到类型 %s 和包 %s", sourceData.Type, sourceData.NpmPkg)
 	}
 
 	// 测试带作用域的 NPM 包
-	sourceData = MatchImportSource(importerPath, "@angular/core", basePath, alias, extensions)
+	sourceData = MatchImportSource(importerPath, "@angular/core", basePath, alias, extensions, "")
 	if sourceData.Type != "npm" || sourceData.NpmPkg != "@angular/core" {
 		t.Errorf("预期的带作用域的 npm 匹配应解析为 '@angular/core', 得到类型 %s 和包 %s", sourceData.Type, sourceData.NpmPkg)
 	}
@@ -79,9 +79,23 @@ func TestMatchImportSource(t *testing.T) {
 	if err := os.WriteFile(dtsFile, []byte("export type MyType = string;"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	sourceData = MatchImportSource(importerPath, "@/feature/LiveRoom/components/MainRight/components/Comments/type", basePath, alias, extensions)
+	sourceData = MatchImportSource(importerPath, "@/feature/LiveRoom/components/MainRight/components/Comments/type", basePath, alias, extensions, "")
 	if sourceData.Type != "file" || sourceData.FilePath != dtsFile {
 		t.Errorf("预期的 .d.ts 别名匹配应解析为 %s, 得到类型 %s 和路径 %s", dtsFile, sourceData.Type, sourceData.FilePath)
+	}
+
+	// 测试 baseUrl 解析
+	baseUrl := "src"
+	baseUrlFilePath := filepath.Join(tmpDir, "src", "components", "Button.ts")
+	if err := os.MkdirAll(filepath.Dir(baseUrlFilePath), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(baseUrlFilePath, []byte{}, 0644); err != nil {
+		t.Fatal(err)
+	}
+	sourceData = MatchImportSource(importerPath, "components/Button", basePath, alias, extensions, baseUrl)
+	if sourceData.Type != "file" || sourceData.FilePath != baseUrlFilePath {
+		t.Errorf("预期的 baseUrl 匹配应解析为 %s, 得到类型 %s 和路径 %s", baseUrlFilePath, sourceData.Type, sourceData.FilePath)
 	}
 }
 

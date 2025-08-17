@@ -135,10 +135,15 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 	}
 }
 
-func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
+func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectParser.ProjectParserResult {
 	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
 	ar.ProjectParser()
+	return ar
+}
+
+func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
+	ar := parseProject(rootPath, ignore, isMonorepo)
 
 	// Convert to filtered result before marshalling
 	filteredResult := toFilteredResult(ar)
@@ -158,4 +163,38 @@ func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonore
 	}
 
 	fmt.Printf("分析结果已写入文件: %s\n", outputFile)
+}
+
+type ImplicitDependency struct {
+	Name     string `json:"name"`
+	FilePath string `json:"filePath"`
+	Raw      string `json:"raw"`
+}
+
+func FindImplicitDependencies(rootPath string, ignore []string, isMonorepo bool) []ImplicitDependency {
+	ar := parseProject(rootPath, ignore, isMonorepo)
+
+	declaredDependencies := make(map[string]bool)
+	for _, pkgData := range ar.Package_Data {
+		for _, dep := range pkgData.NpmList {
+			declaredDependencies[dep.Name] = true
+		}
+	}
+
+	implicitDependencies := []ImplicitDependency{}
+	for path, jsData := range ar.Js_Data {
+		for _, imp := range jsData.ImportDeclarations {
+			if imp.Source.Type == "npm" {
+				if !declaredDependencies[imp.Source.NpmPkg] {
+					implicitDependencies = append(implicitDependencies, ImplicitDependency{
+						Name:     imp.Source.NpmPkg,
+						FilePath: path,
+						Raw:      imp.Raw,
+					})
+				}
+			}
+		}
+	}
+
+	return implicitDependencies
 }

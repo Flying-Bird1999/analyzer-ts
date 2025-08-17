@@ -18,11 +18,11 @@ import (
 type ProjectParserConfig struct {
 	// RootPath 是待分析项目的根目录的绝对路径。
 	RootPath string
-	// RootAlias 是从根目录 tsconfig.json 解析出的路径别名映射。
-	RootAlias map[string]string
-	// PackageAliasMaps 存储了项目中所有找到的 tsconfig.json 的路径别名。
-	// 键是 tsconfig.json 所在的目录的绝对路径，值是该配置对应的别名映射。
-	PackageAliasMaps map[string]map[string]string
+	// RootTsConfig 是从根目录 tsconfig.json 解析出的配置。
+	RootTsConfig TsConfig
+	// PackageTsConfigMaps 存储了项目中所有找到的 tsconfig.json 的配置。
+	// 键是 tsconfig.json 所在的目录的绝对路径，值是该配置对应的 TsConfig 结构体。
+	PackageTsConfigMaps map[string]TsConfig
 	// Extensions 是一个字符串切片，定义了需要被解析的文件的扩展名。
 	Extensions []string
 	// Ignore 是一个字符串切片，定义了在文件扫描时需要忽略的目录或文件的模式。
@@ -44,25 +44,25 @@ type ProjectParserResult struct {
 func NewProjectParserConfig(rootPath string, ignore []string, isMonorepo bool) ProjectParserConfig {
 	absRootPath, _ := filepath.Abs(rootPath)
 	extensions := []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
-	rootAlias := ReadAliasFromTsConfig(absRootPath)
+	rootTsConfig := ReadAliasFromTsConfig(absRootPath)
 
 	if ignore == nil || len(ignore) == 0 {
 		ignore = []string{"**/node_modules/**", "**/dist/**", "**/build/**", "**/test/**", "**/public/**", "**/static/**"}
 	}
 
 	// 为 monorepo 项目查找所有子包的 tsconfig 别名。
-	packageAliases := make(map[string]map[string]string)
+	packageTsConfigs := make(map[string]TsConfig)
 	if isMonorepo {
-		packageAliases = FindAllTsConfigsAndAliases(absRootPath, ignore)
+		packageTsConfigs = FindAllTsConfigsAndAliases(absRootPath, ignore)
 	}
 
 	return ProjectParserConfig{
-		RootPath:         absRootPath,
-		RootAlias:        rootAlias,
-		PackageAliasMaps: packageAliases,
-		Extensions:       extensions,
-		Ignore:           ignore,
-		IsMonorepo:       isMonorepo,
+		RootPath:            absRootPath,
+		RootTsConfig:        rootTsConfig,
+		PackageTsConfigMaps: packageTsConfigs,
+		Extensions:          extensions,
+		Ignore:              ignore,
+		IsMonorepo:          isMonorepo,
 	}
 }
 
@@ -91,26 +91,28 @@ func (ppr *ProjectParserResult) ProjectParser() {
 	}
 }
 
-// getAliasForFile 根据给定的文件路径，从已解析的所有 tsconfig 别名中找到最匹配的一个。
-// 它返回最匹配的别名映射以及该别名配置所在的目录路径。
-func (ppr *ProjectParserResult) getAliasForFile(targetPath string) (map[string]string, string) {
+// getTsConfigForFile 根据给定的文件路径，从已解析的所有 tsconfig 中找到最匹配的一个。
+// 它返回最匹配的别名映射、该 tsconfig 配置所在的目录路径和 baseUrl。
+func (ppr *ProjectParserResult) getTsConfigForFile(targetPath string) (map[string]string, string, string) {
 	bestMatchPath := ""
-	// 默认使用根别名和根路径
-	bestMatchAlias := ppr.Config.RootAlias
+	// 默认使用根配置
+	bestMatchAlias := ppr.Config.RootTsConfig.Alias
+	bestMatchBaseUrl := ppr.Config.RootTsConfig.BaseUrl
 	bestMatchDir := ppr.Config.RootPath
 
-	for tsconfigDir, aliasMap := range ppr.Config.PackageAliasMaps {
+	for tsconfigDir, config := range ppr.Config.PackageTsConfigMaps {
 		// 检查 tsconfig 的目录是否是当前文件路径的前缀
 		if strings.HasPrefix(targetPath, tsconfigDir) {
 			// 我们寻找最长的匹配路径，即最深的子目录
 			if len(tsconfigDir) > len(bestMatchPath) {
 				bestMatchPath = tsconfigDir
-				bestMatchAlias = aliasMap
+				bestMatchAlias = config.Alias
+				bestMatchBaseUrl = config.BaseUrl
 				bestMatchDir = tsconfigDir // 更新为当前匹配的 tsconfig 目录
 			}
 		}
 	}
-	return bestMatchAlias, bestMatchDir
+	return bestMatchAlias, bestMatchDir, bestMatchBaseUrl
 }
 
 // parseJsFile 负责处理单个 JS/TS 文件的解析流程。
@@ -120,11 +122,11 @@ func (ppr *ProjectParserResult) parseJsFile(targetPath string) {
 	result := fileParserResult.GetResult()
 
 	// 为当前文件获取最匹配的路径别名配置和其所在目录
-	aliasForFile, tsconfigDir := ppr.getAliasForFile(targetPath)
+	aliasForFile, tsconfigDir, baseUrl := ppr.getTsConfigForFile(targetPath)
 
 	ppr.Js_Data[targetPath] = JsFileParserResult{
-		ImportDeclarations:    ppr.transformImportDeclarations(targetPath, result.ImportDeclarations, aliasForFile, tsconfigDir),
-		ExportDeclarations:    ppr.transformExportDeclarations(targetPath, result.ExportDeclarations, aliasForFile, tsconfigDir),
+		ImportDeclarations:    ppr.transformImportDeclarations(targetPath, result.ImportDeclarations, aliasForFile, tsconfigDir, baseUrl),
+		ExportDeclarations:    ppr.transformExportDeclarations(targetPath, result.ExportDeclarations, aliasForFile, tsconfigDir, baseUrl),
 		ExportAssignments:     result.ExportAssignments,
 		InterfaceDeclarations: result.InterfaceDeclarations,
 		TypeDeclarations:      result.TypeDeclarations,
@@ -158,7 +160,7 @@ func (ppr *ProjectParserResult) parsePackageJson(targetPath string) {
 }
 
 // transformImportDeclarations 将导入声明转换为高级格式，并使用给定的别名映射来解析模块源。
-func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string, decls []parser.ImportDeclarationResult, alias map[string]string, tsconfigDir string) []ImportDeclarationResult {
+func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string, decls []parser.ImportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ImportDeclarationResult {
 	return lo.Map(decls, func(decl parser.ImportDeclarationResult, _ int) ImportDeclarationResult {
 		sourceData := MatchImportSource(
 			importerPath,
@@ -166,6 +168,7 @@ func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string,
 			tsconfigDir, // 使用 tsconfig 所在的目录作为解析基准
 			alias,
 			ppr.Config.Extensions,
+			baseUrl,
 		)
 		return ImportDeclarationResult{
 			ImportModules: lo.Map(decl.ImportModules, func(module parser.ImportModule, _ int) ImportModule {
@@ -182,7 +185,7 @@ func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string,
 }
 
 // transformExportDeclarations 将导出声明转换为高级格式，并使用给定的别名映射来解析模块源。
-func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string, decls []parser.ExportDeclarationResult, alias map[string]string, tsconfigDir string) []ExportDeclarationResult {
+func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string, decls []parser.ExportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ExportDeclarationResult {
 	return lo.Map(decls, func(decl parser.ExportDeclarationResult, _ int) ExportDeclarationResult {
 		var sourceData *SourceData
 		if decl.Source != "" {
@@ -192,6 +195,7 @@ func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string,
 				tsconfigDir, // 使用 tsconfig 所在的目录作为解析基准
 				alias,
 				ppr.Config.Extensions,
+				baseUrl,
 			)
 			sourceData = &data
 		}

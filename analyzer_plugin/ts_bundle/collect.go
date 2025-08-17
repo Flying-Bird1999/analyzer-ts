@@ -16,10 +16,10 @@ import (
 )
 
 type CollectResult struct {
-	RootPath   string            // 项目根目录
-	Alias      map[string]string // tsconfig.json 中的路径别名
-	Extensions []string          // 支持的文件扩展名
-	// NpmList       scanProject.ProjectNpmList // 依赖列表
+	RootPath      string            // 项目根目录
+	Alias         map[string]string // tsconfig.json 中的路径别名
+	BaseUrl       string            // tsconfig.json 中的 baseUrl
+	Extensions    []string          // 支持的文件扩展名
 	SourceCodeMap map[string]string // 已收集的类型源码
 }
 
@@ -40,10 +40,10 @@ func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectR
 	ar := projectParser.NewProjectParserResult(config)
 
 	return CollectResult{
-		RootPath:   rootPath,
-		Alias:      ar.Config.RootAlias,
-		Extensions: ar.Config.Extensions,
-		// NpmList:       pr.GetNpmList(),
+		RootPath:      rootPath,
+		Alias:         ar.Config.RootTsConfig.Alias,
+		BaseUrl:       ar.Config.RootTsConfig.BaseUrl,
+		Extensions:    ar.Config.Extensions,
 		SourceCodeMap: make(map[string]string),
 	}
 }
@@ -110,7 +110,7 @@ func (br *CollectResult) collectFileType(absFilePath string, typeName string, re
 					realTypeName = module.ImportModule
 					replaceTypeName = typeName
 				}
-				sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions)
+				sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions, br.BaseUrl)
 
 				nextFile := ""
 				if sourceData.Type == "file" {
@@ -136,7 +136,7 @@ func (br *CollectResult) collectFileType(absFilePath string, typeName string, re
 					realTargetTypeRaw := strings.ReplaceAll(br.SourceCodeMap[absFilePath+"_"+parentTypeName], typeName, replaceTypeName)
 					br.SourceCodeMap[absFilePath+"_"+parentTypeName] = realTargetTypeRaw
 
-					sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions)
+					sourceData := projectParser.MatchImportSource(absFilePath, importDecl.Source, br.RootPath, br.Alias, br.Extensions, br.BaseUrl)
 					nextFile := ""
 					if sourceData.Type == "file" {
 						nextFile = sourceData.FilePath
