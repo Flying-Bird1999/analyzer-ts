@@ -57,53 +57,13 @@ type JSXElement struct {
 //（自闭合标签或非自闭合标签）分发给相应的解析函数，并返回一个填充好信息的 JSXElement 实例。
 func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
 	pos, end := node.Pos(), node.End()
-	jsxNode := &JSXElement{
+	return &JSXElement{
 		Raw: utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation: SourceLocation{
 			Start: NodePosition{Line: pos, Column: 0},
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
-
-	if node.Kind == ast.KindJsxElement {
-		// 处理非自闭合的 JSX 元素, 例如 <div>...</div>
-		jsxNode.analyzeJsxElement(node.AsJsxElement(), sourceCode)
-	} else if node.Kind == ast.KindJsxSelfClosingElement {
-		// 处理自闭合的 JSX 元素, 例如 <div />
-		jsxNode.analyzeJsxSelfClosingElement(node.AsJsxSelfClosingElement(), sourceCode)
-	}
-	return jsxNode
-}
-
-// analyzeJsxElement 处理非自闭合的 JSX 元素（例如 `<div>...</div>`）。
-// 它主要关注元素的开标签（OpeningElement），因此直接将分析任务委托给 analyzeJsxOpeningElement。
-func (j *JSXElement) analyzeJsxElement(node *ast.JsxElement, sourceCode string) {
-	j.analyzeJsxOpeningElement(node.OpeningElement, sourceCode)
-}
-
-// reconstructJSXName 从 JSX 标签名节点递归地构建一个组件调用链。
-func reconstructJSXName(node *ast.Node) []string {
-	if node == nil {
-		return nil
-	}
-	switch node.Kind {
-	case ast.KindIdentifier:
-		return []string{node.AsIdentifier().Text}
-	case ast.KindPropertyAccessExpression:
-		propAccess := node.AsPropertyAccessExpression()
-		// 递归地构建左侧部分的调用链
-		left := reconstructJSXName(propAccess.Expression)
-		// 将右侧的名称追加到链上
-		return append(left, propAccess.Name().Text())
-	default:
-		// 对于非预期的节点类型，返回一个空切片
-		return []string{}
-	}
-}
-
-// analyzeTagName 从 JSX 元素的标签名节点中解析出组件调用链。
-func (j *JSXElement) analyzeTagName(tagNameNode *ast.Node) {
-	j.ComponentChain = reconstructJSXName(tagNameNode)
 }
 
 // analyzeAttributeValue 从属性的 AST 节点中解析出其结构化信息。
@@ -159,63 +119,22 @@ func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue
 	return value
 }
 
-// analyzeJsxOpeningElement 负责分析 JSX 开标签（`<...>`）的内部结构。
-// 它会依次解析标签名和所有属性。
-func (j *JSXElement) analyzeJsxOpeningElement(node *ast.Node, sourceCode string) {
-	openingElement := node.AsJsxOpeningElement()
-	j.analyzeTagName(openingElement.TagName)
-
-	// 遍历并解析所有属性
-	if attributes := openingElement.Attributes; attributes != nil {
-		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
-			for _, attr := range jsxAttrs.Properties.Nodes {
-				if attr.Kind == ast.KindJsxAttribute {
-					// 处理常规属性：name="value" 或 name={expression}
-					jsxAttr := attr.AsJsxAttribute()
-					j.Attrs = append(j.Attrs, JSXAttribute{
-						Name:     jsxAttr.Name().Text(),
-						Value:    analyzeAttributeValue(jsxAttr.Initializer, sourceCode),
-						IsSpread: false,
-					})
-				} else if attr.Kind == ast.KindJsxSpreadAttribute {
-					// 处理展开属性：{...props}
-					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					j.Attrs = append(j.Attrs, JSXAttribute{
-						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, sourceCode),
-						Value:    nil, // 展开属性没有独立的 Value
-						IsSpread: true,
-					})
-				}
-			}
-		}
+// reconstructJSXName 从 JSX 标签名节点递归地构建一个组件调用链。
+func reconstructJSXName(node *ast.Node) []string {
+	if node == nil {
+		return nil
 	}
-}
-
-// analyzeJsxSelfClosingElement 负责分析自闭合的 JSX 元素（例如 `<Component />`）。
-// 其逻辑与 analyzeJsxOpeningElement 非常相似，同样需要分析标签名和属性列表。
-func (j *JSXElement) analyzeJsxSelfClosingElement(node *ast.JsxSelfClosingElement, sourceCode string) {
-	j.analyzeTagName(node.TagName)
-
-	// 遍历并解析所有属性
-	if attributes := node.Attributes; attributes != nil {
-		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
-			for _, attr := range jsxAttrs.Properties.Nodes {
-				if attr.Kind == ast.KindJsxAttribute {
-					jsxAttr := attr.AsJsxAttribute()
-					j.Attrs = append(j.Attrs, JSXAttribute{
-						Name:     jsxAttr.Name().Text(),
-						Value:    analyzeAttributeValue(jsxAttr.Initializer, sourceCode),
-						IsSpread: false,
-					})
-				} else if attr.Kind == ast.KindJsxSpreadAttribute {
-					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					j.Attrs = append(j.Attrs, JSXAttribute{
-						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, sourceCode),
-						Value:    nil,
-						IsSpread: true,
-					})
-				}
-			}
-		}
+	switch node.Kind {
+	case ast.KindIdentifier:
+		return []string{node.AsIdentifier().Text}
+	case ast.KindPropertyAccessExpression:
+		propAccess := node.AsPropertyAccessExpression()
+		// 递归地构建左侧部分的调用链
+		left := reconstructJSXName(propAccess.Expression)
+		// 将右侧的名称追加到链上
+		return append(left, propAccess.Name().Text())
+	default:
+		// 对于非预期的节点类型，返回一个空切片
+		return []string{}
 	}
 }

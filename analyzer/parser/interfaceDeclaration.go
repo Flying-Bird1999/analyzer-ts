@@ -40,58 +40,6 @@ func NewInterfaceDeclarationResult(node *ast.Node, sourceCode string) *Interface
 	}
 }
 
-// AnalyzeInterfaces 是分析接口声明的入口函数。
-// 它负责提取接口名称，并分别调用函数处理继承关系和成员属性。
-func (inter *InterfaceDeclarationResult) AnalyzeInterfaces(interfaceDecl *ast.InterfaceDeclaration) {
-	interfaceName := interfaceDecl.Name().AsIdentifier().Text
-	inter.Identifier = interfaceName
-
-	// 分析接口的 `extends` 继承关系。
-	inter.analyzeHeritageClause(interfaceDecl)
-
-	// 遍历并分析接口的所有成员（属性、方法等）。
-	if interfaceDecl.Members != nil {
-		for _, member := range interfaceDecl.Members.Nodes {
-			// 调用共享的分析逻辑来处理每个成员
-			results := AnalyzeMember(member, interfaceName)
-			for _, res := range results {
-				inter.addTypeReference(res.TypeName, res.Location, false)
-			}
-		}
-	}
-}
-
-// analyzeHeritageClause 分析接口的 `extends` 子句，提取所有被继承的类型。
-func (inter *InterfaceDeclarationResult) analyzeHeritageClause(interfaceDecl *ast.InterfaceDeclaration) {
-	extendsElements := ast.GetExtendsHeritageClauseElements(interfaceDecl.AsNode())
-
-	for _, node := range extendsElements {
-		expression := node.Expression()
-		// Case 1: 简单标识符继承, e.g., `extends MyInterface`
-		if ast.IsIdentifier(expression) {
-			name := expression.AsIdentifier().Text
-			// 忽略 TypeScript 的内置工具类型（如 Omit, Pick），但仍会分析其泛型参数。
-			if !(utils.IsUtilityType(name)) {
-				inter.addTypeReference(name, "", true)
-			}
-		// Case 2: 带命名空间的继承, e.g., `extends MyNamespace.MyInterface`
-		} else if ast.IsPropertyAccessExpression(expression) {
-			name := entityNameToString(expression)
-			inter.addTypeReference(name, "", true)
-		}
-
-		// 分析 `extends` 中的泛型参数, e.g., `extends MyGeneric<TypeA, TypeB>`
-		if len(node.TypeArguments()) > 0 {
-			for _, typeArg := range node.TypeArguments() {
-				results := AnalyzeType(typeArg, "")
-				for _, res := range results {
-					inter.addTypeReference(res.TypeName, res.Location, true)
-				}
-			}
-		}
-	}
-}
-
 // addTypeReference 是一个辅助函数，用于向结果的 Reference 映射中添加或更新类型引用。
 func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, location string, isExtend bool) {
 	// 忽略空、基础类型或对接口自身的引用。

@@ -2,12 +2,6 @@
 // 本文件（importDeclaration.go）专门负责处理和解析导入（Import）声明。
 package parser
 
-import (
-	"main/analyzer/utils"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-)
-
 // ImportModule 代表一个被导入的独立实体。
 // 它用于表示默认导入、命名导入或命名空间导入中的具体项。
 type ImportModule struct {
@@ -39,52 +33,4 @@ func (idr *ImportDeclarationResult) addModule(moduleType, importModule, identifi
 		ImportModule: importModule,
 		Identifier:   identifier,
 	})
-}
-
-// AnalyzeImportDeclaration 从给定的 ast.ImportDeclaration 节点中提取详细信息。
-// 它能够处理默认导入、命名空间导入和命名导入（包括带别名的导入）。
-func (idr *ImportDeclarationResult) AnalyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) {
-	// 提取基本信息：原始文本、来源和位置。
-	idr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
-	idr.Source = node.ModuleSpecifier.Text()
-	pos, end := node.Pos(), node.End()
-	idr.SourceLocation = SourceLocation{
-		Start: NodePosition{Line: pos, Column: 0},
-		End:   NodePosition{Line: end, Column: 0},
-	}
-
-	// `ImportClause` 为 nil 表示这是一个纯副作用导入，例如 `import './setup';`，直接返回。
-	if node.ImportClause == nil {
-		return
-	}
-
-	importClause := node.ImportClause.AsImportClause()
-
-	// Case 1: 默认导入, 例如: `import Bird from './type2';`
-	if ast.IsDefaultImport(node.AsNode()) {
-		name := importClause.Name().Text()
-		idr.addModule("default", "default", name)
-	}
-
-	// Case 2: 命名空间导入, 例如: `import * as allTypes from './type';`
-	if namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode()); namespaceNode != nil {
-		name := namespaceNode.Name().Text()
-		idr.addModule("namespace", name, name)
-	}
-
-	// Case 3: 命名导入, 例如: `import { School, School2 as NewSchool } from './school';`
-	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
-		namedImports := importClause.NamedBindings.AsNamedImports()
-		for _, element := range namedImports.Elements.Nodes {
-			importSpecifier := element.AsImportSpecifier()
-
-			identifier := importSpecifier.Name().Text()
-			importModule := identifier
-			// 如果 PropertyName 存在，说明是带别名的导入，原始模块名为 PropertyName。
-			if importSpecifier.PropertyName != nil {
-				importModule = importSpecifier.PropertyName.Text()
-			}
-			idr.addModule("named", importModule, identifier)
-		}
-	}
 }

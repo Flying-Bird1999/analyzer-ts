@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestAnalyzeInterfaces 测试分析接口声明的功能
 func TestAnalyzeInterfaces(t *testing.T) {
 	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
-		Identifier string                          `json:"identifier"` // 接口的标识符
-		Raw        string                          `json:"raw"`        // 原始代码文本
+		Identifier string                            `json:"identifier"` // 接口的标识符
+		Raw        string                            `json:"raw"`        // 原始代码文本
 		Reference  map[string]parser.TypeReference `json:"reference"`  // 类型引用
 	}
 
@@ -128,28 +126,22 @@ func TestAnalyzeInterfaces(t *testing.T) {
 		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个接口声明节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.InterfaceDeclaration {
-		for _, stmt := range sourceFile.Statements.Nodes {
-			if stmt.Kind == ast.KindInterfaceDeclaration {
-				return stmt.AsInterfaceDeclaration()
-			}
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.InterfaceDeclarationResult {
+		// 从 map 中提取我们需要的那个接口进行测试
+		// 注意：由于 map 遍历顺序不确定，这在有多个接口的测试中可能不稳定
+		// 但在这里，每个测试用例都只定义了一个目标接口
+		for _, iface := range result.InterfaceDeclarations {
+			return iface
 		}
-		return nil
+		return parser.InterfaceDeclarationResult{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.InterfaceDeclaration, code string) *parser.InterfaceDeclarationResult {
-		result := parser.NewInterfaceDeclarationResult(node.AsNode(), code)
-		result.AnalyzeInterfaces(node)
-		return result
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.InterfaceDeclarationResult) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.InterfaceDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
-			Identifier string                          `json:"identifier"`
-			Raw        string                          `json:"raw"`
+			Identifier string                            `json:"identifier"`
+			Raw        string                            `json:"raw"`
 			Reference  map[string]parser.TypeReference `json:"reference"`
 		}{
 			Identifier: result.Identifier,
@@ -167,7 +159,7 @@ func TestAnalyzeInterfaces(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

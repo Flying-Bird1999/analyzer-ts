@@ -4,17 +4,15 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestNewVariableDeclaration 测试分析变量声明的功能
 func TestNewVariableDeclaration(t *testing.T) {
 	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
-		Exported    bool                         `json:"exported"`          // 是否导出
-		Kind        parser.DeclarationKind       `json:"kind"`              // 声明类型 (const, let, var)
-		Source      *parser.VariableValue        `json:"source,omitempty"`   // 解构赋值的来源
+		Exported    bool                         `json:"exported"`         // 是否导出
+		Kind        parser.DeclarationKind       `json:"kind"`             // 声明类型 (const, let, var)
+		Source      *parser.VariableValue        `json:"source,omitempty"` // 解构赋值的来源
 		Declarators []*parser.VariableDeclarator `json:"declarators"`      // 声明的变量列表
 	}
 
@@ -108,23 +106,16 @@ func TestNewVariableDeclaration(t *testing.T) {
 		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个变量声明语句节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.VariableStatement {
-		for _, stmt := range sourceFile.Statements.Nodes {
-			if stmt.Kind == ast.KindVariableStatement {
-				return stmt.AsVariableStatement()
-			}
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.VariableDeclaration {
+		if len(result.VariableDeclarations) > 0 {
+			return result.VariableDeclarations[0]
 		}
-		return nil
+		return parser.VariableDeclaration{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.VariableStatement, code string) *parser.VariableDeclaration {
-		return parser.NewVariableDeclaration(node, code)
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.VariableDeclaration) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.VariableDeclaration) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			Exported    bool                         `json:"exported"`
 			Kind        parser.DeclarationKind       `json:"kind"`
@@ -147,7 +138,7 @@ func TestNewVariableDeclaration(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

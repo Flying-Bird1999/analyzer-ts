@@ -82,17 +82,20 @@ func getArgumentType(node *ast.Node) string {
 
 // analyzeCallExpression 从给定的 ast.CallExpression 节点中提取详细信息，并填充到 CallExpression 结构体中。
 // 它能区分简单的函数调用（如 `myFunc()`）和成员方法调用（如 `myObj.myMethod()`）。
-func (ce *CallExpression) AnalyzeCallExpression(node *ast.CallExpression, sourceCode string) {
+// 它还能识别动态导入 `import('...')` 并将其注册为依赖。
+func (p *Parser) analyzeCallExpression(node *ast.CallExpression) {
 	if node == nil {
 		return
 	}
+
+	ce := NewCallExpression(node, p.SourceCode);
 
 	// 填充参数信息
 	ce.Arguments = make([]Argument, len(node.Arguments.Nodes))
 	for i, argNode := range node.Arguments.Nodes {
 		ce.Arguments[i] = Argument{
 			Type: getArgumentType(argNode.AsNode()),
-			Text: strings.TrimSpace(utils.GetNodeText(argNode.AsNode(), sourceCode)),
+			Text: strings.TrimSpace(utils.GetNodeText(argNode.AsNode(), p.SourceCode)),
 		}
 	}
 
@@ -105,11 +108,49 @@ func (ce *CallExpression) AnalyzeCallExpression(node *ast.CallExpression, source
 
 	case ast.KindPropertyAccessExpression:
 		ce.Type = "member"
-		// 直接从属性访问表达式重建整个调用链
-		ce.CallChain = reconstructExpression(expressionNode, sourceCode)
+		ce.CallChain = reconstructExpression(expressionNode, p.SourceCode)
+
+	// 新增：处理动态 import()
+	case ast.KindImportKeyword:
+		// 检查此节点是否已被变量声明逻辑处理过，避免重复
+		if p.processedDynamicImports[node.AsNode()] {
+			return
+		}
+		// 如果未被处理，这可能是一个独立的、未赋值给变量的动态导入
+		ce.Type = "dynamic_import"
+		ce.CallChain = []string{"import"}
+		if len(ce.Arguments) > 0 {
+			arg := ce.Arguments[0]
+			var importPath string
+
+			if arg.Type == "string" {
+				importPath = arg.Text // 保留原始文本，例如 '"./path"'
+			} else if arg.Type == "identifier" {
+				importPath = arg.Text // 使用变量名作为路径
+			} else {
+				// 如果参数不是字符串或标识符，则忽略
+				return
+			}
+
+			// 这是一个动态导入，将其添加到导入声明中
+			importResult := &ImportDeclarationResult{
+				Source: importPath,
+				ImportModules: []ImportModule{
+					{
+						Identifier: "default", // 独立的动态导入，我们将其视为默认导入
+						Type:       "dynamic",
+					},
+				},
+				Raw: ce.Raw,
+			}
+			p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
+		}
+
 
 	default:
 		ce.Type = "call"
-		ce.CallChain = []string{strings.TrimSpace(utils.GetNodeText(expressionNode, sourceCode))}
+		ce.CallChain = []string{strings.TrimSpace(utils.GetNodeText(expressionNode, p.SourceCode))}
 	}
+
+	p.Result.CallExpressions = append(p.Result.CallExpressions, *ce)
 }

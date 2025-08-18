@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestAnalyzeCallExpression 测试分析调用表达式的功能
@@ -63,41 +61,21 @@ func TestAnalyzeCallExpression(t *testing.T) {
 				Arguments: []parser.Argument{
 					{Type: "number", Text: "123"},
 				},
-				Type: "member",
+				Type:      "member",
 			},
 		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个调用表达式节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.CallExpression {
-		var callNode *ast.CallExpression
-		var walk func(node *ast.Node)
-		walk = func(node *ast.Node) {
-			if callNode != nil {
-				return
-			}
-			if node.Kind == ast.KindCallExpression {
-				callNode = node.AsCallExpression()
-				return
-			}
-			node.ForEachChild(func(child *ast.Node) bool {
-				walk(child)
-				return callNode != nil
-			})
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.CallExpression {
+		if len(result.CallExpressions) > 0 {
+			return result.CallExpressions[0]
 		}
-		walk(sourceFile.AsNode())
-		return callNode
+		return parser.CallExpression{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.CallExpression, code string) *parser.CallExpression {
-		result := parser.NewCallExpression(node, code)
-		result.AnalyzeCallExpression(node, code)
-		return result
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.CallExpression) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.CallExpression) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			CallChain []string          `json:"callChain"`
 			Arguments []parser.Argument `json:"arguments"`
@@ -118,7 +96,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

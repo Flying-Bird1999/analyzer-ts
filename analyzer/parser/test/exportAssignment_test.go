@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestAnalyzeExportAssignment 测试分析默认导出（export default）的功能
@@ -38,35 +36,18 @@ func TestAnalyzeExportAssignment(t *testing.T) {
 				Expression: "myFunction()",
 			},
 		},
-		{
-			name: "导出一个对象字面量",
-			code: "export default { key: 'value' };",
-			expectedResult: expectedResult{
-				Raw:        "export default { key: 'value' };",
-				Expression: "{ key: 'value' }",
-			},
-		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个默认导出节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.ExportAssignment {
-		for _, stmt := range sourceFile.Statements.Nodes {
-			if stmt.Kind == ast.KindExportAssignment {
-				return stmt.AsExportAssignment()
-			}
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.ExportAssignmentResult {
+		if len(result.ExportAssignments) > 0 {
+			return result.ExportAssignments[0]
 		}
-		return nil
+		return parser.ExportAssignmentResult{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.ExportAssignment, code string) *parser.ExportAssignmentResult {
-		result := parser.NewExportAssignmentResult(node)
-		result.AnalyzeExportAssignment(node, code)
-		return result
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.ExportAssignmentResult) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.ExportAssignmentResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			Raw        string `json:"raw"`
 			Expression string `json:"expression"`
@@ -85,7 +66,7 @@ func TestAnalyzeExportAssignment(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

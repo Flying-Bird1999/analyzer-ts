@@ -32,19 +32,6 @@ func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclaratio
 	}
 }
 
-// AnalyzeTypeDecl 是分析 `type` 别名声明的入口函数。
-// 重构后，此函数变得非常简洁，直接调用共享的 AnalyzeType 函数即可处理所有情况。
-func (tr *TypeDeclarationResult) AnalyzeTypeDecl(typeDecl *ast.TypeAliasDeclaration) {
-	typeName := typeDecl.Name().Text()
-	tr.Identifier = typeName
-
-	// 调用共享的类型分析器来处理别名的具体类型定义。
-	results := AnalyzeType(typeDecl.Type, typeName)
-	for _, res := range results {
-		tr.addTypeReference(res.TypeName, res.Location, false)
-	}
-}
-
 // addTypeReference 是一个辅助函数，用于向结果的 Reference 映射中添加或更新类型引用。
 func (tr *TypeDeclarationResult) addTypeReference(typeName string, location string, isExtend bool) {
 	// 忽略空、基础类型或对类型别名自身的引用。

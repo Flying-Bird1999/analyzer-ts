@@ -74,7 +74,7 @@ type VariableDeclaration struct {
 // NewVariableDeclaration 是创建和解析 VariableDeclaration 实例的工厂函数。
 func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *VariableDeclaration {
 	pos, end := node.Pos(), node.End()
-	vd := &VariableDeclaration{
+	return &VariableDeclaration{
 		Declarators: make([]*VariableDeclarator, 0),
 		Raw:         utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation: SourceLocation{
@@ -82,8 +82,6 @@ func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *Var
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
-	vd.AnalyzeVariableDeclaration(node, sourceCode)
-	return vd
 }
 
 // analyzeVariableValueNode 是一个核心辅助函数，用于从 AST 节点中解析出结构化的值信息。
@@ -129,130 +127,4 @@ func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue 
 	}
 
 	return value
-}
-
-// analyzeBindingPattern 是一个递归函数，用于解析（可能嵌套的）解构模式。
-// 它会将解析出的所有变量声明器追加到 vd.Declarators 中。
-func (vd *VariableDeclaration) analyzeBindingPattern(node *ast.Node, sourceCode string) {
-	if node == nil {
-		return
-	}
-
-	// 使用通用的 AsBindingPattern 获取元素列表
-	bindingPattern := node.AsBindingPattern()
-	if bindingPattern == nil || bindingPattern.Elements == nil {
-		return
-	}
-	elements := bindingPattern.Elements.Nodes
-
-	// 遍历所有解构元素
-	for _, element := range elements {
-		bindingElement := element.AsBindingElement()
-		if bindingElement == nil {
-			continue
-		}
-
-		nameNode := bindingElement.Name()
-		if nameNode == nil {
-			continue
-		}
-
-		// 如果解构的元素本身又是一个解构模式（嵌套解构），则递归调用
-		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			vd.analyzeBindingPattern(nameNode, sourceCode)
-		} else if ast.IsIdentifier(nameNode) {
-			// 如果是最终的标识符，则创建并添加声明器
-			identifier := nameNode.AsIdentifier().Text
-			propName := identifier // 默认情况下，属性名和标识符相同
-
-			// 处理别名: `const { name: myName } = user`
-			if propertyNameNode := bindingElement.PropertyName; propertyNameNode != nil {
-				// 支持 Identifier、StringLiteral、NumericLiteral、ComputedPropertyName
-				switch propertyNameNode.Kind {
-				case ast.KindIdentifier:
-					if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
-						propName = propIdentifier.Text
-					}
-				case ast.KindStringLiteral:
-					if strLit := propertyNameNode.AsStringLiteral(); strLit != nil {
-						propName = strLit.Text
-					}
-				case ast.KindNumericLiteral:
-					if numLit := propertyNameNode.AsNumericLiteral(); numLit != nil {
-						propName = numLit.Text
-					}
-				case ast.KindComputedPropertyName:
-					// 计算属性名，直接用源码文本
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
-				default:
-					// 其它类型，直接用源码文本
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
-				}
-			}
-
-			declarator := &VariableDeclarator{
-				Identifier: identifier,
-				PropName:   propName,
-				// 处理默认值: `const { name = "guest" } = user`
-				InitValue: analyzeVariableValueNode(bindingElement.Initializer, sourceCode),
-			}
-			vd.Declarators = append(vd.Declarators, declarator)
-		}
-	}
-}
-
-// analyzeVariableDeclaration 是解析变量声明语句的核心逻辑。
-func (vd *VariableDeclaration) AnalyzeVariableDeclaration(node *ast.VariableStatement, sourceCode string) {
-	// 1. 检查导出关键字
-	if modifiers := node.Modifiers(); modifiers != nil {
-		for _, modifier := range modifiers.Nodes {
-			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				vd.Exported = true
-				break
-			}
-		}
-	}
-
-	// 2. 解析声明类型 (const, let, var)
-	declarationList := node.DeclarationList
-	if declarationList == nil {
-		return
-	}
-	if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
-		vd.Kind = ConstDeclaration
-	} else if (declarationList.Flags & ast.NodeFlagsLet) != 0 {
-		vd.Kind = LetDeclaration
-	} else {
-		vd.Kind = VarDeclaration
-	}
-
-	// 3. 遍历所有声明器
-	for _, decl := range declarationList.AsVariableDeclarationList().Declarations.Nodes {
-		variableDecl := decl.AsVariableDeclaration()
-		if variableDecl == nil {
-			continue
-		}
-
-		nameNode := variableDecl.Name()
-		initializerNode := variableDecl.Initializer
-
-		// 3.1. 处理常规变量声明 (e.g., `const a = 1`)
-		if ast.IsIdentifier(nameNode) {
-			declarator := &VariableDeclarator{
-				Identifier: nameNode.AsIdentifier().Text,
-				Type:       analyzeVariableValueNode(variableDecl.Type, sourceCode),
-				InitValue:  analyzeVariableValueNode(initializerNode, sourceCode),
-			}
-			vd.Declarators = append(vd.Declarators, declarator)
-			continue
-		}
-
-		// 3.2. 处理解构声明 (e.g., `const {a, b: c} = {a: 1, b: 2}`)
-		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			// 解析解构的源
-			vd.Source = analyzeVariableValueNode(initializerNode, sourceCode)
-			// 使用新的递归函数来解析解构模式
-			vd.analyzeBindingPattern(nameNode, sourceCode)
-		}
-	}
 }

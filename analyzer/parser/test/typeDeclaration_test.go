@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestAnalyzeTypeDecl 测试分析类型别名声明的功能
@@ -113,25 +111,16 @@ func TestAnalyzeTypeDecl(t *testing.T) {
 		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个类型别名声明节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.TypeAliasDeclaration {
-		for _, stmt := range sourceFile.Statements.Nodes {
-			if stmt.Kind == ast.KindTypeAliasDeclaration {
-				return stmt.AsTypeAliasDeclaration()
-			}
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.TypeDeclarationResult {
+		for _, typeDecl := range result.TypeDeclarations {
+			return typeDecl
 		}
-		return nil
+		return parser.TypeDeclarationResult{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.TypeAliasDeclaration, code string) *parser.TypeDeclarationResult {
-		result := parser.NewTypeDeclarationResult(node.AsNode(), code)
-		result.AnalyzeTypeDecl(node)
-		return result
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.TypeDeclarationResult) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.TypeDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			Identifier string                            `json:"identifier"`
 			Raw        string                            `json:"raw"`
@@ -152,7 +141,7 @@ func TestAnalyzeTypeDecl(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

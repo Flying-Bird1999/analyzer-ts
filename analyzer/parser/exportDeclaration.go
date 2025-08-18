@@ -3,8 +3,6 @@
 package parser
 
 import (
-	"main/analyzer/utils"
-
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
@@ -42,59 +40,5 @@ func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationR
 			Start: NodePosition{Line: pos, Column: 0},
 			End:   NodePosition{Line: end, Column: 0},
 		},
-	}
-}
-
-// AnalyzeExportDeclaration 从给定的 ast.ExportDeclaration 节点中提取信息。
-func (edr *ExportDeclarationResult) AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) {
-	edr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
-
-	// 检查是否存在模块说明符（即 `from './module'`），如果存在，说明是重导出。
-	if node.ModuleSpecifier != nil {
-		edr.Source = node.ModuleSpecifier.Text()
-		edr.Type = "re-export"
-	} else {
-		edr.Type = "named-export"
-	}
-
-	// `ExportClause` 包含了具体的导出项，例如 `{ a, b as c }`。
-	if node.ExportClause != nil {
-		// Case 1: 处理命名导出 `export { ... }`
-		if node.ExportClause.Kind == ast.KindNamedExports {
-			namedExports := node.ExportClause.AsNamedExports()
-			for _, element := range namedExports.Elements.Nodes {
-				specifier := element.AsExportSpecifier()
-				identifier := specifier.Name().Text()
-				moduleName := identifier
-				// 如果 PropertyName 存在，说明是带别名的导出，例如 `a as b`
-				if specifier.PropertyName != nil {
-					moduleName = specifier.PropertyName.Text()
-				}
-				edr.ExportModules = append(edr.ExportModules, ExportModule{
-					ModuleName: moduleName,
-					Type:       "named",
-					Identifier: identifier,
-				})
-			}
-			// Case 2: 处理命名空间导出 `export * as ns from './mod'`
-		} else if node.ExportClause.Kind == ast.KindNamespaceExport {
-			namespaceExport := node.ExportClause.AsNamespaceExport()
-			identifier := namespaceExport.Name().Text()
-			edr.ExportModules = append(edr.ExportModules, ExportModule{
-				ModuleName: "*",
-				Type:       "namespace",
-				Identifier: identifier,
-			})
-		}
-	} else {
-		// Case 3: 处理通配符重导出 `export * from './mod'`
-		// 这种情况下，ExportClause 为 nil，但 ModuleSpecifier 存在。
-		if edr.Source != "" {
-			edr.ExportModules = append(edr.ExportModules, ExportModule{
-				ModuleName: "*",
-				Type:       "namespace",
-				Identifier: "*",
-			})
-		}
 	}
 }

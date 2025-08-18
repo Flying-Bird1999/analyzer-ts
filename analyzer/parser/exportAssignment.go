@@ -3,9 +3,6 @@
 package parser
 
 import (
-	"main/analyzer/utils"
-	"strings"
-
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
@@ -25,12 +22,4 @@ func NewExportAssignmentResult(node *ast.ExportAssignment) *ExportAssignmentResu
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
-}
-
-// AnalyzeExportAssignment 从 `export default` 节点中提取信息。
-func (ear *ExportAssignmentResult) AnalyzeExportAssignment(node *ast.ExportAssignment, sourceCode string) {
-	ear.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
-	// 直接从源码中获取表达式的文本，以避免第三方库中 .Text() 方法可能存在的 bug (例如处理函数调用时)。
-	// 同时，使用 TrimSpace 清理可能存在的前后多余的空白字符。
-	ear.Expression = strings.TrimSpace(utils.GetNodeText(node.Expression, sourceCode))
 }

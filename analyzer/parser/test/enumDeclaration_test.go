@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"main/analyzer/parser"
 	"testing"
-
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // TestNewEnumDeclarationResult 测试分析枚举声明的功能
@@ -40,23 +38,16 @@ func TestNewEnumDeclarationResult(t *testing.T) {
 		},
 	}
 
-	// findNode 是一个辅助函数，用于在 AST 中查找第一个枚举声明节点
-	findNode := func(sourceFile *ast.SourceFile) *ast.EnumDeclaration {
-		for _, stmt := range sourceFile.Statements.Nodes {
-			if stmt.Kind == ast.KindEnumDeclaration {
-				return stmt.AsEnumDeclaration()
-			}
+	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
+	extractFn := func(result *parser.ParserResult) parser.EnumDeclarationResult {
+		for _, enum := range result.EnumDeclarations {
+			return enum
 		}
-		return nil
+		return parser.EnumDeclarationResult{}
 	}
 
-	// testParser 是一个辅助函数，用于执行解析操作
-	testParser := func(node *ast.EnumDeclaration, code string) *parser.EnumDeclarationResult {
-		return parser.NewEnumDeclarationResult(node, code)
-	}
-
-	// marshal 是一个辅助函数，用于将解析结果序列化为 JSON
-	marshal := func(result *parser.EnumDeclarationResult) ([]byte, error) {
+	// marshalFn 定义了如何将提取出的结果序列化为 JSON
+	marshalFn := func(result parser.EnumDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
 			Identifier string `json:"identifier"`
 			Raw        string `json:"raw"`
@@ -75,7 +66,7 @@ func TestNewEnumDeclarationResult(t *testing.T) {
 				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
 			}
 			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), findNode, testParser, marshal)
+			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }
