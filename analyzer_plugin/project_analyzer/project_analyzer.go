@@ -11,6 +11,29 @@ import (
 	"github.com/samber/lo"
 )
 
+type ProjectAnalyzer struct {
+	rootPath   string
+	ignore     []string
+	isMonorepo bool
+}
+
+func NewProjectAnalyzer(rootPath string, ignore []string, isMonorepo bool) *ProjectAnalyzer {
+	return &ProjectAnalyzer{
+		rootPath:   rootPath,
+		ignore:     ignore,
+		isMonorepo: isMonorepo,
+	}
+}
+
+func (pa *ProjectAnalyzer) Analyze() (*projectParser.ProjectParserResult, error) {
+	config := projectParser.NewProjectParserConfig(pa.rootPath, pa.ignore, pa.isMonorepo)
+	ar := projectParser.NewProjectParserResult(config)
+	ar.ProjectParser()
+	return ar, nil
+}
+
+// ... (rest of the file remains the same)
+
 // Filtered structs definition
 
 type FilteredInterfaceDeclarationResult struct {

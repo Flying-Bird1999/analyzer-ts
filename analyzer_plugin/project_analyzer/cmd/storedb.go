@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"main/analyzer/projectParser"
-	"main/cmd"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,45 +18,45 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var storeDbCmd = &cobra.Command{
-	Use:   "store-db",
-	Short: "分析 TypeScript 项目并将结果存储在 SQLite 数据库中。",
-	Long:  `该命令分析给定的 TypeScript 项目，将 package.json、代码文件和各类代码节点（导入、导出、接口等）分别存入其专用的数据库宽表中。`,
-	Run: func(cmd *cobra.Command, args []string) {
-		inputPath, _ := cmd.Flags().GetString("input")
-		outputDir, _ := cmd.Flags().GetString("output") // 现在是输出目录
-		excludePatterns, _ := cmd.Flags().GetStringSlice("exclude")
-		isMonorepo, _ := cmd.Flags().GetBool("monorepo")
+func NewStoreDbCmd() *cobra.Command {
+	storeDbCmd := &cobra.Command{
+		Use:   "store-db",
+		Short: "分析 TypeScript 项目并将结果存储在 SQLite 数据库中。",
+		Long:  `该命令分析给定的 TypeScript 项目，将 package.json、代码文件和各类代码节点（导入、导出、接口等）分别存入其专用的数据库宽表中。`,
+		Run: func(cmd *cobra.Command, args []string) {
+			inputPath, _ := cmd.Flags().GetString("input")
+			outputDir, _ := cmd.Flags().GetString("output") // 现在是输出目录
+			excludePatterns, _ := cmd.Flags().GetStringSlice("exclude")
+			isMonorepo, _ := cmd.Flags().GetBool("monorepo")
 
-		if inputPath == "" || outputDir == "" {
-			log.Fatal("需要提供输入和输出路径。")
-		}
+			if inputPath == "" || outputDir == "" {
+				log.Fatal("需要提供输入和输出路径。")
+			}
 
-		// 根据输入目录名，自动生成数据库文件名
-		projectName := filepath.Base(inputPath)
-		dbFileName := fmt.Sprintf("%s.db", projectName)
-		finalDbPath := filepath.Join(outputDir, dbFileName)
+			// 根据输入目录名，自动生成数据库文件名
+			projectName := filepath.Base(inputPath)
+			dbFileName := fmt.Sprintf("%s.db", projectName)
+			finalDbPath := filepath.Join(outputDir, dbFileName)
 
-		// 确保输出目录存在
-		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-			log.Fatalf("无法创建输出目录 %s: %v", outputDir, err)
-		}
+			// 确保输出目录存在
+			if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+				log.Fatalf("无法创建输出目录 %s: %v", outputDir, err)
+			}
 
-		fmt.Println("开始分析...")
-		config := projectParser.NewProjectParserConfig(inputPath, excludePatterns, isMonorepo)
-		projectData := projectParser.NewProjectParserResult(config)
-		projectData.ProjectParser()
-		fmt.Println(fmt.Sprintf("分析完成。发现 %d 个JS/TS文件和 %d 个package.json文件。", len(projectData.Js_Data), len(projectData.Package_Data)))
+			fmt.Println("开始分析...")
+			config := projectParser.NewProjectParserConfig(inputPath, excludePatterns, isMonorepo)
+			projectData := projectParser.NewProjectParserResult(config)
+			projectData.ProjectParser()
+			fmt.Println(fmt.Sprintf("分析完成。发现 %d 个JS/TS文件和 %d 个package.json文件。", len(projectData.Js_Data), len(projectData.Package_Data)))
 
-		fmt.Println("正在将结果存储到数据库:", finalDbPath)
-		if err := storeInDatabase(projectData, finalDbPath); err != nil {
-			log.Fatalf("无法将数据存储到数据库: %v", err)
-		}
-		fmt.Println("成功将分析结果存储在", finalDbPath)
-	},
-}
+			fmt.Println("正在将结果存储到数据库:", finalDbPath)
+			if err := storeInDatabase(projectData, finalDbPath); err != nil {
+				log.Fatalf("无法将数据存储到数据库: %v", err)
+			}
+			fmt.Println("成功将分析结果存储在", finalDbPath)
+		},
+	}
 
-func init() {
 	storeDbCmd.Flags().StringP("input", "i", "", "要分析的 TypeScript 项目目录的路径")
 	// 更新 output 标志的描述
 	storeDbCmd.Flags().StringP("output", "o", "", "用于存储数据库文件的输出目录路径")
@@ -65,7 +64,8 @@ func init() {
 	storeDbCmd.Flags().BoolP("monorepo", "m", false, "如果要分析的是 monorepo，则设置为 true")
 	storeDbCmd.MarkFlagRequired("input")
 	storeDbCmd.MarkFlagRequired("output")
-	cmd.RootCmd.AddCommand(storeDbCmd)
+
+	return storeDbCmd
 }
 
 // storeInDatabase 负责将所有分析数据存入数据库

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	projectAnalyzerCmd "main/analyzer_plugin/project_analyzer/cmd"
+	tsBundleCmd "main/analyzer_plugin/ts_bundle/cmd"
+
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +14,14 @@ var RootCmd = &cobra.Command{
 	Use:   "analyzer-ts",
 	Short: "一个用于分析 TypeScript 项目的命令行工具。",
 	Long:  `analyzer-ts 是一个功能强大的命令行工具，旨在解析和分析 TypeScript 代码库。它可以生成报告、打包代码，并将分析结果存储在数据库中。`,
+}
+
+func init() {
+	RootCmd.AddCommand(projectAnalyzerCmd.NewAnalyzeCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.NewFindImplicitDepsCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.NewFindCallersCmd())
+	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
 }
 
 // Execute 将所有子命令添加到根命令并适当设置标志。
