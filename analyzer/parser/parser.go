@@ -1,3 +1,5 @@
+// package parser 提供了对单个 TypeScript/TSX 文件进行 AST（抽象语法树）解析的功能。
+// 本文件（parser.go）是解析器的核心，定义了主解析结构、遍历逻辑和结果收集。
 package parser
 
 import (
@@ -8,17 +10,21 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// ... (rest of the file is correct)
-
 // Parser 定义了解析器的主要结构，包含了源码、AST 和最终的解析结果。
 type Parser struct {
-	SourceCode              string             // 文件的源码内容
-	Ast                     *ast.Node          // 从源码解析出的 AST
-	Result                  *ParserResult      // 存储解析结果的容器
-	processedDynamicImports map[*ast.Node]bool // 用于标记已处理的动态导入节点，防止重复解析
+	// SourceCode 是当前被解析文件的源码内容。
+	SourceCode string
+	// Ast 是从源码解析出的 AST 的根节点。
+	Ast *ast.Node
+	// Result 用于存储和累积解析过程中提取出的所有信息。
+	Result *ParserResult
+	// processedDynamicImports 用于标记在变量声明中找到的动态导入节点。
+	// 这样做是为了防止在后续的 `analyzeCallExpression` 中对同一个 `import()` 调用进行重复处理。
+	processedDynamicImports map[*ast.Node]bool
 }
 
 // NewParser 创建并返回一个新的 Parser 实例。
+// 它负责读取文件内容、生成 AST，并初始化解析器结构。
 func NewParser(filePath string) (*Parser, error) {
 	sourceCode, err := utils.ReadFileContent(filePath)
 	if err != nil {
@@ -34,26 +40,29 @@ func NewParser(filePath string) (*Parser, error) {
 }
 
 // Traverse 是解析器的核心驱动函数。
-// 它通过深度优先遍历整个 AST 来识别和解析各种类型的节点。
+// 它通过启动一个递归的 `walk` 函数来深度优先遍历整个 AST，从而识别和解析各种类型的节点。
 func (p *Parser) Traverse() {
 	var walk func(node *ast.Node)
+	// walk 是一个递归函数，用于遍历 AST 树。
 	walk = func(node *ast.Node) {
 		if node == nil {
 			return
 		}
 
+		// switch 语句是节点类型分发器。
+		// 它根据当前节点的类型，调用相应的 `analyze...` 方法进行处理。
 		switch node.Kind {
 		case ast.KindImportDeclaration:
 			p.analyzeImportDeclaration(node.AsImportDeclaration())
-			return // 导入声明不需深入遍历
+			return // 导入声明不需深入遍历其子节点。
 
 		case ast.KindExportDeclaration:
 			p.analyzeExportDeclaration(node.AsExportDeclaration())
-			return // 导出声明不需深入遍历
+			return // 导出声明同样不需深入遍历。
 
 		case ast.KindExportAssignment:
 			p.analyzeExportAssignment(node.AsExportAssignment())
-			return // `export default` 不需深入遍历
+			return // `export default` 也不需深入遍历。
 
 		case ast.KindInterfaceDeclaration:
 			p.analyzeInterfaceDeclaration(node.AsInterfaceDeclaration())
@@ -74,15 +83,18 @@ func (p *Parser) Traverse() {
 			p.analyzeJsxElement(node)
 		}
 
+		// 递归地访问所有子节点。
 		node.ForEachChild(func(child *ast.Node) bool {
 			walk(child)
-			return false // 继续遍历
+			return false // 返回 false 以确保遍历继续。
 		})
 	}
 
+	// 从 AST 的根节点开始遍历。
 	walk(p.Ast)
 }
 
+// analyzeImportDeclaration 解析静态导入声明。
 func (p *Parser) analyzeImportDeclaration(node *ast.ImportDeclaration) {
 	idr := NewImportDeclarationResult()
 	idr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
@@ -93,7 +105,7 @@ func (p *Parser) analyzeImportDeclaration(node *ast.ImportDeclaration) {
 		End:   NodePosition{Line: end, Column: 0},
 	}
 
-	if node.ImportClause == nil {
+	if node.ImportClause == nil { // 处理副作用导入，例如 `import './setup';`
 		p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
 		return
 	}
@@ -125,6 +137,7 @@ func (p *Parser) analyzeImportDeclaration(node *ast.ImportDeclaration) {
 	p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
 }
 
+// analyzeExportDeclaration 解析导出声明。
 func (p *Parser) analyzeExportDeclaration(node *ast.ExportDeclaration) {
 	edr := NewExportDeclarationResult(node)
 	edr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
@@ -173,6 +186,7 @@ func (p *Parser) analyzeExportDeclaration(node *ast.ExportDeclaration) {
 	p.Result.ExportDeclarations = append(p.Result.ExportDeclarations, *edr)
 }
 
+// analyzeExportAssignment 解析 `export default` 声明。
 func (p *Parser) analyzeExportAssignment(node *ast.ExportAssignment) {
 	ear := NewExportAssignmentResult(node)
 	ear.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
@@ -180,12 +194,13 @@ func (p *Parser) analyzeExportAssignment(node *ast.ExportAssignment) {
 	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *ear)
 }
 
+// analyzeInterfaceDeclaration 解析接口声明。
 func (p *Parser) analyzeInterfaceDeclaration(node *ast.InterfaceDeclaration) {
 	inter := NewInterfaceDeclarationResult(node.AsNode(), p.SourceCode)
 	interfaceName := node.Name().Text()
 	inter.Identifier = interfaceName
 
-	// Analyze heritage clauses (extends)
+	// 分析 `extends` 子句
 	extendsElements := ast.GetExtendsHeritageClauseElements(node.AsNode())
 	for _, element := range extendsElements {
 		expression := element.Expression()
@@ -209,7 +224,7 @@ func (p *Parser) analyzeInterfaceDeclaration(node *ast.InterfaceDeclaration) {
 		}
 	}
 
-	// Analyze members
+	// 分析接口成员
 	if node.Members != nil {
 		for _, member := range node.Members.Nodes {
 			results := AnalyzeMember(member, interfaceName)
@@ -221,6 +236,7 @@ func (p *Parser) analyzeInterfaceDeclaration(node *ast.InterfaceDeclaration) {
 	p.Result.InterfaceDeclarations[inter.Identifier] = *inter
 }
 
+// analyzeTypeAliasDeclaration 解析 `type` 别名声明。
 func (p *Parser) analyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
 	tr := NewTypeDeclarationResult(node.AsNode(), p.SourceCode)
 	typeName := node.Name().Text()
@@ -233,11 +249,14 @@ func (p *Parser) analyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
 	p.Result.TypeDeclarations[tr.Identifier] = *tr
 }
 
+// analyzeEnumDeclaration 解析枚举声明。
 func (p *Parser) analyzeEnumDeclaration(node *ast.EnumDeclaration) {
 	er := NewEnumDeclarationResult(node, p.SourceCode)
 	p.Result.EnumDeclarations[er.Identifier] = *er
 }
 
+// analyzeVariableStatement 解析变量声明语句。
+// 这里的逻辑比较复杂，因为它需要主动查找动态导入并将其与变量标识符关联起来。
 func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 	vd := NewVariableDeclaration(node, p.SourceCode)
 
@@ -271,18 +290,21 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 		nameNode := variableDecl.Name()
 		initializerNode := variableDecl.Initializer
 
-		// --- 新增逻辑：检查变量赋值中是否包含动态导入 ---
+		// --- 动态导入检查逻辑 ---
+		// 核心目的：将 `const AdminPage = lazy(() => import('./AdminPage'))` 这样的代码
+		// 正确解析为 `AdminPage` 标识符和 `./AdminPage` 路径之间的关联。
 		if ast.IsIdentifier(nameNode) && initializerNode != nil {
 			identifier := nameNode.AsIdentifier().Text
+			// 递归地在变量的初始化表达式中查找 `import()` 调用。
 			importCallNode, importPath := p.findDynamicImport(initializerNode)
 
 			if importCallNode != nil && importPath != "" {
-				// 找到了一个动态导入赋值给变量，创建一个精确的导入记录
+				// 如果找到了，就创建一个精确的导入记录。
 				importResult := &ImportDeclarationResult{
 					Source: importPath,
 					ImportModules: []ImportModule{
 						{
-							Identifier:   identifier, // 使用变量名作为 identifier
+							Identifier:   identifier, // 使用变量名作为导入的标识符
 							ImportModule: "default",  // 动态导入可以看作是导入默认模块
 							Type:         "dynamic_variable",
 						},
@@ -290,12 +312,13 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 					Raw: utils.GetNodeText(importCallNode, p.SourceCode),
 				}
 				p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
-				// 标记此 import() 节点已处理，避免在 analyzeCallExpression 中重复处理
+				// 标记此 `import()` 节点已处理，避免在 `analyzeCallExpression` 中重复记录。
 				p.processedDynamicImports[importCallNode] = true
 			}
 		}
-		// --- 新增逻辑结束 ---
+		// --- 动态导入检查逻辑结束 ---
 
+		// 继续处理常规的变量声明（无论是简单赋值还是解构）
 		if ast.IsIdentifier(nameNode) {
 			declarator := &VariableDeclarator{
 				Identifier: nameNode.AsIdentifier().Text,
@@ -315,13 +338,14 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 }
 
 // findDynamicImport 递归地在给定的 AST 节点中查找第一个 `import()` 调用。
-// 返回找到的 `import()` 的 ast.Node 和导入的路径字符串。
+// 它会深入常见的包装函数（如 `lazy`, `() => ...`）内部进行查找。
+// 返回找到的 `import()` 对应的 ast.Node 和导入的路径字符串。
 func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
 	if node == nil {
 		return nil, ""
 	}
 
-	// 基本情况：当前节点就是 import() 调用
+	// 基本情况：当前节点就是 `import()` 调用。
 	if node.Kind == ast.KindCallExpression {
 		callExpr := node.AsCallExpression()
 		if callExpr.Expression.Kind == ast.KindImportKeyword {
@@ -336,23 +360,22 @@ func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
 		}
 	}
 
-	// 递归情况：遍历子节点查找
+	// 递归情况：遍历子节点查找。
 	var foundNode *ast.Node
 	var foundPath string
 	node.ForEachChild(func(child *ast.Node) bool {
-		// 如果已经找到了，就停止遍历
+		// 如果已经找到了，就停止遍历，防止找到更深层的无关 `import`。
 		if foundNode != nil {
 			return true // stop traversal
 		}
-		// 递归查找
 		foundNode, foundPath = p.findDynamicImport(child)
-		// 如果在子节点中找到了，返回 true 停止遍历
-		return foundNode != nil
+		return foundNode != nil // 如果在子节点中找到了，返回 true 停止遍历
 	})
 
 	return foundNode, foundPath
 }
 
+// analyzeBindingPattern 解析解构模式。
 func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) {
 	if node == nil {
 		return
@@ -412,6 +435,7 @@ func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) 
 	}
 }
 
+// analyzeJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
 func (p *Parser) analyzeJsxElement(node *ast.Node) {
 	jsxNode := NewJSXNode(*node, p.SourceCode)
 	if node.Kind == ast.KindJsxElement {
@@ -422,6 +446,7 @@ func (p *Parser) analyzeJsxElement(node *ast.Node) {
 	p.Result.JsxElements = append(p.Result.JsxElements, *jsxNode)
 }
 
+// analyzeJsxOpeningElement 解析 JSX 的开标签。
 func (p *Parser) analyzeJsxOpeningElement(jsxNode *JSXElement, node *ast.Node) {
 	openingElement := node.AsJsxOpeningElement()
 	jsxNode.ComponentChain = reconstructJSXName(openingElement.TagName)
@@ -449,6 +474,7 @@ func (p *Parser) analyzeJsxOpeningElement(jsxNode *JSXElement, node *ast.Node) {
 	}
 }
 
+// analyzeJsxSelfClosingElement 解析 JSX 的自闭合标签。
 func (p *Parser) analyzeJsxSelfClosingElement(jsxNode *JSXElement, node *ast.JsxSelfClosingElement) {
 	jsxNode.ComponentChain = reconstructJSXName(node.TagName)
 
