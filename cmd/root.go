@@ -18,7 +18,7 @@ var RootCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(projectAnalyzerCmd.NewAnalyzeCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewFindImplicitDepsCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.NewNpmCheckCmd())
 	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
 	RootCmd.AddCommand(projectAnalyzerCmd.NewFindCallersCmd())
 	RootCmd.AddCommand(projectAnalyzerCmd.NewFindUnreferencedFilesCmd())

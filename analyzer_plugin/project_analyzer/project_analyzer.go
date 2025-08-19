@@ -7,16 +7,19 @@ import (
 	"main/analyzer/projectParser"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/samber/lo"
 )
 
+// ProjectAnalyzer 是项目分析器的主要结构体。
 type ProjectAnalyzer struct {
 	rootPath   string
 	ignore     []string
 	isMonorepo bool
 }
 
+// NewProjectAnalyzer 创建一个新的 ProjectAnalyzer 实例。
 func NewProjectAnalyzer(rootPath string, ignore []string, isMonorepo bool) *ProjectAnalyzer {
 	return &ProjectAnalyzer{
 		rootPath:   rootPath,
@@ -25,6 +28,7 @@ func NewProjectAnalyzer(rootPath string, ignore []string, isMonorepo bool) *Proj
 	}
 }
 
+// Analyze 是为旧 `analyze` 命令提供的分析功能，它会解析整个项目并返回详细的AST信息。
 func (pa *ProjectAnalyzer) Analyze() (*projectParser.ProjectParserResult, error) {
 	config := projectParser.NewProjectParserConfig(pa.rootPath, pa.ignore, pa.isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
@@ -32,74 +36,85 @@ func (pa *ProjectAnalyzer) Analyze() (*projectParser.ProjectParserResult, error)
 	return ar, nil
 }
 
-// ... (rest of the file remains the same)
+// CheckDependencies 是依赖检查功能的主入口。
+// 它负责协调整个检查流程，包括解析项目、并发执行各项检查，并最终返回整合后的结果。
+func CheckDependencies(rootPath string, ignore []string, isMonorepo bool) *DependencyCheckResult {
+	// 1. 解析整个项目，获取AST和package.json信息
+	ar := parseProject(rootPath, ignore, isMonorepo)
 
-// Filtered structs definition
+	// 2. 准备数据：提取所有已声明的依赖项
+	declaredDependencies := make(map[string]bool)
+	for _, pkgData := range ar.Package_Data {
+		for _, dep := range pkgData.NpmList {
+			declaredDependencies[dep.Name] = true
+		}
+	}
 
-type FilteredInterfaceDeclarationResult struct {
-	Identifier string                          `json:"identifier"`
-	Reference  map[string]parser.TypeReference `json:"reference"`
+	// 3. 并行执行各项检查
+	var wg sync.WaitGroup
+	var implicitDeps []ImplicitDependency
+	var unusedDeps []UnusedDependency
+	var outdatedDeps []OutdatedDependency
+
+	wg.Add(2) // 两个并行的任务：(1)CPU密集型的本地分析 (2)网络密集型的过期检查
+
+	// 任务一: 查找隐式和未使用的依赖 (本地分析)
+	go func() {
+		defer wg.Done()
+		var usedDependencies map[string]bool
+		implicitDeps, usedDependencies = findImplicitAndUsedDependencies(ar, declaredDependencies)
+		unusedDeps = findUnusedDependencies(ar, usedDependencies)
+	}()
+
+	// 任务二: 查找过期的依赖 (网络请求)
+	go func() {
+		defer wg.Done()
+		outdatedDeps = findOutdatedDependencies(ar)
+	}()
+
+	wg.Wait() // 等待所有检查任务完成
+
+	// 4. 整合并返回最终结果
+	return &DependencyCheckResult{
+		ImplicitDependencies: implicitDeps,
+		UnusedDependencies:   unusedDeps,
+		OutdatedDependencies: outdatedDeps,
+	}
 }
 
-type FilteredTypeDeclarationResult struct {
-	Identifier string                          `json:"identifier"`
-	Reference  map[string]parser.TypeReference `json:"reference"`
+// parseProject 是一个辅助函数，用于执行底层的项目解析操作。
+func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectParser.ProjectParserResult {
+	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
+	ar := projectParser.NewProjectParserResult(config)
+	ar.ProjectParser()
+	return ar
 }
 
-type FilteredEnumDeclarationResult struct {
-	Identifier string `json:"identifier"`
+// AnalyzeProject 是旧 `analyze` 命令的处理器，它将完整的项目分析结果写入JSON文件。
+func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
+	ar := parseProject(rootPath, ignore, isMonorepo)
+
+	// 在序列化前转换为过滤后的结果
+	filteredResult := toFilteredResult(ar)
+
+	jsonData, err := json.MarshalIndent(filteredResult, "", "  ")
+	if err != nil {
+		fmt.Printf("Error marshalling to JSON: %s\n", err)
+		return
+	}
+
+	// 写入文件
+	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+".json")
+	err = os.WriteFile(outputFile, jsonData, 0644)
+	if err != nil {
+		fmt.Printf("Error writing JSON to file: %s\n", err)
+		return
+	}
+
+	fmt.Printf("分析结果已写入文件: %s\n", outputFile)
 }
 
-type FilteredVariableDeclaration struct {
-	Exported    bool                         `json:"exported"`
-	Kind        parser.DeclarationKind       `json:"kind"`
-	Source      *parser.VariableValue        `json:"source,omitempty"`
-	Declarators []*parser.VariableDeclarator `json:"declarators"`
-}
-
-type FilteredCallExpression struct {
-	CallChain []string          `json:"callChain"`
-	Arguments []parser.Argument `json:"arguments"`
-	Type      string            `json:"type"`
-}
-
-type FilteredJSXElement struct {
-	ComponentChain []string              `json:"componentChain"`
-	Attrs          []parser.JSXAttribute `json:"attrs"`
-}
-
-type FilteredExportAssignmentResult struct {
-	Expression string `json:"expression"`
-}
-
-type FilteredImportDeclaration struct {
-	ImportModules []parser.ImportModule    `json:"importModules"`
-	Source        projectParser.SourceData `json:"source"`
-}
-
-type FilteredExportDeclaration struct {
-	ExportModules []parser.ExportModule     `json:"exportModules"`
-	Source        *projectParser.SourceData `json:"source,omitempty"`
-}
-
-type FilteredJsFileParserResult struct {
-	ImportDeclarations []FilteredImportDeclaration      `json:"importDeclarations"`
-	ExportDeclarations []FilteredExportDeclaration      `json:"exportDeclarations"`
-	ExportAssignments  []FilteredExportAssignmentResult `json:"exportAssignments"`
-	// InterfaceDeclarations map[string]FilteredInterfaceDeclarationResult `json:"interfaceDeclarations"`
-	// TypeDeclarations      map[string]FilteredTypeDeclarationResult      `json:"typeDeclarations"`
-	// EnumDeclarations      map[string]FilteredEnumDeclarationResult      `json:"enumDeclarations"`
-	VariableDeclarations []FilteredVariableDeclaration `json:"variableDeclarations"`
-	CallExpressions      []FilteredCallExpression      `json:"callExpressions"`
-	JsxElements          []FilteredJSXElement          `json:"jsxElements"`
-}
-
-type FilteredProjectParserResult struct {
-	Js_Data      map[string]FilteredJsFileParserResult                `json:"js_Data"`
-	Package_Data map[string]projectParser.PackageJsonFileParserResult `json:"package_Data"`
-}
-
-// Conversion function
+// toFilteredResult 是一个转换函数，用于将完整的分析结果转换为一个更简洁、过滤后的版本，以供 `analyze` 命令输出。
 func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectParserResult {
 	filteredJsData := make(map[string]FilteredJsFileParserResult)
 	for path, jsData := range ar.Js_Data {
@@ -131,15 +146,6 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 			ExportAssignments: lo.Map(jsData.ExportAssignments, func(assign parser.ExportAssignmentResult, _ int) FilteredExportAssignmentResult {
 				return FilteredExportAssignmentResult{Expression: assign.Expression}
 			}),
-			// InterfaceDeclarations: lo.MapValues(jsData.InterfaceDeclarations, func(inter parser.InterfaceDeclarationResult, _ string) FilteredInterfaceDeclarationResult {
-			// 	return FilteredInterfaceDeclarationResult{Identifier: inter.Identifier, Reference: inter.Reference}
-			// }),
-			// TypeDeclarations: lo.MapValues(jsData.TypeDeclarations, func(typeDecl parser.TypeDeclarationResult, _ string) FilteredTypeDeclarationResult {
-			// 	return FilteredTypeDeclarationResult{Identifier: typeDecl.Identifier, Reference: typeDecl.Reference}
-			// }),
-			// EnumDeclarations: lo.MapValues(jsData.EnumDeclarations, func(enumDecl parser.EnumDeclarationResult, _ string) FilteredEnumDeclarationResult {
-			// 	return FilteredEnumDeclarationResult{Identifier: enumDecl.Identifier}
-			// }),
 			VariableDeclarations: lo.Map(jsData.VariableDeclarations, func(decl parser.VariableDeclaration, _ int) FilteredVariableDeclaration {
 				return FilteredVariableDeclaration{Exported: decl.Exported, Kind: decl.Kind, Source: decl.Source, Declarators: decl.Declarators}
 			}),
@@ -156,68 +162,4 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 		Js_Data:      filteredJsData,
 		Package_Data: ar.Package_Data,
 	}
-}
-
-func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectParser.ProjectParserResult {
-	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
-	ar := projectParser.NewProjectParserResult(config)
-	ar.ProjectParser()
-	return ar
-}
-
-func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
-	ar := parseProject(rootPath, ignore, isMonorepo)
-
-	// Convert to filtered result before marshalling
-	filteredResult := toFilteredResult(ar)
-
-	jsonData, err := json.MarshalIndent(filteredResult, "", "  ")
-	if err != nil {
-		fmt.Printf("Error marshalling to JSON: %s\n", err)
-		return
-	}
-
-	// Write to file
-	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+".json")
-	err = os.WriteFile(outputFile, jsonData, 0644)
-	if err != nil {
-		fmt.Printf("Error writing JSON to file: %s\n", err)
-		return
-	}
-
-	fmt.Printf("分析结果已写入文件: %s\n", outputFile)
-}
-
-type ImplicitDependency struct {
-	Name     string `json:"name"`
-	FilePath string `json:"filePath"`
-	Raw      string `json:"raw"`
-}
-
-func FindImplicitDependencies(rootPath string, ignore []string, isMonorepo bool) []ImplicitDependency {
-	ar := parseProject(rootPath, ignore, isMonorepo)
-
-	declaredDependencies := make(map[string]bool)
-	for _, pkgData := range ar.Package_Data {
-		for _, dep := range pkgData.NpmList {
-			declaredDependencies[dep.Name] = true
-		}
-	}
-
-	implicitDependencies := []ImplicitDependency{}
-	for path, jsData := range ar.Js_Data {
-		for _, imp := range jsData.ImportDeclarations {
-			if imp.Source.Type == "npm" {
-				if !declaredDependencies[imp.Source.NpmPkg] {
-					implicitDependencies = append(implicitDependencies, ImplicitDependency{
-						Name:     imp.Source.NpmPkg,
-						FilePath: path,
-						Raw:      imp.Raw,
-					})
-				}
-			}
-		}
-	}
-
-	return implicitDependencies
 }
