@@ -22,6 +22,7 @@ func init() {
 	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
 	RootCmd.AddCommand(projectAnalyzerCmd.NewFindCallersCmd())
 	RootCmd.AddCommand(projectAnalyzerCmd.NewFindUnreferencedFilesCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.NewFindUnconsumedExportsCmd())
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
 }
 

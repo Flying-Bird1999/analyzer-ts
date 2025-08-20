@@ -200,6 +200,16 @@ func (p *Parser) analyzeInterfaceDeclaration(node *ast.InterfaceDeclaration) {
 	interfaceName := node.Name().Text()
 	inter.Identifier = interfaceName
 
+	// 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				inter.Exported = true
+				break
+			}
+		}
+	}
+
 	// 分析 `extends` 子句
 	extendsElements := ast.GetExtendsHeritageClauseElements(node.AsNode())
 	for _, element := range extendsElements {
@@ -242,6 +252,16 @@ func (p *Parser) analyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
 	typeName := node.Name().Text()
 	tr.Identifier = typeName
 
+	// 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				tr.Exported = true
+				break
+			}
+		}
+	}
+
 	results := AnalyzeType(node.Type, typeName)
 	for _, res := range results {
 		tr.addTypeReference(res.TypeName, res.Location, false)
@@ -252,6 +272,17 @@ func (p *Parser) analyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
 // analyzeEnumDeclaration 解析枚举声明。
 func (p *Parser) analyzeEnumDeclaration(node *ast.EnumDeclaration) {
 	er := NewEnumDeclarationResult(node, p.SourceCode)
+
+	// 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				er.Exported = true
+				break
+			}
+		}
+	}
+
 	p.Result.EnumDeclarations[er.Identifier] = *er
 }
 

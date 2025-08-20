@@ -11,6 +11,7 @@ import (
 // EnumDeclarationResult 存储一个解析后的枚举声明信息。
 type EnumDeclarationResult struct {
 	Identifier     string         `json:"identifier"` // 枚举的名称。
+	Exported       bool           `json:"exported"`    // 新增：标记此枚举是否被导出。
 	Raw            string         `json:"raw"`        // 节点在源码中的原始文本。
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
@@ -22,7 +23,8 @@ func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *Enu
 	pos, end := node.Pos(), node.End()
 
 	result := &EnumDeclarationResult{
-		Raw: raw,
+		Exported: false, // 默认为 false
+		Raw:      raw,
 		SourceLocation: SourceLocation{
 			Start: NodePosition{Line: pos, Column: 0},
 			End:   NodePosition{Line: end, Column: 0},
