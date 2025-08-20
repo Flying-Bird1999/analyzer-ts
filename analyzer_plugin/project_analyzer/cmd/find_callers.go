@@ -1,7 +1,7 @@
 // package cmd 包含了所有命令行工具的定义
 package cmd
 
-// example： go run main.go find-callers -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/find_callers_result -x "examples/**" -x "tests/**" -f /Users/bird/company/sc1.0/live/shopline-live-sale/src/utils/downloadFile.ts -f /Users/bird/company/sc1.0/live/shopline-live-sale/src/utils/string-utils.ts
+// example： go run main.go find-callers -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "examples/**" -x "tests/**" -f /Users/bird/company/sc1.0/live/shopline-live-sale/src/utils/downloadFile.ts -f /Users/bird/company/sc1.0/live/shopline-live-sale/src/utils/string-utils.ts
 
 import (
 	"encoding/json"
@@ -149,9 +149,9 @@ func NewFindCallersCmd() *cobra.Command {
 				if err := os.MkdirAll(findCallersOutputDir, os.ModePerm); err != nil {
 					return fmt.Errorf("无法创建输出目录 %s: %w", findCallersOutputDir, err)
 				}
-				// 使用输入目录的名称作为输出文件名
+				// 使用输入目录的名称作为输出文件名，并加上命令名称
 				baseName := filepath.Base(findCallersInputDir)
-				outputFileName := fmt.Sprintf("%s.json", baseName)
+				outputFileName := fmt.Sprintf("%s_find_callers.json", baseName)
 				fullOutputPath := filepath.Join(findCallersOutputDir, outputFileName)
 
 				if err := ioutil.WriteFile(fullOutputPath, outputBytes, 0644); err != nil {

@@ -103,8 +103,8 @@ func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonore
 		return
 	}
 
-	// 写入文件
-	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+".json")
+	// 写入文件，添加命令名称后缀
+	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+"_analyze.json")
 	err = os.WriteFile(outputFile, jsonData, 0644)
 	if err != nil {
 		fmt.Printf("Error writing JSON to file: %s\n", err)

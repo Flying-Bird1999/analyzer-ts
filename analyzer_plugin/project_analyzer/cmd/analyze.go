@@ -1,23 +1,23 @@
 package cmd
 
 // example:
-// go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -x "examples/**" -x "tests/**"
+// go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "examples/**" -x "tests/**"
 
-// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -x "node_modules/**" -x "bffApiDoc/**"
+// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
-// go run main.go analyze -i /Users/bird/company/sc1.0/components/nova -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -m true -x "**/e2e/**"
+// go run main.go analyze -i /Users/bird/company/sc1.0/components/nova -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true -x "**/e2e/**"
 
-// go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -x "node_modules/**" -x "bffApiDoc/**"
+// go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
-// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-post-center -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -x "node_modules/**" -x "bffApiDoc/**"
+// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-post-center -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
-// go run main.go analyze -i /Users/bird/company/sc1.0/mc/message-center/client -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -x "node_modules/**" -x "bffApiDoc/**" -x "sc-components/**"
+// go run main.go analyze -i /Users/bird/company/sc1.0/mc/message-center/client -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**" -x "sc-components/**"
 
-// go run main.go analyze -i /Users/bird/company/sc1.0/components/sc-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json
+// go run main.go analyze -i /Users/bird/company/sc1.0/components/sc-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result
 
-// go run main.go analyze -i /Users/bird/Desktop/sp/smart-push-new -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -m true
+// go run main.go analyze -i /Users/bird/Desktop/sp/smart-push-new -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true
 
-// go run main.go analyze -i /Users/bird/Desktop/sp/fe-lib -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_json -m true
+// go run main.go analyze -i /Users/bird/Desktop/sp/fe-lib -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true
 
 import (
 	"fmt"

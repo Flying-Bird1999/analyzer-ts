@@ -1,6 +1,6 @@
 package cmd
 
-// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/analyzer_result_db -x "node_modules/**" -x "bffApiDoc/**"
+// example: go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"crypto/rand"
@@ -33,9 +33,9 @@ func NewStoreDbCmd() *cobra.Command {
 				log.Fatal("需要提供输入和输出路径。")
 			}
 
-			// 根据输入目录名，自动生成数据库文件名
+			// 根据输入目录名，自动生成数据库文件名，并加上命令名称
 			projectName := filepath.Base(inputPath)
-			dbFileName := fmt.Sprintf("%s.db", projectName)
+			dbFileName := fmt.Sprintf("%s_store_db.db", projectName)
 			finalDbPath := filepath.Join(outputDir, dbFileName)
 
 			// 确保输出目录存在

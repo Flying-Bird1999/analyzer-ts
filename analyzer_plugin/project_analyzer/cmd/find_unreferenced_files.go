@@ -1,6 +1,6 @@
 package cmd
 
-// go run main.go find-unreferenced-files -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/unreferenced_files_result -x "node_modules/**" -x "bffApiDoc/**"
+// go run main.go find-unreferenced-files -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"encoding/json"
@@ -85,7 +85,7 @@ func NewFindUnreferencedFilesCmd() *cobra.Command {
 					return fmt.Errorf("无法创建输出目录 %s: %w", findUnreferencedOutputDir, err)
 				}
 				baseName := filepath.Base(findUnreferencedInputDir)
-				outputFileName := fmt.Sprintf("%s.json", baseName)
+				outputFileName := fmt.Sprintf("%s_find_unreferenced_files.json", baseName)
 				fullOutputPath := filepath.Join(findUnreferencedOutputDir, outputFileName)
 
 				if err := ioutil.WriteFile(fullOutputPath, outputBytes, 0644); err != nil {

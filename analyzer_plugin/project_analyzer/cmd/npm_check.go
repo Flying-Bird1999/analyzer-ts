@@ -1,6 +1,6 @@
 package cmd
 
-// go run main.go npm-check -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result/npm_check -x "node_modules/**" -x "bffApiDoc/**"
+// go run main.go npm-check -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"encoding/json"
@@ -46,7 +46,7 @@ func NewNpmCheckCmd() *cobra.Command {
 					return
 				}
 
-				outputFile := filepath.Join(npmCheckOutputDir, filepath.Base(npmCheckInputDir)+".json")
+				outputFile := filepath.Join(npmCheckOutputDir, filepath.Base(npmCheckInputDir)+"_npm_check.json")
 				err = os.WriteFile(outputFile, jsonData, 0644)
 				if err != nil {
 					fmt.Printf("Error writing JSON to file: %s\n", err)
