@@ -36,10 +36,10 @@
 4. **构建项目:**
 
    ```bash
-   go build
+   go build -o analyzer-ts
    ```
 
-   这将在项目根目录下生成一个名为 `analyzer-ts` (或 `analyzer-ts.exe`) 的可执行文件。
+   我们推荐使用 `-o` 标志来指定输出文件的名称。此命令会编译源代码，并在项目根目录下生成一个名为 `analyzer-ts` (在 Windows 上是 `analyzer-ts.exe`) 的可执行文件。
 
 ## 命令
 
