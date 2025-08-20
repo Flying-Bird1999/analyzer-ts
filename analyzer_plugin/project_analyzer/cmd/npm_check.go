@@ -5,7 +5,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"main/analyzer_plugin/project_analyzer"
+	"main/analyzer_plugin/project_analyzer/dependency"
 	"os"
 	"path/filepath"
 
@@ -24,6 +24,7 @@ func NewNpmCheckCmd() *cobra.Command {
 		Use:   "npm-check",
 		Short: "检查项目的NPM依赖，类似npm-check。",
 		Long:  `分析一个TypeScript项目，识别隐式依赖（幽灵依赖）、未使用的依赖和过期的依赖。`,
+		// Run 是命令的执行入口，它现在只负责参数的传递和结果的输出。
 		Run: func(cmd *cobra.Command, args []string) {
 			if npmCheckInputDir == "" {
 				fmt.Println("需要输入路径。")
@@ -31,63 +32,33 @@ func NewNpmCheckCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			depCheckResult := project_analyzer.CheckDependencies(npmCheckInputDir, npmCheckExclude, npmCheckIsMonorepo)
+			// 直接调用 dependency 包中的核心业务逻辑函数。
+			depCheckResult := dependency.Check(npmCheckInputDir, npmCheckExclude, npmCheckIsMonorepo)
 
+			// 根据用户指定的输出方式，格式化并输出结果。
 			if npmCheckOutputDir != "" {
-				// 自动创建输出目录（如果不存在）
 				if err := os.MkdirAll(npmCheckOutputDir, os.ModePerm); err != nil {
-					fmt.Printf("Error creating output directory: %s\n", err)
+					fmt.Printf("Error creating output directory: %s", err)
 					return
 				}
 
 				jsonData, err := json.MarshalIndent(depCheckResult, "", "  ")
 				if err != nil {
-					fmt.Printf("Error marshalling to JSON: %s\n", err)
+					fmt.Printf("Error marshalling to JSON: %s", err)
 					return
 				}
 
 				outputFile := filepath.Join(npmCheckOutputDir, filepath.Base(npmCheckInputDir)+"_npm_check.json")
 				err = os.WriteFile(outputFile, jsonData, 0644)
 				if err != nil {
-					fmt.Printf("Error writing JSON to file: %s\n", err)
+					fmt.Printf("Error writing JSON to file: %s", err)
 					return
 				}
 
-				fmt.Printf("NPM依赖检查结果已写入文件: %s\n", outputFile)
+				fmt.Printf("NPM依赖检查结果已写入文件: %s", outputFile)
 			} else {
-				// Print Implicit Dependencies
-				if len(depCheckResult.ImplicitDependencies) > 0 {
-					fmt.Println("发现隐式依赖 (幽灵依赖):")
-					for _, dep := range depCheckResult.ImplicitDependencies {
-						fmt.Printf("  - %s (in %s)\n", dep.Name, dep.FilePath)
-					}
-				} else {
-					fmt.Println("✅ 未发现隐式依赖。")
-				}
-
-				fmt.Println() // Add a separator line
-
-				// Print Unused Dependencies
-				if len(depCheckResult.UnusedDependencies) > 0 {
-					fmt.Println("发现未使用依赖:")
-					for _, dep := range depCheckResult.UnusedDependencies {
-						fmt.Printf("  - %s (%s) (in %s)\n", dep.Name, dep.Version, dep.PackageJsonPath)
-					}
-				} else {
-					fmt.Println("✅ 未发现未使用依赖。")
-				}
-
-				fmt.Println() // Add a separator line
-
-				// Print Outdated Dependencies
-				if len(depCheckResult.OutdatedDependencies) > 0 {
-					fmt.Println("发现过期依赖:")
-					for _, dep := range depCheckResult.OutdatedDependencies {
-						fmt.Printf("  - %s (current: %s, latest: %s) (in %s)\n", dep.Name, dep.CurrentVersion, dep.LatestVersion, dep.PackageJsonPath)
-					}
-				} else {
-					fmt.Println("✅ 所有依赖都是最新的。")
-				}
+				// 在控制台打印易于阅读的摘要信息。
+				printDependencyCheckSummary(depCheckResult)
 			}
 		},
 	}
@@ -100,4 +71,38 @@ func NewNpmCheckCmd() *cobra.Command {
 	npmCheckCmd.MarkFlagRequired("input")
 
 	return npmCheckCmd
+}
+
+// printDependencyCheckSummary 是一个辅助函数，用于在控制台打印易于阅读的依赖检查结果摘要。
+func printDependencyCheckSummary(result *dependency.DependencyCheckResult) {
+	if len(result.ImplicitDependencies) > 0 {
+		fmt.Println("发现隐式依赖 (幽灵依赖):")
+		for _, dep := range result.ImplicitDependencies {
+			fmt.Printf("  - %s (in %s)", dep.Name, dep.FilePath)
+		}
+	} else {
+		fmt.Println("✅ 未发现隐式依赖。")
+	}
+
+	fmt.Println() // Add a separator line
+
+	if len(result.UnusedDependencies) > 0 {
+		fmt.Println("发现未使用依赖:")
+		for _, dep := range result.UnusedDependencies {
+			fmt.Printf("  - %s (%s) (in %s)", dep.Name, dep.Version, dep.PackageJsonPath)
+		}
+	} else {
+		fmt.Println("✅ 未发现未使用依赖。")
+	}
+
+	fmt.Println() // Add a separator line
+
+	if len(result.OutdatedDependencies) > 0 {
+		fmt.Println("发现过期依赖:")
+		for _, dep := range result.OutdatedDependencies {
+			fmt.Printf("  - %s (current: %s, latest: %s) (in %s)", dep.Name, dep.CurrentVersion, dep.LatestVersion, dep.PackageJsonPath)
+		}
+	} else {
+		fmt.Println("✅ 所有依赖都是最新的。")
+	}
 }

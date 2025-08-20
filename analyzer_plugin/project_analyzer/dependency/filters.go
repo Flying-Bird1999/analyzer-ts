@@ -1,4 +1,5 @@
-package project_analyzer
+// package dependency 实现了检查项目NPM依赖健康状况的核心业务逻辑。
+package dependency
 
 // nodeBuiltInModules 是一个包含了所有 Node.js 内置模块的集合。
 // 在检查隐式依赖时，我们会忽略这些模块，因为它们是运行环境提供的，不需要在 package.json 中声明。
@@ -11,8 +12,9 @@ var nodeBuiltInModules = map[string]bool{
 	"tty": true, "url": true, "util": true, "v8": true, "vm": true, "zlib": true,
 }
 
-// devDependencyIgnoreList 是一个包含了常见开发工具的集合。
-// 这些工具通常在源码中没有直接的 import/require 语句，而是通过命令行或配置文件使用。
+// devDependencyIgnoreList 是一个包含了常见开发工具和构建相关依赖的集合。
+// 这些工具通常在源码中没有直接的 import/require 语句（而是通过命令行或配置文件使用），
+// 或者它们只在开发阶段需要，不应被视为“未使用”的依赖。
 // 将它们加入忽略列表，可以避免在“未使用依赖”检查中被错误地报告，从而提高报告的信噪比。
 var devDependencyIgnoreList = map[string]bool{
 	"eslint": true, "prettier": true, "husky": true, "lint-staged": true, "typescript": true,

@@ -1,3 +1,8 @@
+// package project_analyzer 是整个分析器插件的核心包。
+// 它作为业务逻辑层的根，提供了项目分析的统一入口，并组织了如此下各种专业的分析器子包：
+// - callgraph: 调用链分析
+// - dependency: NPM依赖分析
+// - unreferenced: 未引用文件分析
 package project_analyzer
 
 import (
@@ -7,12 +12,12 @@ import (
 	"main/analyzer/projectParser"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/samber/lo"
 )
 
 // ProjectAnalyzer 是项目分析器的主要结构体。
+// 它封装了执行项目分析所需的所有配置和状态。
 type ProjectAnalyzer struct {
 	rootPath   string
 	ignore     []string
@@ -20,6 +25,9 @@ type ProjectAnalyzer struct {
 }
 
 // NewProjectAnalyzer 创建一个新的 ProjectAnalyzer 实例。
+// rootPath: 要分析的项目根目录。
+// ignore: 需要从分析中排除的文件/目录的 glob 模式列表。
+// isMonorepo: 指示项目是否为 monorepo。
 func NewProjectAnalyzer(rootPath string, ignore []string, isMonorepo bool) *ProjectAnalyzer {
 	return &ProjectAnalyzer{
 		rootPath:   rootPath,
@@ -28,61 +36,17 @@ func NewProjectAnalyzer(rootPath string, ignore []string, isMonorepo bool) *Proj
 	}
 }
 
-// Analyze 是为旧 `analyze` 命令提供的分析功能，它会解析整个项目并返回详细的AST信息。
+// Analyze 是一个核心方法，它调用底层的 projectParser 来对整个项目进行深度分析，
+// 并返回包含所有文件AST信息的详细结果。这个原始结果是所有上层专业分析器的基础。
 func (pa *ProjectAnalyzer) Analyze() (*projectParser.ProjectParserResult, error) {
 	config := projectParser.NewProjectParserConfig(pa.rootPath, pa.ignore, pa.isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
 	ar.ProjectParser()
+	// 在未来的版本中，这里可以增加错误处理的逻辑。
 	return ar, nil
 }
 
-// CheckDependencies 是依赖检查功能的主入口。
-// 它负责协调整个检查流程，包括解析项目、并发执行各项检查，并最终返回整合后的结果。
-func CheckDependencies(rootPath string, ignore []string, isMonorepo bool) *DependencyCheckResult {
-	// 1. 解析整个项目，获取AST和package.json信息
-	ar := parseProject(rootPath, ignore, isMonorepo)
-
-	// 2. 准备数据：提取所有已声明的依赖项
-	declaredDependencies := make(map[string]bool)
-	for _, pkgData := range ar.Package_Data {
-		for _, dep := range pkgData.NpmList {
-			declaredDependencies[dep.Name] = true
-		}
-	}
-
-	// 3. 并行执行各项检查
-	var wg sync.WaitGroup
-	var implicitDeps []ImplicitDependency
-	var unusedDeps []UnusedDependency
-	var outdatedDeps []OutdatedDependency
-
-	wg.Add(2) // 两个并行的任务：(1)CPU密集型的本地分析 (2)网络密集型的过期检查
-
-	// 任务一: 查找隐式和未使用的依赖 (本地分析)
-	go func() {
-		defer wg.Done()
-		var usedDependencies map[string]bool
-		implicitDeps, usedDependencies = findImplicitAndUsedDependencies(ar, declaredDependencies)
-		unusedDeps = findUnusedDependencies(ar, usedDependencies)
-	}()
-
-	// 任务二: 查找过期的依赖 (网络请求)
-	go func() {
-		defer wg.Done()
-		outdatedDeps = findOutdatedDependencies(ar)
-	}()
-
-	wg.Wait() // 等待所有检查任务完成
-
-	// 4. 整合并返回最终结果
-	return &DependencyCheckResult{
-		ImplicitDependencies: implicitDeps,
-		UnusedDependencies:   unusedDeps,
-		OutdatedDependencies: outdatedDeps,
-	}
-}
-
-// parseProject 是一个辅助函数，用于执行底层的项目解析操作。
+// parseProject 是一个辅助函数，封装了执行底层项目解析操作的具体步骤。
 func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectParser.ProjectParserResult {
 	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
@@ -90,31 +54,34 @@ func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectPar
 	return ar
 }
 
-// AnalyzeProject 是旧 `analyze` 命令的处理器，它将完整的项目分析结果写入JSON文件。
+// AnalyzeProject 是为 `analyze` 命令提供的处理器。
+// 它执行完整的项目分析，并将结果以过滤和序列化后的JSON格式写入文件。
 func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
 	ar := parseProject(rootPath, ignore, isMonorepo)
 
-	// 在序列化前转换为过滤后的结果
+	// 在序列化之前，将完整的分析结果转换为一个更简洁、过滤后的版本。
 	filteredResult := toFilteredResult(ar)
 
 	jsonData, err := json.MarshalIndent(filteredResult, "", "  ")
 	if err != nil {
-		fmt.Printf("Error marshalling to JSON: %s\n", err)
+		fmt.Printf("序列化JSON时出错: %s", err)
 		return
 	}
 
-	// 写入文件，添加命令名称后缀
+	// 将JSON数据写入以项目名命名的输出文件中。
 	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+"_analyze.json")
 	err = os.WriteFile(outputFile, jsonData, 0644)
 	if err != nil {
-		fmt.Printf("Error writing JSON to file: %s\n", err)
+		fmt.Printf("写入JSON文件时出错: %s", err)
 		return
 	}
 
-	fmt.Printf("分析结果已写入文件: %s\n", outputFile)
+	fmt.Printf("分析结果已写入文件: %s", outputFile)
 }
 
-// toFilteredResult 是一个转换函数，用于将完整的分析结果转换为一个更简洁、过滤后的版本，以供 `analyze` 命令输出。
+// toFilteredResult 是一个转换函数，用于将完整的、包含大量原始信息的分析结果 (ProjectParserResult)
+// 转换为一个更简洁、过滤后的版本 (FilteredProjectParserResult)，以供 `analyze` 命令输出。
+// 这样可以减少输出文件的大小，使其更具可读性。
 func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectParserResult {
 	filteredJsData := make(map[string]FilteredJsFileParserResult)
 	for path, jsData := range ar.Js_Data {

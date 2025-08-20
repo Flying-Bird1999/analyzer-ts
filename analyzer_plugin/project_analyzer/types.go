@@ -1,3 +1,4 @@
+// package project_analyzer 是整个分析器插件的核心包。
 package project_analyzer
 
 import (
@@ -5,63 +6,28 @@ import (
 	"main/analyzer/projectParser"
 )
 
-// DependencyCheckResult 是依赖检查功能最终输出的完整结果结构体。
-// 它整合了隐式依赖、未使用依赖和过期依赖三项检查的结果。
-type DependencyCheckResult struct {
-	ImplicitDependencies []ImplicitDependency `json:"implicitDependencies"`
-	UnusedDependencies   []UnusedDependency   `json:"unusedDependencies"`
-	OutdatedDependencies []OutdatedDependency `json:"outdatedDependencies"`
-}
+// --- 以下是为 `analyze` 命令服务的、经过滤和简化的数据结构 ---
+// 这些结构体的目的是为了在 `analyze` 命令的JSON输出中，
+// 只保留最关键的信息，去除不必要的原始数据，以减小输出文件的大小。
 
-// ImplicitDependency 代表一个隐式依赖（幽灵依赖）。
-// 即在代码中被使用，但未在 package.json 中声明的包。
-type ImplicitDependency struct {
-	Name     string `json:"name"`     // 依赖包的名称
-	FilePath string `json:"filePath"` // 在哪个文件中发现了该依赖
-	Raw      string `json:"raw"`      // 发现该依赖的原始导入语句
-}
-
-// UnusedDependency 代表一个未使用的依赖。
-// 即在 package.json 中声明了，但代码中并未导入的包。
-type UnusedDependency struct {
-	Name            string `json:"name"`            // 依赖包的名称
-	Version         string `json:"version"`         // 在 package.json 中声明的版本
-	PackageJsonPath string `json:"packageJsonPath"` // 该依赖所在的 package.json 文件路径
-}
-
-// OutdatedDependency 代表一个已过期的依赖。
-// 即在 package.json 中声明的版本落后于 NPM Registry 中的最新版本。
-type OutdatedDependency struct {
-	Name            string `json:"name"`            // 依赖包的名称
-	CurrentVersion  string `json:"currentVersion"`  // 当前在 package.json 中声明的版本
-	LatestVersion   string `json:"latestVersion"`   // NPM Registry 中的最新版本
-	PackageJsonPath string `json:"packageJsonPath"` // 该依赖所在的 package.json 文件路径
-}
-
-// packageInfo 是用于解析从 NPM Registry API 返回的 JSON 数据的结构体。
-// 我们主要关心 `dist-tags.latest` 字段来获取最新版本号。
-type packageInfo struct {
-	DistTags struct {
-		Latest string `json:"latest"`
-	} `json:"dist-tags"`
-}
-
-// --- 以下是为旧 `analyze` 命令服务的过滤后的数据结构 ---
-
+// FilteredInterfaceDeclarationResult 代表一个简化的接口声明信息。
 type FilteredInterfaceDeclarationResult struct {
 	Identifier string                          `json:"identifier"`
 	Reference  map[string]parser.TypeReference `json:"reference"`
 }
 
+// FilteredTypeDeclarationResult 代表一个简化的类型定义信息。
 type FilteredTypeDeclarationResult struct {
 	Identifier string                          `json:"identifier"`
 	Reference  map[string]parser.TypeReference `json:"reference"`
 }
 
+// FilteredEnumDeclarationResult 代表一个简化的枚举声明信息。
 type FilteredEnumDeclarationResult struct {
 	Identifier string `json:"identifier"`
 }
 
+// FilteredVariableDeclaration 代表一个简化的变量声明信息。
 type FilteredVariableDeclaration struct {
 	Exported    bool                         `json:"exported"`
 	Kind        parser.DeclarationKind       `json:"kind"`
@@ -69,40 +35,47 @@ type FilteredVariableDeclaration struct {
 	Declarators []*parser.VariableDeclarator `json:"declarators"`
 }
 
+// FilteredCallExpression 代表一个简化的函数调用表达式信息。
 type FilteredCallExpression struct {
 	CallChain []string          `json:"callChain"`
 	Arguments []parser.Argument `json:"arguments"`
 	Type      string            `json:"type"`
 }
 
+// FilteredJSXElement 代表一个简化的JSX元素信息。
 type FilteredJSXElement struct {
 	ComponentChain []string              `json:"componentChain"`
 	Attrs          []parser.JSXAttribute `json:"attrs"`
 }
 
+// FilteredExportAssignmentResult 代表一个简化的 `export =` 表达式信息。
 type FilteredExportAssignmentResult struct {
 	Expression string `json:"expression"`
 }
 
+// FilteredImportDeclaration 代表一个简化的导入声明信息。
 type FilteredImportDeclaration struct {
 	ImportModules []parser.ImportModule    `json:"importModules"`
 	Source        projectParser.SourceData `json:"source"`
 }
 
+// FilteredExportDeclaration 代表一个简化的导出声明信息。
 type FilteredExportDeclaration struct {
 	ExportModules []parser.ExportModule     `json:"exportModules"`
 	Source        *projectParser.SourceData `json:"source,omitempty"`
 }
 
+// FilteredJsFileParserResult 代表一个被简化和过滤后的单个文件的解析结果。
 type FilteredJsFileParserResult struct {
-	ImportDeclarations []FilteredImportDeclaration      `json:"importDeclarations"`
-	ExportDeclarations []FilteredExportDeclaration      `json:"exportDeclarations"`
-	ExportAssignments  []FilteredExportAssignmentResult `json:"exportAssignments"`
-	VariableDeclarations []FilteredVariableDeclaration `json:"variableDeclarations"`
-	CallExpressions      []FilteredCallExpression      `json:"callExpressions"`
-	JsxElements          []FilteredJSXElement          `json:"jsxElements"`
+	ImportDeclarations   []FilteredImportDeclaration      `json:"importDeclarations"`
+	ExportDeclarations   []FilteredExportDeclaration      `json:"exportDeclarations"`
+	ExportAssignments    []FilteredExportAssignmentResult `json:"exportAssignments"`
+	VariableDeclarations []FilteredVariableDeclaration    `json:"variableDeclarations"`
+	CallExpressions      []FilteredCallExpression         `json:"callExpressions"`
+	JsxElements          []FilteredJSXElement             `json:"jsxElements"`
 }
 
+// FilteredProjectParserResult 代表整个项目被简化和过滤后的解析结果。
 type FilteredProjectParserResult struct {
 	Js_Data      map[string]FilteredJsFileParserResult                `json:"js_Data"`
 	Package_Data map[string]projectParser.PackageJsonFileParserResult `json:"package_Data"`

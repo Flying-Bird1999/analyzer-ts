@@ -1,23 +1,16 @@
+// package cmd 存放了所有暴露给用户的命令行接口 (CLI) 的定义。
+// 这个包使用了流行的 `cobra` 库来构建子命令。
+//
+// 它的核心职责是：
+// 1. 定义命令的名称、帮助信息和命令行标志 (flags)。
+// 2. 解析用户从命令行输入的参数。
+// 3. 调用相应业务逻辑包中的核心函数。
+// 4. 接收业务逻辑的返回结果，并将其格式化后输出到控制台或文件。
+//
+// 按照设计原则，这个包应该保持为一个“瘦层”，不包含任何复杂的业务逻辑。
 package cmd
 
-// example:
-// go run main.go analyze -i /Users/bird/Desktop/components/shopline-admin-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "examples/**" -x "tests/**"
-
-// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
-
-// go run main.go analyze -i /Users/bird/company/sc1.0/components/nova -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true -x "**/e2e/**"
-
-// go run main.go store-db -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
-
-// go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-post-center -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
-
-// go run main.go analyze -i /Users/bird/company/sc1.0/mc/message-center/client -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**" -x "sc-components/**"
-
-// go run main.go analyze -i /Users/bird/company/sc1.0/components/sc-components -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result
-
-// go run main.go analyze -i /Users/bird/Desktop/sp/smart-push-new -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true
-
-// go run main.go analyze -i /Users/bird/Desktop/sp/fe-lib -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -m true
+// example: go run main.go analyze -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"fmt"
@@ -45,6 +38,7 @@ func NewAnalyzeCmd() *cobra.Command {
 				cmd.Help()
 				os.Exit(1)
 			}
+			// 直接调用业务逻辑层的 AnalyzeProject 函数来执行核心任务。
 			project_analyzer.AnalyzeProject(analyzeInputDir, analyzeOutputDir, analyzeExclude, analyzeIsMonorepo)
 		},
 	}
