@@ -152,7 +152,7 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 			CallExpressions: lo.Map(jsData.CallExpressions, func(expr parser.CallExpression, _ int) FilteredCallExpression {
 				return FilteredCallExpression{CallChain: expr.CallChain, Arguments: expr.Arguments, Type: expr.Type}
 			}),
-			JsxElements: lo.Map(jsData.JsxElements, func(elem parser.JSXElement, _ int) FilteredJSXElement {
+			JsxElements: lo.Map(jsData.JsxElements, func(elem projectParser.JSXElementResult, _ int) FilteredJSXElement {
 				return FilteredJSXElement{ComponentChain: elem.ComponentChain, Attrs: elem.Attrs}
 			}),
 		}

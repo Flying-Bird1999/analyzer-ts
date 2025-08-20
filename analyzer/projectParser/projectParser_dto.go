@@ -17,7 +17,7 @@ type JsFileParserResult struct {
 	EnumDeclarations      map[string]parser.EnumDeclarationResult      `json:"enumDeclarations"`      // 文件中定义的枚举
 	VariableDeclarations  []parser.VariableDeclaration                 `json:"variableDeclarations"`  // 文件中声明的变量
 	CallExpressions       []parser.CallExpression                      `json:"callExpressions"`       // 文件中的函数调用表达式
-	JsxElements           []parser.JSXElement                          `json:"jsxElements"`           // 文件中的JSX元素
+	JsxElements           []JSXElementResult                           `json:"jsxElements"`           // 文件中的JSX元素
 }
 
 // PackageJsonFileParserResult 存储了对 `package.json` 文件解析后的关键信息。
@@ -98,6 +98,14 @@ type ExportModule struct {
 	// Identifier 是导出的标识符（外部名称）。
 	// - 对于 `export { a as b }`，它是 `b`。
 	Identifier string `json:"identifier"`
+}
+
+// JSXElementResult 存储了单个JSX元素的解析结果，包括其来源信息。
+type JSXElementResult struct {
+	ComponentChain []string              `json:"componentChain"` // 组件的完整路径
+	Attrs          []parser.JSXAttribute `json:"attrs"`          // JSX 属性
+	Raw            string                `json:"raw"`            // 节点在源码中的原始文本
+	Source         SourceData            `json:"source"`         // 解析后的来源信息
 }
 
 // SourceData 结构体用于存储对导入或再导出来源模块路径的解析结果。

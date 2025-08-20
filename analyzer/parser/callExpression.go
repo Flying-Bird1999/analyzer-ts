@@ -124,7 +124,8 @@ func (p *Parser) analyzeCallExpression(node *ast.CallExpression) {
 			var importPath string
 
 			if arg.Type == "string" {
-				importPath = arg.Text // 保留原始文本，例如 '"./path"'
+				// 移除字符串引号
+				importPath = strings.Trim(arg.Text, "\"'")
 			} else if arg.Type == "identifier" {
 				importPath = arg.Text // 使用变量名作为路径
 			} else {

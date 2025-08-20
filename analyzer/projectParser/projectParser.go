@@ -133,7 +133,7 @@ func (ppr *ProjectParserResult) parseJsFile(targetPath string) {
 		EnumDeclarations:      result.EnumDeclarations,
 		VariableDeclarations:  result.VariableDeclarations,
 		CallExpressions:       result.CallExpressions,
-		JsxElements:           result.JsxElements,
+		JsxElements:           ppr.transformJsxElements(targetPath, result.JsxElements, aliasForFile, tsconfigDir, baseUrl),
 	}
 }
 
@@ -210,6 +210,39 @@ func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string,
 			}),
 			Raw:    decl.Raw,
 			Source: sourceData,
+		}
+	})
+}
+
+// transformJsxElements 将JSX元素转换为高级格式，并解析其组件来源。
+func (ppr *ProjectParserResult) transformJsxElements(importerPath string, elements []parser.JSXElement, alias map[string]string, tsconfigDir string, baseUrl string) []JSXElementResult {
+	return lo.Map(elements, func(element parser.JSXElement, _ int) JSXElementResult {
+		// 构建组件名称（取最后一个作为组件名）
+		componentName := ""
+		if len(element.ComponentChain) > 0 {
+			componentName = element.ComponentChain[len(element.ComponentChain)-1]
+		}
+
+		// 对于自定义组件（非HTML标签），尝试解析其来源
+		var sourceData SourceData
+		if componentName != "" && strings.ToLower(componentName[0:1]) != componentName[0:1] {
+			// 这是一个自定义组件（首字母大写），尝试解析其来源
+			// 简化处理：假设组件名与导入的模块名相同
+			sourceData = MatchImportSource(
+				importerPath,
+				componentName,
+				tsconfigDir,
+				alias,
+				ppr.Config.Extensions,
+				baseUrl,
+			)
+		}
+
+		return JSXElementResult{
+			ComponentChain: element.ComponentChain,
+			Attrs:          element.Attrs,
+			Raw:            element.Raw,
+			Source:         sourceData,
 		}
 	})
 }
