@@ -38,7 +38,7 @@ func Find(params Params) (*Result, error) {
 			}
 			for _, module := range imp.ImportModules {
 				key := ""
-				if module.Type == "default" || module.Type == "namespace" {
+				if module.Type == "default" || module.Type == "namespace" || module.Type == "dynamic_variable" {
 					key = fmt.Sprintf("%s#*", imp.Source.FilePath) // `*` 代表消费了整个模块，特别是默认导出
 				} else {
 					key = fmt.Sprintf("%s#%s", imp.Source.FilePath, module.Identifier)
