@@ -83,6 +83,7 @@ type FilteredJsFileParserResult struct {
 	CallExpressions      []FilteredCallExpression            `json:"callExpressions"`
 	JsxElements          []FilteredJSXElement                `json:"jsxElements"`
 	FunctionDeclarations []FilteredFunctionDeclarationResult `json:"functionDeclarations"`
+	AnyDeclarations      []parser.AnyInfo                    `json:"anyDeclarations"`
 }
 
 // FilteredProjectParserResult 代表整个项目被简化和过滤后的解析结果。

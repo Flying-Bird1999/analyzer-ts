@@ -115,6 +115,24 @@ func WriteResultToFile(filePath string, result string) error {
 	return nil
 }
 
+// GetLineAndCharacterOfPosition 根据字符位置获取行和列信息 (0-indexed)。
+func GetLineAndCharacterOfPosition(sourceCode string, position int) (line int, character int) {
+	line = 0
+	character = 0
+	for i, r := range sourceCode {
+		if i == position {
+			break
+		}
+		if r == '\n' {
+			line++
+			character = 0
+		} else {
+			character++
+		}
+	}
+	return
+}
+
 // 检查路径是否包含已知扩展名
 func HasExtension(filePath string, extensions []string) bool {
 	base := filepath.Base(filePath)

@@ -16,6 +16,8 @@ type Parser struct {
 	SourceCode string
 	// Ast 是从源码解析出的 AST 的根节点。
 	Ast *ast.Node
+	// SourceFile 是从源码解析出的 AST 的根节点对应的 SourceFile。
+	SourceFile *ast.SourceFile
 	// Result 用于存储和累积解析过程中提取出的所有信息。
 	Result *ParserResult
 	// processedDynamicImports 用于标记在变量声明中找到的动态导入节点。
@@ -40,6 +42,7 @@ func NewParserFromSource(filePath string, sourceCode string) (*Parser, error) {
 	return &Parser{
 		SourceCode:              sourceCode,
 		Ast:                     sourceFile.AsNode(),
+		SourceFile:              sourceFile, // Populate SourceFile
 		Result:                  NewParserResult(filePath),
 		processedDynamicImports: make(map[*ast.Node]bool),
 	}, nil
@@ -53,6 +56,30 @@ func (p *Parser) Traverse() {
 	walk = func(node *ast.Node) {
 		if node == nil {
 			return
+		}
+
+		// 提取 any 信息
+		if node.Kind == ast.KindAnyKeyword {
+			p.Result.AnyDeclarations = append(p.Result.AnyDeclarations, AnyInfo{
+				SourceLocation: SourceLocation{
+					Start: func() NodePosition {
+						line, character := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.Pos())
+						return NodePosition{Line: line + 1, Column: character + 1}
+					}(),
+					End: func() NodePosition {
+						line, character := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.End())
+						return NodePosition{Line: line + 1, Column: character}
+					}(),
+				},
+				Raw: func() string {
+					line, _ := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.Pos())
+					lines := strings.Split(p.SourceCode, "\n")
+					if line >= 0 && line < len(lines) {
+						return strings.TrimSpace(lines[line])
+					}
+					return ""
+				}(),
+			})
 		}
 
 		// switch 语句是节点类型分发器。
@@ -580,6 +607,13 @@ type ParserResult struct {
 	CallExpressions       []CallExpression
 	JsxElements           []JSXElement
 	FunctionDeclarations  []FunctionDeclarationResult // 新增：用于存储找到的所有函数声明的信息
+	AnyDeclarations       []AnyInfo                   // 新增：用于存储找到的所有 any 类型的信息
+}
+
+// AnyInfo 存储了在文件中找到的 any 类型的信息。
+type AnyInfo struct {
+	SourceLocation SourceLocation
+	Raw            string // 存储 any 关键字的原始文本
 }
 
 // NodePosition 用于精确记录代码在源文件中的位置。
@@ -607,7 +641,8 @@ func NewParserResult(filePath string) *ParserResult {
 		VariableDeclarations:  []VariableDeclaration{},
 		CallExpressions:       []CallExpression{},
 		JsxElements:           []JSXElement{},
-		FunctionDeclarations:  []FunctionDeclarationResult{}, // 初始化 FunctionDeclarations 切片
+		FunctionDeclarations:  []FunctionDeclarationResult{},
+		AnyDeclarations:       []AnyInfo{},
 	}
 }
 
@@ -624,6 +659,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 		CallExpressions:       pr.CallExpressions,
 		JsxElements:           pr.JsxElements,
 		FunctionDeclarations:  pr.FunctionDeclarations,
+		AnyDeclarations:       pr.AnyDeclarations,
 	}
 }
 
