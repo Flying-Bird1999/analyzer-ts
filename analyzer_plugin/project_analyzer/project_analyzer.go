@@ -122,6 +122,15 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 			JsxElements: lo.Map(jsData.JsxElements, func(elem projectParser.JSXElementResult, _ int) FilteredJSXElement {
 				return FilteredJSXElement{ComponentChain: elem.ComponentChain, Attrs: elem.Attrs}
 			}),
+			FunctionDeclarations: lo.Map(jsData.FunctionDeclarations, func(elem parser.FunctionDeclarationResult, _ int) FilteredFunctionDeclarationResult {
+				return FilteredFunctionDeclarationResult{
+					Exported:   elem.Exported,
+					Identifier: elem.Identifier,
+					IsAsync:    elem.IsAsync,
+					Parameters: elem.Parameters,
+					ReturnType: elem.ReturnType,
+				}
+			}),
 		}
 	}
 

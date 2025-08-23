@@ -18,6 +18,7 @@ type JsFileParserResult struct {
 	VariableDeclarations  []parser.VariableDeclaration                 `json:"variableDeclarations"`  // 文件中声明的变量
 	CallExpressions       []parser.CallExpression                      `json:"callExpressions"`       // 文件中的函数调用表达式
 	JsxElements           []JSXElementResult                           `json:"jsxElements"`           // 文件中的JSX元素
+	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations"` // 新增：文件中所有显式 any 的信息
 }
 
 // PackageJsonFileParserResult 存储了对 `package.json` 文件解析后的关键信息。

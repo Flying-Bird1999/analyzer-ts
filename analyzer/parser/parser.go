@@ -30,6 +30,12 @@ func NewParser(filePath string) (*Parser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
+	return NewParserFromSource(filePath, sourceCode)
+}
+
+// NewParserFromSource 使用源码字符串创建并返回一个新的 Parser 实例。
+// 这个构造函数对于测试非常有用，可以避免文件系统的 I/O 操作。
+func NewParserFromSource(filePath string, sourceCode string) (*Parser, error) {
 	sourceFile := utils.ParseTypeScriptFile(filePath, sourceCode)
 	return &Parser{
 		SourceCode:              sourceCode,
@@ -81,6 +87,9 @@ func (p *Parser) Traverse() {
 
 		case ast.KindJsxElement, ast.KindJsxSelfClosingElement:
 			p.analyzeJsxElement(node)
+
+		case ast.KindFunctionDeclaration:
+			p.analyzeFunctionDeclaration(node.AsFunctionDeclaration())
 		}
 
 		// 递归地访问所有子节点。
@@ -287,14 +296,14 @@ func (p *Parser) analyzeEnumDeclaration(node *ast.EnumDeclaration) {
 }
 
 // analyzeVariableStatement 解析变量声明语句。
-// 这里的逻辑比较复杂，因为它需要主动查找动态导入并将其与变量标识符关联起来。
+// 这里的逻辑经过了重构，以支持对赋值给变量的函数表达式（箭头函数、匿名函数）进行解析。
 func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
-	vd := NewVariableDeclaration(node, p.SourceCode)
-
+	// 检查 `export` 修饰符
+	isExported := false
 	if modifiers := node.Modifiers(); modifiers != nil {
 		for _, modifier := range modifiers.Nodes {
 			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				vd.Exported = true
+				isExported = true
 				break
 			}
 		}
@@ -304,14 +313,8 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 	if declarationList == nil {
 		return
 	}
-	if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
-		vd.Kind = ConstDeclaration
-	} else if (declarationList.Flags & ast.NodeFlagsLet) != 0 {
-		vd.Kind = LetDeclaration
-	} else {
-		vd.Kind = VarDeclaration
-	}
 
+	// 遍历声明列表中的每一个声明 (例如 `const a = 1, b = 2`)
 	for _, decl := range declarationList.AsVariableDeclarationList().Declarations.Nodes {
 		variableDecl := decl.AsVariableDeclaration()
 		if variableDecl == nil {
@@ -320,6 +323,22 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 
 		nameNode := variableDecl.Name()
 		initializerNode := variableDecl.Initializer
+
+		// --- 函数表达式检查逻辑 ---
+		// 检查变量的初始值是否是一个函数或箭头函数
+		if ast.IsIdentifier(nameNode) && initializerNode != nil {
+			identifier := nameNode.AsIdentifier().Text
+			initKind := initializerNode.Kind
+
+			if initKind == ast.KindArrowFunction || initKind == ast.KindFunctionExpression {
+				// 如果是，则使用新的构造函数来解析这个函数表达式
+				fr := NewFunctionDeclarationResultFromExpression(identifier, isExported, initializerNode, p.SourceCode)
+				p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
+				// 解析为函数后，无需再作为普通变量处理，跳过当前循环
+				continue
+			}
+		}
+		// --- 函数表达式检查逻辑结束 ---
 
 		// --- 动态导入检查逻辑 ---
 		// 核心目的：将 `const AdminPage = lazy(() => import('./AdminPage'))` 这样的代码
@@ -347,9 +366,18 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 				p.processedDynamicImports[importCallNode] = true
 			}
 		}
-		// --- 动态导入检查逻辑结束 ---
 
-		// 继续处理常规的变量声明（无论是简单赋值还是解构）
+		// --- 常规变量和解构变量处理---
+		vd := NewVariableDeclaration(node, p.SourceCode)
+		vd.Exported = isExported
+		if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
+			vd.Kind = ConstDeclaration
+		} else if (declarationList.Flags & ast.NodeFlagsLet) != 0 {
+			vd.Kind = LetDeclaration
+		} else {
+			vd.Kind = VarDeclaration
+		}
+
 		if ast.IsIdentifier(nameNode) {
 			declarator := &VariableDeclarator{
 				Identifier: nameNode.AsIdentifier().Text,
@@ -357,15 +385,12 @@ func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
 				InitValue:  analyzeVariableValueNode(initializerNode, p.SourceCode),
 			}
 			vd.Declarators = append(vd.Declarators, declarator)
-			continue
-		}
-
-		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+		} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
 			vd.Source = analyzeVariableValueNode(initializerNode, p.SourceCode)
 			p.analyzeBindingPattern(nameNode, vd)
 		}
+		p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, *vd)
 	}
-	p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, *vd)
 }
 
 // findDynamicImport 递归地在给定的 AST 节点中查找第一个 `import()` 调用。
@@ -466,6 +491,15 @@ func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) 
 	}
 }
 
+// analyzeFunctionDeclaration 解析函数声明。
+// 此函数不仅提取函数的基本信息，还负责检查参数和返回类型中的显式 any。
+func (p *Parser) analyzeFunctionDeclaration(node *ast.FunctionDeclaration) {
+	// 1. 解析函数声明本身的信息
+	fr := NewFunctionDeclarationResult(node, p.SourceCode)
+	// 3. 将解析结果存入
+	p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
+}
+
 // analyzeJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
 func (p *Parser) analyzeJsxElement(node *ast.Node) {
 	jsxNode := NewJSXNode(*node, p.SourceCode)
@@ -545,6 +579,7 @@ type ParserResult struct {
 	VariableDeclarations  []VariableDeclaration
 	CallExpressions       []CallExpression
 	JsxElements           []JSXElement
+	FunctionDeclarations  []FunctionDeclarationResult // 新增：用于存储找到的所有函数声明的信息
 }
 
 // NodePosition 用于精确记录代码在源文件中的位置。
@@ -572,6 +607,7 @@ func NewParserResult(filePath string) *ParserResult {
 		VariableDeclarations:  []VariableDeclaration{},
 		CallExpressions:       []CallExpression{},
 		JsxElements:           []JSXElement{},
+		FunctionDeclarations:  []FunctionDeclarationResult{}, // 初始化 FunctionDeclarations 切片
 	}
 }
 
@@ -587,6 +623,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 		VariableDeclarations:  pr.VariableDeclarations,
 		CallExpressions:       pr.CallExpressions,
 		JsxElements:           pr.JsxElements,
+		FunctionDeclarations:  pr.FunctionDeclarations,
 	}
 }
 

@@ -65,14 +65,24 @@ type FilteredExportDeclaration struct {
 	Source        *projectParser.SourceData `json:"source,omitempty"`
 }
 
+type FilteredFunctionDeclarationResult struct {
+	Exported bool `json:"exported"` // 标记此函数是否被导出。
+
+	Identifier string                   `json:"identifier"` // 函数的名称。对于匿名函数可能为空。
+	IsAsync    bool                     `json:"isAsync"`    // 标记此函数是否为异步函数 (async)。
+	Parameters []parser.ParameterResult `json:"parameters"` // 函数的参数列表。
+	ReturnType string                   `json:"returnType"` // 函数的返回类型文本。
+}
+
 // FilteredJsFileParserResult 代表一个被简化和过滤后的单个文件的解析结果。
 type FilteredJsFileParserResult struct {
-	ImportDeclarations   []FilteredImportDeclaration      `json:"importDeclarations"`
-	ExportDeclarations   []FilteredExportDeclaration      `json:"exportDeclarations"`
-	ExportAssignments    []FilteredExportAssignmentResult `json:"exportAssignments"`
-	VariableDeclarations []FilteredVariableDeclaration    `json:"variableDeclarations"`
-	CallExpressions      []FilteredCallExpression         `json:"callExpressions"`
-	JsxElements          []FilteredJSXElement             `json:"jsxElements"`
+	ImportDeclarations   []FilteredImportDeclaration         `json:"importDeclarations"`
+	ExportDeclarations   []FilteredExportDeclaration         `json:"exportDeclarations"`
+	ExportAssignments    []FilteredExportAssignmentResult    `json:"exportAssignments"`
+	VariableDeclarations []FilteredVariableDeclaration       `json:"variableDeclarations"`
+	CallExpressions      []FilteredCallExpression            `json:"callExpressions"`
+	JsxElements          []FilteredJSXElement                `json:"jsxElements"`
+	FunctionDeclarations []FilteredFunctionDeclarationResult `json:"functionDeclarations"`
 }
 
 // FilteredProjectParserResult 代表整个项目被简化和过滤后的解析结果。

@@ -134,6 +134,7 @@ func (ppr *ProjectParserResult) parseJsFile(targetPath string) {
 		VariableDeclarations:  result.VariableDeclarations,
 		CallExpressions:       result.CallExpressions,
 		JsxElements:           ppr.transformJsxElements(targetPath, result.JsxElements, aliasForFile, tsconfigDir, baseUrl),
+		FunctionDeclarations:  result.FunctionDeclarations,
 	}
 }
 
