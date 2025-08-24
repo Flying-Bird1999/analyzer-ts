@@ -54,7 +54,7 @@ type JSXElement struct {
 
 // NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。
 // 它接收一个 AST 节点和文件源码作为输入，根据节点的具体类型
-//（自闭合标签或非自闭合标签）分发给相应的解析函数，并返回一个填充好信息的 JSXElement 实例。
+// （自闭合标签或非自闭合标签）分发给相应的解析函数，并返回一个填充好信息的 JSXElement 实例。
 func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
 	pos, end := node.Pos(), node.End()
 	return &JSXElement{

@@ -17,11 +17,11 @@ type Argument struct {
 
 // CallExpression 代表一个函数或方法调用表达式的解析结果。
 type CallExpression struct {
-	CallChain      []string       `json:"callChain"`          // 调用的完整路径，例如 `myObj.methods.myMethod` 会被解析为 `["myObj", "methods", "myMethod"]`。
-	Arguments      []Argument     `json:"arguments"`          // 调用时传递的参数列表。
-	Type           string         `json:"type"`               // 调用的类型。`call` 表示普通函数调用，`member` 表示对象成员方法调用。
-	Raw            string         `json:"raw,omitempty"`      // 节点在源码中的原始文本。
-	SourceLocation SourceLocation `json:"sourceLocation"`     // 节点在源码中的位置信息。
+	CallChain      []string       `json:"callChain"`      // 调用的完整路径，例如 `myObj.methods.myMethod` 会被解析为 `["myObj", "methods", "myMethod"]`。
+	Arguments      []Argument     `json:"arguments"`      // 调用时传递的参数列表。
+	Type           string         `json:"type"`           // 调用的类型。`call` 表示普通函数调用，`member` 表示对象成员方法调用。
+	Raw            string         `json:"raw,omitempty"`  // 节点在源码中的原始文本。
+	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
 // NewCallExpression 基于 AST 节点创建一个新的 CallExpression 实例。
@@ -88,7 +88,7 @@ func (p *Parser) analyzeCallExpression(node *ast.CallExpression) {
 		return
 	}
 
-	ce := NewCallExpression(node, p.SourceCode);
+	ce := NewCallExpression(node, p.SourceCode)
 
 	// 填充参数信息
 	ce.Arguments = make([]Argument, len(node.Arguments.Nodes))
@@ -146,7 +146,6 @@ func (p *Parser) analyzeCallExpression(node *ast.CallExpression) {
 			}
 			p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
 		}
-
 
 	default:
 		ce.Type = "call"

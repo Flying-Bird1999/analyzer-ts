@@ -11,9 +11,9 @@ func TestAnalyzeExportDeclaration(t *testing.T) {
 	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
 		ExportModules []parser.ExportModule `json:"exportModules"` // 导出的模块列表
-		Raw           string                `json:"raw"`            // 原始代码文本
-		Source        string                `json:"source"`         // 导出来源
-		Type          string                `json:"type"`           // 导出类型
+		Raw           string                `json:"raw"`           // 原始代码文本
+		Source        string                `json:"source"`        // 导出来源
+		Type          string                `json:"type"`          // 导出类型
 	}
 
 	// testCases 定义了一系列的测试用例

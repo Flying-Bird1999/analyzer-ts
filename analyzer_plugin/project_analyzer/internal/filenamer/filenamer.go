@@ -15,11 +15,11 @@ import (
 func GenerateOutputFileName(inputPath, suffix string) string {
 	// 1. 获取输入目录的基名（例如，"/path/to/my-project" -> "my-project"）。
 	baseName := filepath.Base(inputPath)
-	
+
 	// 2. 将基名中的空格替换为下划线，以确保文件名的有效性。
 	//    虽然不太常见，但 defensive programming 是好的。
 	safeBaseName := strings.ReplaceAll(baseName, " ", "_")
-	
+
 	// 3. 拼接基名和后缀，并加上 .json 扩展名。
 	//    例如，"my-project" 和 "analyze" 会生成 "my-project_analyze.json"。
 	return fmt.Sprintf("%s_%s.json", safeBaseName, suffix)

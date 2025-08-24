@@ -10,8 +10,8 @@ import (
 func TestAnalyzeInterfaces(t *testing.T) {
 	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
-		Identifier string                            `json:"identifier"` // 接口的标识符
-		Raw        string                            `json:"raw"`        // 原始代码文本
+		Identifier string                          `json:"identifier"` // 接口的标识符
+		Raw        string                          `json:"raw"`        // 原始代码文本
 		Reference  map[string]parser.TypeReference `json:"reference"`  // 类型引用
 	}
 
@@ -140,8 +140,8 @@ func TestAnalyzeInterfaces(t *testing.T) {
 	// marshalFn 定义了如何将提取出的结果序列化为 JSON
 	marshalFn := func(result parser.InterfaceDeclarationResult) ([]byte, error) {
 		return json.MarshalIndent(struct {
-			Identifier string                            `json:"identifier"`
-			Raw        string                            `json:"raw"`
+			Identifier string                          `json:"identifier"`
+			Raw        string                          `json:"raw"`
 			Reference  map[string]parser.TypeReference `json:"reference"`
 		}{
 			Identifier: result.Identifier,

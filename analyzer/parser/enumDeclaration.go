@@ -10,9 +10,9 @@ import (
 
 // EnumDeclarationResult 存储一个解析后的枚举声明信息。
 type EnumDeclarationResult struct {
-	Identifier     string         `json:"identifier"` // 枚举的名称。
-	Exported       bool           `json:"exported"`    // 新增：标记此枚举是否被导出。
-	Raw            string         `json:"raw"`        // 节点在源码中的原始文本。
+	Identifier     string         `json:"identifier"`     // 枚举的名称。
+	Exported       bool           `json:"exported"`       // 新增：标记此枚举是否被导出。
+	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 

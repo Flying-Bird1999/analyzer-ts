@@ -18,8 +18,8 @@ type TypeReference struct {
 
 // InterfaceDeclarationResult 存储一个完整的接口声明的解析结果。
 type InterfaceDeclarationResult struct {
-	Identifier     string                   `json:"identifier"`      // 接口的名称。
-	Exported       bool                     `json:"exported"`        // 新增：标记此接口是否被导出。
+	Identifier     string                   `json:"identifier"`     // 接口的名称。
+	Exported       bool                     `json:"exported"`       // 新增：标记此接口是否被导出。
 	Raw            string                   `json:"raw"`            // 节点在源码中的原始文本。
 	Reference      map[string]TypeReference `json:"reference"`      // 接口所依赖的其他类型的映射，以类型名作为 key。
 	SourceLocation SourceLocation           `json:"sourceLocation"` // 节点在源码中的位置信息。

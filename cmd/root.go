@@ -17,13 +17,11 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	RootCmd.AddCommand(projectAnalyzerCmd.NewAnalyzeCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewNpmCheckCmd())
+	// 注册重构后的统一分析命令
+	RootCmd.AddCommand(projectAnalyzerCmd.GetAnalyzeCmd())
+
+	// 保留其他尚未重构的命令
 	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewFindCallersCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewFindUnreferencedFilesCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewFindUnconsumedExportsCmd())
-	RootCmd.AddCommand(projectAnalyzerCmd.NewCountAnyCmd()) // Add new command
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
 }
 

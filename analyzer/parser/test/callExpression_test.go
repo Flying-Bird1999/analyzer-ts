@@ -61,7 +61,7 @@ func TestAnalyzeCallExpression(t *testing.T) {
 				Arguments: []parser.Argument{
 					{Type: "number", Text: "123"},
 				},
-				Type:      "member",
+				Type: "member",
 			},
 		},
 	}

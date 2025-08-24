@@ -4,23 +4,45 @@ package unreferenced
 import (
 	"fmt"
 	"main/analyzer/projectParser"
+	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
-// Find 在指定的项目中查找所有未被引用的文件。
-// 它首先构建出完整的依赖关系图，然后找出所有入度为 0 的文件节点。
-// 如果用户指定了入口文件，它将执行可达性分析，找出所有从入口文件出发不可达的节点。
-// 最后，它会对结果进行分类，区分出“真正”的未使用文件和“可疑”的未使用文件。
-func Find(params Params) (*Result, error) {
-	// 步骤 1: 使用新的 parser 包分析项目，构建完整的依赖图
-	deps, err := parser.ParseProject(params.RootPath, params.Exclude, params.IsMonorepo)
+// Finder 是“未引用文件”分析器的实现。
+type Finder struct {
+	entrypoints      []string
+	includeEntryDirs bool
+}
+
+var _ projectanalyzer.Analyzer = (*Finder)(nil)
+
+func (f *Finder) Name() string {
+	return "find-unreferenced-files"
+}
+
+func (f *Finder) Configure(params map[string]string) error {
+	if entrypoints, ok := params["entrypoint"]; ok {
+		f.entrypoints = strings.Split(entrypoints, ",")
+	}
+	if include, ok := params["include-entry-dirs"]; ok {
+		includeBool, err := strconv.ParseBool(include)
+		if err != nil {
+			return fmt.Errorf("无效的布尔值 for include-entry-dirs: %s", include)
+		}
+		f.includeEntryDirs = includeBool
+	}
+	return nil
+}
+
+func (f *Finder) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
+	deps, err := parser.ParseProject(ctx.ProjectRoot, ctx.Exclude, ctx.IsMonorepo)
 	if err != nil {
 		return nil, fmt.Errorf("分析项目失败: %w", err)
 	}
 
-	// 步骤 2: 收集所有被其他文件引用过的文件，存入一个集合中以便快速查找。
 	referencedFiles := make(map[string]bool)
 	for _, fileDeps := range deps.Js_Data {
 		for _, dep := range fileDeps.ImportDeclarations {
@@ -40,50 +62,43 @@ func Find(params Params) (*Result, error) {
 		}
 	}
 
-	// 步骤 3: 根据用户输入，确定分析的入口文件。
 	entrypointFiles := make(map[string]bool)
-	if len(params.Entrypoints) > 0 {
-		for _, entrypoint := range params.Entrypoints {
+	if len(f.entrypoints) > 0 {
+		for _, entrypoint := range f.entrypoints {
 			absEntrypoint, err := filepath.Abs(entrypoint)
 			if err != nil {
 				return nil, fmt.Errorf("无法解析入口文件路径 %s: %w", entrypoint, err)
 			}
 			entrypointFiles[absEntrypoint] = true
 		}
-	} else if params.IncludeEntryDirs {
+	} else if f.includeEntryDirs {
 		commonEntrypoints := []string{
 			"index.ts", "index.tsx", "main.ts", "main.tsx",
 			"App.ts", "App.tsx", "src/index.ts", "src/index.tsx",
 		}
 		for _, entryName := range commonEntrypoints {
-			entryPath := filepath.Join(params.RootPath, entryName)
+			entryPath := filepath.Join(ctx.ProjectRoot, entryName)
 			if _, exists := deps.Js_Data[entryPath]; exists {
 				entrypointFiles[entryPath] = true
 			}
 		}
 	}
 
-	// 步骤 4: 找出所有未被引用的文件。
 	var unreferencedFiles []string
 	allFiles := make(map[string]bool)
 	for filePath := range deps.Js_Data {
 		allFiles[filePath] = true
 	}
 
-	// 如果指定了入口文件，则使用可达性分析。
 	if len(entrypointFiles) > 0 {
-		// 从入口文件开始进行深度优先搜索，标记所有可达的文件。
 		visited := performDFS(entrypointFiles, deps)
-		// 如果一个文件既没有被其他文件引用，也无法从入口点访问到，则认为它是未引用的。
 		for filePath := range allFiles {
 			if !referencedFiles[filePath] && !visited[filePath] {
 				unreferencedFiles = append(unreferencedFiles, filePath)
 			}
 		}
 	} else {
-		// 默认行为：找出所有未被任何其他文件引用的文件。
 		for filePath := range allFiles {
-			// 排除常见的入口文件名，因为它们本身可能不会被引用。
 			isEntrypoint := strings.HasSuffix(filePath, "index.ts") ||
 				strings.HasSuffix(filePath, "index.tsx") ||
 				strings.HasSuffix(filePath, "main.ts") ||
@@ -95,17 +110,15 @@ func Find(params Params) (*Result, error) {
 		}
 	}
 
-	// 步骤 5: 使用启发式规则对未引用文件进行分类和过滤。
-	trulyUnreferencedFiles, suspiciousFiles := classifyFiles(unreferencedFiles, params.Exclude)
+	trulyUnreferencedFiles, suspiciousFiles := classifyFiles(unreferencedFiles, ctx.Exclude)
 
-	// 步骤 6: 格式化并返回最终的结构化结果。
-	result := &Result{
+	finalResult := &FindUnreferencedFilesResult{
 		Configuration: AnalysisConfiguration{
-			InputDir:             params.RootPath,
-			EntrypointsSpecified: len(params.Entrypoints) > 0,
-			IncludeEntryDirs:     params.IncludeEntryDirs,
+			InputDir:             ctx.ProjectRoot,
+			EntrypointsSpecified: len(f.entrypoints) > 0,
+			IncludeEntryDirs:     f.includeEntryDirs,
 		},
-		Summary: SummaryStats{
+		Stats: SummaryStats{
 			TotalFiles:             len(allFiles),
 			ReferencedFiles:        len(referencedFiles),
 			TrulyUnreferencedFiles: len(trulyUnreferencedFiles),
@@ -116,10 +129,9 @@ func Find(params Params) (*Result, error) {
 		TrulyUnreferencedFiles: trulyUnreferencedFiles,
 	}
 
-	return result, nil
+	return finalResult, nil
 }
 
-// performDFS 从一组入口文件开始，通过深度优先搜索遍历依赖关系图，返回所有可达的文件集合。
 func performDFS(entrypointFiles map[string]bool, deps *projectParser.ProjectParserResult) map[string]bool {
 	visited := make(map[string]bool)
 	var dfs func(string)
@@ -134,7 +146,6 @@ func performDFS(entrypointFiles map[string]bool, deps *projectParser.ProjectPars
 			return
 		}
 
-		// 递归访问当前文件所依赖的所有文件。
 		for _, dep := range fileDeps.ImportDeclarations {
 			if dep.Source.FilePath != "" {
 				dfs(dep.Source.FilePath)
@@ -152,22 +163,17 @@ func performDFS(entrypointFiles map[string]bool, deps *projectParser.ProjectPars
 		}
 	}
 
-	// 从所有指定的入口文件开始遍历。
 	for entrypoint := range entrypointFiles {
 		dfs(entrypoint)
 	}
 	return visited
 }
 
-// classifyFiles 使用一系列启发式规则，将未引用的文件分为“真正未引用”和“可疑”两类。
-// “可疑”文件通常是配置文件、路由文件或一些公共的工具函数，它们虽然未被直接引用，但可能很重要。
 func classifyFiles(unreferencedFiles []string, excludePatterns []string) (trulyUnreferenced []string, suspicious []string) {
-	// 忽略测试文件、类型定义文件、故事书等。
 	ignoredPatterns := []string{
 		".test.", ".spec.", "__tests__", "__mocks__", ".d.ts",
 		".story.", ".stories.",
 	}
-	// 忽略项目根目录下的常见配置文件。
 	configFilePatterns := []string{
 		"webpack.config", "vite.config", "rollup.config", "babel.config",
 		"prettier.config", ".prettierrc", "eslint.config", ".eslintrc",
@@ -177,11 +183,9 @@ func classifyFiles(unreferencedFiles []string, excludePatterns []string) (trulyU
 		"stylelint.config", ".stylelintrc", "nodemon.json", "nodemon-debug.json",
 		"build.config", "vitest.config", "cypress.config", "playwright.config",
 	}
-	// 常见的入口文件模式，这些文件即使未被引用也应被视为可疑。
 	entryFilePatterns := []string{
 		"index.", "main.", "app.", "root.", "entry.",
 	}
-	// src 目录下的常见配置文件或功能性文件，这些也应被视为可疑。
 	srcConfigPatterns := []string{
 		"router", "route", "store", "state", "theme", "i18n", "locale",
 		"config", "setting", "constant", "util", "helper", "service",
@@ -219,11 +223,9 @@ func classifyFiles(unreferencedFiles []string, excludePatterns []string) (trulyU
 		isSuspicious := false
 		dir := filepath.Dir(filePath)
 
-		// 位于 src 目录外的文件通常是项目级的配置，标记为可疑。
 		if !strings.Contains(dir, "/src/") {
 			isSuspicious = true
 		} else {
-			// 检查是否匹配 src 内的可疑文件模式。
 			for _, pattern := range entryFilePatterns {
 				if strings.HasPrefix(fileName, pattern) {
 					isSuspicious = true
@@ -249,7 +251,6 @@ func classifyFiles(unreferencedFiles []string, excludePatterns []string) (trulyU
 	return
 }
 
-// isInExcludedDir 检查给定的文件路径是否匹配任何排除模式。
 func isInExcludedDir(filePath string, excludePatterns []string) bool {
 	for _, pattern := range excludePatterns {
 		if strings.Contains(filePath, strings.TrimSuffix(pattern, "/**")) {
@@ -259,7 +260,6 @@ func isInExcludedDir(filePath string, excludePatterns []string) bool {
 	return false
 }
 
-// getKeys 从一个 map[string]bool 中提取所有的键，并返回一个字符串切片。
 func getKeys(m map[string]bool) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {

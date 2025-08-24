@@ -11,8 +11,8 @@ func TestAnalyzeImportDeclaration(t *testing.T) {
 	// expectedResult 定义了测试期望的结果结构体
 	type expectedResult struct {
 		ImportModules []parser.ImportModule `json:"importModules"` // 导入的模块列表
-		Raw           string                `json:"raw"`            // 原始代码文本
-		Source        string                `json:"source"`         // 导入来源
+		Raw           string                `json:"raw"`           // 原始代码文本
+		Source        string                `json:"source"`        // 导入来源
 	}
 
 	// testCases 定义了一系列的测试用例
