@@ -5,10 +5,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"main/analyzer_plugin/project_analyzer/callgraph"
-	"os"
-	"path/filepath"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	"main/analyzer_plugin/project_analyzer/internal/writer"
 
 	"github.com/spf13/cobra"
 )
@@ -45,25 +44,23 @@ func NewFindCallersCmd() *cobra.Command {
 				return err
 			}
 
-			// 步骤 3: 将业务逻辑层返回的结构化结果，序列化为 JSON 并输出到文件或控制台。
-			outputBytes, err := json.MarshalIndent(result, "", "  ")
-			if err != nil {
-				return fmt.Errorf("无法将结果序列化为 JSON: %w", err)
-			}
-
+			// 步骤 3: 使用新的 writer 和 filenamer 包来格式化并输出结果。
 			if findCallersOutputDir != "" {
-				if err := os.MkdirAll(findCallersOutputDir, os.ModePerm); err != nil {
-					return fmt.Errorf("无法创建输出目录 %s: %w", findCallersOutputDir, err)
+				// 如果指定了输出目录，则将结果写入文件。
+				outputFileName := filenamer.GenerateOutputFileName(findCallersInputDir, "find_callers")
+				err = writer.WriteJSONResult(findCallersOutputDir, outputFileName, result)
+				if err != nil {
+					// 包装错误信息，提供更清晰的上下文。
+					return fmt.Errorf("无法将输出写入文件: %w", err)
 				}
-				baseName := filepath.Base(findCallersInputDir)
-				outputFileName := fmt.Sprintf("%s_find_callers.json", baseName)
-				fullOutputPath := filepath.Join(findCallersOutputDir, outputFileName)
-
-				if err := ioutil.WriteFile(fullOutputPath, outputBytes, 0644); err != nil {
-					return fmt.Errorf("无法将输出写入文件 %s: %w", fullOutputPath, err)
-				}
-				fmt.Printf("调用链分析结果已写入: %s", fullOutputPath)
 			} else {
+				// 如果没有指定输出目录，则将结果打印到标准输出。
+				// 为了简化，这里直接使用 json.MarshalIndent 和 fmt.Println。
+				// 在更复杂的场景下，可以考虑使用更美观的格式化库。
+				outputBytes, err := json.MarshalIndent(result, "", "  ")
+				if err != nil {
+					return fmt.Errorf("无法将结果序列化为 JSON: %w", err)
+				}
 				fmt.Println(string(outputBytes))
 			}
 

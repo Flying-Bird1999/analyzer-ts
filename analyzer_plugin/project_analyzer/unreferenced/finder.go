@@ -4,7 +4,7 @@ package unreferenced
 import (
 	"fmt"
 	"main/analyzer/projectParser"
-	"main/analyzer_plugin/project_analyzer"
+	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"path/filepath"
 	"strings"
 )
@@ -14,9 +14,8 @@ import (
 // 如果用户指定了入口文件，它将执行可达性分析，找出所有从入口文件出发不可达的节点。
 // 最后，它会对结果进行分类，区分出“真正”的未使用文件和“可疑”的未使用文件。
 func Find(params Params) (*Result, error) {
-	// 步骤 1: 分析项目，构建完整的依赖图
-	analyzer := project_analyzer.NewProjectAnalyzer(params.RootPath, params.Exclude, params.IsMonorepo)
-	deps, err := analyzer.Analyze()
+	// 步骤 1: 使用新的 parser 包分析项目，构建完整的依赖图
+	deps, err := parser.ParseProject(params.RootPath, params.Exclude, params.IsMonorepo)
 	if err != nil {
 		return nil, fmt.Errorf("分析项目失败: %w", err)
 	}

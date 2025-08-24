@@ -3,12 +3,10 @@ package cmd
 // go run main.go find-unreferenced-files -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	"main/analyzer_plugin/project_analyzer/internal/writer"
 	"main/analyzer_plugin/project_analyzer/unreferenced"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -46,25 +44,17 @@ func NewFindUnreferencedFilesCmd() *cobra.Command {
 				return err
 			}
 
-			// 步骤 3: 根据用户指定的输出方式，格式化并输出结果。
+			// 步骤 3: 使用新的 writer 和 filenamer 包来格式化并输出结果。
 			if findUnreferencedOutputDir != "" {
-				// 输出为 JSON 文件
-				outputBytes, err := json.MarshalIndent(result, "", "  ")
+				// 如果指定了输出目录，则将结果写入文件。
+				outputFileName := filenamer.GenerateOutputFileName(findUnreferencedInputDir, "find_unreferenced_files")
+				err = writer.WriteJSONResult(findUnreferencedOutputDir, outputFileName, result)
 				if err != nil {
-					return fmt.Errorf("无法将结果序列化为 JSON: %w", err)
+					// 包装错误信息，提供更清晰的上下文。
+					return fmt.Errorf("无法将输出写入文件: %w", err)
 				}
-
-				if err := os.MkdirAll(findUnreferencedOutputDir, os.ModePerm); err != nil {
-					return fmt.Errorf("无法创建输出目录 %s: %w", findUnreferencedOutputDir, err)
-				}
-				baseName := filepath.Base(findUnreferencedInputDir)
-				outputFileName := fmt.Sprintf("%s_find_unreferenced_files.json", baseName)
-				fullOutputPath := filepath.Join(findUnreferencedOutputDir, outputFileName)
-
-				if err := ioutil.WriteFile(fullOutputPath, outputBytes, 0644); err != nil {
-					return fmt.Errorf("无法将输出写入文件 %s: %w", fullOutputPath, err)
-				}
-				fmt.Printf("未引用文件分析结果已写入: %s", fullOutputPath)
+			} else {
+				//
 			}
 
 			return nil

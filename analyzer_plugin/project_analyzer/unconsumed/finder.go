@@ -4,7 +4,7 @@ package unconsumed
 import (
 	"fmt"
 	"main/analyzer/projectParser"
-	"main/analyzer_plugin/project_analyzer"
+	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"strings"
 )
 
@@ -15,11 +15,9 @@ type alias struct {
 }
 
 // Find 在指定的项目中查找所有已导出但从未被任何其他文件导入的变量、函数、类型等。
-// V2版本改进了算法，能够处理二次导出和JSX组件消费，大大提高了准确性。
 func Find(params Params) (*Result, error) {
-	// 步骤 1: 分析整个项目，获取所有文件的详细AST信息。
-	analyzer := project_analyzer.NewProjectAnalyzer(params.RootPath, params.Exclude, params.IsMonorepo)
-	deps, err := analyzer.Analyze()
+	// 步骤 1: 使用新的 parser 包分析整个项目，获取所有文件的详细AST信息。
+	deps, err := parser.ParseProject(params.RootPath, params.Exclude, params.IsMonorepo)
 	if err != nil {
 		return nil, fmt.Errorf("分析项目失败: %w", err)
 	}

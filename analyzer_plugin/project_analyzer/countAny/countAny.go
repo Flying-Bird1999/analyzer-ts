@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"main/analyzer/parser"
-	"main/analyzer/projectParser"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	internalparser "main/analyzer_plugin/project_analyzer/internal/parser"
 	"os"
 	"path/filepath"
 )
@@ -27,15 +28,19 @@ type FileCount struct {
 
 // CountAnyUsages 分析一个 TypeScript 项目，以统计 'any' 类型的使用情况。
 // 它返回一个包含详细信息的 CountResult 结构体。
-func CountAnyUsages(inputDir string, excludePatterns []string, isMonorepo bool) *CountResult {
-	// 1. 创建解析器配置
-	config := projectParser.NewProjectParserConfig(inputDir, excludePatterns, isMonorepo)
-
-	// 2. 创建用于存储解析结果的容器
-	result := projectParser.NewProjectParserResult(config)
-
-	// 3. 运行主解析逻辑，此操作会填充 'result' 对象
-	result.ProjectParser()
+// rootPath: 要分析的项目根目录。
+// excludePatterns: 需要从分析中排除的文件/目录的 glob 模式列表。
+// isMonorepo: 指示项目是否为 monorepo。
+func CountAnyUsages(rootPath string, excludePatterns []string, isMonorepo bool) *CountResult {
+	// 1. 使用新的 parser 包解析项目
+	result, err := internalparser.ParseProject(rootPath, excludePatterns, isMonorepo)
+	if err != nil {
+		// 在实际的生产代码中，应该更优雅地处理这个错误。
+		// 但为了保持与原函数签名一致（返回 *CountResult），这里直接panic或返回空结果。
+		fmt.Printf("解析项目失败: %v\n", err)
+		// 返回一个空的结果，而不是nil，以避免调用者出现空指针异常。
+		return &CountResult{}
+	}
 
 	totalAnyCount := 0
 	var fileCounts []FileCount
@@ -63,6 +68,9 @@ func CountAnyUsages(inputDir string, excludePatterns []string, isMonorepo bool) 
 
 // WriteOutput 将分析结果以 JSON 格式写入指定的输出目录。
 // 文件名将根据输入目录的名称动态生成，例如 "my-project_any_count.json"。
+// inputPath: 输入项目目录的路径。
+// outputDir: 用于存储 JSON 输出文件的目录路径。
+// result: 要写入的分析结果。
 func WriteOutput(outputDir string, inputPath string, result *CountResult) error {
 	jsonData, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
@@ -76,8 +84,8 @@ func WriteOutput(outputDir string, inputPath string, result *CountResult) error 
 		}
 	}
 
-	// 构建输出文件路径
-	outputFileName := filepath.Base(inputPath) + "_any_count.json"
+	// 使用新的 filenamer 包构建输出文件路径
+	outputFileName := filenamer.GenerateOutputFileName(inputPath, "any_count")
 	outputFile := filepath.Join(outputDir, outputFileName)
 
 	// 写入文件

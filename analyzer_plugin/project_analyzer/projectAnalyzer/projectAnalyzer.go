@@ -6,12 +6,12 @@
 package project_analyzer
 
 import (
-	"encoding/json"
 	"fmt"
 	"main/analyzer/parser"
 	"main/analyzer/projectParser"
-	"os"
-	"path/filepath"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	internalparser "main/analyzer_plugin/project_analyzer/internal/parser"
+	"main/analyzer_plugin/project_analyzer/internal/writer"
 
 	"github.com/samber/lo"
 )
@@ -42,41 +42,32 @@ func (pa *ProjectAnalyzer) Analyze() (*projectParser.ProjectParserResult, error)
 	config := projectParser.NewProjectParserConfig(pa.rootPath, pa.ignore, pa.isMonorepo)
 	ar := projectParser.NewProjectParserResult(config)
 	ar.ProjectParser()
-	// 在未来的版本中，这里可以增加错误处理的逻辑。
 	return ar, nil
-}
-
-// parseProject 是一个辅助函数，封装了执行底层项目解析操作的具体步骤。
-func parseProject(rootPath string, ignore []string, isMonorepo bool) *projectParser.ProjectParserResult {
-	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
-	ar := projectParser.NewProjectParserResult(config)
-	ar.ProjectParser()
-	return ar
 }
 
 // AnalyzeProject 是为 `analyze` 命令提供的处理器。
 // 它执行完整的项目分析，并将结果以过滤和序列化后的JSON格式写入文件。
 func AnalyzeProject(rootPath string, outputDir string, ignore []string, isMonorepo bool) {
-	ar := parseProject(rootPath, ignore, isMonorepo)
+	// 步骤 1: parser解析项目。
+	ar, err := internalparser.ParseProject(rootPath, ignore, isMonorepo)
+	if err != nil {
+		// 可能需要更优雅的错误处理，比如返回错误给调用者。
+		fmt.Printf("解析项目失败: %s", err)
+		return
+	}
 
-	// 在序列化之前，将完整的分析结果转换为一个更简洁、过滤后的版本。
+	// 步骤 2: 在序列化之前，将完整的分析结果转换为一个更简洁、过滤后的版本。
 	filteredResult := toFilteredResult(ar)
 
-	jsonData, err := json.MarshalIndent(filteredResult, "", "  ")
+	// 步骤 3: 使用新的 filenamer 包生成标准化的输出文件名。
+	outputFileName := filenamer.GenerateOutputFileName(rootPath, "analyze")
+
+	// 步骤 4: 使用新的 writer 包将结果写入文件。
+	err = writer.WriteJSONResult(outputDir, outputFileName, filteredResult)
 	if err != nil {
-		fmt.Printf("序列化JSON时出错: %s", err)
+		fmt.Printf("写入分析结果失败: %s", err)
 		return
 	}
-
-	// 将JSON数据写入以项目名命名的输出文件中。
-	outputFile := filepath.Join(outputDir, filepath.Base(rootPath)+"_analyze.json")
-	err = os.WriteFile(outputFile, jsonData, 0644)
-	if err != nil {
-		fmt.Printf("写入JSON文件时出错: %s", err)
-		return
-	}
-
-	fmt.Printf("分析结果已写入文件: %s", outputFile)
 }
 
 // toFilteredResult 是一个转换函数，用于将完整的、包含大量原始信息的分析结果 (ProjectParserResult)

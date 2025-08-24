@@ -3,11 +3,11 @@ package cmd
 // go run main.go npm-check -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
-	"encoding/json"
 	"fmt"
 	"main/analyzer_plugin/project_analyzer/dependency"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	"main/analyzer_plugin/project_analyzer/internal/writer"
 	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -37,28 +37,15 @@ func NewNpmCheckCmd() *cobra.Command {
 
 			// 根据用户指定的输出方式，格式化并输出结果。
 			if npmCheckOutputDir != "" {
-				if err := os.MkdirAll(npmCheckOutputDir, os.ModePerm); err != nil {
-					fmt.Printf("Error creating output directory: %s", err)
-					return
-				}
-
-				jsonData, err := json.MarshalIndent(depCheckResult, "", "  ")
-				if err != nil {
-					fmt.Printf("Error marshalling to JSON: %s", err)
-					return
-				}
-
-				outputFile := filepath.Join(npmCheckOutputDir, filepath.Base(npmCheckInputDir)+"_npm_check.json")
-				err = os.WriteFile(outputFile, jsonData, 0644)
+				// 使用新的 writer 和 filenamer 包将结果写入文件。
+				outputFileName := filenamer.GenerateOutputFileName(npmCheckInputDir, "npm_check")
+				err := writer.WriteJSONResult(npmCheckOutputDir, outputFileName, depCheckResult)
 				if err != nil {
 					fmt.Printf("Error writing JSON to file: %s", err)
 					return
 				}
-
-				fmt.Printf("NPM依赖检查结果已写入文件: %s", outputFile)
 			} else {
-				// 在控制台打印易于阅读的摘要信息。
-				printDependencyCheckSummary(depCheckResult)
+				//
 			}
 		},
 	}
@@ -71,38 +58,4 @@ func NewNpmCheckCmd() *cobra.Command {
 	npmCheckCmd.MarkFlagRequired("input")
 
 	return npmCheckCmd
-}
-
-// printDependencyCheckSummary 是一个辅助函数，用于在控制台打印易于阅读的依赖检查结果摘要。
-func printDependencyCheckSummary(result *dependency.DependencyCheckResult) {
-	if len(result.ImplicitDependencies) > 0 {
-		fmt.Println("发现隐式依赖 (幽灵依赖):")
-		for _, dep := range result.ImplicitDependencies {
-			fmt.Printf("  - %s (in %s)", dep.Name, dep.FilePath)
-		}
-	} else {
-		fmt.Println("✅ 未发现隐式依赖。")
-	}
-
-	fmt.Println() // Add a separator line
-
-	if len(result.UnusedDependencies) > 0 {
-		fmt.Println("发现未使用依赖:")
-		for _, dep := range result.UnusedDependencies {
-			fmt.Printf("  - %s (%s) (in %s)", dep.Name, dep.Version, dep.PackageJsonPath)
-		}
-	} else {
-		fmt.Println("✅ 未发现未使用依赖。")
-	}
-
-	fmt.Println() // Add a separator line
-
-	if len(result.OutdatedDependencies) > 0 {
-		fmt.Println("发现过期依赖:")
-		for _, dep := range result.OutdatedDependencies {
-			fmt.Printf("  - %s (current: %s, latest: %s) (in %s)", dep.Name, dep.CurrentVersion, dep.LatestVersion, dep.PackageJsonPath)
-		}
-	} else {
-		fmt.Println("✅ 所有依赖都是最新的。")
-	}
 }

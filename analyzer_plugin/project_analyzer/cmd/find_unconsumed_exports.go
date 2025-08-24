@@ -3,12 +3,10 @@ package cmd
 // go run main.go find-unconsumed-exports -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/project_analyzer/result -x "node_modules/**" -x "bffApiDoc/**" -x "**/apidoc/**"
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"main/analyzer_plugin/project_analyzer/internal/filenamer"
+	"main/analyzer_plugin/project_analyzer/internal/writer"
 	"main/analyzer_plugin/project_analyzer/unconsumed"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -41,15 +39,17 @@ func NewFindUnconsumedExportsCmd() *cobra.Command {
 				return err
 			}
 
-			// 步骤 3: 格式化并输出结果。
+			// 步骤 3: 使用新的 writer 和 filenamer 包来格式化并输出结果。
 			if findUnconsumedOutputDir != "" {
-				// 输出为 JSON 文件。
-				return printUnconsumedExportsToFile(result, findUnconsumedInputDir, findUnconsumedOutputDir)
-			} else {
-				// 在控制台打印摘要。
-				printUnconsumedExportsToConsole(result)
-				return nil
+				// 如果指定了输出目录，则将结果写入文件。
+				outputFileName := filenamer.GenerateOutputFileName(findUnconsumedInputDir, "find_unconsumed_exports")
+				err = writer.WriteJSONResult(findUnconsumedOutputDir, outputFileName, result)
+				if err != nil {
+					// 包装错误信息，提供更清晰的上下文。
+					return fmt.Errorf("无法将输出写入文件: %w", err)
+				}
 			}
+			return nil
 		},
 	}
 
@@ -62,43 +62,4 @@ func NewFindUnconsumedExportsCmd() *cobra.Command {
 	cmd.MarkFlagRequired("input")
 
 	return cmd
-}
-
-// printUnconsumedExportsToFile 将分析结果序列化为JSON并写入文件。
-func printUnconsumedExportsToFile(result *unconsumed.Result, inputDir, outputDir string) error {
-	outputBytes, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		return fmt.Errorf("无法将结果序列化为 JSON: %w", err)
-	}
-
-	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		return fmt.Errorf("无法创建输出目录 %s: %w", outputDir, err)
-	}
-
-	baseName := filepath.Base(inputDir)
-	outputFileName := fmt.Sprintf("%s_find_unconsumed_exports.json", baseName)
-	fullOutputPath := filepath.Join(outputDir, outputFileName)
-
-	if err := ioutil.WriteFile(fullOutputPath, outputBytes, 0644); err != nil {
-		return fmt.Errorf("无法将输出写入文件 %s: %w", fullOutputPath, err)
-	}
-
-	fmt.Printf("未消费导出分析结果已写入: %s", fullOutputPath)
-	return nil
-}
-
-// printUnconsumedExportsToConsole 在控制台打印易于阅读的分析结果摘要。
-func printUnconsumedExportsToConsole(result *unconsumed.Result) {
-	fmt.Printf("--- 未消费的导出项分析摘要 ---\n")
-	fmt.Printf("扫描文件总数: %d\n", result.Summary.TotalFilesScanned)
-	fmt.Printf("发现导出项总数: %d\n", result.Summary.TotalExportsFound)
-	fmt.Printf("发现未消费导出项: %d\n", result.Summary.UnconsumedExportsFound)
-	fmt.Println("----------------------------------")
-
-	if len(result.UnconsumedExports) > 0 {
-		fmt.Println("\n未消费的导出项列表:")
-		for _, export := range result.UnconsumedExports {
-			fmt.Printf("  - %s:%d - %s (类型: %s)\n", export.FilePath, export.Line, export.ExportName, export.Kind)
-		}
-	}
 }

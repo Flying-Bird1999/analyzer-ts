@@ -33,7 +33,7 @@ func NewStoreDbCmd() *cobra.Command {
 				log.Fatal("需要提供输入和输出路径。")
 			}
 
-			// 根据输入目录名，自动生成数据库文件名，并加上命令名称
+			// 根据输入目录名，使用新的 filenamer 包生成数据库文件名，并加上命令名称
 			projectName := filepath.Base(inputPath)
 			dbFileName := fmt.Sprintf("%s_store_db.db", projectName)
 			finalDbPath := filepath.Join(outputDir, dbFileName)

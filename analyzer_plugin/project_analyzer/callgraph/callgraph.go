@@ -3,7 +3,7 @@ package callgraph
 
 import (
 	"fmt"
-	"main/analyzer_plugin/project_analyzer"
+	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,9 +15,8 @@ import (
 // params: 包含分析所需所有参数的结构体。
 // returns: 返回一个包含详细调用链信息的结构化结果，或在发生错误时返回 error。
 func Find(params Params) (*Result, error) {
-	// 步骤 1: 分析整个项目，以构建一个完整的依赖关系图。
-	analyzer := project_analyzer.NewProjectAnalyzer(params.RootPath, params.Exclude, params.IsMonorepo)
-	deps, err := analyzer.Analyze()
+	// 步骤 1: 使用新的 parser 包分析整个项目，以构建一个完整的依赖关系图。
+	deps, err := parser.ParseProject(params.RootPath, params.Exclude, params.IsMonorepo)
 	if err != nil {
 		return nil, fmt.Errorf("分析项目失败: %w", err)
 	}

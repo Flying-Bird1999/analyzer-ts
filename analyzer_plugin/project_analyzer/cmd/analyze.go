@@ -14,7 +14,7 @@ package cmd
 
 import (
 	"fmt"
-	"main/analyzer_plugin/project_analyzer"
+	project_analyzer "main/analyzer_plugin/project_analyzer/projectAnalyzer"
 	"os"
 
 	"github.com/spf13/cobra"

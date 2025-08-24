@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"main/analyzer/projectParser"
+	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"net/http"
 	"strings"
 	"sync"
@@ -18,10 +19,16 @@ import (
 // ignore: 需要从分析中排除的文件/目录的 glob 模式列表。
 // isMonorepo: 指示项目是否为 monorepo。
 func Check(rootPath string, ignore []string, isMonorepo bool) *DependencyCheckResult {
-	// 步骤 1: 解析整个项目，获取所有代码文件的AST和所有 package.json 的信息。
-	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
-	ar := projectParser.NewProjectParserResult(config)
-	ar.ProjectParser()
+	// 步骤 1: 使用新的 parser 包解析整个项目，获取所有代码文件的AST和所有 package.json 的信息。
+	ar, err := parser.ParseProject(rootPath, ignore, isMonorepo)
+	if err != nil {
+		// 在实际的生产代码中，应该更优雅地处理这个错误，例如记录日志或返回错误。
+		// 但为了保持与原函数签名一致（返回 *DependencyCheckResult），这里直接panic或返回空结果。
+		// 考虑到这是一个分析工具，遇到解析错误通常意味着无法继续，所以打印错误并返回空结果是合理的。
+		fmt.Printf("解析项目失败: %v\n", err)
+		// 返回一个空的结果，而不是nil，以避免调用者出现空指针异常。
+		return &DependencyCheckResult{} 
+	}
 
 	// 步骤 2: 准备数据，提取所有在 package.json 中声明的依赖项，存入一个集合中以便快速查找。
 	declaredDependencies := make(map[string]bool)
