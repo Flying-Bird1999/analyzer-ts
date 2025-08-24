@@ -1,6 +1,6 @@
 package cmd
 
-// example: go run main.go analyze unconsumed find-unreferenced-files count-any npm-check -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**"
+// example: go run main.go analyze unconsumed find-unreferenced-files count-any npm-check structure-simple -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**"
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"main/analyzer_plugin/project_analyzer/internal/filenamer"
 	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"main/analyzer_plugin/project_analyzer/internal/writer"
+	structuresimple "main/analyzer_plugin/project_analyzer/structureSimple"
 	"main/analyzer_plugin/project_analyzer/unconsumed"
 	"main/analyzer_plugin/project_analyzer/unreferenced"
 
@@ -26,6 +27,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"find-unreferenced-files": &unreferenced.Finder{},
 	"count-any":               &countany.Counter{},
 	"npm-check":               &dependency.Checker{},
+	"structure-simple":        &structuresimple.StructureSimpleAnalyzer{},
 }
 
 func GetAnalyzeCmd() *cobra.Command {
@@ -40,9 +42,19 @@ func GetAnalyzeCmd() *cobra.Command {
 	analyzeCmd := &cobra.Command{
 		Use:   "analyze [analyzer_name...]",
 		Short: "对 TypeScript/JavaScript 项目进行代码分析。",
-		Long: `该命令可以对指定的 TypeScript/JavaScript 项目进行深度分析。
-您可以选择运行一个或多个内置的分析器，例如 'unconsumed'、'find-callers' 等。
-如果没有指定任何分析器，命令将仅解析项目结构并输出 AST 解析结果。`,
+		Long: "该命令是分析器的主要入口点，能够对 TypeScript/JavaScript 项目进行深度分析.\n\n" +
+			"您可以选择运行一个或多个内置的分析器，只需在命令后附上它们的名称即可.\n\n" +
+			"可用分析器列表:\n" +
+			"  - structure-simple: 输出一个简化的项目整体结构报告.\n" +
+			"  - unconsumed: 查找项目中所有已导出但从未被导入的符号.\n" +
+			"  - find-callers: 查找一个或多个指定文件的所有上游调用方.\n" +
+			"  - find-unreferenced-files: 查找项目中从未被任何其他文件引用的“孤岛”文件.\n" +
+			"  - count-any: 统计项目中所有 `any` 类型的使用情况.\n" +
+			"  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.\n\n" +
+			"如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的原始 AST 结构.\n\n" +
+			"参数 (-p, --param) 使用示例:\n" +
+			"某些分析器需要额外的参数。例如，`find-callers` 需要知道要追踪哪个文件.\n" +
+			"  analyze find-callers -i . -p \"find-callers.file=src/utils.ts\"",
 		Run: func(cmd *cobra.Command, args []string) {
 			// 0. 如果未提供输出路径，则默认为当前工作目录
 			if outputPath == "" {
