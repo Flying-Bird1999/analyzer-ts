@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Finding 代表一个具体的、已导出但未被消费的实体（变量、函数、类型等）。

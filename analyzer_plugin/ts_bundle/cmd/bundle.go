@@ -5,8 +5,9 @@ package cmd
 
 import (
 	"fmt"
-	"main/analyzer_plugin/ts_bundle"
 	"os"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/ts_bundle"
 
 	"github.com/spf13/cobra"
 )

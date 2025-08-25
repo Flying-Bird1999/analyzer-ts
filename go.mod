@@ -1,4 +1,4 @@
-module main
+module github.com/Flying-Bird1999/analyzer-ts
 
 go 1.24.0
 

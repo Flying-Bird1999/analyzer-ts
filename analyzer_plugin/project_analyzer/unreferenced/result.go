@@ -2,8 +2,9 @@ package unreferenced
 
 import (
 	"fmt"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"strings"
+
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // FindUnreferencedFilesResult 保存了“未引用文件”分析的完整结果。

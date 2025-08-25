@@ -8,11 +8,12 @@ package ts_bundle
 
 import (
 	"fmt"
-	"main/analyzer/parser"
-	"main/analyzer/projectParser"
-	"main/analyzer/utils"
 	"path/filepath"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 )
 
 type CollectResult struct {

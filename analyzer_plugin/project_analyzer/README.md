@@ -84,7 +84,7 @@ analyzer_plugin/project_analyzer/
 ```go
 package deadcode
 
-import "main/analyzer_plugin/project_analyzer"
+import "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 
 // Result 保存分析结果
 type Result struct {
@@ -107,7 +107,7 @@ func (r *Result) ToConsole() string {
 ```go
 package deadcode
 
-import "main/analyzer_plugin/project_analyzer"
+import "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 
 // DeadCodeAnalyzer 实现了 Analyzer 接口
 type DeadCodeAnalyzer struct {
@@ -141,10 +141,10 @@ package cmd
 
 import (
     "fmt"
-    "main/analyzer/projectParser"
-    "main/analyzer_plugin/project_analyzer"
-    "main/analyzer_plugin/project_analyzer/deadcode" // 导入您的分析器逻辑包
-    "main/cmd" // 确保导入根 cmd 包
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/deadcode" // 导入您的分析器逻辑包
+    "github.com/Flying-Bird1999/analyzer-ts/cmd" // 确保导入根 cmd 包
     "github.com/spf13/cobra"
 )
 

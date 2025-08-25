@@ -2,8 +2,9 @@ package parser_test
 
 import (
 	"encoding/json"
-	"main/analyzer/parser"
 	"testing"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 )
 
 // TestAnalyzeInterfaces 测试分析接口声明的功能

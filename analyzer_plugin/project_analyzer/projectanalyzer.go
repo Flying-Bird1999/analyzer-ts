@@ -4,7 +4,8 @@ package project_analyzer
 
 import (
 	"encoding/json"
-	"main/analyzer/projectParser"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 )
 
 // --- 核心接口 ---

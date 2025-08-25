@@ -2,9 +2,10 @@ package countany
 
 import (
 	"fmt"
-	"main/analyzer/parser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // CountAnyResult 是 'any' 类型分析的最终结果的顶层结构体。

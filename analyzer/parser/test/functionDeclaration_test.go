@@ -2,11 +2,12 @@ package parser_test
 
 import (
 	"encoding/json"
-	"main/analyzer/parser"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 
 	"github.com/stretchr/testify/assert"
 )

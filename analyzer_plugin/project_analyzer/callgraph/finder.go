@@ -3,9 +3,10 @@ package callgraph
 import (
 	"errors"
 	"fmt"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"path/filepath"
 	"strings"
+
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Finder 是"查找调用方"分析器的实现。

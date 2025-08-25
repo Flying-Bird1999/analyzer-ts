@@ -2,8 +2,9 @@ package parser_test
 
 import (
 	"encoding/json"
-	"main/analyzer/parser"
 	"testing"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 )
 
 // TestAnalyzeTypeDecl 测试分析类型别名声明的功能

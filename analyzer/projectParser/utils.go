@@ -4,11 +4,12 @@ package projectParser
 import (
 	"encoding/json"
 	"fmt"
-	"main/analyzer/scanProject"
-	"main/analyzer/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/scanProject"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
 	"github.com/tidwall/jsonc"
 )

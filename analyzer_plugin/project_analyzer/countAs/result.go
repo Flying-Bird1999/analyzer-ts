@@ -2,23 +2,24 @@ package countas
 
 import (
 	"fmt"
-	"main/analyzer/parser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // CountAsResult 是 'as' 类型断言分析的最终结果的顶层结构体。
 // 它实现了 projectanalyzer.Result 接口。
 type CountAsResult struct {
-	FilesParsed  int            `json:"filesParsed"`  // 成功解析的 JS/TS 文件数量
-	TotalAsCount int            `json:"totalAsCount"` // 项目中 'as' 类型断言的总数
-	FileCounts   []FileCount    `json:"fileCounts"`   // 每个文件的 'as' 类型断言统计列表
+	FilesParsed  int         `json:"filesParsed"`  // 成功解析的 JS/TS 文件数量
+	TotalAsCount int         `json:"totalAsCount"` // 项目中 'as' 类型断言的总数
+	FileCounts   []FileCount `json:"fileCounts"`   // 每个文件的 'as' 类型断言统计列表
 }
 
 // FileCount 存储单个文件中 'as' 类型断言的使用情况统计。
 type FileCount struct {
-	FilePath string              `json:"filePath"` // 文件的绝对路径
-	AsCount  int                 `json:"asCount"`  // 该文件中的 'as' 类型断言总数
+	FilePath string                `json:"filePath"` // 文件的绝对路径
+	AsCount  int                   `json:"asCount"`  // 该文件中的 'as' 类型断言总数
 	Details  []parser.AsExpression `json:"details"`  // 该文件中所有 'as' 类型断言的详细信息列表
 }
 

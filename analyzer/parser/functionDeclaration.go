@@ -3,8 +3,9 @@
 package parser
 
 import (
-	"main/analyzer/utils"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )

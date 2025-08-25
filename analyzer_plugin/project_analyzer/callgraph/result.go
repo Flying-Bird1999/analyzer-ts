@@ -2,7 +2,8 @@ package callgraph
 
 import (
 	"fmt"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
+
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // FindCallersResult 保存了“查找调用方”分析的完整结果。

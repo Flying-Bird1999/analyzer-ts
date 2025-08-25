@@ -3,9 +3,10 @@ package structuresimple
 
 import (
 	"fmt"
-	"main/analyzer/parser"
-	"main/analyzer/projectParser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 
 	"github.com/samber/lo"
 )

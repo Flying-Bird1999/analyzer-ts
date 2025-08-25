@@ -2,7 +2,7 @@
 package countas
 
 import (
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Counter 是"统计as"分析器的实现。

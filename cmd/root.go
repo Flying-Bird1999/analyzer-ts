@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	projectAnalyzerCmd "main/analyzer_plugin/project_analyzer/cmd"
-	tsBundleCmd "main/analyzer_plugin/ts_bundle/cmd"
+	projectAnalyzerCmd "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/cmd"
+	tsBundleCmd "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/ts_bundle/cmd"
 
 	"github.com/spf13/cobra"
 )

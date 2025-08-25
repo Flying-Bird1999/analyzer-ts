@@ -2,8 +2,9 @@ package dependency
 
 import (
 	"fmt"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"strings"
+
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // DependencyCheckResult 是依赖检查功能最终输出的完整结果结构体。

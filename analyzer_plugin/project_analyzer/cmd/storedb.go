@@ -9,10 +9,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"main/analyzer/projectParser"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"

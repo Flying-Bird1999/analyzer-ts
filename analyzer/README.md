@@ -139,7 +139,7 @@ package parser_test
 
 import (
     "encoding/json"
-    "main/analyzer/parser"
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
     "testing"
 
     "github.com/stretchr/testify/assert"

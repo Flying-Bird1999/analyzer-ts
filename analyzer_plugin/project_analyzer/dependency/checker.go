@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"main/analyzer/projectParser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Checker 是“NPM依赖检查”分析器的实现。

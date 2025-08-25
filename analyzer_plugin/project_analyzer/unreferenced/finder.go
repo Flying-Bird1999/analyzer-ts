@@ -3,11 +3,12 @@ package unreferenced
 
 import (
 	"fmt"
-	"main/analyzer/projectParser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Finder 是“未引用文件”分析器的实现。

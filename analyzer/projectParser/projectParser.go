@@ -5,10 +5,11 @@ package projectParser
 
 import (
 	"fmt"
-	"main/analyzer/parser"
-	"main/analyzer/scanProject"
 	"path/filepath"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/scanProject"
 
 	"github.com/samber/lo"
 )

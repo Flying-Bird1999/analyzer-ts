@@ -1,11 +1,12 @@
 package projectParser
 
 import (
-	"main/analyzer/parser"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 )
 
 // setupTestProject 创建一个用于测试的临时项目目录结构。

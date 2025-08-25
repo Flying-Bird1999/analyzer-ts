@@ -1,6 +1,6 @@
 package projectParser
 
-import "main/analyzer/parser"
+import "github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 
 // JsFileParserResult 结构体用于存储对单个JS或TS文件进行解析后得到的核心数据。
 // 这些数据主要包括文件中的导入和导出声明，为项目级别的依赖分析和代码理解提供基础。

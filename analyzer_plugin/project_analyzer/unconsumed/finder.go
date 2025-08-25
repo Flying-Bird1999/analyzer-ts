@@ -3,9 +3,10 @@ package unconsumed
 
 import (
 	"fmt"
-	"main/analyzer/projectParser"
-	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
 // Finder 是“未消费导出”分析器的实现。
