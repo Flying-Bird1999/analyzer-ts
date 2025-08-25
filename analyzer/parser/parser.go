@@ -48,9 +48,27 @@ func NewParserFromSource(filePath string, sourceCode string) (*Parser, error) {
 	}, nil
 }
 
+// addResult 将提取的结果添加到相应的结果集中
+func (p *Parser) addResult(result interface{}) {
+	switch r := result.(type) {
+	case AnyInfo:
+		p.Result.ExtractedNodes.AnyDeclarations = append(p.Result.ExtractedNodes.AnyDeclarations, r)
+	case AsExpression:
+		p.Result.ExtractedNodes.AsExpressions = append(p.Result.ExtractedNodes.AsExpressions, r)
+		// 未来添加更多类型
+	}
+}
+
 // Traverse 是解析器的核心驱动函数。
 // 它通过启动一个递归的 `walk` 函数来深度优先遍历整个 AST，从而识别和解析各种类型的节点。
 func (p *Parser) Traverse() {
+	// 定义所有提取器
+	extractors := []Extractor{
+		&AnyExtractor{},
+		&AsExtractor{},
+		// 未来添加更多提取器
+	}
+
 	var walk func(node *ast.Node)
 	// walk 是一个递归函数，用于遍历 AST 树。
 	walk = func(node *ast.Node) {
@@ -58,28 +76,12 @@ func (p *Parser) Traverse() {
 			return
 		}
 
-		// 提取 any 信息
-		if node.Kind == ast.KindAnyKeyword {
-			p.Result.AnyDeclarations = append(p.Result.AnyDeclarations, AnyInfo{
-				SourceLocation: SourceLocation{
-					Start: func() NodePosition {
-						line, character := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.Pos())
-						return NodePosition{Line: line + 1, Column: character + 1}
-					}(),
-					End: func() NodePosition {
-						line, character := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.End())
-						return NodePosition{Line: line + 1, Column: character}
-					}(),
-				},
-				Raw: func() string {
-					line, _ := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Loc.Pos())
-					lines := strings.Split(p.SourceCode, "\n")
-					if line >= 0 && line < len(lines) {
-						return strings.TrimSpace(lines[line])
-					}
-					return ""
-				}(),
-			})
+		// 使用提取器处理节点
+		for _, extractor := range extractors {
+			if extractor.CanExtract(node) {
+				result := extractor.Extract(node, p.SourceCode)
+				p.addResult(result)
+			}
 		}
 
 		// switch 语句是节点类型分发器。
@@ -593,6 +595,84 @@ func (p *Parser) analyzeJsxSelfClosingElement(jsxNode *JSXElement, node *ast.Jsx
 	}
 }
 
+// Extractor 定义了从AST节点中提取信息的接口
+type Extractor interface {
+	// CanExtract 检查是否可以从此节点提取信息
+	CanExtract(node *ast.Node) bool
+
+	// Extract 从节点中提取信息并返回结果
+	Extract(node *ast.Node, sourceCode string) interface{}
+}
+
+// AnyExtractor 提取 any 类型信息
+type AnyExtractor struct{}
+
+func (e *AnyExtractor) CanExtract(node *ast.Node) bool {
+	return node.Kind == ast.KindAnyKeyword
+}
+
+func (e *AnyExtractor) Extract(node *ast.Node, sourceCode string) interface{} {
+	return AnyInfo{
+		SourceLocation: SourceLocation{
+			Start: func() NodePosition {
+				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.Pos())
+				return NodePosition{Line: line + 1, Column: character + 1}
+			}(),
+			End: func() NodePosition {
+				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.End())
+				return NodePosition{Line: line + 1, Column: character}
+			}(),
+		},
+		Raw: func() string {
+			line, _ := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.Pos())
+			lines := strings.Split(sourceCode, "\n")
+			if line >= 0 && line < len(lines) {
+				return strings.TrimSpace(lines[line])
+			}
+			return ""
+		}(),
+	}
+}
+
+// AsExtractor 提取 as 表达式信息
+type AsExtractor struct{}
+
+func (e *AsExtractor) CanExtract(node *ast.Node) bool {
+	return node.Kind == ast.KindAsExpression
+}
+
+func (e *AsExtractor) Extract(node *ast.Node, sourceCode string) interface{} {
+	asExpr := node.AsAsExpression()
+	return AsExpression{
+		Raw: func() string {
+			line, _ := utils.GetLineAndCharacterOfPosition(sourceCode, node.AsNode().Loc.Pos())
+			lines := strings.Split(sourceCode, "\n")
+			if line >= 0 && line < len(lines) {
+				return strings.TrimSpace(lines[line])
+			}
+			return ""
+		}(),
+		SourceLocation: SourceLocation{
+			Start: func() NodePosition {
+				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, asExpr.Expression.Loc.Pos())
+				return NodePosition{Line: line + 1, Column: character + 1}
+			}(),
+			End: func() NodePosition {
+				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, asExpr.Type.Loc.End())
+				return NodePosition{Line: line + 1, Column: character}
+			}(),
+		},
+	}
+}
+
+// ExtractedNodes 用于存储从文件中提取出的各种节点信息。
+// 当需要添加新的节点类型时，只需在此结构体中添加新的字段。
+type ExtractedNodes struct {
+	AnyDeclarations []AnyInfo      // 存储找到的所有 any 类型的信息
+	AsExpressions   []AsExpression // 存储找到的所有 as 表达式的信息
+	// 后续新增其他节点类型时，同步添加在下方
+}
+
 // ParserResult 是单文件解析的最终结果容器。
 // 它存储了从文件中提取出的所有顶层声明和表达式。
 type ParserResult struct {
@@ -607,13 +687,19 @@ type ParserResult struct {
 	CallExpressions       []CallExpression
 	JsxElements           []JSXElement
 	FunctionDeclarations  []FunctionDeclarationResult // 新增：用于存储找到的所有函数声明的信息
-	AnyDeclarations       []AnyInfo                   // 新增：用于存储找到的所有 any 类型的信息
+	ExtractedNodes        ExtractedNodes              // 新增：用于存储提取的节点信息
 }
 
 // AnyInfo 存储了在文件中找到的 any 类型的信息。
 type AnyInfo struct {
 	SourceLocation SourceLocation
 	Raw            string // 存储 any 关键字的原始文本
+}
+
+// AsExpression 代表一个解析后的 'as' 类型断言表达式。
+type AsExpression struct {
+	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
+	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
 // NodePosition 用于精确记录代码在源文件中的位置。
@@ -642,7 +728,10 @@ func NewParserResult(filePath string) *ParserResult {
 		CallExpressions:       []CallExpression{},
 		JsxElements:           []JSXElement{},
 		FunctionDeclarations:  []FunctionDeclarationResult{},
-		AnyDeclarations:       []AnyInfo{},
+		ExtractedNodes: ExtractedNodes{
+			AnyDeclarations: []AnyInfo{},
+			AsExpressions:   []AsExpression{},
+		},
 	}
 }
 
@@ -659,7 +748,10 @@ func (pr *ParserResult) GetResult() ParserResult {
 		CallExpressions:       pr.CallExpressions,
 		JsxElements:           pr.JsxElements,
 		FunctionDeclarations:  pr.FunctionDeclarations,
-		AnyDeclarations:       pr.AnyDeclarations,
+		ExtractedNodes: ExtractedNodes{
+			AnyDeclarations: pr.ExtractedNodes.AnyDeclarations,
+			AsExpressions:   pr.ExtractedNodes.AsExpressions,
+		},
 	}
 }
 

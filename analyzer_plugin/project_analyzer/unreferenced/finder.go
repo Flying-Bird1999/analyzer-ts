@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"main/analyzer/projectParser"
 	projectanalyzer "main/analyzer_plugin/project_analyzer"
-	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -38,10 +37,7 @@ func (f *Finder) Configure(params map[string]string) error {
 }
 
 func (f *Finder) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
-	deps, err := parser.ParseProject(ctx.ProjectRoot, ctx.Exclude, ctx.IsMonorepo)
-	if err != nil {
-		return nil, fmt.Errorf("分析项目失败: %w", err)
-	}
+	deps := ctx.ParsingResult
 
 	referencedFiles := make(map[string]bool)
 	for _, fileDeps := range deps.Js_Data {

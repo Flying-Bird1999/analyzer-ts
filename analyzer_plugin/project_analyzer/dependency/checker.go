@@ -7,7 +7,6 @@ import (
 	"io"
 	"main/analyzer/projectParser"
 	projectanalyzer "main/analyzer_plugin/project_analyzer"
-	"main/analyzer_plugin/project_analyzer/internal/parser"
 	"net/http"
 	"strings"
 	"sync"
@@ -28,13 +27,10 @@ func (c *Checker) Configure(params map[string]string) error {
 }
 
 func (c *Checker) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
-	ar, err := parser.ParseProject(ctx.ProjectRoot, ctx.Exclude, ctx.IsMonorepo)
-	if err != nil {
-		return nil, fmt.Errorf("解析项目失败: %w", err)
-	}
+	parseResult := ctx.ParsingResult
 
 	declaredDependencies := make(map[string]bool)
-	for _, pkgData := range ar.Package_Data {
+	for _, pkgData := range parseResult.Package_Data {
 		for _, dep := range pkgData.NpmList {
 			declaredDependencies[dep.Name] = true
 		}
@@ -50,13 +46,13 @@ func (c *Checker) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.
 	go func() {
 		defer wg.Done()
 		var usedDependencies map[string]bool
-		implicitDeps, usedDependencies = findImplicitAndUsedDependencies(ar, declaredDependencies)
-		unusedDeps = findUnusedDependencies(ar, usedDependencies)
+		implicitDeps, usedDependencies = findImplicitAndUsedDependencies(parseResult, declaredDependencies)
+		unusedDeps = findUnusedDependencies(parseResult, usedDependencies)
 	}()
 
 	go func() {
 		defer wg.Done()
-		outdatedDeps = findOutdatedDependencies(ar)
+		outdatedDeps = findOutdatedDependencies(parseResult)
 	}()
 
 	wg.Wait()

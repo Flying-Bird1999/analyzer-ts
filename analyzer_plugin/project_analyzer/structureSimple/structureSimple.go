@@ -108,7 +108,6 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 					ReturnType: elem.ReturnType,
 				}
 			}),
-			AnyDeclarations: jsData.AnyDeclarations,
 		}
 	}
 

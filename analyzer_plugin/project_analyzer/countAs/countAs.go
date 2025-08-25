@@ -1,17 +1,17 @@
-// package countany 包含了用于统计项目中 'any' 类型使用情况的核心业务逻辑。
-package countany
+// package countas 包含了用于统计项目中 'as' 类型断言使用情况的核心业务逻辑。
+package countas
 
 import (
 	projectanalyzer "main/analyzer_plugin/project_analyzer"
 )
 
-// Counter 是“统计any”分析器的实现。
+// Counter 是"统计as"分析器的实现。
 type Counter struct{}
 
 var _ projectanalyzer.Analyzer = (*Counter)(nil)
 
 func (c *Counter) Name() string {
-	return "count-any"
+	return "count-as"
 }
 
 func (c *Counter) Configure(params map[string]string) error {
@@ -21,26 +21,26 @@ func (c *Counter) Configure(params map[string]string) error {
 func (c *Counter) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
 	parseResult := ctx.ParsingResult
 
-	totalAnyCount := 0
+	totalAsCount := 0
 	var fileCounts []FileCount
 
 	for filePath, fileData := range parseResult.Js_Data {
-		anyCountInFile := len(fileData.ExtractedNodes.AnyDeclarations)
+		asCountInFile := len(fileData.ExtractedNodes.AsExpressions)
 
-		if anyCountInFile > 0 {
+		if asCountInFile > 0 {
 			fileCounts = append(fileCounts, FileCount{
 				FilePath: filePath,
-				AnyCount: anyCountInFile,
-				Details:  fileData.ExtractedNodes.AnyDeclarations,
+				AsCount:  asCountInFile,
+				Details:  fileData.ExtractedNodes.AsExpressions,
 			})
 		}
-		totalAnyCount += anyCountInFile
+		totalAsCount += asCountInFile
 	}
 
-	finalResult := &CountAnyResult{
-		TotalAnyCount: totalAnyCount,
-		FileCounts:    fileCounts,
-		FilesParsed:   len(parseResult.Js_Data),
+	finalResult := &CountAsResult{
+		TotalAsCount: totalAsCount,
+		FileCounts:   fileCounts,
+		FilesParsed:  len(parseResult.Js_Data),
 	}
 
 	return finalResult, nil

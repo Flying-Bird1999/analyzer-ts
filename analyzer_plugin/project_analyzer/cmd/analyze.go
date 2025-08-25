@@ -5,17 +5,18 @@ package cmd
 // example: go run main.go analyze find-callers -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ActivityPage/index.tsx" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/SettingPage/index.tsx"
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"main/analyzer/projectParser"
 	projectanalyzer "main/analyzer_plugin/project_analyzer"
 	"main/analyzer_plugin/project_analyzer/callgraph"
 	countany "main/analyzer_plugin/project_analyzer/countAny"
+	countas "main/analyzer_plugin/project_analyzer/countAs"
 	"main/analyzer_plugin/project_analyzer/dependency"
-	"main/analyzer_plugin/project_analyzer/internal/filenamer"
-	"main/analyzer_plugin/project_analyzer/internal/parser"
-	"main/analyzer_plugin/project_analyzer/internal/writer"
 	structuresimple "main/analyzer_plugin/project_analyzer/structureSimple"
 	"main/analyzer_plugin/project_analyzer/unconsumed"
 	"main/analyzer_plugin/project_analyzer/unreferenced"
@@ -29,6 +30,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"find-callers":            &callgraph.Finder{},
 	"find-unreferenced-files": &unreferenced.Finder{},
 	"count-any":               &countany.Counter{},
+	"count-as":                &countas.Counter{},
 	"npm-check":               &dependency.Checker{},
 	"structure-simple":        &structuresimple.StructureSimpleAnalyzer{},
 }
@@ -54,6 +56,7 @@ func GetAnalyzeCmd() *cobra.Command {
 			"  - find-callers: 查找一个或多个指定文件的所有上游调用方.\n" +
 			"  - find-unreferenced-files: 查找项目中从未被任何其他文件引用的\"孤岛\"文件.\n" +
 			"  - count-any: 统计项目中所有 `any` 类型的使用情况.\n" +
+			"  - count-as: 统计项目中所有 `as` 类型断言的使用情况.\n" +
 			"  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.\n\n" +
 			"如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的原始 AST 结构.\n\n" +
 			"参数 (-p, --param) 使用示例:\n" +
@@ -78,7 +81,7 @@ func GetAnalyzeCmd() *cobra.Command {
 
 			// 2. 解析项目
 			fmt.Println("开始解析项目，这可能需要一些时间...")
-			parsingResult, err := parser.ParseProject(inputPath, excludePath, isMonorepo)
+			parsingResult, err := ParseProject(inputPath, excludePath, isMonorepo)
 			if err != nil {
 				fmt.Printf("错误: 解析项目失败: %v\n", err)
 				os.Exit(1)
@@ -88,8 +91,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			// 3. 如果没有指定分析器，则直接输出解析结果
 			if len(args) == 0 {
 				fmt.Println("\n未指定分析器，将直接输出项目解析结果。")
-				outputFileName := filenamer.GenerateOutputFileName(inputPath, "analyzer_data")
-				err := writer.WriteJSONResult(outputPath, outputFileName, parsingResult)
+				outputFileName := GenerateOutputFileName(inputPath, "analyzer_data")
+				err := WriteJSONResult(outputPath, outputFileName, parsingResult)
 				if err != nil {
 					fmt.Printf("错误: 无法将结果写入文件 %s: %v\n", outputPath, err)
 					os.Exit(1)
@@ -213,11 +216,85 @@ func executeAnalyzers(analyzers []projectanalyzer.Analyzer, ctx *projectanalyzer
 // handleResults 处理并写入所有分析结果
 func handleResults(results map[string]projectanalyzer.Result, path string, inputPath string) {
 	fmt.Printf("\n分析完成，正在将 %d 个分析结果写入 %s...\n", len(results), path)
-	outputFileName := filenamer.GenerateOutputFileName(inputPath, "analyzer_data")
-	err := writer.WriteJSONResult(path, outputFileName, results)
+	outputFileName := GenerateOutputFileName(inputPath, "analyzer_data")
+	err := WriteJSONResult(path, outputFileName, results)
 	if err != nil {
 		fmt.Printf("错误: 无法将结果写入文件 %s: %v\n", path, err)
 		os.Exit(1)
 	}
 	fmt.Println("✅ 结果写入成功！")
+}
+
+// GenerateOutputFileName 是一个公共函数，用于根据输入目录和分析类型生成标准化的输出文件名。
+// 它封装了文件名生成的通用逻辑，供各个分析器调用，确保输出文件名的一致性。
+// 参数:
+//   - inputPath: 输入项目目录的路径。
+//   - suffix:    - string: 生成的标准化文件名（不包含路径）。
+func GenerateOutputFileName(inputPath, suffix string) string {
+	// 1. 获取输入目录的基名（例如，"/path/to/my-project" -> "my-project"）。
+	baseName := filepath.Base(inputPath)
+
+	// 2. 将基名中的空格替换为下划线，以确保文件名的有效性。
+	//    虽然不太常见，但 defensive programming 是好的。
+	safeBaseName := strings.ReplaceAll(baseName, " ", "_")
+
+	// 3. 拼接基名和后缀，并加上 .json 扩展名。
+	//    例如，"my-project" 和 "analyze" 会生成 "my-project_analyze.json"。
+	return fmt.Sprintf("%s_%s.json", safeBaseName, suffix)
+}
+
+// ParseProject 是一个公共函数，用于解析整个项目。
+// 它封装了项目解析的通用逻辑，供各个分析器调用，避免代码重复。
+// 参数:
+//   - rootPath: 项目根目录的绝对路径。
+//   - ignore: 需要从分析中排除的文件/目录的 glob 模式列表。
+//   - isMonorepo: 指示项目是否为 monorepo。
+//
+// 返回值:
+//   - *projectParser.ProjectParserResult: 解析后的项目结果。
+//   - error: 解析过程中可能发生的错误。
+func ParseProject(rootPath string, ignore []string, isMonorepo bool) (*projectParser.ProjectParserResult, error) {
+	// 步骤 1: 创建项目解析器配置。
+	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
+
+	// 步骤 2: 创建用于存储解析结果的容器。
+	ar := projectParser.NewProjectParserResult(config)
+
+	// 步骤 3: 运行主解析逻辑。
+	ar.ProjectParser()
+
+	// 在未来的版本中，这里可以增加更详细的错误处理逻辑。
+	// 目前，ProjectParser 方法内部的错误处理比较简单。
+	return ar, nil
+}
+
+// WriteJSONResult 是一个公共函数，用于将分析结果序列化为 JSON 并写入文件。
+// 它封装了 JSON 序列化和文件写入的通用逻辑，供各个分析器调用，避免代码重复。
+// 参数:
+//   - outputDir: 用于存储 JSON 输出文件的目录路径。
+//   - fileName: 输出文件的名称（不包含路径）。
+//   - result:   - error: 写入过程中可能发生的错误。
+func WriteJSONResult(outputDir, fileName string, result interface{}) error {
+	// 步骤 1: 将结果序列化为格式化的 JSON 字节。
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return fmt.Errorf("序列化JSON时出错: %w", err)
+	}
+
+	// 步骤 2: 确保输出目录存在。
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return fmt.Errorf("创建输出目录失败: %w", err)
+	}
+
+	// 步骤 3: 构建完整的输出文件路径。
+	outputFile := filepath.Join(outputDir, fileName)
+
+	// 步骤 4: 将 JSON 数据写入文件。
+	if err := os.WriteFile(outputFile, jsonData, 0644); err != nil {
+		return fmt.Errorf("写入JSON文件失败: %w", err)
+	}
+
+	// 步骤 5: 打印成功信息到标准输出。
+	fmt.Printf("结果已成功写入到 %s\n", outputFile)
+	return nil
 }

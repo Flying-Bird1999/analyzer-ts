@@ -101,7 +101,7 @@ func TestAnyDeclarations(t *testing.T) {
 			}(),
 				func(result *parser.ParserResult) []expectedAnyResult {
 					cleanedActuals := []expectedAnyResult{}
-					for _, anyInfo := range result.AnyDeclarations {
+					for _, anyInfo := range result.ExtractedNodes.AnyDeclarations {
 						cleanedActuals = append(cleanedActuals, expectedAnyResult{
 							SourceLocation: anyInfo.SourceLocation,
 							Raw:            anyInfo.Raw,
