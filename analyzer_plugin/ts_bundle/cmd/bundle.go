@@ -1,7 +1,7 @@
 package cmd
 
 // 示例:
-// go run main.go bundle -i /Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/bundle/index1.ts -t Class -o /Users/bird/Desktop/alalyzer/analyzer-ts/ts_example/output/result.ts
+// go run main.go bundle -i /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/ts_bundle/ts_bundle_example/index1.ts -t Class -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin/ts_bundle/result.ts
 
 import (
 	"fmt"
@@ -28,7 +28,20 @@ func NewBundleCmd() *cobra.Command {
 				cmd.Help()
 				os.Exit(1)
 			}
-			ts_bundle.GenerateBundle(inputFile, inputType, outputFile, projectRoot)
+			bundledContent := ts_bundle.GenerateBundle(inputFile, inputType, outputFile, projectRoot)
+
+			// 输出到文件
+			err := os.WriteFile(outputFile, []byte(bundledContent), 0644)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Write error: %v\n", err)
+				return
+			}
+
+			fmt.Printf("Bundle completed: %s\n", outputFile)
+			fmt.Printf("\nName mappings:\n")
+			// for key, finalName := range bundler.FinalNameMap {
+			// 	fmt.Printf("  %s -> %s\n", key, finalName)
+			// }
 		},
 	}
 

@@ -187,9 +187,6 @@ func (b *TypeBundler) getUniqueKey(decl *TypeDeclaration) string {
 // generateBundle 生成最终 bundle 文件内容（带来源注释）
 func (b *TypeBundler) generateBundle(declarations []*TypeDeclaration) string {
 	var result strings.Builder
-	// 文件头
-	result.WriteString("// Auto-generated bundle file\n")
-	result.WriteString("// This file contains bundled type declarations\n\n")
 
 	b.writeDeclarations(&result, declarations)
 	return result.String()
@@ -207,17 +204,14 @@ func (b *TypeBundler) writeDeclarations(result *strings.Builder, decls []*TypeDe
 	})
 
 	for _, decl := range decls {
-		// 添加来源注释
-		result.WriteString(fmt.Sprintf("// From: %s (original: %s)", decl.FilePath, decl.OriginalName))
+		// 1. 清理源码前后的空白，保证格式一致
+		trimmedSource := strings.TrimSpace(decl.SourceCode)
 
-		// 输出更新后的代码
-		result.WriteString(decl.SourceCode)
+		// 2. 写入清理后的代码
+		result.WriteString(trimmedSource)
 
-		if !strings.HasSuffix(decl.SourceCode, "\n") {
-			result.WriteString("\n")
-		}
-
-		result.WriteString("\n")
+		// 3. 写入两个换行符，确保条目之间有一个空行
+		result.WriteString("\n\n")
 	}
 }
 
