@@ -13,11 +13,27 @@
 
 ## 安装
 
+我们提供两种安装方式：`go install`（推荐）或从源码构建。
+
+### 方式一：全局安装 (推荐)
+
+这是最简单的安装方式。请确保您已安装 Go (1.24 或更高版本)，然后在终端中运行以下命令：
+
+```bash
+go install github.com/Flying-Bird1999/analyzer-ts@latest
+```
+
+此命令会自动下载、编译并安装 `analyzer-ts` 到您的 Go 环境中。安装成功后，您可以在系统的任何路径下直接使用 `analyzer-ts` 命令。
+
+### 方式二：从源码构建
+
+如果您想自行编译或修改代码，可以按以下步骤操作：
+
 1. **确保您已经安装了 Go (1.18 或更高版本)。**
 2. **克隆此仓库:**
 
    ```bash
-   git clone https://github.com/your-username/analyzer-ts.git
+   git clone https://github.com/Flying-Bird1999/analyzer-ts.git
    ```
 3. **进入项目目录:**
 
