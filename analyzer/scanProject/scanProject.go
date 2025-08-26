@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/gobwas/glob"
 )
 
@@ -80,8 +81,8 @@ func (pr *ProjectResult) ScanFileList() {
 		if !info.IsDir() {
 			pr.FileList[path] = FileItem{
 				FileName: info.Name(),
-				Size:     info.Size(),        // 文件大小（字节）
-				Ext:      filepath.Ext(path), // 文件后缀
+				Size:     utils.FormatSize(info.Size()), // 直接存储格式化后的大小
+				Ext:      filepath.Ext(path),            // 文件后缀
 			}
 		}
 

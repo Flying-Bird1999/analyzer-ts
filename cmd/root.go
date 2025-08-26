@@ -17,12 +17,10 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
-	// 注册重构后的统一分析命令
 	RootCmd.AddCommand(projectAnalyzerCmd.GetAnalyzeCmd())
-
-	// 保留其他尚未重构的命令
 	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
+	RootCmd.AddCommand(ScanCmd)
 }
 
 // Execute 将所有子命令添加到根命令并适当设置标志。

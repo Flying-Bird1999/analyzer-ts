@@ -14,6 +14,28 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/tspath"
 )
 
+// FormatSize 将字节大小格式化为更易读的 KB, MB, GB 字符串。
+func FormatSize(size int64) string {
+	const (
+		B  = 1
+		KB = 1024 * B
+		MB = 1024 * KB
+		GB = 1024 * MB
+	)
+
+	switch {
+	case size >= GB:
+		return fmt.Sprintf("%.2f GB", float64(size)/float64(GB))
+	case size >= MB:
+		return fmt.Sprintf("%.2f MB", float64(size)/float64(MB))
+	case size >= KB:
+		return fmt.Sprintf("%.2f KB", float64(size)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", size)
+	}
+}
+
+
 // 读取文件内容
 func ReadFileContent(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
