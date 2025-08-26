@@ -1,384 +1,227 @@
-// TypeScript 类型声明打包工具（TypeBundler），用于将多个 TS 文件中的类型声明（interface/type/class/enum）合并为一个 bundle 文件，并解决跨文件同名类型冲突、类型引用正确性等问题。其核心设计思路如下：
-
-// 分离式处理架构
-
-// 首先收集所有类型声明，检测同名冲突，确定每个类型的最终名称（如有冲突则加后缀）。
-// 然后基于名称映射，一次性更新所有类型声明和引用，避免重复替换和错误引用。
-// 智能冲突解决
-
-// 第一个遇到的类型保持原名，后续冲突类型基于文件名生成唯一后缀（如 Package_index2）。
-// 全局唯一性保证：所有类型最终名称唯一，避免命名污染。
-// 上下文感知的引用更新
-
-// 只替换类型引用，不替换类型声明。
-// 优先引用本文件的同名类型，否则引用全局唯一版本。
-// 精确的字符串替换机制
-
-// 通过正则和上下文判断，区分类型声明和类型引用，避免误替换。
-// 数据结构设计
-
-// TypeDeclaration：封装类型声明的所有信息（文件路径、原名、最终名、源码）。
-// TypeBundler：管理类型名映射、已用名、原始名等。
-
 package ts_bundle
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 )
 
-// TypeBundler 类型打包器
+// GenericDeclaration 是一个通用的结构体，用于存放任何类型声明（如 interface, type, enum）的关键信息。
+// 它是在 `collect.go` 中收集的信息的基础上进行打包处理的中间表示。
+type GenericDeclaration struct {
+	Name      string            // 原始声明名称
+	Raw       string            // 原始声明的源代码文本
+	Reference map[string]bool   // 此声明内部引用的其他类型名称集合
+	FilePath  string            // 声明所在的文件路径
+}
+
+// TypeBundler 是实现 TypeScript 类型打包功能的核心结构体。
+// 它持有所需的所有状态，并提供打包方法。
 type TypeBundler struct {
-	// 存储原始名称到最终名称的映射
-	FinalNameMap map[string]string `json:"finalNameMap"`
-	// 存储已使用的名称，避免冲突
-	UsedNames map[string]bool `json:"usedNames"`
-	// 存储每个文件路径中的原始类型名称
-	OriginalNames map[string]string `json:"originalNames"`
+	declarations      map[UniqueTypeID]GenericDeclaration // 从收集器传入的所有类型声明
+	resolutionMaps    map[string]FileScopeResolutionMap   // 每个文件的作用域解析图
+	finalNameMap      map[UniqueTypeID]string             // 存储每个类型最终在打包文件中使用的名称
+	usedNames         map[string]bool                     // 用于跟踪已经使用过的名称，以避免冲突
+	defaultExportUIDs map[UniqueTypeID]bool             // 记录哪些类型是默认导出，用于处理别名
 }
 
-// TypeDeclaration 类型声明
-type TypeDeclaration struct {
-	FilePath     string `json:"filePath"`     // 文件路径
-	TypeName     string `json:"typeName"`     // 类型名称
-	OriginalName string `json:"originalName"` // 原始名称
-	SourceCode   string `json:"sourceCode"`   // 源码
-	FinalName    string `json:"finalName"`    // 最终确定的名称
+// safeReplace 使用正则表达式安全地替换字符串中的标识符。
+// `\b` 边界匹配符确保只替换完整的单词，避免将一个名称作为另一个更长名称的子串进行替换。
+// 例如，确保 `safeReplace("type T = T1", "T", "NewT")` 得到 `"type NewT = T1"` 而不是 `"type NewT = NewT1"`。
+func safeReplace(source, oldName, newName string) string {
+	if oldName == "" || newName == "" || oldName == newName {
+		return source
+	}
+	// 使用 `\b` 来匹配单词边界，确保只替换独立的标识符
+	re := regexp.MustCompile(`\b` + regexp.QuoteMeta(oldName) + `\b`)
+	return re.ReplaceAllString(source, newName)
 }
 
-func NewTypeBundler() *TypeBundler {
+// NewTypeBundler 创建一个新的 TypeBundler 实例。
+// 它接收 `CollectResult` 作为输入，这是前一阶段（依赖收集）的产物。
+func NewTypeBundler(result *CollectResult) *TypeBundler {
 	return &TypeBundler{
-		FinalNameMap:  make(map[string]string),
-		UsedNames:     make(map[string]bool),
-		OriginalNames: make(map[string]string),
+		declarations:      result.Declarations,
+		resolutionMaps:    result.ResolutionMaps,
+		finalNameMap:      make(map[UniqueTypeID]string),
+		usedNames:         make(map[string]bool),
+		defaultExportUIDs: make(map[UniqueTypeID]bool),
 	}
 }
 
-func (b *TypeBundler) Bundle(typeMap map[string]string) (string, error) {
-	// 第一步：解析所有类型声明
-	declarations := b.parseTypeMap(typeMap)
-
-	// 第二步：检测冲突并生成最终名称
-	b.resolveAllNameConflicts(declarations)
-
-	// 第三步：一次性更新所有代码中的类型引用
-	b.updateAllTypeReferences(declarations)
-
-	// 第四步：生成最终的 bundle 内容
-	return b.generateBundle(declarations), nil
+// Bundle 是执行打包过程的主函数。
+// 它按顺序执行名称冲突解决、引用更新和最终代码生成。
+func (b *TypeBundler) Bundle(entryFile string, entryType string) (string, error) {
+	// 1. 识别出所有的默认导出
+	b.findDefaultExports()
+	// 2. 解决所有潜在的名称冲突
+	b.resolveNameConflicts()
+	// 3. 更新所有声明中的类型引用，确保它们指向正确的、重命名后的类型
+	b.updateAllTypeReferences()
+	// 4. 生成最终的打包输出字符串
+	return b.generateBundleOutput(), nil
 }
 
-// parseTypeMap 解析类型声明map为 TypeDeclaration 列表
-func (b *TypeBundler) parseTypeMap(typeMap map[string]string) []*TypeDeclaration {
-	var declarations []*TypeDeclaration
-
-	for key, sourceCode := range typeMap {
-		// 解析 key: filePath_typeName
-		lastUnderscoreIndex := strings.LastIndex(key, "_")
-		if lastUnderscoreIndex == -1 {
-			continue
-		}
-
-		filePath := key[:lastUnderscoreIndex]
-		typeName := key[lastUnderscoreIndex+1:]
-
-		decl := &TypeDeclaration{
-			FilePath:     filePath,
-			TypeName:     typeName,
-			OriginalName: typeName,
-			SourceCode:   sourceCode,
-		}
-
-		declarations = append(declarations, decl)
-
-		// 记录原始名称
-		b.OriginalNames[key] = typeName
-	}
-
-	return declarations
-}
-
-// resolveAllNameConflicts 检测所有类型声明的同名冲突并生成最终名称
-func (b *TypeBundler) resolveAllNameConflicts(declarations []*TypeDeclaration) {
-	// 按类型名称分组
-	typeGroups := make(map[string][]*TypeDeclaration)
-	for _, decl := range declarations {
-		typeGroups[decl.TypeName] = append(typeGroups[decl.TypeName], decl)
-	}
-
-	// 为每个类型组解决冲突
-	for typeName, decls := range typeGroups {
-		if len(decls) == 1 {
-			// 没有冲突，使用原名
-			finalName := typeName
-			decls[0].FinalName = finalName
-			b.FinalNameMap[b.getUniqueKey(decls[0])] = finalName
-			b.UsedNames[finalName] = true
-		} else {
-			// 有冲突，需要重命名
-			b.resolveConflictingGroup(typeName, decls)
+// findDefaultExports 遍历所有文件的解析图，找出被 `export default` 的类型，
+// 并将它们的 UniqueTypeID 记录下来。这对于后续处理导入别名很重要。
+func (b *TypeBundler) findDefaultExports() {
+	for _, resMap := range b.resolutionMaps {
+		if uid, ok := resMap["default"]; ok {
+			b.defaultExportUIDs[uid] = true
 		}
 	}
 }
 
-// resolveConflictingGroup 处理同名类型冲突，生成唯一名称
-func (b *TypeBundler) resolveConflictingGroup(baseName string, decls []*TypeDeclaration) {
-	// 按文件路径排序，确保一致性
-	sort.Slice(decls, func(i, j int) bool {
-		return decls[i].FilePath < decls[j].FilePath
-	})
-
-	for i, decl := range decls {
-		var finalName string
-
-		if i == 0 && !b.UsedNames[baseName] {
-			// 第一个保持原名（如果可能）
-			finalName = baseName
-		} else {
-			// 生成唯一名称
-			finalName = b.generateUniqueName(baseName, decl)
-		}
-
-		decl.FinalName = finalName
-		b.FinalNameMap[b.getUniqueKey(decl)] = finalName
-		b.UsedNames[finalName] = true
-	}
-}
-
-// generateUniqueName 基于文件路径生成唯一后缀，确保类型名唯一
-func (b *TypeBundler) generateUniqueName(baseName string, decl *TypeDeclaration) string {
-	// 基于文件路径生成后缀
-	pathParts := strings.Split(decl.FilePath, "/")
-	var suffix string
-
-	if len(pathParts) > 0 {
-		fileName := pathParts[len(pathParts)-1]
-		// 清理文件名，移除扩展名和特殊字符
-		fileName = strings.TrimSuffix(fileName, ".ts")
-		fileName = strings.TrimSuffix(fileName, ".d")
-		fileName = regexp.MustCompile(`[^a-zA-Z0-9_]`).ReplaceAllString(fileName, "_")
-		suffix = fileName
+// resolveNameConflicts 是打包过程中最关键和复杂的步骤之一。
+// 它的目标是为每个类型分配一个在最终打包文件中唯一的名称。
+func (b *TypeBundler) resolveNameConflicts() {
+	// 策略 1: 初始名称。将每个类型的最终名称初步设置为其原始声明名称。
+	for uid, decl := range b.declarations {
+		b.finalNameMap[uid] = decl.Name
 	}
 
-	if suffix == "" {
-		suffix = "1"
-	}
-
-	candidateName := fmt.Sprintf("%s_%s", baseName, suffix)
-
-	// 确保名称唯一
-	counter := 1
-	finalName := candidateName
-	for b.UsedNames[finalName] {
-		finalName = fmt.Sprintf("%s_%d", candidateName, counter)
-		counter++
-	}
-
-	return finalName
-}
-
-// getUniqueKey 生成唯一key（文件路径+类型名）
-func (b *TypeBundler) getUniqueKey(decl *TypeDeclaration) string {
-	return fmt.Sprintf("%s:%s", decl.FilePath, decl.OriginalName)
-}
-
-// generateBundle 生成最终 bundle 文件内容（带来源注释）
-func (b *TypeBundler) generateBundle(declarations []*TypeDeclaration) string {
-	var result strings.Builder
-
-	b.writeDeclarations(&result, declarations)
-	return result.String()
-}
-
-// writeDeclarations 写入所有类型声明到 bundle
-func (b *TypeBundler) writeDeclarations(result *strings.Builder, decls []*TypeDeclaration) {
-	if len(decls) == 0 {
-		return
-	}
-
-	// 按最终名称排序
-	sort.Slice(decls, func(i, j int) bool {
-		return decls[i].FinalName < decls[j].FinalName
-	})
-
-	for _, decl := range decls {
-		// 1. 清理源码前后的空白，保证格式一致
-		trimmedSource := strings.TrimSpace(decl.SourceCode)
-
-		// 2. 写入清理后的代码
-		result.WriteString(trimmedSource)
-
-		// 3. 写入两个换行符，确保条目之间有一个空行
-		result.WriteString("\n\n")
-	}
-}
-
-// updateAllTypeReferences 更新所有类型声明中的类型引用
-func (b *TypeBundler) updateAllTypeReferences(declarations []*TypeDeclaration) {
-	// 为每个声明单独处理类型引用更新
-	for _, decl := range declarations {
-		decl.SourceCode = b.updateSingleDeclarationReferences(decl, declarations)
-	}
-}
-
-// updateSingleDeclarationReferences 更新单个类型声明中的类型引用
-func (b *TypeBundler) updateSingleDeclarationReferences(currentDecl *TypeDeclaration, allDeclarations []*TypeDeclaration) string {
-	updatedCode := currentDecl.SourceCode
-
-	// 第一步：更新当前类型的声明名称
-	if currentDecl.FinalName != currentDecl.OriginalName {
-		declarationPatterns := []string{
-			fmt.Sprintf(`\binterface\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\btype\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\bclass\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\benum\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\bexport\s+interface\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\bexport\s+type\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\bexport\s+class\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-			fmt.Sprintf(`\bexport\s+enum\s+%s\b`, regexp.QuoteMeta(currentDecl.OriginalName)),
-		}
-
-		declarationReplacements := []string{
-			fmt.Sprintf("interface %s", currentDecl.FinalName),
-			fmt.Sprintf("type %s", currentDecl.FinalName),
-			fmt.Sprintf("class %s", currentDecl.FinalName),
-			fmt.Sprintf("enum %s", currentDecl.FinalName),
-			fmt.Sprintf("export interface %s", currentDecl.FinalName),
-			fmt.Sprintf("export type %s", currentDecl.FinalName),
-			fmt.Sprintf("export class %s", currentDecl.FinalName),
-			fmt.Sprintf("export enum %s", currentDecl.FinalName),
-		}
-
-		for i, pattern := range declarationPatterns {
-			re := regexp.MustCompile(pattern)
-			updatedCode = re.ReplaceAllString(updatedCode, declarationReplacements[i])
-		}
-	}
-
-	// 第二步：更新对其他类型的引用
-	for _, otherDecl := range allDeclarations {
-		if otherDecl == currentDecl {
-			continue
-		}
-
-		shouldReplace := b.shouldReplaceReference(currentDecl, otherDecl, allDeclarations)
-		if shouldReplace && otherDecl.FinalName != otherDecl.OriginalName {
-			// 使用简单的单词边界匹配，然后手动过滤声明语句
-			pattern := fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta(otherDecl.OriginalName))
-			re := regexp.MustCompile(pattern)
-
-			// 找到所有匹配位置，然后检查上下文
-			updatedCode = b.replaceTypeReferencesOnly(updatedCode, re, otherDecl.OriginalName, otherDecl.FinalName)
-		}
-	}
-
-	return updatedCode
-}
-
-// replaceTypeReferencesOnly 只替换类型引用，不替换声明
-func (b *TypeBundler) replaceTypeReferencesOnly(text string, re *regexp.Regexp, oldName, newName string) string {
-	// 找到所有匹配的位置
-	matches := re.FindAllStringIndex(text, -1)
-	if len(matches) == 0 {
-		return text
-	}
-
-	// 从后往前替换，避免索引偏移问题
-	result := text
-	for i := len(matches) - 1; i >= 0; i-- {
-		start, end := matches[i][0], matches[i][1]
-
-		// 检查这个匹配是否是类型声明（而不是引用）
-		if b.isTypeDeclaration(result, start, end, oldName) {
-			continue // 跳过声明，不替换
-		}
-
-		// 替换引用
-		result = result[:start] + newName + result[end:]
-	}
-
-	return result
-}
-
-// isTypeDeclaration 判断匹配位置是否为类型声明（而不是引用）
-func (b *TypeBundler) isTypeDeclaration(text string, start, end int, typeName string) bool {
-	// 获取匹配位置前的文本，检查是否是声明关键字
-	beforeMatch := ""
-	if start > 0 {
-		// 取前面最多50个字符来检查上下文
-		contextStart := start - 50
-		if contextStart < 0 {
-			contextStart = 0
-		}
-		beforeMatch = text[contextStart:start]
-	}
-
-	// 检查是否包含声明关键字
-	declarationKeywords := []string{
-		"interface ", "type ", "class ", "enum ",
-		"export interface ", "export type ", "export class ", "export enum ",
-	}
-
-	for _, keyword := range declarationKeywords {
-		if strings.Contains(beforeMatch, keyword) {
-			// 进一步检查是否紧接着类型名
-			keywordIndex := strings.LastIndex(beforeMatch, keyword)
-			if keywordIndex >= 0 {
-				afterKeyword := beforeMatch[keywordIndex+len(keyword):]
-				afterKeyword = strings.TrimSpace(afterKeyword)
-				if afterKeyword == "" {
-					// 关键字后直接是类型名，这是声明
-					return true
+	// 策略 2: 别名优先。如果一个类型在某个文件中被用别名导入或导出，
+	// 那么这个别名通常是用户更希望看到的名称，因此给予它更高的优先级。
+	// 但要排除 `import MyType from ...` 这种情况，因为 `MyType` 是本地的，不应作为全局优先名。
+	uidToPreferredName := make(map[UniqueTypeID]string)
+	for _, resolutionMap := range b.resolutionMaps {
+		for nameInFile, uid := range resolutionMap {
+			if decl, ok := b.declarations[uid]; ok {
+				// 如果文件中的名称与原始名称不同，并且它不是一个默认导入的本地别名，则认为它是一个优先的别名。
+				isDefaultImportAlias := b.defaultExportUIDs[uid]
+				if nameInFile != decl.Name && !isDefaultImportAlias {
+					uidToPreferredName[uid] = nameInFile
 				}
 			}
 		}
 	}
+	// 应用这些找到的优先名称。
+	for uid, preferredName := range uidToPreferredName {
+		b.finalNameMap[uid] = preferredName
+	}
 
-	return false
+	// 策略 3: 命名空间。处理 `import * as ns from ...` 的情况。
+	// 导入的类型会以 `ns.TypeName` 的形式存在，我们将 `.` 替换为 `_` 来创建一个合法的标识符，
+	// 例如 `ns_TypeName`。这具有很高的优先级。
+	for _, resolutionMap := range b.resolutionMaps {
+		for nameInFile, uid := range resolutionMap {
+			if strings.Contains(nameInFile, ".") {
+				b.finalNameMap[uid] = strings.ReplaceAll(nameInFile, ".", "_")
+			}
+		}
+	}
+
+	// 策略 4: 解决冲突。在应用了以上策略后，仍然可能存在名称冲突（例如，两个不同文件中的 `type T = {}`）。
+	// 我们检测这些冲突，并为冲突的类型生成新的唯一名称。
+	nameToUIDs := make(map[string][]UniqueTypeID)
+	for uid, name := range b.finalNameMap {
+		nameToUIDs[name] = append(nameToUIDs[name], uid)
+	}
+
+	for name, uids := range nameToUIDs {
+		if len(uids) > 1 { // 如果一个名称对应多个类型，则存在冲突
+			// 对UID进行排序以确保重命名行为是确定性的
+			sort.Slice(uids, func(i, j int) bool { return uids[i] < uids[j] })
+			// 保留第一个类型使用原始名称，为其余的生成新名称
+			for i := 1; i < len(uids); i++ {
+				b.finalNameMap[uids[i]] = b.generateUniqueName(name, uids[i])
+			}
+		}
+	}
 }
 
-// shouldReplaceReference 判断是否需要替换类型引用（上下文感知）
-func (b *TypeBundler) shouldReplaceReference(currentDecl, referencedDecl *TypeDeclaration, allDeclarations []*TypeDeclaration) bool {
-	// 如果被引用的类型没有重命名，不需要替换
-	if referencedDecl.FinalName == referencedDecl.OriginalName {
-		return false
-	}
+// generateUniqueName 为冲突的类型生成一个基于其原始文件名和路径的、可读性强的唯一名称。
+// 例如，如果 `Button` 类型在 `components/button.ts` 和 `theme/button.ts` 中都有定义，
+// 它们可能会被重命名为 `ButtonFromComponentsButton` 和 `ButtonFromThemeButton`。
+func (b *TypeBundler) generateUniqueName(baseName string, uid UniqueTypeID) string {
+	// 从 UID 中提取文件路径部分
+	path := strings.Split(string(uid), ":")[0]
+	pathParts := strings.Split(path, string(filepath.Separator))
+	fileName := pathParts[len(pathParts)-1]
 
-	// 查找所有同名的类型声明
-	sameNameDecls := []*TypeDeclaration{}
-	for _, decl := range allDeclarations {
-		if decl.OriginalName == referencedDecl.OriginalName {
-			sameNameDecls = append(sameNameDecls, decl)
+	// 清理文件名，移除非法字符，并转换为驼峰式
+	suffix := strings.TrimSuffix(fileName, ".ts")
+	suffix = strings.TrimSuffix(suffix, ".d")
+	suffix = regexp.MustCompile(`[^a-zA-Z0-9_]`).ReplaceAllString(suffix, "_")
+	suffix = strings.Title(strings.ToLower(suffix)) // e.g., "my-component" -> "MyComponent"
+
+	// 组合新名称并确保其唯一性
+	newName := fmt.Sprintf("%sFrom%s", baseName, suffix)
+	counter := 1
+	finalName := newName
+	for b.usedNames[finalName] { // 如果新生成的名称也冲突了，则添加数字后缀
+		finalName = fmt.Sprintf("%s_%d", newName, counter)
+		counter++
+	}
+	b.usedNames[finalName] = true // 标记新名称已被使用
+	return finalName
+}
+
+// updateAllTypeReferences 在所有类型名称都最终确定后，此函数会遍历每一个类型声明的源代码，
+// 将其内部对其他类型的引用更新为这些类型最终确定的名称。
+func (b *TypeBundler) updateAllTypeReferences() {
+	for uid, decl := range b.declarations {
+		newSource := decl.Raw
+		resolutionMap := b.resolutionMaps[decl.FilePath]
+
+		finalDeclName, ok := b.finalNameMap[uid]
+		if !ok {
+			continue // 如果该声明未被使用，则跳过
+		}
+
+		// 1. 首先，将声明本身的名称更新为其最终名称。
+		//    例如 `type MyType = ...` -> `type MyTypeFromComponent = ...`
+		newSource = safeReplace(newSource, decl.Name, finalDeclName)
+
+		// 2. 然后，更新此声明内部对其他类型的所有引用。
+		//    例如 `type T = { a: OtherType }` -> `type T = { a: OtherTypeFromLib }`
+		for refName, refUID := range resolutionMap {
+			if finalRefName, ok := b.finalNameMap[refUID]; ok {
+				newSource = safeReplace(newSource, refName, finalRefName)
+			}
+		}
+
+		// 3. 将更新后的源代码存回声明对象中。
+		decl.Raw = newSource
+		b.declarations[uid] = decl
+	}
+}
+
+// generateBundleOutput 生成最终的打包文件内容。
+// 它将所有处理过的、需要包含在最终产物中的类型声明，按照名称排序后拼接成一个字符串。
+func (b *TypeBundler) generateBundleOutput() string {
+	var finalDecls []GenericDeclaration
+	// 筛选出所有需要被打包的声明
+	for uid := range b.declarations {
+		if _, ok := b.finalNameMap[uid]; ok {
+			finalDecls = append(finalDecls, b.declarations[uid])
 		}
 	}
 
-	// 如果只有一个同名类型，不需要特殊处理
-	if len(sameNameDecls) <= 1 {
-		return false
-	}
+	// 对声明进行排序，以确保每次打包的结果都是稳定和一致的。
+	// 主要按最终确定的类型名称进行字母序排序。
+	sort.Slice(finalDecls, func(i, j int) bool {
+		uid_i := UniqueTypeID(fmt.Sprintf("%s:%s", finalDecls[i].FilePath, finalDecls[i].Name))
+		uid_j := UniqueTypeID(fmt.Sprintf("%s:%s", finalDecls[j].FilePath, finalDecls[j].Name))
 
-	// 确定当前文件应该引用哪个版本
-	// 规则：优先引用同一文件中的类型，否则引用第一个（保持原名的）版本
-	for _, sameNameDecl := range sameNameDecls {
-		if sameNameDecl.FilePath == currentDecl.FilePath {
-			// 如果当前文件中有同名类型，引用当前文件的版本
-			return sameNameDecl == referencedDecl
+		nameI, okI := b.finalNameMap[uid_i]
+		nameJ, okJ := b.finalNameMap[uid_j]
+
+		if okI && okJ {
+			return nameI < nameJ
 		}
-	}
-
-	// 如果当前文件中没有同名类型，引用保持原名的版本（通常是第一个）
-	for _, sameNameDecl := range sameNameDecls {
-		if sameNameDecl.FinalName == sameNameDecl.OriginalName {
-			return false // 引用原名版本，不需要替换
-		}
-	}
-
-	// 如果所有版本都被重命名了，引用第一个版本
-	sort.Slice(sameNameDecls, func(i, j int) bool {
-		return sameNameDecls[i].FilePath < sameNameDecls[j].FilePath
+		return uid_i < uid_j // 如果找不到名称，则按UID排序作为备用方案
 	})
 
-	return sameNameDecls[0] == referencedDecl
+	// 将所有排序后的声明拼接成一个字符串。
+	var result strings.Builder
+	for _, decl := range finalDecls {
+		trimmedSource := strings.TrimSpace(decl.Raw)
+		result.WriteString(trimmedSource)
+		result.WriteString("\n\n") // 在每个声明之间添加两个换行符以提高可读性
+	}
+
+	return result.String()
 }

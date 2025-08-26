@@ -55,6 +55,20 @@ func TestGenerateBundle(t *testing.T) {
 			expectedOutputFile: "test_data/namespace/expected.ts",
 			projectRoot:        "test_data/namespace",
 		},
+		{
+			name:               "Re-export and Default Export",
+			entryFile:          "test_data/export/index.ts",
+			entryType:          "Container",
+			expectedOutputFile: "test_data/export/expected.ts",
+			projectRoot:        "test_data/export",
+		},
+		{
+			name:               "Complex Exports",
+			entryFile:          "test_data/complex_exports/index.ts",
+			entryType:          "Container",
+			expectedOutputFile: "test_data/complex_exports/expected.ts",
+			projectRoot:        "test_data/complex_exports",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -89,7 +103,7 @@ func TestGenerateBundle(t *testing.T) {
 
 			// Compare actual vs. expected.
 			if normalizedActual != normalizedExpected {
-				t.Errorf("Bundle mismatch for test '%s'.\n\n--- EXPECTED ---\n%s\n\n--- ACTUAL ---\n%s", tc.name, normalizedExpected, normalizedActual)
+				t.Errorf("Bundle mismatch for test '%s'.\n\n--- EXPECTED ---\n%s\n\n--- ACTUAL ---\n%s", tc.name, expectedBundle, actualBundle)
 			}
 		})
 	}
