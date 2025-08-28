@@ -8,6 +8,7 @@ package ts_bundle
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -22,21 +23,76 @@ type CollectResult struct {
 	BaseUrl       string            // tsconfig.json 中的 baseUrl
 	Extensions    []string          // 支持的文件扩展名
 	SourceCodeMap map[string]string // 已收集的类型源码
+	visited       map[string]bool   // 用于检测循环依赖的访问记录
+}
+
+// findProjectRoot 向上查找项目根目录
+// 查找顺序：
+// 1. 如果提供了 projectRootPath，直接使用
+// 2. 查找 tsconfig.json
+// 3. 查找 package.json
+// 4. 查找 .git 目录
+// 5. 如果都找不到，使用入口文件所在目录
+func findProjectRoot(inputAnalyzeFile string, projectRootPath string) string {
+	// 如果显式提供了项目根路径，直接使用
+	if projectRootPath != "" {
+		return projectRootPath
+	}
+
+	// 获取入口文件的绝对路径
+	absFilePath, err := filepath.Abs(inputAnalyzeFile)
+	if err != nil {
+		// 如果无法获取绝对路径，使用文件所在目录
+		dir := filepath.Dir(inputAnalyzeFile)
+		absDir, err := filepath.Abs(dir)
+		if err != nil {
+			return dir // 最坏情况下返回原始目录
+		}
+		return absDir
+	}
+
+	// 从入口文件所在目录开始向上查找
+	currentDir := filepath.Dir(absFilePath)
+	
+	// 限制向上查找的深度，避免无限循环
+	for i := 0; i < 10; i++ {
+		// 检查是否存在 tsconfig.json
+		if _, err := os.Stat(filepath.Join(currentDir, "tsconfig.json")); err == nil {
+			return currentDir
+		}
+		
+		// 检查是否存在 package.json
+		if _, err := os.Stat(filepath.Join(currentDir, "package.json")); err == nil {
+			return currentDir
+		}
+		
+		// 检查是否存在 .git 目录
+		if _, err := os.Stat(filepath.Join(currentDir, ".git")); err == nil {
+			return currentDir
+		}
+		
+		// 向上移动一级目录
+		parentDir := filepath.Dir(currentDir)
+		
+		// 如果已经到达文件系统根目录，停止查找
+		if parentDir == currentDir {
+			break
+		}
+		
+		currentDir = parentDir
+	}
+	
+	// 如果找不到项目根目录，使用入口文件所在目录
+	return filepath.Dir(absFilePath)
 }
 
 // NewCollectResult 构造函数，初始化 CollectResult。
 // 通过入口文件路径自动推断项目根目录、npm 列表、alias、扩展名等信息。
 func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectRootPath string) CollectResult {
-	var rootPath string = projectRootPath
+	// 通过更智能的方式查找项目根目录
+	rootPath := findProjectRoot(inputAnalyzeFile, projectRootPath)
 
-	// TODO: 逻辑待优化
-	// 1. 通过截取 inputAnalyzeFile 中的路径，匹配到/src前边的部分，得到 rootPath
-	if projectRootPath == "" {
-		absFilePath, _ := filepath.Abs(inputAnalyzeFile)
-		rootPath = strings.Split(absFilePath, "/src")[0]
-	}
-
-	// 2. 获取 tsconfig.json 中的 alias 列表
+	// 获取 tsconfig.json 中的 alias 列表
 	config := projectParser.NewProjectParserConfig(rootPath, []string{}, false)
 	ar := projectParser.NewProjectParserResult(config)
 
@@ -46,6 +102,7 @@ func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectR
 		BaseUrl:       ar.Config.RootTsConfig.BaseUrl,
 		Extensions:    ar.Config.Extensions,
 		SourceCodeMap: make(map[string]string),
+		visited:       make(map[string]bool),
 	}
 }
 
@@ -55,7 +112,22 @@ func NewCollectResult(inputAnalyzeFile string, inputAnalyzeType string, projectR
 // replaceTypeName: 类型重命名（如 import {A as B}）时的替换名
 // parentTypeName: 父类型名（用于命名空间类型替换）
 func (br *CollectResult) collectFileType(absFilePath string, typeName string, replaceTypeName string, parentTypeName string) {
-	// TODO: 已经解析过的文件可以做缓存
+	// 创建一个唯一的键来标识这次调用
+	visitKey := fmt.Sprintf("%s::%s::%s::%s", absFilePath, typeName, replaceTypeName, parentTypeName)
+	
+	// 检查是否已经访问过这个键，如果是则直接返回以避免循环依赖
+	if br.visited[visitKey] {
+		fmt.Printf("检测到循环依赖，跳过: %s \n", visitKey)
+		return
+	}
+	
+	// 标记为已访问
+	br.visited[visitKey] = true
+	defer func() {
+		// 在函数退出时取消标记（允许在不同路径上重新访问）
+		delete(br.visited, visitKey)
+	}()
+	
 	fmt.Printf("开始解析当前文件: %s \n", absFilePath)
 
 	// 解析当前文件
