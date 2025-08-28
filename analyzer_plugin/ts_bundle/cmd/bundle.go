@@ -33,7 +33,7 @@ func NewBundleCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			// 调用 ts_bundle 包中的 GenerateBundle 函数执行打包逻辑
-			bundledContent := ts_bundle.GenerateBundle(inputFile, inputType, outputFile, projectRoot)
+			bundledContent, _ := ts_bundle.GenerateBundle(inputFile, inputType, projectRoot)
 
 			// 将打包后的内容写入指定输出文件
 			err := os.WriteFile(outputFile, []byte(bundledContent), 0644)
