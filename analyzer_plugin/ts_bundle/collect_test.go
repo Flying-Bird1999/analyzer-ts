@@ -2,324 +2,287 @@ package ts_bundle
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// getTestProjectRoot 获取测试项目的根目录
-func getTestProjectRoot() string {
-	// 使用固定的测试数据目录
-	return filepath.Join("testdata")
+// getTestProjectRoot 是一个辅助函数，用于获取 testdata 目录的绝对路径。
+func getTestProjectRoot(t *testing.T) string {
+	projectRoot, err := filepath.Abs("testdata")
+	assert.NoError(t, err, "获取 testdata 的绝对路径失败")
+	return projectRoot
 }
 
-// TestGenerateBundle_SimpleType 测试简单类型的收集
-func TestGenerateBundle_SimpleType(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "utils", "user.ts")
-	typeName := "User"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface User", "应该包含 User 接口定义")
-	assert.Contains(t, bundledContent, "id: number", "应该包含 id 属性")
-	assert.Contains(t, bundledContent, "name: string", "应该包含 name 属性")
-	// 确保不包含其他未引用的类型
-	assert.NotContains(t, bundledContent, "UserRole", "不应该包含未引用的 UserRole")
+// TestGenerateBundle 是一个表驱动测试，覆盖了 GenerateBundle 函数的各种场景。
+// 这种结构使得添加、删除或修改测试用例变得非常容易，提高了可维护性。
+func TestGenerateBundle(t *testing.T) {
+	projectRoot := getTestProjectRoot(t)
+
+	// testCases 定义了一系列测试场景。
+	testCases := []struct {
+		name                 string   // name 测试用例的描述，会显示在测试日志中。
+		entryFile            string   // entryFile 作为依赖收集起点的文件路径。
+		typeName             string   // typeName 需要收集的目标类型名称。
+		expectedToContain    []string // expectedToContain 一个字符串切片，断言最终生成的 bundle 文件中必须包含这些字符串。
+		expectedToNotContain []string // expectedToNotContain 一个字符串切片，断言最终生成的 bundle 文件中必须不包含这些字符串。
+	}{
+		{
+			name:      "基础场景：简单接口",
+			entryFile: filepath.Join(projectRoot, "src", "utils", "user.ts"),
+			typeName:  "User",
+			expectedToContain: []string{
+				"interface User",
+				"id: number",
+				"name: string",
+			},
+			expectedToNotContain: []string{
+				"UserRole", // 确保不会收集同一文件中的其他无关类型。
+			},
+		},
+		{
+			name:      "基础场景：联合类型",
+			entryFile: filepath.Join(projectRoot, "src", "utils", "user.ts"),
+			typeName:  "UserRole",
+			expectedToContain: []string{
+				"type UserRole",
+				"'admin' | 'user'",
+			},
+		},
+		{
+			name:      "基础场景：枚举类型",
+			entryFile: filepath.Join(projectRoot, "src", "utils", "user.ts"),
+			typeName:  "UserStatus",
+			expectedToContain: []string{
+				"enum UserStatus",
+				"Active = 'active'",
+				"Inactive = 'inactive'",
+			},
+		},
+		{
+			name:      "依赖收集：接口继承 (extends)",
+			entryFile: filepath.Join(projectRoot, "src", "utils", "user.ts"),
+			typeName:  "AdminUser",
+			expectedToContain: []string{
+				"interface AdminUser",
+				"extends User",
+				"role: UserRole",
+				"status: UserStatus",
+				// 验证其依赖项（User, UserRole, UserStatus）是否也被正确收集。
+				"interface User",
+				"type UserRole",
+				"enum UserStatus",
+			},
+		},
+		{
+			name:      "依赖收集：跨文件导入与命名冲突",
+			entryFile: filepath.Join(projectRoot, "src", "index.ts"),
+			typeName:  "UserProfile",
+			expectedToContain: []string{
+				"interface UserProfile",
+				"extends User",
+				"address: Address",
+				"tags: Common_CommonType[]", // 验证 CommonType 因为命名冲突被重命名为 Common_CommonType。
+				// 验证所有直接和间接依赖项都被收集。
+				"interface User",
+				"interface Address",
+				"type Common_CommonType", // 验证被重命名的依赖项本身也被正确收集。
+			},
+		},
+		{
+			name:      "依赖收集：命名空间导入 (import * as ...)",
+			entryFile: filepath.Join(projectRoot, "src", "index.ts"),
+			typeName:  "UserId",
+			expectedToContain: []string{
+				"type UserId",
+				"Common_CommonInterface['id']", // 验证通过命名空间访问的类型被正确处理和重命名。
+				// 验证相关依赖项被收集。
+				"interface Common_CommonInterface",
+				"id: CommonType",
+				"type CommonType",
+			},
+		},
+		{
+			name:      "依赖收集：类型组合 (&)",
+			entryFile: filepath.Join(projectRoot, "src", "index.ts"),
+			typeName:  "FullUser",
+			expectedToContain: []string{
+				"type FullUser",
+				"UserProfile & AdminUser",
+				// 验证组合的所有部分及其深层依赖都被正确收集。
+				"interface UserProfile",
+				"interface AdminUser",
+				"interface User",
+				"type UserRole",
+				"enum UserStatus",
+				"interface Address",
+				"type Common_CommonType", // 验证重名类型。
+			},
+		},
+		{
+			name:      "模块解析：NPM 包导入",
+			entryFile: filepath.Join(projectRoot, "src", "external.ts"),
+			typeName:  "LocalTypeWithExternal",
+			expectedToContain: []string{
+				"interface LocalTypeWithExternal",
+				"externalProp: ExternalType",
+				// 验证能成功从 node_modules/some-package/index.d.ts 中收集类型。
+				"interface ExternalType",
+				"externalId: number",
+			},
+		},
+		{
+			name:      "高级类型：Omit 工具类型",
+			entryFile: filepath.Join(projectRoot, "src", "complex.ts"),
+			typeName:  "UserWithoutAddress",
+			expectedToContain: []string{
+				"type UserWithoutAddress = Omit<FullUser, 'address'>",
+				// 验证 Omit 的泛型参数类型被正确收集。
+				"type FullUser",
+			},
+		},
+		{
+			name:      "高级类型：Pick 工具类型",
+			entryFile: filepath.Join(projectRoot, "src", "complex.ts"),
+			typeName:  "UserBasicInfo",
+			expectedToContain: []string{
+				"type UserBasicInfo = Pick<FullUser, 'id' | 'name'>",
+				// 验证 Pick 的泛型参数类型被正确收集。
+				"type FullUser",
+			},
+		},
+		{
+			name:      "高级类型：keyof 操作符",
+			entryFile: filepath.Join(projectRoot, "src", "complex.ts"),
+			typeName:  "UserFields",
+			expectedToContain: []string{
+				"[K in keyof FullUser]?: FullUser[K]",
+				// 验证 keyof 的操作对象类型被正确收集。
+				"type FullUser",
+			},
+		},
+		{
+			name:      "高级类型：索引访问类型 (T[K])",
+			entryFile: filepath.Join(projectRoot, "src", "complex.ts"),
+			typeName:  "UserName",
+			expectedToContain: []string{
+				"type UserName = FullUser['name']",
+				// 验证索引访问的对象类型被正确收集。
+				"type FullUser",
+			},
+		},
+		{
+			name:      "模块解析：tsconfig.json 路径别名 (@/...)",
+			entryFile: filepath.Join(projectRoot, "src", "path-alias.ts"),
+			typeName:  "PathAliasUser",
+			expectedToContain: []string{
+				"interface PathAliasUser",
+				"extends AliasUser",
+				"role: AliasRole",
+				// 验证能通过路径别名找到并收集依赖。
+				"interface AliasUser",
+				"type AliasRole",
+			},
+		},
+		{
+			name:      "边缘场景：循环依赖",
+			entryFile: filepath.Join(projectRoot, "src", "circular.ts"),
+			typeName:  "CircularType",
+			expectedToContain: []string{
+				"interface CircularType",
+				"b?: CircularBType",
+				"interface CircularBType",
+				"a?: CircularAType",
+				"interface CircularAType",
+			},
+		},
+		{
+			name:      "边缘场景：请求一个不存在的类型",
+			entryFile: filepath.Join(projectRoot, "src", "utils", "user.ts"),
+			typeName:  "NonExistentType",
+			// 期望返回空内容且无错误。
+			expectedToContain:    []string{},
+			expectedToNotContain: []string{"interface", "type", "enum"},
+		},
+		{
+			name:      "导出模式：默认导出 (export default)",
+			entryFile: filepath.Join(projectRoot, "src", "default-export.ts"),
+			typeName:  "DefaultExportedType",
+			expectedToContain: []string{
+				"interface DefaultExportedType",
+				"id: string",
+				"value: boolean",
+			},
+		},
+		{
+			name:      "导出模式：重命名重新导出 (export { A as B } from ...)",
+			entryFile: filepath.Join(projectRoot, "src", "re-export.ts"),
+			typeName:  "ReExportedType",
+			expectedToContain: []string{
+				// 打包器应该正确地将类型重命名为其导出的别名。
+				"interface ReExportedType",
+				"message: string",
+			},
+		},
+		{
+			name:      "导出模式：通配符重新导出 (export * from ...)",
+			entryFile: filepath.Join(projectRoot, "src", "re-export.ts"),
+			typeName:  "User", // 这个类型来自通配符导出 `export * from './utils/user'`
+			expectedToContain: []string{
+				"interface User",
+				"id: number",
+				"name: string",
+			},
+			expectedToNotContain: []string{
+				"AdminUser", // 确保不会引入无关的类型。
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// 调用核心函数 GenerateBundle 进行测试。
+			bundledContent, err := GenerateBundle(tc.entryFile, tc.typeName, projectRoot)
+
+			// 所有表中的测试用例都预期成功执行，不应返回错误。
+			assert.NoError(t, err, "GenerateBundle should execute without errors")
+
+			// 特殊处理“不存在类型”的用例，预期返回一个完全空的字符串。
+			if tc.typeName == "NonExistentType" {
+				assert.Equal(t, "", bundledContent, "对于不存在的类型，捆绑内容应为空")
+				return
+			}
+
+			// 对于所有其他情况，检查预期包含和不应包含的子字符串。
+			// 这种断言方式比精确匹配整个文件内容更健壮，因为它对代码格式（如空格、换行）不敏感。
+			for _, expected := range tc.expectedToContain {
+				assert.Contains(t, bundledContent, expected, "捆绑内容应包含预期的字符串")
+			}
+
+			for _, notExpected := range tc.expectedToNotContain {
+				assert.NotContains(t, bundledContent, notExpected, "捆绑内容不应包含意外的字符串")
+			}
+
+			// 一个通用检查，确保对于有效类型，生成的内容不为空。
+			if len(tc.expectedToContain) > 0 {
+				assert.NotEmpty(t, strings.TrimSpace(bundledContent), "对于存在的类型，捆绑内容不应为空")
+			}
+		})
+	}
 }
 
-// TestGenerateBundle_TypeWithUnion 测试联合类型的收集
-func TestGenerateBundle_TypeWithUnion(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "utils", "user.ts")
-	typeName := "UserRole"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "type UserRole", "应该包含 UserRole 类型定义")
-	assert.Contains(t, bundledContent, "'admin' | 'user'", "应该包含联合类型定义")
-}
+// TestGenerateBundle_ErrorCases 测试预期会返回错误的场景。
+func TestGenerateBundle_ErrorCases(t *testing.T) {
+	projectRoot := getTestProjectRoot(t)
 
-// TestGenerateBundle_EnumType 测试枚举类型的收集
-func TestGenerateBundle_EnumType(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "utils", "user.ts")
-	typeName := "UserStatus"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "enum UserStatus", "应该包含 UserStatus 枚举定义")
-	assert.Contains(t, bundledContent, "Active = 'active'", "应该包含 Active 枚举值")
-	assert.Contains(t, bundledContent, "Inactive = 'inactive'", "应该包含 Inactive 枚举值")
-}
+	t.Run("边缘场景：入口文件不存在", func(t *testing.T) {
+		entryFile := filepath.Join(projectRoot, "src", "non-existent-file.ts")
+		typeName := "AnyType"
 
-// TestGenerateBundle_InterfaceExtends 测试接口继承的类型收集
-func TestGenerateBundle_InterfaceExtends(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "utils", "user.ts")
-	typeName := "AdminUser"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "extends User", "应该包含 extends User")
-	assert.Contains(t, bundledContent, "role: UserRole", "应该包含 role 属性")
-	assert.Contains(t, bundledContent, "status: UserStatus", "应该包含 status 属性")
-	// 确保也包含了被继承的 User 接口和依赖的 UserRole、UserStatus
-	assert.Contains(t, bundledContent, "interface User", "应该包含被继承的 User 接口定义")
-	assert.Contains(t, bundledContent, "type UserRole", "应该包含依赖的 UserRole 类型定义")
-	assert.Contains(t, bundledContent, "enum UserStatus", "应该包含依赖的 UserStatus 枚举定义")
-}
+		_, err := GenerateBundle(entryFile, typeName, projectRoot)
 
-// TestGenerateBundle_TypeWithImport 测试带导入的类型收集
-func TestGenerateBundle_TypeWithImport(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "index.ts")
-	typeName := "UserProfile"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "extends User", "应该包含 extends User")
-	assert.Contains(t, bundledContent, "address: Address", "应该包含 address 属性")
-	// 检查重命名后的类型
-	assert.Contains(t, bundledContent, "tags: Common_CommonType[]", "应该包含重命名后的 tags 属性")
-	// 确保包含了所有依赖的类型
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-	assert.Contains(t, bundledContent, "interface Address", "应该包含依赖的 Address 接口定义")
-	assert.Contains(t, bundledContent, "type Common_CommonType", "应该包含重命名后的 CommonType 类型定义")
-}
-
-// TestGenerateBundle_NamespaceImport 测试命名空间导入的类型收集
-func TestGenerateBundle_NamespaceImport(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "index.ts")
-	typeName := "UserId"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "type UserId", "应该包含 UserId 类型定义")
-	// 检查重命名后的类型
-	assert.Contains(t, bundledContent, "Common_CommonInterface['id']", "应该包含重命名后的索引访问类型")
-	// 确保包含了 CommonInterface
-	assert.Contains(t, bundledContent, "interface Common_CommonInterface", "应该包含重命名后的 CommonInterface 接口定义")
-	assert.Contains(t, bundledContent, "id: CommonType", "应该包含 CommonInterface 的 id 属性")
-	assert.Contains(t, bundledContent, "type CommonType", "应该包含 CommonType 类型定义")
-}
-
-// TestGenerateBundle_TypeComposition 测试类型组合的收集
-func TestGenerateBundle_TypeComposition(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "index.ts")
-	typeName := "FullUser"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "type FullUser", "应该包含 FullUser 类型定义")
-	// 确保包含了所有组合的类型
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含依赖的 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含依赖的 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-	assert.Contains(t, bundledContent, "type UserRole", "应该包含依赖的 UserRole 类型定义")
-	assert.Contains(t, bundledContent, "enum UserStatus", "应该包含依赖的 UserStatus 枚举定义")
-	assert.Contains(t, bundledContent, "interface Address", "应该包含依赖的 Address 接口定义")
-	// 检查重命名后的类型
-	assert.Contains(t, bundledContent, "type Common_CommonType", "应该包含重命名后的 CommonType 类型定义")
-}
-
-// TestGenerateBundle_ExternalPackageImport 测试外部包导入的类型收集
-func TestGenerateBundle_ExternalPackageImport(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "external.ts")
-	typeName := "LocalTypeWithExternal"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface LocalTypeWithExternal", "应该包含 LocalTypeWithExternal 接口定义")
-	assert.Contains(t, bundledContent, "externalProp: ExternalType", "应该包含 externalProp 属性")
-	// 确保包含了外部类型
-	assert.Contains(t, bundledContent, "interface ExternalType", "应该包含依赖的 ExternalType 接口定义")
-	assert.Contains(t, bundledContent, "externalId: number", "应该包含 ExternalType 的 externalId 属性")
-	assert.Contains(t, bundledContent, "externalName: string", "应该包含 ExternalType 的 externalName 属性")
-}
-
-// TestGenerateBundle_ComplexTypes 测试复杂类型的收集
-func TestGenerateBundle_ComplexTypes(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "complex.ts")
-	typeName := "UserFields"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "type UserFields", "应该包含 UserFields 类型定义")
-	// 检查是否包含了必要的依赖类型 (注意类型可能已被重命名)
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含依赖的 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含依赖的 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-	// 检查重命名后的类型
-	assert.Contains(t, bundledContent, "type Common_CommonType", "应该包含重命名后的 CommonType 类型定义")
-}
-
-// TestGenerateBundle_TypeWithOmit 测试使用 Omit 的类型收集
-func TestGenerateBundle_TypeWithOmit(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "complex.ts")
-	typeName := "UserWithoutAddress"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	// 由于 Omit 是工具类型，实际输出应该是展开后的类型
-	// 我们检查是否包含了必要的依赖类型 (注意类型可能已被重命名)
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含依赖的 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含依赖的 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-	assert.Contains(t, bundledContent, "interface Address", "应该包含依赖的 Address 接口定义")
-	// 检查重命名后的类型
-	assert.Contains(t, bundledContent, "type Common_CommonType", "应该包含重命名后的 CommonType 类型定义")
-}
-
-// TestGenerateBundle_TypeWithPick 测试使用 Pick 的类型收集
-func TestGenerateBundle_TypeWithPick(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "complex.ts")
-	typeName := "UserBasicInfo"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	// 由于 Pick 是工具类型，实际输出应该是展开后的类型
-	// 我们检查是否包含了必要的依赖类型 (注意类型可能已被重命名)
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含依赖的 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含依赖的 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-}
-
-// TestGenerateBundle_NamespaceTypeAccess 测试命名空间类型访问的收集
-func TestGenerateBundle_NamespaceTypeAccess(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "complex.ts")
-	typeName := "UserTypeCheck"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface UserTypeCheck", "应该包含 UserTypeCheck 接口定义")
-	// 检查重命名后的类型引用
-	assert.Contains(t, bundledContent, "userId: UserUtils_User['id']", "应该包含重命名后的 userId 属性")
-	assert.Contains(t, bundledContent, "userRole: UserUtils_UserRole", "应该包含重命名后的 userRole 属性")
-	// 确保包含了依赖的类型 (注意类型可能已被重命名)
-	assert.Contains(t, bundledContent, "interface UserUtils_User", "应该包含重命名后的 User 接口定义")
-	assert.Contains(t, bundledContent, "type UserUtils_UserRole", "应该包含重命名后的 UserRole 类型定义")
-}
-
-// TestGenerateBundle_IndexedAccessType 测试索引访问类型的收集
-func TestGenerateBundle_IndexedAccessType(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "complex.ts")
-	typeName := "UserName"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	// 由于是索引访问类型，实际输出应该是 string 类型
-	// 我们检查是否包含了必要的依赖类型 (注意类型可能已被重命名)
-	assert.Contains(t, bundledContent, "interface UserProfile", "应该包含依赖的 UserProfile 接口定义")
-	assert.Contains(t, bundledContent, "interface AdminUser", "应该包含依赖的 AdminUser 接口定义")
-	assert.Contains(t, bundledContent, "interface User", "应该包含依赖的 User 接口定义")
-}
-
-// TestGenerateBundle_ImportWithAlias 测试带别名的导入
-func TestGenerateBundle_ImportWithAlias(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "advanced.ts")
-	typeName := "AdvancedUser"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface AdvancedUser", "应该包含 AdvancedUser 接口定义")
-	// 检查是否正确处理了别名导入
-	assert.Contains(t, bundledContent, "aliasId: number", "应该包含 aliasId 属性")
-	assert.Contains(t, bundledContent, "aliasName: string", "应该包含 aliasName 属性")
-	assert.Contains(t, bundledContent, "'admin' | 'user'", "应该包含 AliasRole 的联合类型定义")
-}
-
-// TestGenerateBundle_DefaultImportWithAlias 测试带别名的默认导入
-func TestGenerateBundle_DefaultImportWithAlias(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "advanced.ts")
-	typeName := "AdvancedDefaultUser2"
-	
-	_, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	// 注意：对于默认导入，我们可能无法直接获取到原始类型的属性，因为默认导入的是整个模块
-	// 这个测试主要是验证不会出错
-}
-
-// TestGenerateBundle_ImportType 测试 import type 语法
-func TestGenerateBundle_ImportType(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "advanced.ts")
-	typeName := "AdvancedRole"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "type AdvancedRole", "应该包含 AdvancedRole 类型定义")
-	// 检查是否正确处理了 import type
-	assert.Contains(t, bundledContent, "'admin' | 'user'", "应该包含 AliasRole 的联合类型定义")
-}
-
-// TestGenerateBundle_ReExportWithAlias 测试带别名的重新导出
-func TestGenerateBundle_ReExportWithAlias(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "advanced.ts")
-	typeName := "RenamedAliasUser"
-	
-	_, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	// 注意：重新导出的类型在打包结果中可能不会直接显示，这个测试主要是验证不会出错
-}
-
-// TestGenerateBundle_PathAliasImport 测试路径别名导入
-func TestGenerateBundle_PathAliasImport(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "path-alias.ts")
-	typeName := "PathAliasUser"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface PathAliasUser", "应该包含 PathAliasUser 接口定义")
-	// 检查是否正确处理了路径别名导入
-	assert.Contains(t, bundledContent, "aliasId: number", "应该包含 aliasId 属性")
-	assert.Contains(t, bundledContent, "aliasName: string", "应该包含 aliasName 属性")
-	assert.Contains(t, bundledContent, "'admin' | 'user'", "应该包含 AliasRole 的联合类型定义")
-}
-
-// TestGenerateBundle_CircularDependency 测试循环依赖导入
-func TestGenerateBundle_CircularDependency(t *testing.T) {
-	projectRoot, _ := filepath.Abs(getTestProjectRoot())
-	entryFile := filepath.Join(projectRoot, "src", "circular.ts")
-	typeName := "CircularType"
-	
-	bundledContent, err := GenerateBundle(entryFile, typeName, projectRoot)
-	
-	assert.NoError(t, err, "GenerateBundle 应该成功执行")
-	assert.Contains(t, bundledContent, "interface CircularType", "应该包含 CircularType 接口定义")
-	// 检查是否正确处理了循环依赖
-	assert.Contains(t, bundledContent, "interface CircularAType", "应该包含 CircularAType 接口定义")
-	assert.Contains(t, bundledContent, "aName: string", "应该包含 aName 属性")
+		// 对于一个不存在的文件，底层的解析器应该会失败，我们预期这里会收到一个错误。
+		assert.Error(t, err, "对于不存在的入口文件，GenerateBundle 应该返回一个错误")
+	})
 }

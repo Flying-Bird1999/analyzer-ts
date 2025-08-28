@@ -758,12 +758,12 @@ func (pr *ParserResult) GetResult() ParserResult {
 
 // Traverse 是旧的入口点，现在它将工作委托给新的 Parser 结构。
 // 这样做是为了保持对外的 API 兼容性。
-func (pr *ParserResult) Traverse() {
+func (pr *ParserResult) Traverse() error {
 	p, err := NewParser(pr.filePath)
 	if err != nil {
-		fmt.Printf("Error creating parser: %v\n", err)
-		return
+		return fmt.Errorf("Error creating parser: %w", err)
 	}
 	p.Traverse()
 	*pr = *p.Result
+	return nil
 }
