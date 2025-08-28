@@ -255,7 +255,7 @@ func GenerateOutputFileName(inputPath, suffix string) string {
 //   - error: 解析过程中可能发生的错误。
 func ParseProject(rootPath string, ignore []string, isMonorepo bool) (*projectParser.ProjectParserResult, error) {
 	// 步骤 1: 创建项目解析器配置。
-	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo)
+	config := projectParser.NewProjectParserConfig(rootPath, ignore, isMonorepo, []string{})
 
 	// 步骤 2: 创建用于存储解析结果的容器。
 	ar := projectParser.NewProjectParserResult(config)

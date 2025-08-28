@@ -26,6 +26,8 @@ type ProjectParserConfig struct {
 	PackageTsConfigMaps map[string]TsConfig
 	// Extensions 是一个字符串切片，定义了需要被解析的文件的扩展名。
 	Extensions []string
+	// TargetExtensions 是一个可选的字符串切片，如果提供，将只解析这些扩展名的文件，覆盖默认的 Extensions。
+	TargetExtensions []string
 	// Ignore 是一个字符串切片，定义了在文件扫描时需要忽略的目录或文件的模式。
 	Ignore []string
 	// IsMonorepo 是一个布尔值，指示当前分析的项目是否是一个 monorepo 仓库。
@@ -42,7 +44,7 @@ type ProjectParserResult struct {
 
 // NewProjectParserConfig 创建并初始化一个项目解析器的配置对象。
 // 它会设置默认值，并根据项目类型（是否为 monorepo）解析路径别名。
-func NewProjectParserConfig(rootPath string, ignore []string, isMonorepo bool) ProjectParserConfig {
+func NewProjectParserConfig(rootPath string, ignore []string, isMonorepo bool, targetExtensions []string) ProjectParserConfig {
 	absRootPath, _ := filepath.Abs(rootPath)
 	extensions := []string{".ts", ".tsx", ".d.ts", ".js", ".jsx"}
 	rootTsConfig := ReadAliasFromTsConfig(absRootPath)
@@ -62,6 +64,7 @@ func NewProjectParserConfig(rootPath string, ignore []string, isMonorepo bool) P
 		RootTsConfig:        rootTsConfig,
 		PackageTsConfigMaps: packageTsConfigs,
 		Extensions:          extensions,
+		TargetExtensions:    targetExtensions,
 		Ignore:              ignore,
 		IsMonorepo:          isMonorepo,
 	}
@@ -81,8 +84,21 @@ func (ppr *ProjectParserResult) ProjectParser() {
 	projectScanner := scanProject.NewProjectResult(ppr.Config.RootPath, ppr.Config.Ignore, ppr.Config.IsMonorepo)
 	projectScanner.ScanProject()
 
+	extensionsToUse := ppr.Config.Extensions
+	if len(ppr.Config.TargetExtensions) > 0 {
+		extensionsToUse = ppr.Config.TargetExtensions
+	}
+
 	for targetPath, fileDetail := range projectScanner.GetFileList() {
-		if lo.Contains(ppr.Config.Extensions, fileDetail.Ext) {
+		included := false
+		for _, ext := range extensionsToUse {
+			if strings.HasSuffix(targetPath, ext) {
+				included = true
+				break
+			}
+		}
+
+		if included {
 			ppr.parseJsFile(targetPath)
 		}
 

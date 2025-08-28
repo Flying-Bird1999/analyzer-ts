@@ -8,25 +8,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// getTestProjectRoot 是一个辅助函数，用于获取 testdata 目录的绝对路径。
+// getTestProjectRoot 是一个测试辅助函数，用于获取测试数据目录（`testdata`）的绝对路径。
+// 为了保证测试的稳定性，我们所有的测试用例都基于这个固定的目录结构进行。
 func getTestProjectRoot(t *testing.T) string {
 	projectRoot, err := filepath.Abs("testdata")
 	assert.NoError(t, err, "获取 testdata 的绝对路径失败")
 	return projectRoot
 }
 
-// TestGenerateBundle 是一个表驱动测试，覆盖了 GenerateBundle 函数的各种场景。
-// 这种结构使得添加、删除或修改测试用例变得非常容易，提高了可维护性。
+// TestGenerateBundle 是一个全面的表驱动测试，它系统地覆盖了 `GenerateBundle` 函数的各种核心功能和边缘场景。
+// 表驱动测试（Table-Driven Test）是一种将测试用例的数据和断言逻辑分离的设计模式。
+// 所有的测试场景都定义在一个名为 `testCases` 的切片中，每个元素代表一个独立的测试用例。
+// 这种结构极大地提高了测试代码的可读性、可维护性和可扩展性。当需要添加新的测试场景时，只需向 `testCases` 切片中增加一个新的结构体实例即可。
 func TestGenerateBundle(t *testing.T) {
 	projectRoot := getTestProjectRoot(t)
 
 	// testCases 定义了一系列测试场景。
 	testCases := []struct {
-		name                 string   // name 测试用例的描述，会显示在测试日志中。
-		entryFile            string   // entryFile 作为依赖收集起点的文件路径。
-		typeName             string   // typeName 需要收集的目标类型名称。
-		expectedToContain    []string // expectedToContain 一个字符串切片，断言最终生成的 bundle 文件中必须包含这些字符串。
-		expectedToNotContain []string // expectedToNotContain 一个字符串切片，断言最终生成的 bundle 文件中必须不包含这些字符串。
+		name                 string   // name: 测试用例的描述，会显示在 `go test -v` 的日志中，便于快速定位问题。
+		entryFile            string   // entryFile: 作为依赖收集起点的文件路径。
+		typeName             string   // typeName: 需要收集的目标类型名称。
+		expectedToContain    []string // expectedToContain: 一个字符串切片，断言最终生成的 bundle 文件中必须包含这些字符串。
+		expectedToNotContain []string // expectedToNotContain: 一个字符串切片，断言最终生成的 bundle 文件中必须不包含这些字符串。
 	}{
 		{
 			name:      "基础场景：简单接口",
@@ -238,15 +241,28 @@ func TestGenerateBundle(t *testing.T) {
 				"AdminUser", // 确保不会引入无关的类型。
 			},
 		},
+		{
+			name:      "全局类型：从 .d.ts 文件收集环境类型",
+			entryFile: filepath.Join(projectRoot, "src", "uses-global.ts"),
+			typeName:  "UsesGlobal",
+			expectedToContain: []string{
+				"interface UsesGlobal",
+				"prop: MyGlobalType",
+				// 验证 `MyGlobalType`（在 global.d.ts 中声明）被成功收集。
+				"interface MyGlobalType",
+				"id: string",
+			},
+		},
 	}
 
+	// 遍历并执行所有测试用例。
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// 调用核心函数 GenerateBundle 进行测试。
 			bundledContent, err := GenerateBundle(tc.entryFile, tc.typeName, projectRoot)
 
 			// 所有表中的测试用例都预期成功执行，不应返回错误。
-			assert.NoError(t, err, "GenerateBundle should execute without errors")
+			assert.NoError(t, err, "GenerateBundle 应该成功执行，不产生错误")
 
 			// 特殊处理“不存在类型”的用例，预期返回一个完全空的字符串。
 			if tc.typeName == "NonExistentType" {

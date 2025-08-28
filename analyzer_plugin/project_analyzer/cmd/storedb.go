@@ -45,7 +45,7 @@ func NewStoreDbCmd() *cobra.Command {
 			}
 
 			fmt.Println("开始分析...")
-			config := projectParser.NewProjectParserConfig(inputPath, excludePatterns, isMonorepo)
+			config := projectParser.NewProjectParserConfig(inputPath, excludePatterns, isMonorepo, []string{})
 			projectData := projectParser.NewProjectParserResult(config)
 			projectData.ProjectParser()
 			fmt.Println(fmt.Sprintf("分析完成。发现 %d 个JS/TS文件和 %d 个package.json文件。", len(projectData.Js_Data), len(projectData.Package_Data)))
