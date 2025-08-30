@@ -2,102 +2,197 @@ package parser_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/stretchr/testify/assert"
 )
 
-// TestAnalyzeCallExpression 测试分析调用表达式的功能
-func TestAnalyzeCallExpression(t *testing.T) {
-	// expectedResult 定义了测试期望的结果结构体
-	type expectedResult struct {
-		CallChain []string          `json:"callChain"` // 调用链
-		Arguments []parser.Argument `json:"arguments"` // 参数
-		Type      string            `json:"type"`      // 类型
-	}
+// expectedCallResult 是一个简化的结构，仅用于在测试中断言核心字段。
+// 这样可以忽略像 SourceLocation 这样容易变动且与核心逻辑无关的字段。
+type expectedCallResult struct {
+	Expression *parser.VariableValue   `json:"expression"`
+	CallChain  []string                `json:"callChain"`
+	Arguments  []*parser.VariableValue `json:"arguments"`
+	Raw        string                `json:"raw"`
+}
 
-	// testCases 定义了一系列的测试用例
+func TestCallExpression(t *testing.T) {
 	testCases := []struct {
-		name           string         // 测试用例名称
-		code           string         // 需要被解析的代码
-		expectedResult expectedResult // 期望的解析结果
+		name               string
+		code               string
+		expectedCalls      []expectedCallResult
+		expectedImportDecl int // 用于测试动态导入
 	}{
 		{
 			name: "简单的函数调用",
-			code: `myFunction();`,
-			expectedResult: expectedResult{
-				CallChain: []string{"myFunction"},
-				Arguments: []parser.Argument{},
-				Type:      "call",
-			},
-		},
-		{
-			name: "带参数的函数调用",
-			code: `myFunction(1, "hello", true, myVar);`,
-			expectedResult: expectedResult{
-				CallChain: []string{"myFunction"},
-				Arguments: []parser.Argument{
-					{Type: "number", Text: "1"},
-					{Type: "string", Text: "\"hello\""},
-					{Type: "boolean", Text: "true"},
-					{Type: "identifier", Text: "myVar"},
+			code: `foo(1, 'bar');`,
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "identifier",
+						Expression: "foo",
+						Data:       "foo",
+					},
+					CallChain: []string{"foo"},
+					Arguments: []*parser.VariableValue{
+						{
+							Type:       "numericLiteral",
+							Expression: "1",
+							Data:       "1",
+						},
+						{
+							Type:       "stringLiteral",
+							Expression: "'bar'",
+							Data:       "bar",
+						},
+					},
+					Raw: "foo(1, 'bar')",
 				},
-				Type: "call",
 			},
 		},
 		{
-			name: "成员访问调用",
-			code: `myObj.myMethod();`,
-			expectedResult: expectedResult{
-				CallChain: []string{"myObj", "myMethod"},
-				Arguments: []parser.Argument{},
-				Type:      "member",
-			},
-		},
-		{
-			name: "链式成员访问调用",
-			code: `this.a.b.c(123);`,
-			expectedResult: expectedResult{
-				CallChain: []string{"this", "a", "b", "c"},
-				Arguments: []parser.Argument{
-					{Type: "number", Text: "123"},
+			name: "成员方法调用",
+			code: `myObj.method.call(null, a, b);`,
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "propertyAccess",
+						Expression: "myObj.method.call",
+					},
+					CallChain: []string{"myObj", "method", "call"},
+					Arguments: []*parser.VariableValue{
+						{
+							Type:       "other",
+							Expression: "null",
+						},
+						{
+							Type:       "identifier",
+							Expression: "a",
+							Data:       "a",
+						},
+						{
+							Type:       "identifier",
+							Expression: "b",
+							Data:       "b",
+						},
+					},
+					Raw: "myObj.method.call(null, a, b)",
 				},
-				Type: "member",
 			},
+		},
+		{
+			name: "无参数调用",
+			code: `run();`,
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "identifier",
+						Expression: "run",
+						Data:       "run",
+					},
+					CallChain: []string{"run"},
+					Arguments:  []*parser.VariableValue{},
+					Raw:        "run()",
+				},
+			},
+		},
+		{
+			name: "复杂参数调用",
+			code: `register({ user: 'test' }, () => { return true; });`,
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "identifier",
+						Expression: "register",
+						Data:       "register",
+					},
+					CallChain: []string{"register"},
+					Arguments: []*parser.VariableValue{
+						{
+							Type:       "objectLiteral",
+							Expression: "{ user: 'test' }",
+						},
+						{
+							Type:       "arrowFunction",
+							Expression: "() => { return true; }",
+						},
+					},
+					Raw: "register({ user: 'test' }, () => { return true; })",
+				},
+			},
+		},
+		{
+			name: "被调用者是函数调用",
+			code: `getHandler()();`,
+			// 注意：顺序已根据深度优先遍历的实际结果调整
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "callExpression",
+						Expression: "getHandler()",
+					},
+					CallChain:  []string{"getHandler()"},
+					Arguments:  []*parser.VariableValue{},
+					Raw:        "getHandler()()",
+				},
+				{
+					Expression: &parser.VariableValue{
+						Type:       "identifier",
+						Expression: "getHandler",
+						Data:       "getHandler",
+					},
+					CallChain:  []string{"getHandler"},
+					Arguments:  []*parser.VariableValue{},
+					Raw:        "getHandler()",
+				},
+			},
+		},
+		{
+			name:               "独立的动态导入",
+			code:               `import('./module');`,
+			expectedCalls:      []expectedCallResult{},
+			expectedImportDecl: 1, // 期望生成一个导入声明
 		},
 	}
 
-	// extractFn 定义了如何从完整的解析结果中提取我们关心的部分
-	extractFn := func(result *parser.ParserResult) parser.CallExpression {
-		if len(result.CallExpressions) > 0 {
-			return result.CallExpressions[0]
-		}
-		return parser.CallExpression{}
-	}
-
-	// marshalFn 定义了如何将提取出的结果序列化为 JSON
-	marshalFn := func(result parser.CallExpression) ([]byte, error) {
-		return json.MarshalIndent(struct {
-			CallChain []string          `json:"callChain"`
-			Arguments []parser.Argument `json:"arguments"`
-			Type      string            `json:"type"`
-		}{
-			CallChain: result.CallChain,
-			Arguments: result.Arguments,
-			Type:      result.Type,
-		}, "", "\t")
-	}
-
-	// 遍历所有测试用例并执行测试
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// 将期望结果序列化为 JSON
-			expectedJSON, err := json.MarshalIndent(tc.expectedResult, "", "\t")
-			if err != nil {
-				t.Fatalf("无法将期望结果序列化为 JSON: %v", err)
+			// 检查调用表达式
+			RunTest(t, tc.code, func() string {
+				jsonBytes, err := json.Marshal(tc.expectedCalls)
+				assert.NoError(t, err)
+				return string(jsonBytes)
+			}(),
+				func(result *parser.ParserResult) []expectedCallResult {
+					cleanedActuals := []expectedCallResult{}
+					for _, callExpr := range result.CallExpressions {
+						cleanedActuals = append(cleanedActuals, expectedCallResult{
+							Expression: callExpr.Expression,
+							CallChain:  callExpr.CallChain,
+							Arguments:  callExpr.Arguments,
+							Raw:        callExpr.Raw,
+						})
+					}
+					return cleanedActuals
+				},
+				func(result []expectedCallResult) ([]byte, error) {
+					return json.Marshal(result)
+				})
+
+			// 如果需要，检查动态导入声明的数量
+			if tc.expectedImportDecl > 0 {
+				wd, err := os.Getwd()
+				assert.NoError(t, err)
+				dummyPath := filepath.Join(wd, "test.ts")
+
+				p, err := parser.NewParserFromSource(dummyPath, tc.code)
+				assert.NoError(t, err)
+				p.Traverse()
+				assert.Equal(t, tc.expectedImportDecl, len(p.Result.ImportDeclarations), "动态导入声明的数量应匹配")
 			}
-			// 运行测试
-			RunTest(t, tc.code, string(expectedJSON), extractFn, marshalFn)
 		})
 	}
 }

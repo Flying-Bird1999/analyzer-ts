@@ -95,7 +95,12 @@ func toFilteredResult(ar *projectParser.ProjectParserResult) *FilteredProjectPar
 				return FilteredVariableDeclaration{Exported: decl.Exported, Kind: decl.Kind, Source: decl.Source, Declarators: decl.Declarators}
 			}),
 			CallExpressions: lo.Map(jsData.CallExpressions, func(expr parser.CallExpression, _ int) FilteredCallExpression {
-				return FilteredCallExpression{CallChain: expr.CallChain, Arguments: expr.Arguments, Type: expr.Type}
+				return FilteredCallExpression{
+					CallChain: expr.CallChain,
+					Arguments: lo.Map(expr.Arguments, func(arg *parser.VariableValue, _ int) parser.VariableValue {
+						return *arg
+					}),
+				}
 			}),
 			JsxElements: lo.Map(jsData.JsxElements, func(elem projectParser.JSXElementResult, _ int) FilteredJSXElement {
 				return FilteredJSXElement{ComponentChain: elem.ComponentChain, Attrs: elem.Attrs}
@@ -128,9 +133,8 @@ type FilteredVariableDeclaration struct {
 }
 
 type FilteredCallExpression struct {
-	CallChain []string          `json:"callChain"`
-	Arguments []parser.Argument `json:"arguments"`
-	Type      string            `json:"type"`
+	CallChain []string               `json:"callChain"`
+	Arguments []parser.VariableValue `json:"arguments"`
 }
 
 type FilteredJSXElement struct {
