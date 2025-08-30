@@ -4,7 +4,7 @@ package parser
 
 import (
 	"fmt"
-	"strings"
+	"runtime/debug"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
@@ -49,77 +49,49 @@ func NewParserFromSource(filePath string, sourceCode string) (*Parser, error) {
 	}, nil
 }
 
-// addResult 将提取的结果添加到相应的结果集中
-func (p *Parser) addResult(result interface{}) {
-	switch r := result.(type) {
-	case AnyInfo:
-		p.Result.ExtractedNodes.AnyDeclarations = append(p.Result.ExtractedNodes.AnyDeclarations, r)
-	case AsExpression:
-		p.Result.ExtractedNodes.AsExpressions = append(p.Result.ExtractedNodes.AsExpressions, r)
-		// 未来添加更多类型
-	}
+
+
+// Visitor 定义了 AST 遍历期间访问不同类型节点的接口。
+// 每个 Visit 方法对应一种我们关心的 AST 节点类型。
+// 这种设计模式（访问者模式）将节点处理逻辑从遍历逻辑中解耦，
+// 使得添加对新节点类型的支持变得容易，而无需修改核心的遍历代码。
+type Visitor interface {
+	VisitImportDeclaration(*ast.ImportDeclaration)
+	VisitExportDeclaration(*ast.ExportDeclaration)
+	VisitExportAssignment(*ast.ExportAssignment)
+	VisitInterfaceDeclaration(*ast.InterfaceDeclaration)
+	VisitTypeAliasDeclaration(*ast.TypeAliasDeclaration)
+	VisitEnumDeclaration(*ast.EnumDeclaration)
+	VisitVariableStatement(*ast.VariableStatement)
+	VisitCallExpression(*ast.CallExpression)
+	VisitJsxElement(*ast.Node) // JsxElement 和 JsxSelfClosingElement 没有独立的类型，使用 Node
+	VisitFunctionDeclaration(*ast.FunctionDeclaration)
+	VisitAnyKeyword(*ast.Node)
+	VisitAsExpression(*ast.AsExpression)
 }
 
 // Traverse 是解析器的核心驱动函数。
-// 它通过启动一个递归的 `walk` 函数来深度优先遍历整个 AST，从而识别和解析各种类型的节点。
+// 它通过启动一个递归的 `walk` 函数来深度优先遍历整个 AST。
+// 在每个节点上，它会调用 `dispatch` 方法，该方法会根据节点类型调用合适的 Visitor 方法。
 func (p *Parser) Traverse() {
-	// 定义所有提取器
-	extractors := []Extractor{
-		&AnyExtractor{},
-		&AsExtractor{},
-		// 未来添加更多提取器
-	}
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("recovered from panic: %v\n%s", r, debug.Stack())
+			p.Result.Errors = append(p.Result.Errors, err)
+		}
+	}()
 
 	var walk func(node *ast.Node)
-	// walk 是一个递归函数，用于遍历 AST 树。
 	walk = func(node *ast.Node) {
 		if node == nil {
 			return
 		}
 
-		// 使用提取器处理节点
-		for _, extractor := range extractors {
-			if extractor.CanExtract(node) {
-				result := extractor.Extract(node, p.SourceCode)
-				p.addResult(result)
-			}
-		}
-
-		// switch 语句是节点类型分发器。
-		// 它根据当前节点的类型，调用相应的 `analyze...` 方法进行处理。
-		switch node.Kind {
-		case ast.KindImportDeclaration:
-			p.analyzeImportDeclaration(node.AsImportDeclaration())
-			return // 导入声明不需深入遍历其子节点。
-
-		case ast.KindExportDeclaration:
-			p.analyzeExportDeclaration(node.AsExportDeclaration())
-			return // 导出声明同样不需深入遍历。
-
-		case ast.KindExportAssignment:
-			p.analyzeExportAssignment(node.AsExportAssignment())
-			return // `export default` 也不需深入遍历。
-
-		case ast.KindInterfaceDeclaration:
-			p.analyzeInterfaceDeclaration(node.AsInterfaceDeclaration())
-
-		case ast.KindTypeAliasDeclaration:
-			p.analyzeTypeAliasDeclaration(node.AsTypeAliasDeclaration())
-
-		case ast.KindEnumDeclaration:
-			p.analyzeEnumDeclaration(node.AsEnumDeclaration())
-
-		case ast.KindVariableStatement:
-			p.analyzeVariableStatement(node.AsVariableStatement())
-
-		case ast.KindCallExpression:
-			p.analyzeCallExpression(node.AsCallExpression())
-
-		case ast.KindJsxElement, ast.KindJsxSelfClosingElement:
-			p.analyzeJsxElement(node)
-
-		case ast.KindFunctionDeclaration:
-			p.analyzeFunctionDeclaration(node.AsFunctionDeclaration())
+		// dispatch 会调用此节点对应的 Visit 方法。
+		// continueWalk 控制是否需要继续遍历该节点的子节点。
+		continueWalk := p.dispatch(node)
+		if !continueWalk {
+			return
 		}
 
 		// 递归地访问所有子节点。
@@ -133,546 +105,79 @@ func (p *Parser) Traverse() {
 	walk(p.Ast)
 }
 
-// analyzeImportDeclaration 解析静态导入声明。
-func (p *Parser) analyzeImportDeclaration(node *ast.ImportDeclaration) {
-	idr := NewImportDeclarationResult()
-	idr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
-	idr.Source = node.ModuleSpecifier.Text()
-	pos, end := node.Pos(), node.End()
-	idr.SourceLocation = SourceLocation{
-		Start: NodePosition{Line: pos, Column: 0},
-		End:   NodePosition{Line: end, Column: 0},
+// dispatch 是节点分发器，它取代了旧的 switch 语句。
+// 它检查节点类型，并调用 Parser 上实现的相应 Visitor 方法。
+// 返回一个布尔值，指示是否应该继续遍历当前节点的子节点。
+func (p *Parser) dispatch(node *ast.Node) (continueWalk bool) {
+	// 默认继续遍历子节点
+	continueWalk = true
+
+	switch node.Kind {
+	case ast.KindImportDeclaration:
+		p.VisitImportDeclaration(node.AsImportDeclaration())
+		continueWalk = false // 导入声明不需深入遍历其子节点。
+	case ast.KindExportDeclaration:
+		p.VisitExportDeclaration(node.AsExportDeclaration())
+		continueWalk = false // 导出声明同样不需深入遍历。
+	case ast.KindExportAssignment:
+		p.VisitExportAssignment(node.AsExportAssignment())
+		continueWalk = false // `export default` 也不需深入遍历。
+	case ast.KindInterfaceDeclaration:
+		p.VisitInterfaceDeclaration(node.AsInterfaceDeclaration())
+	case ast.KindTypeAliasDeclaration:
+		p.VisitTypeAliasDeclaration(node.AsTypeAliasDeclaration())
+	case ast.KindEnumDeclaration:
+		p.VisitEnumDeclaration(node.AsEnumDeclaration())
+	case ast.KindVariableStatement:
+		p.VisitVariableStatement(node.AsVariableStatement())
+	case ast.KindCallExpression:
+		p.VisitCallExpression(node.AsCallExpression())
+	case ast.KindJsxElement, ast.KindJsxSelfClosingElement:
+		p.VisitJsxElement(node)
+	case ast.KindFunctionDeclaration:
+		p.VisitFunctionDeclaration(node.AsFunctionDeclaration())
+	case ast.KindAnyKeyword:
+		p.VisitAnyKeyword(node)
+	case ast.KindAsExpression:
+		p.VisitAsExpression(node.AsAsExpression())
 	}
 
-	if node.ImportClause == nil { // 处理副作用导入，例如 `import './setup';`
-		p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
-		return
-	}
-
-	importClause := node.ImportClause.AsImportClause()
-
-	if ast.IsDefaultImport(node.AsNode()) {
-		name := importClause.Name().Text()
-		idr.addModule("default", "default", name)
-	}
-
-	if namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode()); namespaceNode != nil {
-		name := namespaceNode.Name().Text()
-		idr.addModule("namespace", name, name)
-	}
-
-	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
-		namedImports := importClause.NamedBindings.AsNamedImports()
-		for _, element := range namedImports.Elements.Nodes {
-			importSpecifier := element.AsImportSpecifier()
-			identifier := importSpecifier.Name().Text()
-			importModule := identifier
-			if importSpecifier.PropertyName != nil {
-				importModule = importSpecifier.PropertyName.Text()
-			}
-			idr.addModule("named", importModule, identifier)
-		}
-	}
-	p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
+	return continueWalk
 }
 
-// analyzeExportDeclaration 解析导出声明。
-func (p *Parser) analyzeExportDeclaration(node *ast.ExportDeclaration) {
-	edr := NewExportDeclarationResult(node)
-	edr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
 
-	if node.ModuleSpecifier != nil {
-		edr.Source = node.ModuleSpecifier.Text()
-		edr.Type = "re-export"
-	} else {
-		edr.Type = "named-export"
-	}
 
-	if node.ExportClause != nil {
-		if node.ExportClause.Kind == ast.KindNamedExports {
-			namedExports := node.ExportClause.AsNamedExports()
-			for _, element := range namedExports.Elements.Nodes {
-				specifier := element.AsExportSpecifier()
-				identifier := specifier.Name().Text()
-				moduleName := identifier
-				if specifier.PropertyName != nil {
-					moduleName = specifier.PropertyName.Text()
-				}
-				edr.ExportModules = append(edr.ExportModules, ExportModule{
-					ModuleName: moduleName,
-					Type:       "named",
-					Identifier: identifier,
-				})
-			}
-		} else if node.ExportClause.Kind == ast.KindNamespaceExport {
-			namespaceExport := node.ExportClause.AsNamespaceExport()
-			identifier := namespaceExport.Name().Text()
-			edr.ExportModules = append(edr.ExportModules, ExportModule{
-				ModuleName: "*",
-				Type:       "namespace",
-				Identifier: identifier,
-			})
-		}
-	} else {
-		if edr.Source != "" {
-			edr.ExportModules = append(edr.ExportModules, ExportModule{
-				ModuleName: "*",
-				Type:       "namespace",
-				Identifier: "*",
-			})
-		}
-	}
-	p.Result.ExportDeclarations = append(p.Result.ExportDeclarations, *edr)
+
+
+
+
+
+
+
+
+// addError 是一个辅助函数，用于向结果中添加一个格式化的解析错误。
+func (p *Parser) addError(node *ast.Node, format string, args ...interface{}) {
+	line, col := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Pos())
+	msg := fmt.Sprintf(format, args...)
+	err := fmt.Errorf("Error at %s:%d:%d: %s", p.Result.filePath, line+1, col+1, msg)
+	p.Result.Errors = append(p.Result.Errors, err)
 }
 
-// analyzeExportAssignment 解析 `export default` 声明。
-func (p *Parser) analyzeExportAssignment(node *ast.ExportAssignment) {
-	ear := NewExportAssignmentResult(node)
-	ear.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
-	ear.Expression = strings.TrimSpace(utils.GetNodeText(node.Expression, p.SourceCode))
-	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *ear)
-}
 
-// analyzeInterfaceDeclaration 解析接口声明。
-func (p *Parser) analyzeInterfaceDeclaration(node *ast.InterfaceDeclaration) {
-	inter := NewInterfaceDeclarationResult(node.AsNode(), p.SourceCode)
-	interfaceName := node.Name().Text()
-	inter.Identifier = interfaceName
 
-	// 检查导出关键字
-	if modifiers := node.Modifiers(); modifiers != nil {
-		for _, modifier := range modifiers.Nodes {
-			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				inter.Exported = true
-				break
-			}
-		}
-	}
 
-	// 分析 `extends` 子句
-	extendsElements := ast.GetExtendsHeritageClauseElements(node.AsNode())
-	for _, element := range extendsElements {
-		expression := element.Expression()
-		if ast.IsIdentifier(expression) {
-			name := expression.AsIdentifier().Text
-			if !(utils.IsUtilityType(name)) {
-				inter.addTypeReference(name, "", true)
-			}
-		} else if ast.IsPropertyAccessExpression(expression) {
-			name := entityNameToString(expression)
-			inter.addTypeReference(name, "", true)
-		}
 
-		if len(element.TypeArguments()) > 0 {
-			for _, typeArg := range element.TypeArguments() {
-				results := AnalyzeType(typeArg, "")
-				for _, res := range results {
-					inter.addTypeReference(res.TypeName, res.Location, true)
-				}
-			}
-		}
-	}
 
-	// 分析接口成员
-	if node.Members != nil {
-		for _, member := range node.Members.Nodes {
-			results := AnalyzeMember(member, interfaceName)
-			for _, res := range results {
-				inter.addTypeReference(res.TypeName, res.Location, false)
-			}
-		}
-	}
-	p.Result.InterfaceDeclarations[inter.Identifier] = *inter
-}
 
-// analyzeTypeAliasDeclaration 解析 `type` 别名声明。
-func (p *Parser) analyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
-	tr := NewTypeDeclarationResult(node.AsNode(), p.SourceCode)
-	typeName := node.Name().Text()
-	tr.Identifier = typeName
 
-	// 检查导出关键字
-	if modifiers := node.Modifiers(); modifiers != nil {
-		for _, modifier := range modifiers.Nodes {
-			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				tr.Exported = true
-				break
-			}
-		}
-	}
 
-	results := AnalyzeType(node.Type, typeName)
-	for _, res := range results {
-		tr.addTypeReference(res.TypeName, res.Location, false)
-	}
-	p.Result.TypeDeclarations[tr.Identifier] = *tr
-}
 
-// analyzeEnumDeclaration 解析枚举声明。
-func (p *Parser) analyzeEnumDeclaration(node *ast.EnumDeclaration) {
-	er := NewEnumDeclarationResult(node, p.SourceCode)
 
-	// 检查导出关键字
-	if modifiers := node.Modifiers(); modifiers != nil {
-		for _, modifier := range modifiers.Nodes {
-			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				er.Exported = true
-				break
-			}
-		}
-	}
 
-	p.Result.EnumDeclarations[er.Identifier] = *er
-}
 
-// analyzeVariableStatement 解析变量声明语句。
-// 这里的逻辑经过了重构，以支持对赋值给变量的函数表达式（箭头函数、匿名函数）进行解析。
-func (p *Parser) analyzeVariableStatement(node *ast.VariableStatement) {
-	// 检查 `export` 修饰符
-	isExported := false
-	if modifiers := node.Modifiers(); modifiers != nil {
-		for _, modifier := range modifiers.Nodes {
-			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				isExported = true
-				break
-			}
-		}
-	}
 
-	declarationList := node.DeclarationList
-	if declarationList == nil {
-		return
-	}
 
-	// 遍历声明列表中的每一个声明 (例如 `const a = 1, b = 2`)
-	for _, decl := range declarationList.AsVariableDeclarationList().Declarations.Nodes {
-		variableDecl := decl.AsVariableDeclaration()
-		if variableDecl == nil {
-			continue
-		}
 
-		nameNode := variableDecl.Name()
-		initializerNode := variableDecl.Initializer
-
-		// --- 函数表达式检查逻辑 ---
-		// 检查变量的初始值是否是一个函数或箭头函数
-		if ast.IsIdentifier(nameNode) && initializerNode != nil {
-			identifier := nameNode.AsIdentifier().Text
-			initKind := initializerNode.Kind
-
-			if initKind == ast.KindArrowFunction || initKind == ast.KindFunctionExpression {
-				// 如果是，则使用新的构造函数来解析这个函数表达式
-				fr := NewFunctionDeclarationResultFromExpression(identifier, isExported, initializerNode, p.SourceCode)
-				p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
-				// 解析为函数后，无需再作为普通变量处理，跳过当前循环
-				continue
-			}
-		}
-		// --- 函数表达式检查逻辑结束 ---
-
-		// --- 动态导入检查逻辑 ---
-		// 核心目的：将 `const AdminPage = lazy(() => import('./AdminPage'))` 这样的代码
-		// 正确解析为 `AdminPage` 标识符和 `./AdminPage` 路径之间的关联。
-		if ast.IsIdentifier(nameNode) && initializerNode != nil {
-			identifier := nameNode.AsIdentifier().Text
-			// 递归地在变量的初始化表达式中查找 `import()` 调用。
-			importCallNode, importPath := p.findDynamicImport(initializerNode)
-
-			if importCallNode != nil && importPath != "" {
-				// 如果找到了，就创建一个精确的导入记录。
-				importResult := &ImportDeclarationResult{
-					Source: importPath,
-					ImportModules: []ImportModule{
-						{
-							Identifier:   identifier, // 使用变量名作为导入的标识符
-							ImportModule: "default",  // 动态导入可以看作是导入默认模块
-							Type:         "dynamic_variable",
-						},
-					},
-					Raw: utils.GetNodeText(importCallNode, p.SourceCode),
-				}
-				p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
-				// 标记此 `import()` 节点已处理，避免在 `analyzeCallExpression` 中重复记录。
-				p.processedDynamicImports[importCallNode] = true
-			}
-		}
-
-		// --- 常规变量和解构变量处理---
-		vd := NewVariableDeclaration(node, p.SourceCode)
-		vd.Exported = isExported
-		if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
-			vd.Kind = ConstDeclaration
-		} else if (declarationList.Flags & ast.NodeFlagsLet) != 0 {
-			vd.Kind = LetDeclaration
-		} else {
-			vd.Kind = VarDeclaration
-		}
-
-		if ast.IsIdentifier(nameNode) {
-			declarator := &VariableDeclarator{
-				Identifier: nameNode.AsIdentifier().Text,
-				Type:       analyzeVariableValueNode(variableDecl.Type, p.SourceCode),
-				InitValue:  analyzeVariableValueNode(initializerNode, p.SourceCode),
-			}
-			vd.Declarators = append(vd.Declarators, declarator)
-		} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			vd.Source = analyzeVariableValueNode(initializerNode, p.SourceCode)
-			p.analyzeBindingPattern(nameNode, vd)
-		}
-		p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, *vd)
-	}
-}
-
-// findDynamicImport 递归地在给定的 AST 节点中查找第一个 `import()` 调用。
-// 它会深入常见的包装函数（如 `lazy`, `() => ...`）内部进行查找。
-// 返回找到的 `import()` 对应的 ast.Node 和导入的路径字符串。
-func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
-	if node == nil {
-		return nil, ""
-	}
-
-	// 基本情况：当前节点就是 `import()` 调用。
-	if node.Kind == ast.KindCallExpression {
-		callExpr := node.AsCallExpression()
-		if callExpr.Expression.Kind == ast.KindImportKeyword {
-			if len(callExpr.Arguments.Nodes) > 0 {
-				arg := callExpr.Arguments.Nodes[0]
-				if arg.Kind == ast.KindStringLiteral {
-					return node, arg.AsStringLiteral().Text
-				} else if arg.Kind == ast.KindIdentifier {
-					return node, arg.AsIdentifier().Text
-				}
-			}
-		}
-	}
-
-	// 递归情况：遍历子节点查找。
-	var foundNode *ast.Node
-	var foundPath string
-	node.ForEachChild(func(child *ast.Node) bool {
-		// 如果已经找到了，就停止遍历，防止找到更深层的无关 `import`。
-		if foundNode != nil {
-			return true // stop traversal
-		}
-		foundNode, foundPath = p.findDynamicImport(child)
-		return foundNode != nil // 如果在子节点中找到了，返回 true 停止遍历
-	})
-
-	return foundNode, foundPath
-}
-
-// analyzeBindingPattern 解析解构模式。
-func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) {
-	if node == nil {
-		return
-	}
-
-	bindingPattern := node.AsBindingPattern()
-	if bindingPattern == nil || bindingPattern.Elements == nil {
-		return
-	}
-	elements := bindingPattern.Elements.Nodes
-
-	for _, element := range elements {
-		bindingElement := element.AsBindingElement()
-		if bindingElement == nil {
-			continue
-		}
-
-		nameNode := bindingElement.Name()
-		if nameNode == nil {
-			continue
-		}
-
-		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			p.analyzeBindingPattern(nameNode, vd)
-		} else if ast.IsIdentifier(nameNode) {
-			identifier := nameNode.AsIdentifier().Text
-			propName := identifier
-
-			if propertyNameNode := bindingElement.PropertyName; propertyNameNode != nil {
-				switch propertyNameNode.Kind {
-				case ast.KindIdentifier:
-					if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
-						propName = propIdentifier.Text
-					}
-				case ast.KindStringLiteral:
-					if strLit := propertyNameNode.AsStringLiteral(); strLit != nil {
-						propName = strLit.Text
-					}
-				case ast.KindNumericLiteral:
-					if numLit := propertyNameNode.AsNumericLiteral(); numLit != nil {
-						propName = numLit.Text
-					}
-				case ast.KindComputedPropertyName:
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
-				default:
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
-				}
-			}
-
-			declarator := &VariableDeclarator{
-				Identifier: identifier,
-				PropName:   propName,
-				InitValue:  analyzeVariableValueNode(bindingElement.Initializer, p.SourceCode),
-			}
-			vd.Declarators = append(vd.Declarators, declarator)
-		}
-	}
-}
-
-// analyzeFunctionDeclaration 解析函数声明。
-// 此函数不仅提取函数的基本信息，还负责检查参数和返回类型中的显式 any。
-func (p *Parser) analyzeFunctionDeclaration(node *ast.FunctionDeclaration) {
-	// 1. 解析函数声明本身的信息
-	fr := NewFunctionDeclarationResult(node, p.SourceCode)
-	// 3. 将解析结果存入
-	p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
-}
-
-// analyzeJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
-func (p *Parser) analyzeJsxElement(node *ast.Node) {
-	jsxNode := NewJSXNode(*node, p.SourceCode)
-	if node.Kind == ast.KindJsxElement {
-		p.analyzeJsxOpeningElement(jsxNode, node.AsJsxElement().OpeningElement)
-	} else if node.Kind == ast.KindJsxSelfClosingElement {
-		p.analyzeJsxSelfClosingElement(jsxNode, node.AsJsxSelfClosingElement())
-	}
-	p.Result.JsxElements = append(p.Result.JsxElements, *jsxNode)
-}
-
-// analyzeJsxOpeningElement 解析 JSX 的开标签。
-func (p *Parser) analyzeJsxOpeningElement(jsxNode *JSXElement, node *ast.Node) {
-	openingElement := node.AsJsxOpeningElement()
-	jsxNode.ComponentChain = reconstructJSXName(openingElement.TagName)
-
-	if attributes := openingElement.Attributes; attributes != nil {
-		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
-			for _, attr := range jsxAttrs.Properties.Nodes {
-				if attr.Kind == ast.KindJsxAttribute {
-					jsxAttr := attr.AsJsxAttribute()
-					jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
-						Name:     jsxAttr.Name().Text(),
-						Value:    analyzeAttributeValue(jsxAttr.Initializer, p.SourceCode),
-						IsSpread: false,
-					})
-				} else if attr.Kind == ast.KindJsxSpreadAttribute {
-					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
-						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, p.SourceCode),
-						Value:    nil,
-						IsSpread: true,
-					})
-				}
-			}
-		}
-	}
-}
-
-// analyzeJsxSelfClosingElement 解析 JSX 的自闭合标签。
-func (p *Parser) analyzeJsxSelfClosingElement(jsxNode *JSXElement, node *ast.JsxSelfClosingElement) {
-	jsxNode.ComponentChain = reconstructJSXName(node.TagName)
-
-	if attributes := node.Attributes; attributes != nil {
-		if jsxAttrs := attributes.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
-			for _, attr := range jsxAttrs.Properties.Nodes {
-				if attr.Kind == ast.KindJsxAttribute {
-					jsxAttr := attr.AsJsxAttribute()
-					jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
-						Name:     jsxAttr.Name().Text(),
-						Value:    analyzeAttributeValue(jsxAttr.Initializer, p.SourceCode),
-						IsSpread: false,
-					})
-				} else if attr.Kind == ast.KindJsxSpreadAttribute {
-					jsxSpreadAttr := attr.AsJsxSpreadAttribute()
-					jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
-						Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, p.SourceCode),
-						Value:    nil,
-						IsSpread: true,
-					})
-				}
-			}
-		}
-	}
-}
-
-// Extractor 定义了从AST节点中提取信息的接口
-type Extractor interface {
-	// CanExtract 检查是否可以从此节点提取信息
-	CanExtract(node *ast.Node) bool
-
-	// Extract 从节点中提取信息并返回结果
-	Extract(node *ast.Node, sourceCode string) interface{}
-}
-
-// AnyExtractor 提取 any 类型信息
-type AnyExtractor struct{}
-
-func (e *AnyExtractor) CanExtract(node *ast.Node) bool {
-	return node.Kind == ast.KindAnyKeyword
-}
-
-func (e *AnyExtractor) Extract(node *ast.Node, sourceCode string) interface{} {
-	return AnyInfo{
-		SourceLocation: SourceLocation{
-			Start: func() NodePosition {
-				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.Pos())
-				return NodePosition{Line: line + 1, Column: character + 1}
-			}(),
-			End: func() NodePosition {
-				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.End())
-				return NodePosition{Line: line + 1, Column: character}
-			}(),
-		},
-		Raw: func() string {
-			line, _ := utils.GetLineAndCharacterOfPosition(sourceCode, node.Loc.Pos())
-			lines := strings.Split(sourceCode, "\n")
-			if line >= 0 && line < len(lines) {
-				return strings.TrimSpace(lines[line])
-			}
-			return ""
-		}(),
-	}
-}
-
-// AsExtractor 提取 as 表达式信息
-type AsExtractor struct{}
-
-func (e *AsExtractor) CanExtract(node *ast.Node) bool {
-	return node.Kind == ast.KindAsExpression
-}
-
-func (e *AsExtractor) Extract(node *ast.Node, sourceCode string) interface{} {
-	asExpr := node.AsAsExpression()
-	return AsExpression{
-		Raw: func() string {
-			line, _ := utils.GetLineAndCharacterOfPosition(sourceCode, node.AsNode().Loc.Pos())
-			lines := strings.Split(sourceCode, "\n")
-			if line >= 0 && line < len(lines) {
-				return strings.TrimSpace(lines[line])
-			}
-			return ""
-		}(),
-		SourceLocation: SourceLocation{
-			Start: func() NodePosition {
-				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, asExpr.Expression.Loc.Pos())
-				return NodePosition{Line: line + 1, Column: character + 1}
-			}(),
-			End: func() NodePosition {
-				line, character := utils.GetLineAndCharacterOfPosition(sourceCode, asExpr.Type.Loc.End())
-				return NodePosition{Line: line + 1, Column: character}
-			}(),
-		},
-	}
-}
-
-// ExtractedNodes 用于存储从文件中提取出的各种节点信息。
-// 当需要添加新的节点类型时，只需在此结构体中添加新的字段。
-type ExtractedNodes struct {
-	AnyDeclarations []AnyInfo      // 存储找到的所有 any 类型的信息
-	AsExpressions   []AsExpression // 存储找到的所有 as 表达式的信息
-	// 后续新增其他节点类型时，同步添加在下方
-}
 
 // ParserResult 是单文件解析的最终结果容器。
 // 它存储了从文件中提取出的所有顶层声明和表达式。
@@ -689,19 +194,12 @@ type ParserResult struct {
 	JsxElements           []JSXElement
 	FunctionDeclarations  []FunctionDeclarationResult // 新增：用于存储找到的所有函数声明的信息
 	ExtractedNodes        ExtractedNodes              // 新增：用于存储提取的节点信息
+	Errors                []error                     // 新增：用于存储解析过程中遇到的错误
 }
 
-// AnyInfo 存储了在文件中找到的 any 类型的信息。
-type AnyInfo struct {
-	SourceLocation SourceLocation
-	Raw            string // 存储 any 关键字的原始文本
-}
 
-// AsExpression 代表一个解析后的 'as' 类型断言表达式。
-type AsExpression struct {
-	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
-	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
-}
+
+
 
 // NodePosition 用于精确记录代码在源文件中的位置。
 type NodePosition struct {
@@ -733,6 +231,7 @@ func NewParserResult(filePath string) *ParserResult {
 			AnyDeclarations: []AnyInfo{},
 			AsExpressions:   []AsExpression{},
 		},
+		Errors: []error{},
 	}
 }
 

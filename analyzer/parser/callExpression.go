@@ -81,10 +81,10 @@ func getArgumentType(node *ast.Node) string {
 	}
 }
 
-// analyzeCallExpression 从给定的 ast.CallExpression 节点中提取详细信息，并填充到 CallExpression 结构体中。
+// VisitCallExpression 从给定的 ast.CallExpression 节点中提取详细信息，并填充到 CallExpression 结构体中。
 // 它能区分简单的函数调用（如 `myFunc()`）和成员方法调用（如 `myObj.myMethod()`）。
 // 它还能识别动态导入 `import('...')` 并将其注册为依赖。
-func (p *Parser) analyzeCallExpression(node *ast.CallExpression) {
+func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
 	if node == nil {
 		return
 	}

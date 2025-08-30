@@ -88,6 +88,21 @@ func GetAnalyzeCmd() *cobra.Command {
 			}
 			fmt.Println("项目解析完成。")
 
+			// 打印解析错误
+			var totalErrors int
+			for filePath, fileResult := range parsingResult.Js_Data {
+				if len(fileResult.Errors) > 0 {
+					fmt.Fprintf(os.Stderr, "\n--- Errors in %s ---\n", filePath)
+					for _, err := range fileResult.Errors {
+						fmt.Fprintf(os.Stderr, "- %v\n", err)
+					}
+					totalErrors += len(fileResult.Errors)
+				}
+			}
+			if totalErrors > 0 {
+				fmt.Fprintf(os.Stderr, "\nFound a total of %d parsing errors.\n", totalErrors)
+			}
+
 			// 3. 如果没有指定分析器，则直接输出解析结果
 			if len(args) == 0 {
 				fmt.Println("\n未指定分析器，将直接输出项目解析结果。")

@@ -153,6 +153,7 @@ func (ppr *ProjectParserResult) parseJsFile(targetPath string) {
 		JsxElements:           ppr.transformJsxElements(targetPath, result.JsxElements, aliasForFile, tsconfigDir, baseUrl),
 		FunctionDeclarations:  result.FunctionDeclarations,
 		ExtractedNodes:        result.ExtractedNodes,
+		Errors:                result.Errors,
 	}
 }
 

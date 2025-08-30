@@ -138,3 +138,54 @@ func reconstructJSXName(node *ast.Node) []string {
 		return []string{}
 	}
 }
+
+// VisitJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
+func (p *Parser) VisitJsxElement(node *ast.Node) {
+	jsxNode := NewJSXNode(*node, p.SourceCode)
+	if node.Kind == ast.KindJsxElement {
+		p.analyzeJsxOpeningElement(jsxNode, node.AsJsxElement().OpeningElement)
+	} else if node.Kind == ast.KindJsxSelfClosingElement {
+		p.analyzeJsxSelfClosingElement(jsxNode, node.AsJsxSelfClosingElement())
+	}
+	p.Result.JsxElements = append(p.Result.JsxElements, *jsxNode)
+}
+
+// analyzeJsxAttributes 是一个辅助函数，用于解析 JSX 元素的属性。
+// 它被 analyzeJsxOpeningElement 和 analyzeJsxSelfClosingElement 调用，以消除代码重复。
+func (p *Parser) analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.Node) {
+	if attributesNode == nil {
+		return
+	}
+	if jsxAttrs := attributesNode.AsJsxAttributes(); jsxAttrs != nil && jsxAttrs.Properties != nil {
+		for _, attr := range jsxAttrs.Properties.Nodes {
+			if attr.Kind == ast.KindJsxAttribute {
+				jsxAttr := attr.AsJsxAttribute()
+				jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
+					Name:     jsxAttr.Name().Text(),
+					Value:    analyzeAttributeValue(jsxAttr.Initializer, p.SourceCode),
+					IsSpread: false,
+				})
+			} else if attr.Kind == ast.KindJsxSpreadAttribute {
+				jsxSpreadAttr := attr.AsJsxSpreadAttribute()
+				jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
+					Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, p.SourceCode),
+					Value:    nil,
+					IsSpread: true,
+				})
+			}
+		}
+	}
+}
+
+// analyzeJsxOpeningElement 解析 JSX 的开标签。
+func (p *Parser) analyzeJsxOpeningElement(jsxNode *JSXElement, node *ast.Node) {
+	openingElement := node.AsJsxOpeningElement()
+	jsxNode.ComponentChain = reconstructJSXName(openingElement.TagName)
+	p.analyzeJsxAttributes(jsxNode, openingElement.Attributes)
+}
+
+// analyzeJsxSelfClosingElement 解析 JSX 的自闭合标签。
+func (p *Parser) analyzeJsxSelfClosingElement(jsxNode *JSXElement, node *ast.JsxSelfClosingElement) {
+	jsxNode.ComponentChain = reconstructJSXName(node.TagName)
+	p.analyzeJsxAttributes(jsxNode, node.Attributes)
+}

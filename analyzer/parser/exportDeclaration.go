@@ -4,6 +4,7 @@ package parser
 
 import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 )
 
 // ExportModule 代表一个被导出的独立实体。
@@ -41,4 +42,53 @@ func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationR
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
+}
+
+// VisitExportDeclaration 解析导出声明。
+func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
+	edr := NewExportDeclarationResult(node)
+	edr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
+
+	if node.ModuleSpecifier != nil {
+		edr.Source = node.ModuleSpecifier.Text()
+		edr.Type = "re-export"
+	} else {
+		edr.Type = "named-export"
+	}
+
+	if node.ExportClause != nil {
+		if node.ExportClause.Kind == ast.KindNamedExports {
+			namedExports := node.ExportClause.AsNamedExports()
+			for _, element := range namedExports.Elements.Nodes {
+				specifier := element.AsExportSpecifier()
+				identifier := specifier.Name().Text()
+				moduleName := identifier
+				if specifier.PropertyName != nil {
+					moduleName = specifier.PropertyName.Text()
+				}
+				edr.ExportModules = append(edr.ExportModules, ExportModule{
+					ModuleName: moduleName,
+					Type:       "named",
+					Identifier: identifier,
+				})
+			}
+		} else if node.ExportClause.Kind == ast.KindNamespaceExport {
+			namespaceExport := node.ExportClause.AsNamespaceExport()
+			identifier := namespaceExport.Name().Text()
+			edr.ExportModules = append(edr.ExportModules, ExportModule{
+				ModuleName: "*",
+				Type:       "namespace",
+				Identifier: identifier,
+			})
+		}
+	} else {
+		if edr.Source != "" {
+			edr.ExportModules = append(edr.ExportModules, ExportModule{
+				ModuleName: "*",
+				Type:       "namespace",
+				Identifier: "*",
+			})
+		}
+	}
+	p.Result.ExportDeclarations = append(p.Result.ExportDeclarations, *edr)
 }

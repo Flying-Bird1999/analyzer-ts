@@ -3,6 +3,9 @@
 package parser
 
 import (
+	"strings"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
@@ -22,4 +25,12 @@ func NewExportAssignmentResult(node *ast.ExportAssignment) *ExportAssignmentResu
 			End:   NodePosition{Line: end, Column: 0},
 		},
 	}
+}
+
+// VisitExportAssignment 解析 `export default` 声明。
+func (p *Parser) VisitExportAssignment(node *ast.ExportAssignment) {
+	ear := NewExportAssignmentResult(node)
+	ear.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
+	ear.Expression = strings.TrimSpace(utils.GetNodeText(node.Expression, p.SourceCode))
+	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *ear)
 }

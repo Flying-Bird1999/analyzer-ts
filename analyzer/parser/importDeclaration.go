@@ -2,6 +2,11 @@
 // 本文件（importDeclaration.go）专门负责处理和解析导入（Import）声明。
 package parser
 
+import (
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
+)
+
 // ImportModule 代表一个被导入的独立实体。
 // 它用于表示默认导入、命名导入或命名空间导入中的具体项。
 type ImportModule struct {
@@ -33,4 +38,47 @@ func (idr *ImportDeclarationResult) addModule(moduleType, importModule, identifi
 		ImportModule: importModule,
 		Identifier:   identifier,
 	})
+}
+
+// VisitImportDeclaration 解析静态导入声明。
+func (p *Parser) VisitImportDeclaration(node *ast.ImportDeclaration) {
+	idr := NewImportDeclarationResult()
+	idr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
+	idr.Source = node.ModuleSpecifier.Text()
+	pos, end := node.Pos(), node.End()
+	idr.SourceLocation = SourceLocation{
+		Start: NodePosition{Line: pos, Column: 0},
+		End:   NodePosition{Line: end, Column: 0},
+	}
+
+	if node.ImportClause == nil { // 处理副作用导入，例如 `import './setup';`
+		p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
+		return
+	}
+
+	importClause := node.ImportClause.AsImportClause()
+
+	if ast.IsDefaultImport(node.AsNode()) {
+		name := importClause.Name().Text()
+		idr.addModule("default", "default", name)
+	}
+
+	if namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode()); namespaceNode != nil {
+		name := namespaceNode.Name().Text()
+		idr.addModule("namespace", name, name)
+	}
+
+	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
+		namedImports := importClause.NamedBindings.AsNamedImports()
+		for _, element := range namedImports.Elements.Nodes {
+			importSpecifier := element.AsImportSpecifier()
+			identifier := importSpecifier.Name().Text()
+			importModule := identifier
+			if importSpecifier.PropertyName != nil {
+				importModule = importSpecifier.PropertyName.Text()
+			}
+			idr.addModule("named", importModule, identifier)
+		}
+	}
+	p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
 }

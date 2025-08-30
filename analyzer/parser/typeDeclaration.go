@@ -54,3 +54,26 @@ func (tr *TypeDeclarationResult) addTypeReference(typeName string, location stri
 		}
 	}
 }
+
+// VisitTypeAliasDeclaration 解析 `type` 别名声明。
+func (p *Parser) VisitTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
+	tr := NewTypeDeclarationResult(node.AsNode(), p.SourceCode)
+	typeName := node.Name().Text()
+	tr.Identifier = typeName
+
+	// 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				tr.Exported = true
+				break
+			}
+		}
+	}
+
+	results := AnalyzeType(node.Type, typeName)
+	for _, res := range results {
+		tr.addTypeReference(res.TypeName, res.Location, false)
+	}
+	p.Result.TypeDeclarations[tr.Identifier] = *tr
+}

@@ -20,6 +20,7 @@ type JsFileParserResult struct {
 	JsxElements           []JSXElementResult                           `json:"jsxElements"`           // 文件中的JSX元素
 	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations"` // 文件中所有函数声明的信息
 	ExtractedNodes        parser.ExtractedNodes                        // 用于存储提取的节点信息
+	Errors                []error                                      `json:"errors,omitempty"`     // 新增：用于存储解析过程中遇到的错误
 }
 
 // PackageJsonFileParserResult 存储了对 `package.json` 文件解析后的关键信息。

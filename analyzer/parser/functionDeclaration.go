@@ -228,3 +228,12 @@ func parseParameters(result *FunctionDeclarationResult, params *ast.NodeList, so
 		})
 	}
 }
+
+// VisitFunctionDeclaration 解析函数声明。
+// 此函数不仅提取函数的基本信息，还负责检查参数和返回类型中的显式 any。
+func (p *Parser) VisitFunctionDeclaration(node *ast.FunctionDeclaration) {
+	// 1. 解析函数声明本身的信息
+	fr := NewFunctionDeclarationResult(node, p.SourceCode)
+	// 3. 将解析结果存入
+	p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
+}

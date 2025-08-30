@@ -43,3 +43,20 @@ func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *Enu
 
 	return result
 }
+
+// VisitEnumDeclaration 解析枚举声明。
+func (p *Parser) VisitEnumDeclaration(node *ast.EnumDeclaration) {
+	er := NewEnumDeclarationResult(node, p.SourceCode)
+
+	// 检查导出关键字
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				er.Exported = true
+				break
+			}
+		}
+	}
+
+	p.Result.EnumDeclarations[er.Identifier] = *er
+}

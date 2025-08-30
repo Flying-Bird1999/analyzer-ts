@@ -129,3 +129,216 @@ func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue 
 
 	return value
 }
+
+// VisitVariableStatement 解析变量声明语句。
+// 此函数现在作为一个调度中心，根据变量声明的具体类型，
+// 将任务分发给更专门的函数进行处理。
+func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
+	// 检查 `export` 修饰符
+	isExported := false
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				isExported = true
+				break
+			}
+		}
+	}
+
+	declarationList := node.DeclarationList
+	if declarationList == nil {
+		return
+	}
+
+	// 遍历声明列表中的每一个声明 (例如 `const a = 1, b = 2`)
+	for _, decl := range declarationList.AsVariableDeclarationList().Declarations.Nodes {
+		variableDecl := decl.AsVariableDeclaration()
+		if variableDecl == nil {
+			continue
+		}
+
+		nameNode := variableDecl.Name()
+		initializerNode := variableDecl.Initializer
+
+		// 尝试作为函数赋值进行解析，如果成功，则处理下一个声明
+		if p.analyzeFunctionAssignment(variableDecl, isExported) {
+			continue
+		}
+
+		// 尝试作为动态导入赋值进行解析，如果成功，则处理下一个声明
+		if p.analyzeDynamicImportAssignment(variableDecl) {
+			continue
+		}
+
+		// --- 常规变量和解构变量处理---
+		vd := NewVariableDeclaration(node, p.SourceCode)
+		vd.Exported = isExported
+		if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
+			vd.Kind = ConstDeclaration
+		} else if (declarationList.Flags & ast.NodeFlagsLet) != 0 {
+			vd.Kind = LetDeclaration
+		} else {
+			vd.Kind = VarDeclaration
+		}
+
+		if ast.IsIdentifier(nameNode) {
+			declarator := &VariableDeclarator{
+				Identifier: nameNode.AsIdentifier().Text,
+				Type:       analyzeVariableValueNode(variableDecl.Type, p.SourceCode),
+				InitValue:  analyzeVariableValueNode(initializerNode, p.SourceCode),
+			}
+			vd.Declarators = append(vd.Declarators, declarator)
+		} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+			vd.Source = analyzeVariableValueNode(initializerNode, p.SourceCode)
+			p.analyzeBindingPattern(nameNode, vd)
+		}
+		p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, *vd)
+	}
+}
+
+// analyzeFunctionAssignment 专门处理赋值为函数表达式的变量声明。
+// 如果成功解析了一个函数表达式，则返回 true。
+func (p *Parser) analyzeFunctionAssignment(variableDecl *ast.VariableDeclaration, isExported bool) bool {
+	nameNode := variableDecl.Name()
+	initializerNode := variableDecl.Initializer
+
+	if ast.IsIdentifier(nameNode) && initializerNode != nil {
+		identifier := nameNode.AsIdentifier().Text
+		initKind := initializerNode.Kind
+
+		if initKind == ast.KindArrowFunction || initKind == ast.KindFunctionExpression {
+			fr := NewFunctionDeclarationResultFromExpression(identifier, isExported, initializerNode, p.SourceCode)
+			p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
+			return true
+		}
+	}
+	return false
+}
+
+// analyzeDynamicImportAssignment 专门处理赋值为动态导入的变量声明。
+// 如果成功解析了一个动态导入，则返回 true。
+func (p *Parser) analyzeDynamicImportAssignment(variableDecl *ast.VariableDeclaration) bool {
+	nameNode := variableDecl.Name()
+	initializerNode := variableDecl.Initializer
+
+	if ast.IsIdentifier(nameNode) && initializerNode != nil {
+		identifier := nameNode.AsIdentifier().Text
+		importCallNode, importPath := p.findDynamicImport(initializerNode)
+
+		if importCallNode != nil && importPath != "" {
+			importResult := &ImportDeclarationResult{
+				Source: importPath,
+				ImportModules: []ImportModule{
+					{
+						Identifier:   identifier,
+						ImportModule: "default",
+						Type:         "dynamic_variable",
+					},
+				},
+				Raw: utils.GetNodeText(importCallNode, p.SourceCode),
+			}
+			p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
+			p.processedDynamicImports[importCallNode] = true
+			return true
+		}
+	}
+	return false
+}
+
+// findDynamicImport 递归地在给定的 AST 节点中查找第一个 `import()` 调用。
+// 它会深入常见的包装函数（如 `lazy`, `() => ...`）内部进行查找。
+// 返回找到的 `import()` 对应的 ast.Node 和导入的路径字符串。
+func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
+	if node == nil {
+		return nil, ""
+	}
+
+	// 基本情况：当前节点就是 `import()` 调用。
+	if node.Kind == ast.KindCallExpression {
+		callExpr := node.AsCallExpression()
+		if callExpr.Expression.Kind == ast.KindImportKeyword {
+			if len(callExpr.Arguments.Nodes) > 0 {
+				arg := callExpr.Arguments.Nodes[0]
+				if arg.Kind == ast.KindStringLiteral {
+					return node, arg.AsStringLiteral().Text
+				} else if arg.Kind == ast.KindIdentifier {
+					return node, arg.AsIdentifier().Text
+				}
+			}
+		}
+	}
+
+	// 递归情况：遍历子节点查找。
+	var foundNode *ast.Node
+	var foundPath string
+	node.ForEachChild(func(child *ast.Node) bool {
+		// 如果已经找到了，就停止遍历，防止找到更深层的无关 `import`。
+		if foundNode != nil {
+			return true // stop traversal
+		}
+		foundNode, foundPath = p.findDynamicImport(child)
+		return foundNode != nil // 如果在子节点中找到了，返回 true 停止遍历
+	})
+
+	return foundNode, foundPath
+}
+
+// analyzeBindingPattern 解析解构模式。
+func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) {
+	if node == nil {
+		return
+	}
+
+	bindingPattern := node.AsBindingPattern()
+	if bindingPattern == nil || bindingPattern.Elements == nil {
+		return
+	}
+	elements := bindingPattern.Elements.Nodes
+
+	for _, element := range elements {
+		bindingElement := element.AsBindingElement()
+		if bindingElement == nil {
+			continue
+		}
+
+		nameNode := bindingElement.Name()
+		if nameNode == nil {
+			continue
+		}
+
+		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
+			p.analyzeBindingPattern(nameNode, vd)
+		} else if ast.IsIdentifier(nameNode) {
+			identifier := nameNode.AsIdentifier().Text
+			propName := identifier
+
+			if propertyNameNode := bindingElement.PropertyName; propertyNameNode != nil {
+				switch propertyNameNode.Kind {
+				case ast.KindIdentifier:
+					if propIdentifier := propertyNameNode.AsIdentifier(); propIdentifier != nil {
+						propName = propIdentifier.Text
+					}
+				case ast.KindStringLiteral:
+					if strLit := propertyNameNode.AsStringLiteral(); strLit != nil {
+						propName = strLit.Text
+					}
+				case ast.KindNumericLiteral:
+					if numLit := propertyNameNode.AsNumericLiteral(); numLit != nil {
+						propName = numLit.Text
+					}
+				case ast.KindComputedPropertyName:
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
+				default:
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
+				}
+			}
+
+			declarator := &VariableDeclarator{
+				Identifier: identifier,
+				PropName:   propName,
+				InitValue:  analyzeVariableValueNode(bindingElement.Initializer, p.SourceCode),
+			}
+			vd.Declarators = append(vd.Declarators, declarator)
+		}
+	}
+}
