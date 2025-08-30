@@ -23,7 +23,7 @@ type Parser struct {
 	Result *ParserResult
 	// processedDynamicImports 用于标记在变量声明中找到的动态导入节点。
 	// 这样做是为了防止在后续的 `analyzeCallExpression` 中对同一个 `import()` 调用进行重复处理。
-	processedDynamicImports map[*ast.Node]bool
+	ProcessedDynamicImports map[*ast.Node]bool
 }
 
 // NewParser 创建并返回一个新的 Parser 实例。
@@ -45,11 +45,9 @@ func NewParserFromSource(filePath string, sourceCode string) (*Parser, error) {
 		Ast:                     sourceFile.AsNode(),
 		SourceFile:              sourceFile, // Populate SourceFile
 		Result:                  NewParserResult(filePath),
-		processedDynamicImports: make(map[*ast.Node]bool),
+		ProcessedDynamicImports: make(map[*ast.Node]bool),
 	}, nil
 }
-
-
 
 // Visitor 定义了 AST 遍历期间访问不同类型节点的接口。
 // 每个 Visit 方法对应一种我们关心的 AST 节点类型。
@@ -145,16 +143,6 @@ func (p *Parser) dispatch(node *ast.Node) (continueWalk bool) {
 	return continueWalk
 }
 
-
-
-
-
-
-
-
-
-
-
 // addError 是一个辅助函数，用于向结果中添加一个格式化的解析错误。
 func (p *Parser) addError(node *ast.Node, format string, args ...interface{}) {
 	line, col := utils.GetLineAndCharacterOfPosition(p.SourceCode, node.Pos())
@@ -163,21 +151,18 @@ func (p *Parser) addError(node *ast.Node, format string, args ...interface{}) {
 	p.Result.Errors = append(p.Result.Errors, err)
 }
 
+// NewSourceLocation 是一个辅助函数，用于从 AST 节点中创建并返回一个准确的 SourceLocation。
+// 它将节点的字符偏移位置转换为行列号。
+func NewSourceLocation(node *ast.Node, sourceCode string) SourceLocation {
+	startPos, endPos := node.Pos(), node.End()
+	startLine, startChar := utils.GetLineAndCharacterOfPosition(sourceCode, startPos)
+	endLine, endChar := utils.GetLineAndCharacterOfPosition(sourceCode, endPos)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	return SourceLocation{
+		Start: NodePosition{Line: startLine + 1, Column: startChar + 1},
+		End:   NodePosition{Line: endLine + 1, Column: endChar + 1},
+	}
+}
 
 // ParserResult 是单文件解析的最终结果容器。
 // 它存储了从文件中提取出的所有顶层声明和表达式。
@@ -196,10 +181,6 @@ type ParserResult struct {
 	ExtractedNodes        ExtractedNodes              // 新增：用于存储提取的节点信息
 	Errors                []error                     // 新增：用于存储解析过程中遇到的错误
 }
-
-
-
-
 
 // NodePosition 用于精确记录代码在源文件中的位置。
 type NodePosition struct {

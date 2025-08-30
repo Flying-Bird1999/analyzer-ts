@@ -74,19 +74,15 @@ type VariableDeclaration struct {
 
 // NewVariableDeclaration 是创建和解析 VariableDeclaration 实例的工厂函数。
 func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *VariableDeclaration {
-	pos, end := node.Pos(), node.End()
 	return &VariableDeclaration{
-		Declarators: make([]*VariableDeclarator, 0),
-		Raw:         utils.GetNodeText(node.AsNode(), sourceCode),
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+		Declarators:    make([]*VariableDeclarator, 0),
+		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
 }
 
-// analyzeVariableValueNode 是一个核心辅助函数，用于从 AST 节点中解析出结构化的值信息。
-func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue {
+// AnalyzeVariableValueNode 是一个核心辅助函数，用于从 AST 节点中解析出结构化的值信息。
+func AnalyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue {
 	if node == nil {
 		return nil
 	}
@@ -130,11 +126,11 @@ func analyzeVariableValueNode(node *ast.Node, sourceCode string) *VariableValue 
 	return value
 }
 
-// VisitVariableStatement 解析变量声明语句。
-// 此函数现在作为一个调度中心，根据变量声明的具体类型，
-// 将任务分发给更专门的函数进行处理。
-func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
-	// 检查 `export` 修饰符
+// ExtractVariableDeclarations 从一个变量声明语句中提取出所有的声明，并作为单独的 VariableDeclaration 对象返回。
+// 一个语句（如 `export const a = 1, b = 2`）可能包含多个声明，此函数将其拆分。
+func ExtractVariableDeclarations(node *ast.VariableStatement, sourceCode string) []VariableDeclaration {
+	results := []VariableDeclaration{}
+
 	isExported := false
 	if modifiers := node.Modifiers(); modifiers != nil {
 		for _, modifier := range modifiers.Nodes {
@@ -147,7 +143,7 @@ func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
 
 	declarationList := node.DeclarationList
 	if declarationList == nil {
-		return
+		return results
 	}
 
 	// 遍历声明列表中的每一个声明 (例如 `const a = 1, b = 2`)
@@ -156,22 +152,8 @@ func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
 		if variableDecl == nil {
 			continue
 		}
-
-		nameNode := variableDecl.Name()
-		initializerNode := variableDecl.Initializer
-
-		// 尝试作为函数赋值进行解析，如果成功，则处理下一个声明
-		if p.analyzeFunctionAssignment(variableDecl, isExported) {
-			continue
-		}
-
-		// 尝试作为动态导入赋值进行解析，如果成功，则处理下一个声明
-		if p.analyzeDynamicImportAssignment(variableDecl) {
-			continue
-		}
-
 		// --- 常规变量和解构变量处理---
-		vd := NewVariableDeclaration(node, p.SourceCode)
+		vd := NewVariableDeclaration(node, sourceCode)
 		vd.Exported = isExported
 		if (declarationList.Flags & ast.NodeFlagsConst) != 0 {
 			vd.Kind = ConstDeclaration
@@ -181,19 +163,52 @@ func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
 			vd.Kind = VarDeclaration
 		}
 
+		nameNode := variableDecl.Name()
+		initializerNode := variableDecl.Initializer
+
 		if ast.IsIdentifier(nameNode) {
 			declarator := &VariableDeclarator{
 				Identifier: nameNode.AsIdentifier().Text,
-				Type:       analyzeVariableValueNode(variableDecl.Type, p.SourceCode),
-				InitValue:  analyzeVariableValueNode(initializerNode, p.SourceCode),
+				Type:       AnalyzeVariableValueNode(variableDecl.Type, sourceCode),
+				InitValue:  AnalyzeVariableValueNode(initializerNode, sourceCode),
 			}
 			vd.Declarators = append(vd.Declarators, declarator)
 		} else if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			vd.Source = analyzeVariableValueNode(initializerNode, p.SourceCode)
-			p.analyzeBindingPattern(nameNode, vd)
+			vd.Source = AnalyzeVariableValueNode(initializerNode, sourceCode)
+			analyzeBindingPattern(nameNode, vd, sourceCode)
 		}
-		p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, *vd)
+		results = append(results, *vd)
 	}
+	return results
+}
+
+// VisitVariableStatement 解析变量声明语句。
+// 它现在将主要工作委托给 ExtractVariableDeclarations，并处理函数赋值和动态导入等特殊情况。
+func (p *Parser) VisitVariableStatement(node *ast.VariableStatement) {
+	isExported := false
+	if modifiers := node.Modifiers(); modifiers != nil {
+		for _, modifier := range modifiers.Nodes {
+			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
+				isExported = true
+				break
+			}
+		}
+	}
+
+	// 遍历所有声明，检查是否是函数赋值或动态导入
+	for _, decl := range node.DeclarationList.AsVariableDeclarationList().Declarations.Nodes {
+		variableDecl := decl.AsVariableDeclaration()
+		if p.analyzeFunctionAssignment(variableDecl, isExported) {
+			continue
+		}
+		if p.analyzeDynamicImportAssignment(variableDecl) {
+			continue
+		}
+	}
+
+	// 将常规变量声明添加到结果中
+	decls := ExtractVariableDeclarations(node, p.SourceCode)
+	p.Result.VariableDeclarations = append(p.Result.VariableDeclarations, decls...)
 }
 
 // analyzeFunctionAssignment 专门处理赋值为函数表达式的变量声明。
@@ -238,7 +253,7 @@ func (p *Parser) analyzeDynamicImportAssignment(variableDecl *ast.VariableDeclar
 				Raw: utils.GetNodeText(importCallNode, p.SourceCode),
 			}
 			p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
-			p.processedDynamicImports[importCallNode] = true
+			p.ProcessedDynamicImports[importCallNode] = true
 			return true
 		}
 	}
@@ -252,8 +267,8 @@ func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
 	if node == nil {
 		return nil, ""
 	}
+	// 基本情况：当前节点就是 `import()` 调用
 
-	// 基本情况：当前节点就是 `import()` 调用。
 	if node.Kind == ast.KindCallExpression {
 		callExpr := node.AsCallExpression()
 		if callExpr.Expression.Kind == ast.KindImportKeyword {
@@ -284,7 +299,7 @@ func (p *Parser) findDynamicImport(node *ast.Node) (*ast.Node, string) {
 }
 
 // analyzeBindingPattern 解析解构模式。
-func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) {
+func analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration, sourceCode string) {
 	if node == nil {
 		return
 	}
@@ -307,7 +322,7 @@ func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) 
 		}
 
 		if ast.IsObjectBindingPattern(nameNode) || ast.IsArrayBindingPattern(nameNode) {
-			p.analyzeBindingPattern(nameNode, vd)
+			analyzeBindingPattern(nameNode, vd, sourceCode)
 		} else if ast.IsIdentifier(nameNode) {
 			identifier := nameNode.AsIdentifier().Text
 			propName := identifier
@@ -327,16 +342,16 @@ func (p *Parser) analyzeBindingPattern(node *ast.Node, vd *VariableDeclaration) 
 						propName = numLit.Text
 					}
 				case ast.KindComputedPropertyName:
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
 				default:
-					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), p.SourceCode))
+					propName = strings.TrimSpace(utils.GetNodeText(propertyNameNode.AsNode(), sourceCode))
 				}
 			}
 
 			declarator := &VariableDeclarator{
 				Identifier: identifier,
 				PropName:   propName,
-				InitValue:  analyzeVariableValueNode(bindingElement.Initializer, p.SourceCode),
+				InitValue:  AnalyzeVariableValueNode(bindingElement.Initializer, sourceCode),
 			}
 			vd.Declarators = append(vd.Declarators, declarator)
 		}

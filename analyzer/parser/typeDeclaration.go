@@ -20,17 +20,13 @@ type TypeDeclarationResult struct {
 // NewTypeDeclarationResult 基于 AST 节点创建一个新的 TypeDeclarationResult 实例。
 func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclarationResult {
 	raw := utils.GetNodeText(node, sourceCode)
-	pos, end := node.Pos(), node.End()
 
 	return &TypeDeclarationResult{
-		Identifier: "",
-		Exported:   false, // 默认为 false
-		Raw:        raw,
-		Reference:  make(map[string]TypeReference),
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+		Identifier:     "",
+		Exported:       false,
+		Raw:            raw,
+		Reference:      make(map[string]TypeReference),
+		SourceLocation: NewSourceLocation(node, sourceCode),
 	}
 }
 

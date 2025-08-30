@@ -13,15 +13,15 @@ import (
 // CallExpression 代表一个函数或方法调用表达式的解析结果。
 // 它同时包含结构化的 Expression 字段和易于使用的 CallChain 字段。
 type CallExpression struct {
-	Expression     *VariableValue   `json:"expression"`      // [权威] 被调用的表达式的完整结构化信息
-	CallChain      []string         `json:"callChain"`       // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
-	Arguments      []*VariableValue `json:"arguments"`       // 调用时传递的参数列表。
-	Raw            string           `json:"raw,omitempty"`   // 节点在源码中的原始文本。
-	SourceLocation SourceLocation   `json:"sourceLocation"`  // 节点在源码中的位置信息。
+	Expression     *VariableValue   `json:"expression"`     // [权威] 被调用的表达式的完整结构化信息
+	CallChain      []string         `json:"callChain"`      // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
+	Arguments      []*VariableValue `json:"arguments"`      // 调用时传递的参数列表。
+	Raw            string           `json:"raw,omitempty"`  // 节点在源码中的原始文本。
+	SourceLocation SourceLocation   `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
-// reconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。
-func reconstructCallChain(node *ast.Node, sourceCode string) []string {
+// ReconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。
+func ReconstructCallChain(node *ast.Node, sourceCode string) []string {
 	if node == nil {
 		return nil
 	}
@@ -30,7 +30,7 @@ func reconstructCallChain(node *ast.Node, sourceCode string) []string {
 		return []string{node.AsIdentifier().Text}
 	case ast.KindPropertyAccessExpression:
 		propAccess := node.AsPropertyAccessExpression()
-		left := reconstructCallChain(propAccess.Expression, sourceCode)
+		left := ReconstructCallChain(propAccess.Expression, sourceCode)
 		return append(left, propAccess.Name().Text())
 	default:
 		// 对于其他复杂情况（例如 getFunc()()），返回其源码文本作为唯一标识
@@ -45,7 +45,7 @@ func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
 	}
 
 	// 动态导入（赋值给变量的）已在变量声明处处理，这里跳过以避免重复
-	if _, ok := p.processedDynamicImports[node.AsNode()]; ok {
+	if _, ok := p.ProcessedDynamicImports[node.AsNode()]; ok {
 		return
 	}
 
@@ -79,18 +79,14 @@ func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
 		return // 处理完毕，不再作为常规 CallExpression 添加
 	}
 
-	pos, end := node.Pos(), node.End()
 	ce := CallExpression{
-		Expression: analyzeVariableValueNode(node.Expression, p.SourceCode),
-		CallChain:  reconstructCallChain(node.Expression, p.SourceCode),
+		Expression: AnalyzeVariableValueNode(node.Expression, p.SourceCode),
+		CallChain:  ReconstructCallChain(node.Expression, p.SourceCode),
 		Arguments: lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
-			return analyzeVariableValueNode(arg, p.SourceCode)
+			return AnalyzeVariableValueNode(arg, p.SourceCode)
 		}),
-		Raw: utils.GetNodeText(node.AsNode(), p.SourceCode),
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+		Raw:            utils.GetNodeText(node.AsNode(), p.SourceCode),
+		SourceLocation: NewSourceLocation(node.AsNode(), p.SourceCode),
 	}
 
 	p.Result.CallExpressions = append(p.Result.CallExpressions, ce)

@@ -36,28 +36,18 @@ type FunctionDeclarationResult struct {
 }
 
 // NewFunctionDeclarationResult 是基于 ast.FunctionDeclaration 节点创建函数解析结果的构造函数。
-// 它现在作为 `extractFunctionDetails` 的一个包装器。
 func NewFunctionDeclarationResult(node *ast.FunctionDeclaration, sourceCode string) *FunctionDeclarationResult {
-	// 初始化基本的返回结构
 	result := &FunctionDeclarationResult{
-		Raw:        utils.GetNodeText(node.AsNode(), sourceCode),
-		Parameters: []ParameterResult{},
-		Generics:   []string{},
+		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
+		Parameters:     []ParameterResult{},
+		Generics:       []string{},
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
 
-	// 从节点中提取位置信息
-	pos, end := node.Pos(), node.End()
-	result.SourceLocation = SourceLocation{
-		Start: NodePosition{Line: pos, Column: 0},
-		End:   NodePosition{Line: end, Column: 0},
-	}
-
-	// 获取函数名
 	if node.Name() != nil {
 		result.Identifier = node.Name().Text()
 	}
 
-	// 调用核心解析逻辑函数
 	extractFunctionDetails(result, node.AsNode(), sourceCode)
 
 	return result
@@ -69,20 +59,13 @@ func NewFunctionDeclarationResult(node *ast.FunctionDeclaration, sourceCode stri
 // isExported: 该函数是否被导出。
 // node: 函数表达式的 AST 节点。
 func NewFunctionDeclarationResultFromExpression(identifier string, isExported bool, node *ast.Node, sourceCode string) *FunctionDeclarationResult {
-	// 初始化基本的返回结构
 	result := &FunctionDeclarationResult{
-		Identifier: identifier,
-		Exported:   isExported,
-		Raw:        utils.GetNodeText(node, sourceCode),
-		Parameters: []ParameterResult{},
-		Generics:   []string{},
-	}
-
-	// 从节点中提取位置信息
-	pos, end := node.Pos(), node.End()
-	result.SourceLocation = SourceLocation{
-		Start: NodePosition{Line: pos, Column: 0},
-		End:   NodePosition{Line: end, Column: 0},
+		Identifier:     identifier,
+		Exported:       isExported,
+		Raw:            utils.GetNodeText(node, sourceCode),
+		Parameters:     []ParameterResult{},
+		Generics:       []string{},
+		SourceLocation: NewSourceLocation(node, sourceCode),
 	}
 
 	// 调用核心解析逻辑函数
@@ -234,6 +217,6 @@ func parseParameters(result *FunctionDeclarationResult, params *ast.NodeList, so
 func (p *Parser) VisitFunctionDeclaration(node *ast.FunctionDeclaration) {
 	// 1. 解析函数声明本身的信息
 	fr := NewFunctionDeclarationResult(node, p.SourceCode)
-	// 3. 将解析结果存入
+	// 2. 将解析结果存入
 	p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
 }

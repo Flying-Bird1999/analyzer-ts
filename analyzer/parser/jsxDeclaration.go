@@ -55,14 +55,10 @@ type JSXElement struct {
 // NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。
 // 它接收一个 AST 节点和文件源码作为输入，根据节点的具体类型
 // （自闭合标签或非自闭合标签）分发给相应的解析函数，并返回一个填充好信息的 JSXElement 实例。
-func NewJSXNode(node ast.Node, sourceCode string) *JSXElement {
-	pos, end := node.Pos(), node.End()
+func NewJSXNode(node *ast.Node, sourceCode string) *JSXElement {
 	return &JSXElement{
-		Raw: utils.GetNodeText(node.AsNode(), sourceCode),
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+		Raw:            utils.GetNodeText(node, sourceCode),
+		SourceLocation: NewSourceLocation(node, sourceCode),
 	}
 }
 
@@ -79,7 +75,7 @@ func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue
 
 	value := &JSXAttributeValue{
 		// 首先，无论值的类型是什么，都记录其原始文本表达式。
-		Expression: utils.GetNodeText(node.AsNode(), sourceCode),
+		Expression: utils.GetNodeText(node, sourceCode),
 	}
 
 	// 属性值通常被包裹在 JsxExpression 中（例如 `attr={...}`），
@@ -141,7 +137,7 @@ func reconstructJSXName(node *ast.Node) []string {
 
 // VisitJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
 func (p *Parser) VisitJsxElement(node *ast.Node) {
-	jsxNode := NewJSXNode(*node, p.SourceCode)
+	jsxNode := NewJSXNode(node, p.SourceCode)
 	if node.Kind == ast.KindJsxElement {
 		p.analyzeJsxOpeningElement(jsxNode, node.AsJsxElement().OpeningElement)
 	} else if node.Kind == ast.KindJsxSelfClosingElement {
@@ -151,7 +147,7 @@ func (p *Parser) VisitJsxElement(node *ast.Node) {
 }
 
 // analyzeJsxAttributes 是一个辅助函数，用于解析 JSX 元素的属性。
-// 它被 analyzeJsxOpeningElement 和 analyzeJsxSelfClosingElement 调用，以消除代码重复。
+// 被 analyzeJsxOpeningElement 和 analyzeJsxSelfClosingElement 调用，以消除代码重复。
 func (p *Parser) analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.Node) {
 	if attributesNode == nil {
 		return

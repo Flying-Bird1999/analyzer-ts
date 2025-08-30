@@ -20,18 +20,13 @@ type EnumDeclarationResult struct {
 // 它从 ast.EnumDeclaration 节点中提取枚举的名称、原始源码和位置信息。
 func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *EnumDeclarationResult {
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
-	pos, end := node.Pos(), node.End()
 
 	result := &EnumDeclarationResult{
-		Exported: false, // 默认为 false
-		Raw:      raw,
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+		Exported:       false, // 默认为 false
+		Raw:            raw,
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
 
-	// 获取枚举的名称节点。
 	nameNode := node.Name()
 	// 确认名称节点是一个标识符，然后提取其文本作为枚举的名称。
 	if ast.IsIdentifier(nameNode) {

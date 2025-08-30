@@ -16,21 +16,12 @@ type ExportAssignmentResult struct {
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
-// NewExportAssignmentResult 基于 AST 节点创建一个新的 ExportAssignmentResult 实例。
-func NewExportAssignmentResult(node *ast.ExportAssignment) *ExportAssignmentResult {
-	pos, end := node.Pos(), node.End()
-	return &ExportAssignmentResult{
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
-	}
-}
-
 // VisitExportAssignment 解析 `export default` 声明。
 func (p *Parser) VisitExportAssignment(node *ast.ExportAssignment) {
-	ear := NewExportAssignmentResult(node)
-	ear.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
-	ear.Expression = strings.TrimSpace(utils.GetNodeText(node.Expression, p.SourceCode))
+	ear := &ExportAssignmentResult{
+		Raw:            utils.GetNodeText(node.AsNode(), p.SourceCode),
+		Expression:     strings.TrimSpace(utils.GetNodeText(node.Expression, p.SourceCode)),
+		SourceLocation: NewSourceLocation(node.AsNode(), p.SourceCode),
+	}
 	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *ear)
 }
