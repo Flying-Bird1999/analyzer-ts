@@ -3,6 +3,7 @@ package parser_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
@@ -23,17 +24,8 @@ func RunTest[R any](t *testing.T, code, expectedJSON string, extractFn func(resu
 	assert.NoError(t, err, "获取当前工作目录失败")
 	dummyPath := filepath.Join(wd, "test.ts")
 
-	// 创建一个临时文件来写入测试代码，因为我们的解析器现在直接从文件路径读取
-	tempFile, err := os.Create(dummyPath)
-	assert.NoError(t, err, "创建临时文件失败")
-	defer os.Remove(dummyPath) // 测试结束后清理文件
-
-	_, err = tempFile.WriteString(code)
-	assert.NoError(t, err, "写入临时文件失败")
-	tempFile.Close()
-
-	// 使用新的 API 创建和运行解析器
-	p, err := parser.NewParser(dummyPath)
+	// 使用源码创建解析器，避免文件 I/O
+	p, err := parser.NewParserFromSource(dummyPath, code)
 	assert.NoError(t, err, "创建解析器失败")
 	p.Traverse()
 
@@ -46,4 +38,9 @@ func RunTest[R any](t *testing.T, code, expectedJSON string, extractFn func(resu
 
 	// 比较生成的 JSON 是否与预期的 JSON 一致
 	assert.JSONEq(t, expectedJSON, string(resultJSON), "生成的 JSON 应与预期的 JSON 匹配")
+}
+
+// a helper function to trim whitespace from raw fields for robust testing
+func trimRaw(s string) string {
+	return strings.TrimSpace(s)
 }

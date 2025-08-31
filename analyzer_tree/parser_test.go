@@ -139,8 +139,13 @@ function MyComponent() {
 		return n.Declaration.Identifier == "MyComponent"
 	})
 
-	// 查找顶层的 div
-	div := findNode(t, myComponent, func(n *JsxNode) bool {
+	// MyComponent 应该只包含一个 return 语句
+	assert.Equal(t, 1, len(myComponent.GetChildren()), "MyComponent 应该只包含一个 return 语句")
+	returnNode := findNode(t, myComponent, func(n *ReturnNode) bool { return true })
+
+	// return 语句应该只包含一个 div
+	assert.Equal(t, 1, len(returnNode.GetChildren()), "return 语句应该只包含一个 div")
+	div := findNode(t, returnNode, func(n *JsxNode) bool {
 		return n.Declaration.ComponentChain[0] == "div"
 	})
 	assert.Equal(t, "App", div.Declaration.Attrs[0].Value.Data, "div 的 className 应该是 App")
@@ -180,4 +185,72 @@ function App() {
 	// 它不应该包含一个独立的 CallNode `useState(0)`。
 	assert.Equal(t, 1, len(appFunc.GetChildren()), "App 函数应该只包含一个子节点")
 	assert.IsType(t, &VariableNode{}, appFunc.GetChildren()[0], "唯一的子节点应该是 VariableNode")
+}
+
+// TestHookScope 测试对 Hooks（如 useEffect）这类将函数作为参数的调用表达式的解析。
+func TestHookScope(t *testing.T) {
+	code := `
+import { useEffect } from 'react';
+
+function MyComponent() {
+    useEffect(() => {
+        const subscription = API.subscribe();
+        return () => {
+            API.unsubscribe(subscription);
+        };
+    });
+}
+`
+	wd, _ := os.Getwd()
+	dummyPath := filepath.Join(wd, "test.tsx")
+
+	tp, err := NewTreeParserFromSource(dummyPath, code)
+	assert.NoError(t, err)
+	tp.Traverse()
+	tree := tp.Tree
+
+	// 1. 找到 MyComponent 函数节点
+	myComponentFunc := findNode(t, tree, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "MyComponent"
+	})
+
+	// 2. 在 MyComponent 内部找到 useEffect 调用节点
+	useEffectCall := findNode(t, myComponentFunc, func(n *CallNode) bool {
+		return n.Call.CallChain[0] == "useEffect"
+	})
+	assert.NotNil(t, useEffectCall, "未找到 useEffect 调用节点")
+
+	// 3. useEffect 调用节点现在应该是一个容器，包含一个匿名的函数子节点
+	assert.Equal(t, 1, len(useEffectCall.GetChildren()), "useEffect 调用应包含一个函数作为子节点")
+	anonFunc := findNode(t, useEffectCall, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == ""
+	})
+	assert.NotNil(t, anonFunc, "useEffect 的子节点应为一个函数")
+
+	// 4. 断言匿名函数内部的结构
+	assert.Equal(t, 2, len(anonFunc.GetChildren()), "useEffect 的回调函数应有两个子节点")
+
+	// 5. 查找内部的变量声明
+	findNode(t, anonFunc, func(n *VariableNode) bool {
+		return n.Declaration.Declarators[0].Identifier == "subscription"
+	})
+
+	// 6. 查找内部的 return 语句
+	returnNode := findNode(t, anonFunc, func(n *ReturnNode) bool {
+		return n.Expression.Type == "arrowFunction"
+	})
+	assert.NotNil(t, returnNode, "未找到 return 语句")
+
+	// 7. return 语句的子节点应该是另一个匿名函数（清理函数）
+	assert.Equal(t, 1, len(returnNode.GetChildren()), "return 语句应包含一个清理函数作为子节点")
+	cleanupFunc := findNode(t, returnNode, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == ""
+	})
+	assert.NotNil(t, cleanupFunc, "return 的子节点应为一个函数")
+
+	// 8. 断言清理函数内部的结构
+	assert.Equal(t, 1, len(cleanupFunc.GetChildren()), "清理函数应有一个子节点")
+	findNode(t, cleanupFunc, func(n *CallNode) bool {
+		return n.Call.CallChain[0] == "API"
+	})
 }

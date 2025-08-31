@@ -91,14 +91,18 @@ func (tp *TreeParser) dispatch(node *ast.Node) (isContainer bool, continueWalk b
 
 	switch n := node.AsNode(); n.Kind {
 
-	// --- 容器节点: Function, JsxElement ---
-	// 对于容器节点，我们将 isContainer 设为 true，并在处理后压入堆栈。
-	// 通常我们希望继续遍历其子节点，所以 continueWalk 保持 true。
+	// --- 容器节点 ---
 
-	case ast.KindFunctionDeclaration:
-		fnDecl := n.AsFunctionDeclaration()
-		declResult := parser.NewFunctionDeclarationResult(fnDecl, tp.SourceCode)
-		fnNode := &FunctionNode{Declaration: *declResult}
+	case ast.KindFunctionDeclaration, ast.KindArrowFunction, ast.KindFunctionExpression:
+		var declResult parser.FunctionDeclarationResult
+		if n.Kind == ast.KindFunctionDeclaration {
+			declResult = *parser.NewFunctionDeclarationResult(n.AsFunctionDeclaration(), tp.SourceCode)
+		} else {
+			// 对于箭头函数和函数表达式，我们假设它们是匿名的
+			declResult = *parser.NewFunctionDeclarationResultFromExpression("", false, n, tp.SourceCode)
+		}
+
+		fnNode := &FunctionNode{Declaration: declResult}
 		parent.AddChild(fnNode)
 		tp.nodeStack = append(tp.nodeStack, fnNode)
 		isContainer = true
@@ -110,20 +114,53 @@ func (tp *TreeParser) dispatch(node *ast.Node) (isContainer bool, continueWalk b
 		tp.nodeStack = append(tp.nodeStack, jsxNode)
 		isContainer = true
 
-	// --- 块级叶子节点: Variable, Interface, Enum, TypeAlias, Import, Export ---
-	// 这些节点我们只关心其本身，不关心其内部的子节点（因为信息已经在 Analyze... 函数中提取）。
-	// 所以我们将 continueWalk 设为 false，以停止对这些分支的深入遍历。
+	case ast.KindCallExpression:
+		callExpr := n.AsCallExpression()
+		callResult, importResult := parser.AnalyzeCallExpression(callExpr, tp.SourceCode, tp.ProcessedDynamicImports)
+
+		if importResult != nil {
+			importNode := &ImportNode{Declaration: *importResult}
+			parent.AddChild(importNode)
+			continueWalk = false
+			return
+		}
+
+		if callResult != nil {
+			callNode := &CallNode{Call: *callResult}
+			parent.AddChild(callNode)
+
+			// 如果调用表达式的参数包含内联函数，则此 CallNode 成为一个容器
+			if len(callResult.InlineFunctions) > 0 {
+				tp.nodeStack = append(tp.nodeStack, callNode)
+				isContainer = true
+			}
+		}
+
+	case ast.KindReturnStatement:
+		returnStmt := n.AsReturnStatement()
+		returnResult := parser.AnalyzeReturnStatement(returnStmt, tp.SourceCode)
+		returnNode := &ReturnNode{Expression: returnResult.Expression}
+		parent.AddChild(returnNode)
+
+		// 如果存在返回表达式，我们就将ReturnNode视为一个容器，并继续遍历
+		if returnResult.Expression != nil {
+			tp.nodeStack = append(tp.nodeStack, returnNode)
+			isContainer = true
+		} else {
+			// 没有表达式（例如空的 return;），它就是一个叶子节点
+			continueWalk = false
+		}
+
+	// --- 块级叶子节点 ---
 
 	case ast.KindVariableStatement:
 		varStmt := n.AsVariableStatement()
 		declarations := parser.ExtractVariableDeclarations(varStmt, tp.SourceCode)
 		for _, decl := range declarations {
-			// 检查是否是函数赋值
+			// 检查是否是函数赋值，如果是，则由 FunctionDeclaration case 处理，这里跳过
 			if len(decl.Declarators) > 0 && decl.Declarators[0].InitValue != nil {
 				initType := decl.Declarators[0].InitValue.Type
 				if initType == "arrowFunction" || initType == "functionExpression" {
-					// 如果是函数表达式，则作为 FunctionNode 处理
-					// 为了简化，我们暂时跳过，但这是一个可以完善的点。
 					continue
 				}
 			}
@@ -173,21 +210,6 @@ func (tp *TreeParser) dispatch(node *ast.Node) (isContainer bool, continueWalk b
 		exportAssignNode := &ExportAssignmentNode{Declaration: *declResult}
 		parent.AddChild(exportAssignNode)
 		continueWalk = false
-
-	// --- 表达式级叶子节点: CallExpression ---
-	// 只有当 CallExpression 是一个独立的表达式语句的一部分时，我们才处理它。
-	// 其他情况（如在变量声明中）已经被包含在父节点的解析逻辑中。
-	case ast.KindCallExpression:
-		callExpr := n.AsCallExpression()
-		callResult, importResult := parser.AnalyzeCallExpression(callExpr, tp.SourceCode, tp.ProcessedDynamicImports)
-
-		if importResult != nil {
-			importNode := &ImportNode{Declaration: *importResult}
-			parent.AddChild(importNode)
-		} else if callResult != nil {
-			callNode := &CallNode{Call: *callResult}
-			parent.AddChild(callNode)
-		}
 	}
 
 	return

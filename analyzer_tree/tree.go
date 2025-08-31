@@ -39,10 +39,11 @@ type FunctionNode struct {
 }
 
 // CallNode 代表一个函数调用节点。
-// 在当前的树模型中，函数调用被视为【叶子节点】。
+// 当函数调用的参数包含内联函数时（如useEffect），它会成为一个【容器节点】。
 type CallNode struct {
-	Call   parser.CallExpression `json:"call"`  // 存储了从 parser 包解析出的原始函数调用信息。
-	parent Node                  `json:"-"`     // 指向其所属的父节点（根节点或函数节点）。
+	Call     parser.CallExpression `json:"call"`     // 存储了从 parser 包解析出的原始函数调用信息。
+	Children []Node                `json:"children"` // 用于存储在参数中定义的内联函数节点。
+	parent   Node                  `json:"-"`        // 指向其所属的父节点（根节点或函数节点）。
 }
 
 // VariableNode 代表一个变量声明节点。
@@ -104,52 +105,16 @@ type JsxNode struct {
 	parent      Node              `json:"-"`
 }
 
-// --- 通用节点实现 ---
-
-// baseNode 提供了所有节点共享的 parent 指针。
-type baseNode struct {
-	parent Node `json:"-"`
-}
-
-func (b *baseNode) GetParent() Node {
-	return b.parent
-}
-
-func (b *baseNode) SetParent(p Node) {
-	b.parent = p
-}
-
-// leafNode 提供了所有叶子节点的通用实现。
-type leafNode struct {
-	baseNode
-}
-
-func (l *leafNode) GetChildren() []Node {
-	return nil
-}
-
-func (l *leafNode) AddChild(child Node) {
-	// 叶子节点不添加子节点
-}
-
-// containerNode 提供了所有容器节点的通用实现。
-type containerNode struct {
-	baseNode
-	Children []Node `json:"children"`
-}
-
-func (c *containerNode) GetChildren() []Node {
-	return c.Children
-}
-
-func (c *containerNode) AddChild(child Node) {
-	child.SetParent(c)
-	c.Children = append(c.Children, child)
+// ReturnNode 代表一个 return 语句。
+// 它可以是一个【容器节点】，如果它返回了一个函数表达式。
+type ReturnNode struct {
+	Expression *parser.VariableValue `json:"expression"`
+	Children   []Node                `json:"children"`
+	parent     Node                  `json:"-"`
 }
 
 // --- 根节点实现 ---
 
-// GetChildren 实现 Node 接口，它收集所有类型的子节点并作为一个统一的切片返回。
 func (rn *RootNode) GetChildren() []Node {
 	var children []Node
 	for _, n := range rn.Functions {
@@ -185,13 +150,10 @@ func (rn *RootNode) GetChildren() []Node {
 	return children
 }
 
-// GetParent 实现 Node 接口，根节点没有父节点，总是返回 nil。
 func (rn *RootNode) GetParent() Node { return nil }
 
-// SetParent 实现 Node 接口，根节点无法设置父节点，此方法为空操作。
 func (rn *RootNode) SetParent(p Node) {}
 
-// AddChild 将子节点添加到 RootNode。它通过类型断言将子节点放入对应的切片中。
 func (rn *RootNode) AddChild(child Node) {
 	child.SetParent(rn)
 	switch v := child.(type) {
@@ -228,6 +190,14 @@ func (fn *FunctionNode) AddChild(child Node) {
 	fn.Children = append(fn.Children, child)
 }
 
+func (cn *CallNode) GetChildren() []Node { return cn.Children }
+func (cn *CallNode) GetParent() Node     { return cn.parent }
+func (cn *CallNode) SetParent(p Node)    { cn.parent = p }
+func (cn *CallNode) AddChild(child Node) {
+	child.SetParent(cn)
+	cn.Children = append(cn.Children, child)
+}
+
 func (in *InterfaceNode) GetChildren() []Node { return in.Children }
 func (in *InterfaceNode) GetParent() Node     { return in.parent }
 func (in *InterfaceNode) SetParent(p Node)    { in.parent = p }
@@ -252,12 +222,15 @@ func (jn *JsxNode) AddChild(child Node) {
 	jn.Children = append(jn.Children, child)
 }
 
-// --- 叶子节点实现 ---
+func (rn *ReturnNode) GetChildren() []Node { return rn.Children }
+func (rn *ReturnNode) GetParent() Node     { return rn.parent }
+func (rn *ReturnNode) SetParent(p Node)    { rn.parent = p }
+func (rn *ReturnNode) AddChild(child Node) {
+	child.SetParent(rn)
+	rn.Children = append(rn.Children, child)
+}
 
-func (cn *CallNode) GetChildren() []Node { return nil }
-func (cn *CallNode) GetParent() Node     { return cn.parent }
-func (cn *CallNode) SetParent(p Node)    { cn.parent = p }
-func (cn *CallNode) AddChild(child Node) {}
+// --- 叶子节点实现 ---
 
 func (vn *VariableNode) GetChildren() []Node { return nil }
 func (vn *VariableNode) GetParent() Node     { return vn.parent }
@@ -291,41 +264,6 @@ func FindFunctionNode(nodes []Node, name string) *FunctionNode {
 	for _, node := range nodes {
 		if fn, ok := node.(*FunctionNode); ok && fn.Declaration.Identifier == name {
 			return fn
-		}
-	}
-	return nil
-}
-
-// FindCallNode 在给定的节点列表中查找特定的函数调用节点。
-func FindCallNode(nodes []Node, callChain []string) *CallNode {
-	for _, node := range nodes {
-		if cn, ok := node.(*CallNode); ok {
-			if len(cn.Call.CallChain) == len(callChain) {
-				match := true
-				for i := range callChain {
-					if cn.Call.CallChain[i] != callChain[i] {
-						match = false
-						break
-					}
-				}
-				if match {
-					return cn
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// FindVariableNode 在给定的节点列表中查找具有特定标识符的变量节点。
-func FindVariableNode(nodes []Node, identifier string) *VariableNode {
-	for _, node := range nodes {
-		if vn, ok := node.(*VariableNode); ok {
-			for _, decl := range vn.Declaration.Declarators {
-				if decl.Identifier == identifier {
-					return vn
-				}
-			}
 		}
 	}
 	return nil

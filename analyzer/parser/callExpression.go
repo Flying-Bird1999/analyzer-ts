@@ -11,13 +11,14 @@ import (
 )
 
 // CallExpression 代表一个函数或方法调用表达式的解析结果。
-// 它同时包含结构化的 Expression 字段和易于使用的 CallChain 字段。
+// 它现在可以包含在参数中发现的内联函数声明。
 type CallExpression struct {
-	Expression     *VariableValue   `json:"expression"`     // [权威] 被调用的表达式的完整结构化信息
-	CallChain      []string         `json:"callChain"`      // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
-	Arguments      []*VariableValue `json:"arguments"`      // 调用时传递的参数列表。
-	Raw            string           `json:"raw,omitempty"`  // 节点在源码中的原始文本。
-	SourceLocation SourceLocation   `json:"sourceLocation"` // 节点在源码中的位置信息。
+	Expression      *VariableValue              `json:"expression"`      // [权威] 被调用的表达式的完整结构化信息
+	CallChain       []string                    `json:"callChain"`       // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
+	Arguments       []*VariableValue            `json:"arguments"`       // 调用时传递的参数列表。
+	InlineFunctions []FunctionDeclarationResult `json:"inlineFunctions"` // [新增] 在参数中发现的内联函数（例如 useEffect 的回调）
+	Raw             string                      `json:"raw,omitempty"`   // 节点在源码中的原始文本。
+	SourceLocation  SourceLocation              `json:"sourceLocation"`  // 节点在源码中的位置信息。
 }
 
 // ReconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。
@@ -39,7 +40,7 @@ func ReconstructCallChain(node *ast.Node, sourceCode string) []string {
 }
 
 // AnalyzeCallExpression 是一个公共的、可复用的函数，用于从 AST 节点中解析函数调用表达式。
-// 它返回一个 CallExpression 结构体，如果它是一个不应被视为常规调用的特殊情况（如动态导入），则返回 nil。
+// 它现在还会检查参数，以查找并解析内联的箭头函数或函数表达式。
 func AnalyzeCallExpression(node *ast.CallExpression, sourceCode string, processedDynamicImports map[*ast.Node]bool) (*CallExpression, *ImportDeclarationResult) {
 	if node == nil {
 		return nil, nil
@@ -79,14 +80,26 @@ func AnalyzeCallExpression(node *ast.CallExpression, sourceCode string, processe
 		return nil, nil // 参数不合法的动态导入
 	}
 
+	// --- 新增逻辑：检查参数中的内联函数 ---
+	inlineFunctions := []FunctionDeclarationResult{}
+	for _, arg := range node.Arguments.Nodes {
+		if arg.Kind == ast.KindArrowFunction || arg.Kind == ast.KindFunctionExpression {
+			// 为这个匿名的内联函数创建一个函数声明结果
+			// 标识符为空，因为它没有名字
+			fnResult := NewFunctionDeclarationResultFromExpression("", false, arg, sourceCode)
+			inlineFunctions = append(inlineFunctions, *fnResult)
+		}
+	}
+
 	ce := &CallExpression{
-		Expression: AnalyzeVariableValueNode(node.Expression, sourceCode),
-		CallChain:  ReconstructCallChain(node.Expression, sourceCode),
-		Arguments: lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
+		Expression:      AnalyzeVariableValueNode(node.Expression, sourceCode),
+		CallChain:       ReconstructCallChain(node.Expression, sourceCode),
+		Arguments:       lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
 			return AnalyzeVariableValueNode(arg, sourceCode)
 		}),
-		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
-		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
+		InlineFunctions: inlineFunctions, // 存储找到的内联函数
+		Raw:             utils.GetNodeText(node.AsNode(), sourceCode),
+		SourceLocation:  NewSourceLocation(node.AsNode(), sourceCode),
 	}
 
 	return ce, nil

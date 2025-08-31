@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
@@ -13,10 +14,11 @@ import (
 // expectedCallResult 是一个简化的结构，仅用于在测试中断言核心字段。
 // 这样可以忽略像 SourceLocation 这样容易变动且与核心逻辑无关的字段。
 type expectedCallResult struct {
-	Expression *parser.VariableValue   `json:"expression"`
-	CallChain  []string                `json:"callChain"`
-	Arguments  []*parser.VariableValue `json:"arguments"`
-	Raw        string                `json:"raw"`
+	Expression      *parser.VariableValue              `json:"expression"`
+	CallChain       []string                           `json:"callChain"`
+	Arguments       []*parser.VariableValue            `json:"arguments"`
+	InlineFunctions []parser.FunctionDeclarationResult `json:"inlineFunctions,omitempty"` // omitempty 用于不测试此字段的旧用例
+	Raw             string                             `json:"raw"`
 }
 
 func TestCallExpression(t *testing.T) {
@@ -120,6 +122,12 @@ func TestCallExpression(t *testing.T) {
 							Expression: "() => { return true; }",
 						},
 					},
+					InlineFunctions: []parser.FunctionDeclarationResult{
+						{
+							Identifier: "", // 匿名函数
+							Parameters: []parser.ParameterResult{},
+						},
+					},
 					Raw: "register({ user: 'test' }, () => { return true; })",
 				},
 			},
@@ -156,6 +164,48 @@ func TestCallExpression(t *testing.T) {
 			expectedCalls:      []expectedCallResult{},
 			expectedImportDecl: 1, // 期望生成一个导入声明
 		},
+		{
+			name: "带有内联函数的Hook调用",
+			code: `useEffect(() => { console.log("mounted"); });`,
+			expectedCalls: []expectedCallResult{
+				{
+					Expression: &parser.VariableValue{
+						Type:       "identifier",
+						Expression: "useEffect",
+						Data:       "useEffect",
+					},
+					CallChain: []string{"useEffect"},
+					Arguments: []*parser.VariableValue{
+						{
+							Type:       "arrowFunction",
+							Expression: "() => { console.log(\"mounted\"); }",
+						},
+					},
+					InlineFunctions: []parser.FunctionDeclarationResult{
+						{
+							Identifier: "", // 匿名函数
+							Parameters: []parser.ParameterResult{},
+						},
+					},
+					Raw: "useEffect(() => { console.log(\"mounted\"); })",
+				},
+				{
+					Expression: &parser.VariableValue{
+						Type:       "propertyAccess",
+						Expression: "console.log",
+					},
+					CallChain: []string{"console", "log"},
+					Arguments: []*parser.VariableValue{
+						{
+							Type:       "stringLiteral",
+							Expression: "\"mounted\"",
+							Data:       "mounted",
+						},
+					},
+					Raw: "console.log(\"mounted\")",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -169,11 +219,21 @@ func TestCallExpression(t *testing.T) {
 				func(result *parser.ParserResult) []expectedCallResult {
 					cleanedActuals := []expectedCallResult{}
 					for _, callExpr := range result.CallExpressions {
+						// 为了测试稳定性，我们只比较关键字段
+						cleanedFuncs := []parser.FunctionDeclarationResult{}
+						for _, f := range callExpr.InlineFunctions {
+							cleanedFuncs = append(cleanedFuncs, parser.FunctionDeclarationResult{
+								Identifier: f.Identifier,
+								Parameters: f.Parameters,
+							})
+						}
+
 						cleanedActuals = append(cleanedActuals, expectedCallResult{
-							Expression: callExpr.Expression,
-							CallChain:  callExpr.CallChain,
-							Arguments:  callExpr.Arguments,
-							Raw:        callExpr.Raw,
+							Expression:      callExpr.Expression,
+							CallChain:       callExpr.CallChain,
+							Arguments:       callExpr.Arguments,
+							InlineFunctions: cleanedFuncs,
+							Raw:             strings.TrimSpace(callExpr.Raw),
 						})
 					}
 					return cleanedActuals

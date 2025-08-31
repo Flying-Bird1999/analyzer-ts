@@ -66,6 +66,7 @@ type Visitor interface {
 	VisitFunctionDeclaration(*ast.FunctionDeclaration)
 	VisitAnyKeyword(*ast.Node)
 	VisitAsExpression(*ast.AsExpression)
+	VisitReturnStatement(*ast.ReturnStatement)
 }
 
 // Traverse 是解析器的核心驱动函数。
@@ -138,9 +139,19 @@ func (p *Parser) dispatch(node *ast.Node) (continueWalk bool) {
 		p.VisitAnyKeyword(node)
 	case ast.KindAsExpression:
 		p.VisitAsExpression(node.AsAsExpression())
+	case ast.KindReturnStatement:
+		p.VisitReturnStatement(node.AsReturnStatement())
 	}
 
 	return continueWalk
+}
+
+// VisitReturnStatement 解析 return 语句。
+func (p *Parser) VisitReturnStatement(node *ast.ReturnStatement) {
+	result := AnalyzeReturnStatement(node, p.SourceCode)
+	if result != nil {
+		p.Result.ReturnStatements = append(p.Result.ReturnStatements, *result)
+	}
 }
 
 // addError 是一个辅助函数，用于向结果中添加一个格式化的解析错误。
@@ -177,9 +188,10 @@ type ParserResult struct {
 	VariableDeclarations  []VariableDeclaration
 	CallExpressions       []CallExpression
 	JsxElements           []JSXElement
-	FunctionDeclarations  []FunctionDeclarationResult // 新增：用于存储找到的所有函数声明的信息
-	ExtractedNodes        ExtractedNodes              // 新增：用于存储提取的节点信息
-	Errors                []error                     // 新增：用于存储解析过程中遇到的错误
+	FunctionDeclarations  []FunctionDeclarationResult
+	ReturnStatements      []ReturnStatementResult // 新增：用于存储 return 语句
+	ExtractedNodes        ExtractedNodes
+	Errors                []error
 }
 
 // NodePosition 用于精确记录代码在源文件中的位置。
@@ -208,6 +220,7 @@ func NewParserResult(filePath string) *ParserResult {
 		CallExpressions:       []CallExpression{},
 		JsxElements:           []JSXElement{},
 		FunctionDeclarations:  []FunctionDeclarationResult{},
+		ReturnStatements:      []ReturnStatementResult{},
 		ExtractedNodes: ExtractedNodes{
 			AnyDeclarations: []AnyInfo{},
 			AsExpressions:   []AsExpression{},
@@ -229,6 +242,7 @@ func (pr *ParserResult) GetResult() ParserResult {
 		CallExpressions:       pr.CallExpressions,
 		JsxElements:           pr.JsxElements,
 		FunctionDeclarations:  pr.FunctionDeclarations,
+		ReturnStatements:      pr.ReturnStatements,
 		ExtractedNodes: ExtractedNodes{
 			AnyDeclarations: pr.ExtractedNodes.AnyDeclarations,
 			AsExpressions:   pr.ExtractedNodes.AsExpressions,
