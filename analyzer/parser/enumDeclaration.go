@@ -16,9 +16,8 @@ type EnumDeclarationResult struct {
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
-// NewEnumDeclarationResult 基于 AST 节点创建一个新的 EnumDeclarationResult 实例。
-// 它从 ast.EnumDeclaration 节点中提取枚举的名称、原始源码和位置信息。
-func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *EnumDeclarationResult {
+// AnalyzeEnumDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析枚举声明。
+func AnalyzeEnumDeclaration(node *ast.EnumDeclaration, sourceCode string) *EnumDeclarationResult {
 	raw := utils.GetNodeText(node.AsNode(), sourceCode)
 
 	result := &EnumDeclarationResult{
@@ -36,22 +35,21 @@ func NewEnumDeclarationResult(node *ast.EnumDeclaration, sourceCode string) *Enu
 		result.Identifier = ""
 	}
 
-	return result
-}
-
-// VisitEnumDeclaration 解析枚举声明。
-func (p *Parser) VisitEnumDeclaration(node *ast.EnumDeclaration) {
-	er := NewEnumDeclarationResult(node, p.SourceCode)
-
 	// 检查导出关键字
 	if modifiers := node.Modifiers(); modifiers != nil {
 		for _, modifier := range modifiers.Nodes {
 			if modifier != nil && modifier.Kind == ast.KindExportKeyword {
-				er.Exported = true
+				result.Exported = true
 				break
 			}
 		}
 	}
 
-	p.Result.EnumDeclarations[er.Identifier] = *er
+	return result
+}
+
+// VisitEnumDeclaration 解析枚举声明。
+func (p *Parser) VisitEnumDeclaration(node *ast.EnumDeclaration) {
+	result := AnalyzeEnumDeclaration(node, p.SourceCode)
+	p.Result.EnumDeclarations[result.Identifier] = *result
 }

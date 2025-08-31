@@ -38,20 +38,20 @@ func ReconstructCallChain(node *ast.Node, sourceCode string) []string {
 	}
 }
 
-// VisitCallExpression 从给定的 ast.CallExpression 节点中提取详细信息。
-func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
+// AnalyzeCallExpression 是一个公共的、可复用的函数，用于从 AST 节点中解析函数调用表达式。
+// 它返回一个 CallExpression 结构体，如果它是一个不应被视为常规调用的特殊情况（如动态导入），则返回 nil。
+func AnalyzeCallExpression(node *ast.CallExpression, sourceCode string, processedDynamicImports map[*ast.Node]bool) (*CallExpression, *ImportDeclarationResult) {
 	if node == nil {
-		return
+		return nil, nil
 	}
 
 	// 动态导入（赋值给变量的）已在变量声明处处理，这里跳过以避免重复
-	if _, ok := p.ProcessedDynamicImports[node.AsNode()]; ok {
-		return
+	if _, ok := processedDynamicImports[node.AsNode()]; ok {
+		return nil, nil
 	}
 
 	// 检查是否是独立的动态导入 `import(...)`
 	if node.Expression.Kind == ast.KindImportKeyword {
-		// 这是一个独立的、未赋值给变量的动态导入
 		if len(node.Arguments.Nodes) > 0 {
 			arg := node.Arguments.Nodes[0]
 			var importPath string
@@ -60,7 +60,7 @@ func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
 			} else if arg.Kind == ast.KindIdentifier {
 				importPath = arg.AsIdentifier().Text
 			} else {
-				return // 不支持的动态导入参数类型
+				return nil, nil // 不支持的动态导入参数类型
 			}
 
 			importResult := &ImportDeclarationResult{
@@ -72,22 +72,35 @@ func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
 						Type:         "dynamic",
 					},
 				},
-				Raw: utils.GetNodeText(node.AsNode(), p.SourceCode),
+				Raw: utils.GetNodeText(node.AsNode(), sourceCode),
 			}
-			p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importResult)
+			return nil, importResult // 返回一个导入声明结果，而不是调用表达式
 		}
-		return // 处理完毕，不再作为常规 CallExpression 添加
+		return nil, nil // 参数不合法的动态导入
 	}
 
-	ce := CallExpression{
-		Expression: AnalyzeVariableValueNode(node.Expression, p.SourceCode),
-		CallChain:  ReconstructCallChain(node.Expression, p.SourceCode),
+	ce := &CallExpression{
+		Expression: AnalyzeVariableValueNode(node.Expression, sourceCode),
+		CallChain:  ReconstructCallChain(node.Expression, sourceCode),
 		Arguments: lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
-			return AnalyzeVariableValueNode(arg, p.SourceCode)
+			return AnalyzeVariableValueNode(arg, sourceCode)
 		}),
-		Raw:            utils.GetNodeText(node.AsNode(), p.SourceCode),
-		SourceLocation: NewSourceLocation(node.AsNode(), p.SourceCode),
+		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
 
-	p.Result.CallExpressions = append(p.Result.CallExpressions, ce)
+	return ce, nil
+}
+
+// VisitCallExpression 从给定的 ast.CallExpression 节点中提取详细信息。
+func (p *Parser) VisitCallExpression(node *ast.CallExpression) {
+	callExpr, importDecl := AnalyzeCallExpression(node, p.SourceCode, p.ProcessedDynamicImports)
+
+	if importDecl != nil {
+		p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *importDecl)
+	}
+
+	if callExpr != nil {
+		p.Result.CallExpressions = append(p.Result.CallExpressions, *callExpr)
+	}
 }

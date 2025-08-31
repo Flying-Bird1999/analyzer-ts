@@ -51,9 +51,9 @@ func (tr *TypeDeclarationResult) addTypeReference(typeName string, location stri
 	}
 }
 
-// VisitTypeAliasDeclaration 解析 `type` 别名声明。
-func (p *Parser) VisitTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
-	tr := NewTypeDeclarationResult(node.AsNode(), p.SourceCode)
+// AnalyzeTypeAliasDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析 `type` 别名声明。
+func AnalyzeTypeAliasDeclaration(node *ast.TypeAliasDeclaration, sourceCode string) *TypeDeclarationResult {
+	tr := NewTypeDeclarationResult(node.AsNode(), sourceCode)
 	typeName := node.Name().Text()
 	tr.Identifier = typeName
 
@@ -67,9 +67,17 @@ func (p *Parser) VisitTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
 		}
 	}
 
+	// 使用核心的类型分析器来递归地查找所有依赖的类型
 	results := AnalyzeType(node.Type, typeName)
 	for _, res := range results {
 		tr.addTypeReference(res.TypeName, res.Location, false)
 	}
-	p.Result.TypeDeclarations[tr.Identifier] = *tr
+
+	return tr
+}
+
+// VisitTypeAliasDeclaration 解析 `type` 别名声明。
+func (p *Parser) VisitTypeAliasDeclaration(node *ast.TypeAliasDeclaration) {
+	result := AnalyzeTypeAliasDeclaration(node, p.SourceCode)
+	p.Result.TypeDeclarations[result.Identifier] = *result
 }

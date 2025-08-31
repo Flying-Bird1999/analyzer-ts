@@ -16,12 +16,18 @@ type ExportAssignmentResult struct {
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
-// VisitExportAssignment 解析 `export default` 声明。
-func (p *Parser) VisitExportAssignment(node *ast.ExportAssignment) {
-	ear := &ExportAssignmentResult{
-		Raw:            utils.GetNodeText(node.AsNode(), p.SourceCode),
-		Expression:     strings.TrimSpace(utils.GetNodeText(node.Expression, p.SourceCode)),
-		SourceLocation: NewSourceLocation(node.AsNode(), p.SourceCode),
+// AnalyzeExportAssignment 是一个公共的、可复用的函数，用于从 AST 节点中解析 `export default` 声明。
+func AnalyzeExportAssignment(node *ast.ExportAssignment, sourceCode string) *ExportAssignmentResult {
+	return &ExportAssignmentResult{
+		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
+		Expression:     strings.TrimSpace(utils.GetNodeText(node.Expression, sourceCode)),
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
-	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *ear)
+}
+
+// VisitExportAssignment 是 `parser.Parser` 的一部分，在 AST 遍历时被调用。
+// 它现在将工作委托给可复用的 `AnalyzeExportAssignment` 函数。
+func (p *Parser) VisitExportAssignment(node *ast.ExportAssignment) {
+	result := AnalyzeExportAssignment(node, p.SourceCode)
+	p.Result.ExportAssignments = append(p.Result.ExportAssignments, *result)
 }

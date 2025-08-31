@@ -3,8 +3,8 @@
 package parser
 
 import (
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // ImportModule 代表一个被导入的独立实体。
@@ -40,34 +40,37 @@ func (idr *ImportDeclarationResult) addModule(moduleType, importModule, identifi
 	})
 }
 
-// VisitImportDeclaration 解析静态导入声明。
-func (p *Parser) VisitImportDeclaration(node *ast.ImportDeclaration) {
+// AnalyzeImportDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析导入声明的详细信息。
+// 它将核心解析逻辑与 `Parser` 的状态解耦，使其可以在其他包（如 analyzer_tree）中被安全地调用。
+// node: 要分析的 `ast.ImportDeclaration` 节点。
+// sourceCode: 完整的源文件代码，用于提取原始文本。
+// 返回一个填充了信息的 `ImportDeclarationResult` 结构体。
+func AnalyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) *ImportDeclarationResult {
 	idr := NewImportDeclarationResult()
-	idr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
+	idr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
 	idr.Source = node.ModuleSpecifier.Text()
-	pos, end := node.Pos(), node.End()
-	idr.SourceLocation = SourceLocation{
-		Start: NodePosition{Line: pos, Column: 0},
-		End:   NodePosition{Line: end, Column: 0},
-	}
+	idr.SourceLocation = NewSourceLocation(node.AsNode(), sourceCode)
 
-	if node.ImportClause == nil { // 处理副作用导入，例如 `import './setup';`
-		p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
-		return
+	// 处理副作用导入，例如 `import './setup';`
+	if node.ImportClause == nil {
+		return idr
 	}
 
 	importClause := node.ImportClause.AsImportClause()
 
+	// 处理默认导入: `import MyDefault from '...'`
 	if ast.IsDefaultImport(node.AsNode()) {
 		name := importClause.Name().Text()
 		idr.addModule("default", "default", name)
 	}
 
+	// 处理命名空间导入: `import * as ns from '...'`
 	if namespaceNode := ast.GetNamespaceDeclarationNode(node.AsNode()); namespaceNode != nil {
 		name := namespaceNode.Name().Text()
 		idr.addModule("namespace", name, name)
 	}
 
+	// 处理命名导入: `import { a, b as c } from '...'`
 	if importClause.NamedBindings != nil && importClause.NamedBindings.Kind == ast.KindNamedImports {
 		namedImports := importClause.NamedBindings.AsNamedImports()
 		for _, element := range namedImports.Elements.Nodes {
@@ -80,5 +83,13 @@ func (p *Parser) VisitImportDeclaration(node *ast.ImportDeclaration) {
 			idr.addModule("named", importModule, identifier)
 		}
 	}
-	p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *idr)
+
+	return idr
+}
+
+// VisitImportDeclaration 是 `parser.Parser` 的一部分，它在 AST 遍历期间被调用。
+// 它现在将工作委托给可复用的 `AnalyzeImportDeclaration` 函数，然后将结果存入解析器的结果列表中。
+func (p *Parser) VisitImportDeclaration(node *ast.ImportDeclaration) {
+	result := AnalyzeImportDeclaration(node, p.SourceCode)
+	p.Result.ImportDeclarations = append(p.Result.ImportDeclarations, *result)
 }

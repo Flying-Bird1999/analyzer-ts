@@ -3,9 +3,7 @@ package analyzer_tree
 
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/samber/lo"
 )
 
 // TreeParser 是一个专门用于构建层级关系树的解析器。
@@ -56,16 +54,22 @@ func (tp *TreeParser) Traverse() {
 			return
 		}
 
-		// isContainer 标记当前节点是否是一个容器节点（如函数），
+		// isContainer 标记当前节点是否是一个容器节点（如函数、JSX元素），
 		// 在它所有子节点都处理完毕后，需要将它从上下文堆栈中弹出。
-		isContainer := tp.dispatch(node)
+		// continueWalk 控制是否要继续遍历当前节点的子节点。
+		isContainer, continueWalk := tp.dispatch(node)
+
+		// 如果分发器指示不要继续，则直接返回，停止对该分支的深入遍历。
+		if !continueWalk {
+			return
+		}
 
 		node.ForEachChild(func(child *ast.Node) bool {
 			walk(child)
-			return false
+			return false // 返回 false 以确保遍历所有子节点
 		})
 
-		// 如果当前节点是容器，则在遍历完所有子节点后，将其从堆栈中弹出。
+		// 如果当前节点是容器，则在遍历完所有子节点后，将其从堆栈中弹出，返回到父级作用域。
 		if isContainer {
 			tp.nodeStack = tp.nodeStack[:len(tp.nodeStack)-1]
 		}
@@ -75,57 +79,114 @@ func (tp *TreeParser) Traverse() {
 }
 
 // dispatch 是自定义的节点分发器，这是构建树的核心逻辑。
-func (tp *TreeParser) dispatch(node *ast.Node) (isContainer bool) {
+// 它根据 AST 节点的类型，创建对应的树节点，并正确处理容器和叶子节点，维护作用域堆栈。
+// 返回 isContainer 和 continueWalk 两个布尔值。
+func (tp *TreeParser) dispatch(node *ast.Node) (isContainer bool, continueWalk bool) {
+	// 默认行为：不是容器，并继续遍历子节点
 	isContainer = false
+	continueWalk = true
+
+	// 从堆栈顶部获取当前父节点
 	parent := tp.nodeStack[len(tp.nodeStack)-1]
 
 	switch n := node.AsNode(); n.Kind {
+
+	// --- 容器节点: Function, JsxElement ---
+	// 对于容器节点，我们将 isContainer 设为 true，并在处理后压入堆栈。
+	// 通常我们希望继续遍历其子节点，所以 continueWalk 保持 true。
+
 	case ast.KindFunctionDeclaration:
 		fnDecl := n.AsFunctionDeclaration()
 		declResult := parser.NewFunctionDeclarationResult(fnDecl, tp.SourceCode)
-		fnNode := &FunctionNode{Declaration: *declResult, parent: parent}
+		fnNode := &FunctionNode{Declaration: *declResult}
 		parent.AddChild(fnNode)
 		tp.nodeStack = append(tp.nodeStack, fnNode)
 		isContainer = true
 
-	case ast.KindCallExpression:
-		callExpr := n.AsCallExpression()
-		if _, ok := tp.Parser.ProcessedDynamicImports[n]; ok {
-			return
-		}
-		if callExpr.Expression.Kind == ast.KindImportKeyword {
-			return
-		}
+	case ast.KindJsxElement, ast.KindJsxSelfClosingElement:
+		declResult := parser.AnalyzeJsxElement(n, tp.SourceCode)
+		jsxNode := &JsxNode{Declaration: *declResult}
+		parent.AddChild(jsxNode)
+		tp.nodeStack = append(tp.nodeStack, jsxNode)
+		isContainer = true
 
-		ce := parser.CallExpression{
-			Expression: parser.AnalyzeVariableValueNode(callExpr.Expression, tp.SourceCode),
-			CallChain:  parser.ReconstructCallChain(callExpr.Expression, tp.SourceCode),
-			Arguments: lo.Map(callExpr.Arguments.Nodes, func(arg *ast.Node, _ int) *parser.VariableValue {
-				return parser.AnalyzeVariableValueNode(arg, tp.SourceCode)
-			}),
-			Raw:            utils.GetNodeText(n, tp.SourceCode),
-			SourceLocation: parser.NewSourceLocation(n, tp.SourceCode),
-		}
-		callNode := &CallNode{Call: ce, parent: parent}
-		parent.AddChild(callNode)
+	// --- 块级叶子节点: Variable, Interface, Enum, TypeAlias, Import, Export ---
+	// 这些节点我们只关心其本身，不关心其内部的子节点（因为信息已经在 Analyze... 函数中提取）。
+	// 所以我们将 continueWalk 设为 false，以停止对这些分支的深入遍历。
 
 	case ast.KindVariableStatement:
 		varStmt := n.AsVariableStatement()
 		declarations := parser.ExtractVariableDeclarations(varStmt, tp.SourceCode)
 		for _, decl := range declarations {
-			// 检查是否是函数赋值或动态导入，这些在基础 parser 中已经处理，这里要避免重复创建节点
-			isFuncAssignment := false
+			// 检查是否是函数赋值
 			if len(decl.Declarators) > 0 && decl.Declarators[0].InitValue != nil {
 				initType := decl.Declarators[0].InitValue.Type
 				if initType == "arrowFunction" || initType == "functionExpression" {
-					isFuncAssignment = true
+					// 如果是函数表达式，则作为 FunctionNode 处理
+					// 为了简化，我们暂时跳过，但这是一个可以完善的点。
+					continue
 				}
 			}
+			varNode := &VariableNode{Declaration: decl}
+			parent.AddChild(varNode)
+		}
+		continueWalk = false
 
-			if !isFuncAssignment {
-				varNode := &VariableNode{Declaration: decl, parent: parent}
-				parent.AddChild(varNode)
-			}
+	case ast.KindInterfaceDeclaration:
+		interfaceDecl := n.AsInterfaceDeclaration()
+		declResult := parser.AnalyzeInterfaceDeclaration(interfaceDecl, tp.SourceCode)
+		interfaceNode := &InterfaceNode{Declaration: *declResult}
+		parent.AddChild(interfaceNode)
+		continueWalk = false
+
+	case ast.KindEnumDeclaration:
+		enumDecl := n.AsEnumDeclaration()
+		declResult := parser.AnalyzeEnumDeclaration(enumDecl, tp.SourceCode)
+		enumNode := &EnumNode{Declaration: *declResult}
+		parent.AddChild(enumNode)
+		continueWalk = false
+
+	case ast.KindTypeAliasDeclaration:
+		typeAliasDecl := n.AsTypeAliasDeclaration()
+		declResult := parser.AnalyzeTypeAliasDeclaration(typeAliasDecl, tp.SourceCode)
+		typeAliasNode := &TypeAliasNode{Declaration: *declResult}
+		parent.AddChild(typeAliasNode)
+		continueWalk = false
+
+	case ast.KindImportDeclaration:
+		importDecl := n.AsImportDeclaration()
+		declResult := parser.AnalyzeImportDeclaration(importDecl, tp.SourceCode)
+		importNode := &ImportNode{Declaration: *declResult}
+		parent.AddChild(importNode)
+		continueWalk = false
+
+	case ast.KindExportDeclaration:
+		exportDecl := n.AsExportDeclaration()
+		declResult := parser.AnalyzeExportDeclaration(exportDecl, tp.SourceCode)
+		exportNode := &ExportNode{Declaration: *declResult}
+		parent.AddChild(exportNode)
+		continueWalk = false
+
+	case ast.KindExportAssignment:
+		exportAssign := n.AsExportAssignment()
+		declResult := parser.AnalyzeExportAssignment(exportAssign, tp.SourceCode)
+		exportAssignNode := &ExportAssignmentNode{Declaration: *declResult}
+		parent.AddChild(exportAssignNode)
+		continueWalk = false
+
+	// --- 表达式级叶子节点: CallExpression ---
+	// 只有当 CallExpression 是一个独立的表达式语句的一部分时，我们才处理它。
+	// 其他情况（如在变量声明中）已经被包含在父节点的解析逻辑中。
+	case ast.KindCallExpression:
+		callExpr := n.AsCallExpression()
+		callResult, importResult := parser.AnalyzeCallExpression(callExpr, tp.SourceCode, tp.ProcessedDynamicImports)
+
+		if importResult != nil {
+			importNode := &ImportNode{Declaration: *importResult}
+			parent.AddChild(importNode)
+		} else if callResult != nil {
+			callNode := &CallNode{Call: *callResult}
+			parent.AddChild(callNode)
 		}
 	}
 

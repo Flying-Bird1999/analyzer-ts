@@ -59,16 +59,15 @@ func (inter *InterfaceDeclarationResult) addTypeReference(typeName string, locat
 	}
 }
 
-// VisitInterfaceDeclaration 解析接口声明。
-func (p *Parser) VisitInterfaceDeclaration(node *ast.InterfaceDeclaration) {
-	inter := NewInterfaceDeclarationResult(node.AsNode(), p.SourceCode)
-	// 接口名称通常是一个标识符，如果不是，则记录一个错误。
-	if !ast.IsIdentifier(node.Name()) {
-		p.addError(node.Name(), "Expected interface name to be an identifier, but got %s", node.Name().Kind)
-		return
+// AnalyzeInterfaceDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析接口声明的详细信息。
+func AnalyzeInterfaceDeclaration(node *ast.InterfaceDeclaration, sourceCode string) *InterfaceDeclarationResult {
+	inter := NewInterfaceDeclarationResult(node.AsNode(), sourceCode)
+
+	// 接口名称通常是一个标识符
+	if ast.IsIdentifier(node.Name()) {
+		interfaceName := node.Name().Text()
+		inter.Identifier = interfaceName
 	}
-	interfaceName := node.Name().Text()
-	inter.Identifier = interfaceName
 
 	// 检查导出关键字
 	if modifiers := node.Modifiers(); modifiers != nil {
@@ -107,11 +106,24 @@ func (p *Parser) VisitInterfaceDeclaration(node *ast.InterfaceDeclaration) {
 	// 分析接口成员
 	if node.Members != nil {
 		for _, member := range node.Members.Nodes {
-			results := AnalyzeMember(member, interfaceName)
+			results := AnalyzeMember(member, inter.Identifier)
 			for _, res := range results {
 				inter.addTypeReference(res.TypeName, res.Location, false)
 			}
 		}
 	}
-	p.Result.InterfaceDeclarations[inter.Identifier] = *inter
+
+	return inter
+}
+
+// VisitInterfaceDeclaration 解析接口声明。
+func (p *Parser) VisitInterfaceDeclaration(node *ast.InterfaceDeclaration) {
+	// 接口名称通常是一个标识符，如果不是，则记录一个错误。
+	if !ast.IsIdentifier(node.Name()) {
+		p.addError(node.Name(), "Expected interface name to be an identifier, but got %s", node.Name().Kind)
+		return
+	}
+
+	result := AnalyzeInterfaceDeclaration(node, p.SourceCode)
+	p.Result.InterfaceDeclarations[result.Identifier] = *result
 }

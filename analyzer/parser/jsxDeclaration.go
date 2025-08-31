@@ -63,23 +63,15 @@ func NewJSXNode(node *ast.Node, sourceCode string) *JSXElement {
 }
 
 // analyzeAttributeValue 从属性的 AST 节点中解析出其结构化信息。
-// 这是实现“从 AST 直接采集数据”的核心函数，取代了旧的、依赖源码字符串的方法。
-// node: 属性的初始值节点 (Initializer)。
-// sourceCode: 完整的文件源码，用于获取节点原始文本。
-// 返回一个填充好的 JSXAttributeValue 实例。
 func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue {
-	// 对于布尔属性，其 Initializer 节点为 nil。
 	if node == nil {
 		return nil
 	}
 
 	value := &JSXAttributeValue{
-		// 首先，无论值的类型是什么，都记录其原始文本表达式。
 		Expression: utils.GetNodeText(node, sourceCode),
 	}
 
-	// 属性值通常被包裹在 JsxExpression 中（例如 `attr={...}`），
-	// 我们需要解开这层包裹，获取真正的表达式节点。
 	actualValueNode := node
 	if node.Kind == ast.KindJsxExpression {
 		if expr := node.AsJsxExpression(); expr.Expression != nil {
@@ -87,17 +79,15 @@ func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue
 		}
 	}
 
-	// 根据真实值节点的类型，填充 Type 和 Data 字段。
 	switch actualValueNode.Kind {
 	case ast.KindStringLiteral:
 		value.Type = "stringLiteral"
-		value.Data = actualValueNode.AsStringLiteral().Text // 存储不带引号的纯字符串
+		value.Data = actualValueNode.AsStringLiteral().Text
 	case ast.KindIdentifier:
 		value.Type = "identifier"
-		value.Data = actualValueNode.AsIdentifier().Text // 存储变量名
+		value.Data = actualValueNode.AsIdentifier().Text
 	case ast.KindPropertyAccessExpression:
 		value.Type = "propertyAccess"
-		// 未来可以扩展，例如将 `styles.foo` 解析为 { object: "styles", property: "foo" } 并存入 Data 字段。
 	case ast.KindCallExpression:
 		value.Type = "callExpression"
 	case ast.KindArrowFunction:
@@ -109,14 +99,15 @@ func analyzeAttributeValue(node *ast.Node, sourceCode string) *JSXAttributeValue
 	case ast.KindTrueKeyword, ast.KindFalseKeyword:
 		value.Type = "booleanLiteral"
 	default:
-		value.Type = "other" // 其他未覆盖的复杂类型
+		value.Type = "other"
 	}
 
 	return value
 }
 
-// reconstructJSXName 从 JSX 标签名节点递归地构建一个组件调用链。
-func reconstructJSXName(node *ast.Node) []string {
+// ReconstructJSXName 从 JSX 标签名节点递归地构建一个组件调用链。
+// 此函数被设为公共，以便在 analyzer_tree 包中复用。
+func ReconstructJSXName(node *ast.Node) []string {
 	if node == nil {
 		return nil
 	}
@@ -125,30 +116,15 @@ func reconstructJSXName(node *ast.Node) []string {
 		return []string{node.AsIdentifier().Text}
 	case ast.KindPropertyAccessExpression:
 		propAccess := node.AsPropertyAccessExpression()
-		// 递归地构建左侧部分的调用链
-		left := reconstructJSXName(propAccess.Expression)
-		// 将右侧的名称追加到链上
+		left := ReconstructJSXName(propAccess.Expression)
 		return append(left, propAccess.Name().Text())
 	default:
-		// 对于非预期的节点类型，返回一个空切片
 		return []string{}
 	}
 }
 
-// VisitJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
-func (p *Parser) VisitJsxElement(node *ast.Node) {
-	jsxNode := NewJSXNode(node, p.SourceCode)
-	if node.Kind == ast.KindJsxElement {
-		p.analyzeJsxOpeningElement(jsxNode, node.AsJsxElement().OpeningElement)
-	} else if node.Kind == ast.KindJsxSelfClosingElement {
-		p.analyzeJsxSelfClosingElement(jsxNode, node.AsJsxSelfClosingElement())
-	}
-	p.Result.JsxElements = append(p.Result.JsxElements, *jsxNode)
-}
-
 // analyzeJsxAttributes 是一个辅助函数，用于解析 JSX 元素的属性。
-// 被 analyzeJsxOpeningElement 和 analyzeJsxSelfClosingElement 调用，以消除代码重复。
-func (p *Parser) analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.Node) {
+func analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.Node, sourceCode string) {
 	if attributesNode == nil {
 		return
 	}
@@ -158,13 +134,13 @@ func (p *Parser) analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.N
 				jsxAttr := attr.AsJsxAttribute()
 				jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
 					Name:     jsxAttr.Name().Text(),
-					Value:    analyzeAttributeValue(jsxAttr.Initializer, p.SourceCode),
+					Value:    analyzeAttributeValue(jsxAttr.Initializer, sourceCode),
 					IsSpread: false,
 				})
 			} else if attr.Kind == ast.KindJsxSpreadAttribute {
 				jsxSpreadAttr := attr.AsJsxSpreadAttribute()
 				jsxNode.Attrs = append(jsxNode.Attrs, JSXAttribute{
-					Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, p.SourceCode),
+					Name:     "..." + utils.GetNodeText(jsxSpreadAttr.Expression, sourceCode),
 					Value:    nil,
 					IsSpread: true,
 				})
@@ -173,15 +149,23 @@ func (p *Parser) analyzeJsxAttributes(jsxNode *JSXElement, attributesNode *ast.N
 	}
 }
 
-// analyzeJsxOpeningElement 解析 JSX 的开标签。
-func (p *Parser) analyzeJsxOpeningElement(jsxNode *JSXElement, node *ast.Node) {
-	openingElement := node.AsJsxOpeningElement()
-	jsxNode.ComponentChain = reconstructJSXName(openingElement.TagName)
-	p.analyzeJsxAttributes(jsxNode, openingElement.Attributes)
+// AnalyzeJsxElement 是一个公共的、可复用的函数，用于从 AST 节点中解析 JSX 元素。
+func AnalyzeJsxElement(node *ast.Node, sourceCode string) *JSXElement {
+	jsxNode := NewJSXNode(node, sourceCode)
+	if node.Kind == ast.KindJsxElement {
+		openingElement := node.AsJsxElement().OpeningElement.AsJsxOpeningElement()
+		jsxNode.ComponentChain = ReconstructJSXName(openingElement.TagName)
+		analyzeJsxAttributes(jsxNode, openingElement.Attributes, sourceCode)
+	} else if node.Kind == ast.KindJsxSelfClosingElement {
+		selfClosingElement := node.AsJsxSelfClosingElement()
+		jsxNode.ComponentChain = ReconstructJSXName(selfClosingElement.TagName)
+		analyzeJsxAttributes(jsxNode, selfClosingElement.Attributes, sourceCode)
+	}
+	return jsxNode
 }
 
-// analyzeJsxSelfClosingElement 解析 JSX 的自闭合标签。
-func (p *Parser) analyzeJsxSelfClosingElement(jsxNode *JSXElement, node *ast.JsxSelfClosingElement) {
-	jsxNode.ComponentChain = reconstructJSXName(node.TagName)
-	p.analyzeJsxAttributes(jsxNode, node.Attributes)
+// VisitJsxElement 解析 JSX 元素（包括自闭合和非自闭合的）。
+func (p *Parser) VisitJsxElement(node *ast.Node) {
+	result := AnalyzeJsxElement(node, p.SourceCode)
+	p.Result.JsxElements = append(p.Result.JsxElements, *result)
 }

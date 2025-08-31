@@ -8,93 +8,176 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTreeParser(t *testing.T) {
-	code := `
-let globalVar = 1;
+// --- 测试辅助函数 ---
 
-function parentFunc() {
-    let parentVar = 2;
-    childFunc();
-
-    function childFunc() {
-        let childVar = 3;
-        console.log(childVar);
-    }
+// findNode 是一个泛型辅助函数，用于在节点的直接子节点中查找特定类型的节点。
+// node: 父节点
+// predicate: 一个返回布尔值的函数，用于判断子节点是否匹配
+func findNode[T Node](t *testing.T, node Node, predicate func(n T) bool) T {
+	for _, child := range node.GetChildren() {
+		if typedChild, ok := child.(T); ok {
+			if predicate(typedChild) {
+				return typedChild
+			}
+		}
+	}
+	// 如果找不到，返回 T 的零值，并让测试失败
+	var zero T
+	t.Fatalf("在父节点中未找到匹配的子节点")
+	return zero
 }
 
-parentFunc();
+// TestGlobalScopeDeclarations 测试解析器是否能正确处理在全局作用域下的各种声明。
+func TestGlobalScopeDeclarations(t *testing.T) {
+	code := `
+import React from 'react';
+export const PI = 3.14;
+export interface User {}
+export enum Role {}
+export default function App() {}
 `
+	wd, _ := os.Getwd()
+	dummyPath := filepath.Join(wd, "test.ts")
 
-	wd, err := os.Getwd()
-	assert.NoError(t, err)
-	dummyPath := filepath.Join(wd, "test_tree_parser.ts")
-	err = os.WriteFile(dummyPath, []byte(code), 0644)
-	assert.NoError(t, err)
-	defer os.Remove(dummyPath)
-
-	// 1. 使用新的 TreeParser 进行解析和构建
-	tp, err := NewTreeParser(dummyPath)
+	tp, err := NewTreeParserFromSource(dummyPath, code)
 	assert.NoError(t, err)
 	tp.Traverse()
 	tree := tp.Tree
 
-	// 2. 断言树的结构是否正确
-	assert.NotNil(t, tree, "树的根节点不应为 nil")
+	// 断言根节点的子节点数量是否正确
+	assert.Equal(t, 5, len(tree.GetChildren()), "根节点应包含5个声明")
 
-	// 2.1. 检查根节点的直接子节点
-	assert.Equal(t, 1, len(tree.Variables), "根作用域应包含一个变量 (globalVar)")
-	assert.Equal(t, "globalVar", tree.Variables[0].Declaration.Declarators[0].Identifier)
+	// 使用辅助函数查找并断言各个节点
+	findNode(t, tree, func(n *ImportNode) bool {
+		return n.Declaration.Source == "react"
+	})
+	findNode(t, tree, func(n *VariableNode) bool {
+		return n.Declaration.Declarators[0].Identifier == "PI" && n.Declaration.Exported
+	})
+	findNode(t, tree, func(n *InterfaceNode) bool {
+		return n.Declaration.Identifier == "User" && n.Declaration.Exported
+	})
+	findNode(t, tree, func(n *EnumNode) bool {
+		return n.Declaration.Identifier == "Role" && n.Declaration.Exported
+	})
+	findNode(t, tree, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "App" && n.Declaration.Exported
+	})
+}
 
-	assert.Equal(t, 1, len(tree.Functions), "根作用域应包含一个函数 (parentFunc)")
-	assert.Equal(t, "parentFunc", tree.Functions[0].Declaration.Identifier)
+// TestFunctionScope 测试解析器是否能正确处理函数内部的声明和调用。
+func TestFunctionScope(t *testing.T) {
+	code := `
+function parentFunc() {
+    let parentVar = 2;
+    childFunc();
+    function childFunc() {
+        console.log("hello");
+    }
+}
+`
+	wd, _ := os.Getwd()
+	dummyPath := filepath.Join(wd, "test.ts")
 
-	assert.Equal(t, 1, len(tree.Calls), "根作用域应包含一个函数调用 (parentFunc())")
-	assert.Equal(t, "parentFunc", tree.Calls[0].Call.CallChain[0])
+	tp, err := NewTreeParserFromSource(dummyPath, code)
+	assert.NoError(t, err)
+	tp.Traverse()
+	tree := tp.Tree
 
-	// 2.2. 深入检查 parentFunc 的内部结构
-	parentFunc := tree.Functions[0]
-	// 为了方便断言，我们将子节点分类
-	var childVars []*VariableNode
-	var childCalls []*CallNode
-	var childFuncs []*FunctionNode
+	// 查找 parentFunc
+	parentFunc := findNode(t, tree, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "parentFunc"
+	})
 
-	for _, child := range parentFunc.Children {
-		switch c := child.(type) {
-		case *VariableNode:
-			childVars = append(childVars, c)
-		case *CallNode:
-			childCalls = append(childCalls, c)
-		case *FunctionNode:
-			childFuncs = append(childFuncs, c)
-		}
-	}
+	// 断言 parentFunc 的子节点
+	assert.Equal(t, 3, len(parentFunc.GetChildren()), "parentFunc 应有3个子节点")
 
-	assert.Equal(t, 1, len(childVars), "parentFunc 内部应有1个变量声明 (parentVar)")
-	assert.Equal(t, "parentVar", childVars[0].Declaration.Declarators[0].Identifier)
+	// 查找并断言 parentVar
+	findNode(t, parentFunc, func(n *VariableNode) bool {
+		return n.Declaration.Declarators[0].Identifier == "parentVar"
+	})
 
-	assert.Equal(t, 1, len(childCalls), "parentFunc 内部应有1个函数调用 (childFunc())")
-	assert.Equal(t, "childFunc", childCalls[0].Call.CallChain[0])
+	// 查找并断言 childFunc 调用
+	findNode(t, parentFunc, func(n *CallNode) bool {
+		return n.Call.CallChain[0] == "childFunc"
+	})
 
-	assert.Equal(t, 1, len(childFuncs), "parentFunc 内部应有1个函数定义 (childFunc)")
-	assert.Equal(t, "childFunc", childFuncs[0].Declaration.Identifier)
+	// 查找并断言 childFunc 的定义
+	childFunc := findNode(t, parentFunc, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "childFunc"
+	})
 
-	// 2.3. 深入检查 childFunc 的内部结构
-	childFunc := childFuncs[0]
-	var grandChildVars []*VariableNode
-	var grandChildCalls []*CallNode
+	// 断言孙子节点
+	assert.Equal(t, 1, len(childFunc.GetChildren()), "childFunc 应有1个子节点")
+	findNode(t, childFunc, func(n *CallNode) bool {
+		return n.Call.CallChain[0] == "console"
+	})
+}
 
-	for _, child := range childFunc.Children {
-		switch c := child.(type) {
-		case *VariableNode:
-			grandChildVars = append(grandChildVars, c)
-		case *CallNode:
-			grandChildCalls = append(grandChildCalls, c)
-		}
-	}
+// TestJsxNesting 测试解析器是否能正确处理 JSX 的嵌套结构。
+func TestJsxNesting(t *testing.T) {
+	code := `
+function MyComponent() {
+    return (
+        <div className="App">
+            <h1>Title</h1>
+            <Button>Click Me</Button>
+        </div>
+    );
+}
+`
+	wd, _ := os.Getwd()
+	dummyPath := filepath.Join(wd, "test.tsx")
 
-	assert.Equal(t, 1, len(grandChildVars), "childFunc 内部应有1个变量声明 (childVar)")
-	assert.Equal(t, "childVar", grandChildVars[0].Declaration.Declarators[0].Identifier)
+	tp, err := NewTreeParserFromSource(dummyPath, code)
+	assert.NoError(t, err)
+	tp.Traverse()
+	tree := tp.Tree
 
-	assert.Equal(t, 1, len(grandChildCalls), "childFunc 内部应有1个函数调用 (console.log)")
-	assert.Equal(t, "console", grandChildCalls[0].Call.CallChain[0])
+	// 查找 MyComponent 函数
+	myComponent := findNode(t, tree, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "MyComponent"
+	})
+
+	// 查找顶层的 div
+	div := findNode(t, myComponent, func(n *JsxNode) bool {
+		return n.Declaration.ComponentChain[0] == "div"
+	})
+	assert.Equal(t, "App", div.Declaration.Attrs[0].Value.Data, "div 的 className 应该是 App")
+
+	// 断言 div 的子节点
+	assert.Equal(t, 2, len(div.GetChildren()), "div 应该有两个子节点 (h1, Button)")
+
+	// 查找 h1 和 Button
+	findNode(t, div, func(n *JsxNode) bool {
+		return n.Declaration.ComponentChain[0] == "h1"
+	})
+	findNode(t, div, func(n *JsxNode) bool {
+		return n.Declaration.ComponentChain[0] == "Button"
+	})
+}
+
+// TestNoDoubleCounting 验证变量声明中的调用表达式不会被重复计为独立的调用节点。
+func TestNoDoubleCounting(t *testing.T) {
+	code := `
+function App() {
+    const [count, setCount] = useState(0);
+}
+`
+	wd, _ := os.Getwd()
+	dummyPath := filepath.Join(wd, "test.tsx")
+
+	tp, err := NewTreeParserFromSource(dummyPath, code)
+	assert.NoError(t, err)
+	tp.Traverse()
+	tree := tp.Tree
+
+	appFunc := findNode(t, tree, func(n *FunctionNode) bool {
+		return n.Declaration.Identifier == "App"
+	})
+
+	// App 函数应该只包含一个 VariableDeclaration 子节点。
+	// 它不应该包含一个独立的 CallNode `useState(0)`。
+	assert.Equal(t, 1, len(appFunc.GetChildren()), "App 函数应该只包含一个子节点")
+	assert.IsType(t, &VariableNode{}, appFunc.GetChildren()[0], "唯一的子节点应该是 VariableNode")
 }

@@ -3,8 +3,8 @@
 package parser
 
 import (
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
 // ExportModule 代表一个被导出的独立实体。
@@ -30,25 +30,15 @@ type ExportDeclarationResult struct {
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
 }
 
-// NewExportDeclarationResult 基于 AST 节点创建一个新的 ExportDeclarationResult 实例。
-func NewExportDeclarationResult(node *ast.ExportDeclaration) *ExportDeclarationResult {
-	pos, end := node.Pos(), node.End()
-	return &ExportDeclarationResult{
-		ExportModules: make([]ExportModule, 0),
-		Raw:           "",
-		Type:          "",
-		SourceLocation: SourceLocation{
-			Start: NodePosition{Line: pos, Column: 0},
-			End:   NodePosition{Line: end, Column: 0},
-		},
+// AnalyzeExportDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析导出声明的详细信息。
+func AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) *ExportDeclarationResult {
+	edr := &ExportDeclarationResult{
+		ExportModules:  make([]ExportModule, 0),
+		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
+		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
 	}
-}
 
-// VisitExportDeclaration 解析导出声明。
-func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
-	edr := NewExportDeclarationResult(node)
-	edr.Raw = utils.GetNodeText(node.AsNode(), p.SourceCode)
-
+	// 检查是否存在模块说明符（例如 `from './module'`），如果存在，则为重导出
 	if node.ModuleSpecifier != nil {
 		edr.Source = node.ModuleSpecifier.Text()
 		edr.Type = "re-export"
@@ -56,13 +46,16 @@ func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
 		edr.Type = "named-export"
 	}
 
+	// 检查是否存在导出子句（例如 `{ a, b }` 或 `* as ns`）
 	if node.ExportClause != nil {
+		// 处理命名导出 `export { a, b as c }`
 		if node.ExportClause.Kind == ast.KindNamedExports {
 			namedExports := node.ExportClause.AsNamedExports()
 			for _, element := range namedExports.Elements.Nodes {
 				specifier := element.AsExportSpecifier()
 				identifier := specifier.Name().Text()
 				moduleName := identifier
+				// 处理别名 `export { a as b }`
 				if specifier.PropertyName != nil {
 					moduleName = specifier.PropertyName.Text()
 				}
@@ -72,6 +65,7 @@ func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
 					Identifier: identifier,
 				})
 			}
+			// 处理命名空间导出 `export * as ns from './module'`
 		} else if node.ExportClause.Kind == ast.KindNamespaceExport {
 			namespaceExport := node.ExportClause.AsNamespaceExport()
 			identifier := namespaceExport.Name().Text()
@@ -82,6 +76,7 @@ func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
 			})
 		}
 	} else {
+		// 处理 `export * from './module'`
 		if edr.Source != "" {
 			edr.ExportModules = append(edr.ExportModules, ExportModule{
 				ModuleName: "*",
@@ -90,5 +85,12 @@ func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
 			})
 		}
 	}
-	p.Result.ExportDeclarations = append(p.Result.ExportDeclarations, *edr)
+	return edr
+}
+
+// VisitExportDeclaration 是 `parser.Parser` 的一部分，在 AST 遍历时被调用。
+// 它现在将工作委托给可复用的 `AnalyzeExportDeclaration` 函数。
+func (p *Parser) VisitExportDeclaration(node *ast.ExportDeclaration) {
+	result := AnalyzeExportDeclaration(node, p.SourceCode)
+	p.Result.ExportDeclarations = append(p.Result.ExportDeclarations, *result)
 }
