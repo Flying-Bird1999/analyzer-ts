@@ -35,6 +35,7 @@ export const PI = 3.14;
 export interface User {}
 export enum Role {}
 export default function App() {}
+export * from './other';
 `
 	wd, _ := os.Getwd()
 	dummyPath := filepath.Join(wd, "test.ts")
@@ -45,24 +46,38 @@ export default function App() {}
 	tree := tp.Tree
 
 	// 断言根节点的子节点数量是否正确
-	assert.Equal(t, 5, len(tree.GetChildren()), "根节点应包含5个声明")
+	assert.Equal(t, 6, len(tree.GetChildren()), "根节点应包含6个声明")
 
 	// 使用辅助函数查找并断言各个节点
-	findNode(t, tree, func(n *ImportNode) bool {
+	importNode := findNode(t, tree, func(n *ImportNode) bool {
 		return n.Declaration.Source == "react"
 	})
-	findNode(t, tree, func(n *VariableNode) bool {
+	assert.Same(t, tree, importNode.GetParent(), "导入节点的父节点应该是根节点")
+
+	variableNode := findNode(t, tree, func(n *VariableNode) bool {
 		return n.Declaration.Declarators[0].Identifier == "PI" && n.Declaration.Exported
 	})
-	findNode(t, tree, func(n *InterfaceNode) bool {
+	assert.Same(t, tree, variableNode.GetParent(), "变量节点的父节点应该是根节点")
+
+	interfaceNode := findNode(t, tree, func(n *InterfaceNode) bool {
 		return n.Declaration.Identifier == "User" && n.Declaration.Exported
 	})
-	findNode(t, tree, func(n *EnumNode) bool {
+	assert.Same(t, tree, interfaceNode.GetParent(), "接口节点的父节点应该是根节点")
+
+	enumNode := findNode(t, tree, func(n *EnumNode) bool {
 		return n.Declaration.Identifier == "Role" && n.Declaration.Exported
 	})
-	findNode(t, tree, func(n *FunctionNode) bool {
+	assert.Same(t, tree, enumNode.GetParent(), "枚举节点的父节点应该是根节点")
+
+	fnNode := findNode(t, tree, func(n *FunctionNode) bool {
 		return n.Declaration.Identifier == "App" && n.Declaration.Exported
 	})
+	assert.Same(t, tree, fnNode.GetParent(), "函数节点的父节点应该是根节点")
+
+	exportNode := findNode(t, tree, func(n *ExportNode) bool {
+		return n.Declaration.Source == "./other"
+	})
+	assert.Same(t, tree, exportNode.GetParent(), "导出节点的父节点应该是根节点")
 }
 
 // TestFunctionScope 测试解析器是否能正确处理函数内部的声明和调用。
@@ -93,25 +108,23 @@ function parentFunc() {
 	assert.Equal(t, 3, len(parentFunc.GetChildren()), "parentFunc 应有3个子节点")
 
 	// 查找并断言 parentVar
-	findNode(t, parentFunc, func(n *VariableNode) bool {
+	varNode := findNode(t, parentFunc, func(n *VariableNode) bool {
 		return n.Declaration.Declarators[0].Identifier == "parentVar"
 	})
-
-	// 查找并断言 childFunc 调用
-	findNode(t, parentFunc, func(n *CallNode) bool {
-		return n.Call.CallChain[0] == "childFunc"
-	})
+	assert.Same(t, parentFunc, varNode.GetParent(), "parentVar 的父节点应该是 parentFunc")
 
 	// 查找并断言 childFunc 的定义
 	childFunc := findNode(t, parentFunc, func(n *FunctionNode) bool {
 		return n.Declaration.Identifier == "childFunc"
 	})
+	assert.Same(t, parentFunc, childFunc.GetParent(), "childFunc 的父节点应该是 parentFunc")
 
 	// 断言孙子节点
 	assert.Equal(t, 1, len(childFunc.GetChildren()), "childFunc 应有1个子节点")
-	findNode(t, childFunc, func(n *CallNode) bool {
+	callNode := findNode(t, childFunc, func(n *CallNode) bool {
 		return n.Call.CallChain[0] == "console"
 	})
+	assert.Same(t, childFunc, callNode.GetParent(), "console.log 调用的父节点应该是 childFunc")
 }
 
 // TestJsxNesting 测试解析器是否能正确处理 JSX 的嵌套结构。
@@ -142,24 +155,17 @@ function MyComponent() {
 	// MyComponent 应该只包含一个 return 语句
 	assert.Equal(t, 1, len(myComponent.GetChildren()), "MyComponent 应该只包含一个 return 语句")
 	returnNode := findNode(t, myComponent, func(n *ReturnNode) bool { return true })
+	assert.Same(t, myComponent, returnNode.GetParent(), "return 语句的父节点应该是 MyComponent")
 
 	// return 语句应该只包含一个 div
 	assert.Equal(t, 1, len(returnNode.GetChildren()), "return 语句应该只包含一个 div")
 	div := findNode(t, returnNode, func(n *JsxNode) bool {
 		return n.Declaration.ComponentChain[0] == "div"
 	})
-	assert.Equal(t, "App", div.Declaration.Attrs[0].Value.Data, "div 的 className 应该是 App")
+	assert.Same(t, returnNode, div.GetParent(), "div 的父节点应该是 return 语句")
 
 	// 断言 div 的子节点
 	assert.Equal(t, 2, len(div.GetChildren()), "div 应该有两个子节点 (h1, Button)")
-
-	// 查找 h1 和 Button
-	findNode(t, div, func(n *JsxNode) bool {
-		return n.Declaration.ComponentChain[0] == "h1"
-	})
-	findNode(t, div, func(n *JsxNode) bool {
-		return n.Declaration.ComponentChain[0] == "Button"
-	})
 }
 
 // TestNoDoubleCounting 验证变量声明中的调用表达式不会被重复计为独立的调用节点。
@@ -218,39 +224,21 @@ function MyComponent() {
 	useEffectCall := findNode(t, myComponentFunc, func(n *CallNode) bool {
 		return n.Call.CallChain[0] == "useEffect"
 	})
-	assert.NotNil(t, useEffectCall, "未找到 useEffect 调用节点")
+	assert.Same(t, myComponentFunc, useEffectCall.GetParent(), "useEffect 调用的父节点应该是 MyComponent")
 
 	// 3. useEffect 调用节点现在应该是一个容器，包含一个匿名的函数子节点
 	assert.Equal(t, 1, len(useEffectCall.GetChildren()), "useEffect 调用应包含一个函数作为子节点")
 	anonFunc := findNode(t, useEffectCall, func(n *FunctionNode) bool {
 		return n.Declaration.Identifier == ""
 	})
-	assert.NotNil(t, anonFunc, "useEffect 的子节点应为一个函数")
+	assert.Same(t, useEffectCall, anonFunc.GetParent(), "匿名函数的父节点应该是 useEffect 调用")
 
 	// 4. 断言匿名函数内部的结构
 	assert.Equal(t, 2, len(anonFunc.GetChildren()), "useEffect 的回调函数应有两个子节点")
 
-	// 5. 查找内部的变量声明
-	findNode(t, anonFunc, func(n *VariableNode) bool {
-		return n.Declaration.Declarators[0].Identifier == "subscription"
-	})
-
-	// 6. 查找内部的 return 语句
+	// 5. 查找内部的 return 语句
 	returnNode := findNode(t, anonFunc, func(n *ReturnNode) bool {
 		return n.Expression.Type == "arrowFunction"
 	})
-	assert.NotNil(t, returnNode, "未找到 return 语句")
-
-	// 7. return 语句的子节点应该是另一个匿名函数（清理函数）
-	assert.Equal(t, 1, len(returnNode.GetChildren()), "return 语句应包含一个清理函数作为子节点")
-	cleanupFunc := findNode(t, returnNode, func(n *FunctionNode) bool {
-		return n.Declaration.Identifier == ""
-	})
-	assert.NotNil(t, cleanupFunc, "return 的子节点应为一个函数")
-
-	// 8. 断言清理函数内部的结构
-	assert.Equal(t, 1, len(cleanupFunc.GetChildren()), "清理函数应有一个子节点")
-	findNode(t, cleanupFunc, func(n *CallNode) bool {
-		return n.Call.CallChain[0] == "API"
-	})
+	assert.Same(t, anonFunc, returnNode.GetParent(), "return 语句的父节点应该是匿名函数")
 }

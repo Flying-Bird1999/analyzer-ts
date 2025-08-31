@@ -256,15 +256,3 @@ func (tan *TypeAliasNode) GetChildren() []Node { return nil }
 func (tan *TypeAliasNode) GetParent() Node     { return tan.parent }
 func (tan *TypeAliasNode) SetParent(p Node)    { tan.parent = p }
 func (tan *TypeAliasNode) AddChild(child Node) {}
-
-// --- 辅助查找函数 ---
-
-// FindFunctionNode 在给定的节点列表中查找具有特定名称的函数节点。
-func FindFunctionNode(nodes []Node, name string) *FunctionNode {
-	for _, node := range nodes {
-		if fn, ok := node.(*FunctionNode); ok && fn.Declaration.Identifier == name {
-			return fn
-		}
-	}
-	return nil
-}
