@@ -35,7 +35,6 @@ func FormatSize(size int64) string {
 	}
 }
 
-
 // 读取文件内容
 func ReadFileContent(filePath string) (string, error) {
 	content, err := os.ReadFile(filePath)
@@ -55,7 +54,7 @@ func ParseTypeScriptFile(filePath string, sourceCode string) *ast.SourceFile {
 		filePath,
 		path,
 		sourceCode,
-		core.ScriptTargetES2015,
+		core.ScriptTargetESNext, // 使用最新的ECMAScript标准以支持现代语法
 		scanner.JSDocParsingModeParseAll,
 	)
 

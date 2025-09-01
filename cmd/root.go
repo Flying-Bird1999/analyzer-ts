@@ -17,9 +17,15 @@ var RootCmd = &cobra.Command{
 }
 
 func init() {
+	// 添加 project_analyzer 的子命令
 	RootCmd.AddCommand(projectAnalyzerCmd.GetAnalyzeCmd())
+	RootCmd.AddCommand(projectAnalyzerCmd.GetQueryCmd()) // 新增: 添加 query 命令
 	RootCmd.AddCommand(projectAnalyzerCmd.NewStoreDbCmd())
+
+	// 添加 ts_bundle 的子命令
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
+
+	// 添加其他顶级命令
 	RootCmd.AddCommand(ScanCmd)
 }
 
