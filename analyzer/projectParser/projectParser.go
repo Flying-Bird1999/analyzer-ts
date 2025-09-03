@@ -37,8 +37,8 @@ type ProjectParserConfig struct {
 // ProjectParserResult 结构体是整个项目解析过程的最终结果容器。
 // 它存储了配置信息、所有已解析的 JS/TS 文件的信息以及所有 `package.json` 文件的信息。
 type ProjectParserResult struct {
-	Config       ProjectParserConfig                  `json:"config"`
-	Js_Data      map[string]JsFileParserResult        `json:"js_data"`
+	Config       ProjectParserConfig                    `json:"config"`
+	Js_Data      map[string]JsFileParserResult          `json:"js_data"`
 	Package_Data map[string]PackageJsonFileParserResult `json:"package_data"`
 }
 

@@ -10,8 +10,8 @@ import (
 // ExtractedNodes 用于存储从文件中提取出的各种节点信息。
 // 当需要添加新的节点类型时，只需在此结构体中添加新的字段。
 type ExtractedNodes struct {
-	AnyDeclarations []AnyInfo      // 存储找到的所有 any 类型的信息
-	AsExpressions   []AsExpression // 存储找到的所有 as 表达式的信息
+	AnyDeclarations []AnyInfo      `json:"anyDeclarations"` // 存储找到的所有 any 类型的信息
+	AsExpressions   []AsExpression `json:"asExpressions"`   // 存储找到的所有 as 表达式的信息
 	// 后续新增其他节点类型时，同步添加在下方
 }
 

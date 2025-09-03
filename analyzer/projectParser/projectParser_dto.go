@@ -11,7 +11,7 @@ type JsFileParserResult struct {
 	// ExportDeclarations 存储了文件中所有的导出声明。
 	// 每个导出声明都包含了导出的模块、原始语句以及可能的来源信息（用于再导出场景）。
 	ExportDeclarations    []ExportDeclarationResult                    `json:"exportDeclarations"`
-	ExportAssignments     []parser.ExportAssignmentResult              // 例如 `export default` 声明
+	ExportAssignments     []parser.ExportAssignmentResult              `json:"exportAssignments"`     // 例如 `export default` 声明
 	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult `json:"interfaceDeclarations"` // 文件中定义的接口
 	TypeDeclarations      map[string]parser.TypeDeclarationResult      `json:"typeDeclarations"`      // 文件中定义的类型别名
 	EnumDeclarations      map[string]parser.EnumDeclarationResult      `json:"enumDeclarations"`      // 文件中定义的枚举
@@ -19,8 +19,8 @@ type JsFileParserResult struct {
 	CallExpressions       []parser.CallExpression                      `json:"callExpressions"`       // 文件中的函数调用表达式
 	JsxElements           []JSXElementResult                           `json:"jsxElements"`           // 文件中的JSX元素
 	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations"` // 文件中所有函数声明的信息
-	ExtractedNodes        parser.ExtractedNodes                        // 用于存储提取的节点信息
-	Errors                []error                                      `json:"errors,omitempty"`     // 新增：用于存储解析过程中遇到的错误
+	ExtractedNodes        parser.ExtractedNodes                        `json:"extractedNodes"`        // 用于存储提取的节点信息
+	Errors                []error                                      `json:"errors,omitempty"`      // 新增：用于存储解析过程中遇到的错误
 }
 
 // PackageJsonFileParserResult 存储了对 `package.json` 文件解析后的关键信息。

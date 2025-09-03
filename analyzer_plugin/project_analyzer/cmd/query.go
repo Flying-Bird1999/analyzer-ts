@@ -1,358 +1,220 @@
-// package cmd 存放了所有命令行工具的实现。
+// package cmd 定义了分析器的所有命令行接口。
+// 本文件 (query.go) 实现了一个最终版的、高度灵活的一站式数据查询和重塑命令。
 package cmd
 
-// go run main.go query 'js_data' --omit-fields="*.raw,*.sourceLocation,*.expression" -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**"
-
 import (
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	jmespath "github.com/jmespath/go-jmespath"
+	"github.com/jmespath/go-jmespath"
 	"github.com/spf13/cobra"
 )
 
-// GetQueryCmd 返回新增的 query 命令的 Cobra 命令对象。
-// 这个命令允许用户使用 JMESPath 对项目解析结果进行通用查询。
+// GetQueryCmd 返回 'query' 子命令的 Cobra 命令对象。
+// 这是该命令的最终实现，提供了最大的灵活性。
 func GetQueryCmd() *cobra.Command {
-	var (
-		inputPath   string
-		outputPath  string
-		excludePath []string
-		isMonorepo  bool
-		omitFields  []string
-		noCache     bool
-	)
+	var queryCmd = &cobra.Command{
+		Use:   "query -i <project-path> [flags]",
+		Short: "一站式地分析项目，并可选地使用字段名/路径和 JMESPath 进行精确的数据提取与重塑。",
+		Long: `'query' 命令是一个强大的一站式工具，它按以下顺序执行操作：
 
-	queryCmd := &cobra.Command{
-		Use:   "query <jmespath_query>",
-		Short: "使用 JMESPath 对项目解析结果进行通用查询。",
-		Long: "该命令提供了一个强大的、通用的方式来查询和过滤项目解析后的数据。\n\n" +
-			"核心功能:\n" +
-			"- 使用 JMESPath 语言进行灵活的数据查询和筛选。\n" +
-			"- 通过 --omit-fields 标志对查询结果进行精细的“瘦身”，移除不需要的字段。\n\n" +
-			"JMESPath 查询示例:\n" +
-			"  # 查询所有从 'react' 库的导入\n" +
-			"  query 'js_data.*.importDeclarations[?source.npmPkg==`'react'`]'\n\n" +
-			"  # 同时查询函数和导入声明，并压平到一个列表\n" +
-			"  query 'js_data.*.[functionsDeclarations, importDeclarations][][]'\n\n" +
-			"--omit-fields 使用示例:\n" +
-			"  # 1. 全局模式: 移除所有节点下的 'raw' 字段\n" +
-			"  --omit-fields=\"*.raw\"\n\n" +
-			"  # 2. 精确模式: 移除特定节点下的特定字段\n" +
-			"  --omit-fields=\"FunctionDeclaration.SourceLocation.Start\"\n\n" +
-			"高级查询示例:\n" +
-			"  # 1. 提取所有 package.json 的数据\n" +
-			"  query 'package_data'\n\n" +
-			"  # 2. 提取所有NPM依赖包的名称\n" +
-			"  query 'package_data.*.npmList.*.name'\n\n" +
-			"  # 3. 输出未经任何处理的完整原始JSON数据\n" +
-			"  query '@'",
-		Args: cobra.ExactArgs(1), // 要求必须且只有一个参数，即 JMESPath 查询语句
-		Run: func(cmd *cobra.Command, args []string) {
-			jmespathQuery := args[0]
+1.  **项目分析**: 完整地分析指定的 TypeScript 项目，生成一个包含所有代码结构信息的 JSON 对象。
+2.  **字段剔除 (可选)**: 根据 --strip-fields 标志，精确地移除 JSON 中所有指定的字段，以简化输出。
+3.  **JMESPath 查询 (可选)**: 如果提供了 --jmespath 表达式，则对 JSON 结果进行过滤和重塑。
+4.  **输出**: 将最终处理后的数据输出到指定文件或标准输出。
 
-			// 1. 检查输入路径
-			if inputPath == "" {
-				fmt.Println("错误: 请使用 -i 或 --input 标志提供项目路径。")
-				return
-			}
+**标志 (Flags):**
 
-			// 2. 解析项目
-			parsingResult, err := ParseProjectWithCache(inputPath, excludePath, isMonorepo, !noCache)
+- **-i, --input (必需)**: 指定要分析的 TypeScript 项目的根目录。
+- **-o, --output**: 指定输出文件的目录。如果留空，结果将打印到标准输出。
+- **-m, --monorepo**: 如果项目是一个 monorepo 仓库，请使用此标志以确保正确解析依赖关系。
+- **-x, --exclude**: 指定要从分析中排除的目录或文件的 glob 模式 (例如 'src/**/*.test.ts', 'node_modules')。可多次使用。
+- **-s, --strip-fields**: 指定要从结果中递归删除的字段名或字段路径。这对于清理和简化输出非常有用。
+    - **按名称剔除**: '-s raw' 会删除所有名为 "raw" 的字段。
+    - **按路径剔除**: '-s importDeclarations.raw' 只会删除 importDeclarations 下的 "raw" 字段。
+- **-j, --jmespath**: 提供一个 JMESPath 表达式来查询和重塑最终的 JSON 数据。
+
+**数据结构:**
+
+分析结果的顶层是一个 JSON 对象，其关键字段是 "js_data"。"js_data" 是一个以文件绝对路径为键，以该文件的解析结果为值的 map/对象。
+
+**实用查询案例 (JMESPath 示例):**
+
+1.  **(最可靠) 提取所有 'as' 表达式:**
+    'go run main.go query -i . -j "js_data.*[?length(extractedNodes.asExpressions) > '0'].extractedNodes.asExpressions"'
+
+2.  **查找所有类型为 'any' 的变量声明:**
+    'go run main.go query -i . -j "js_data.*.variableDeclarations[?type=='any'].name"'
+
+3.  **列出所有从 'react' 导入的模块:**
+    'go run main.go query -i . -j "js_data.*.importDeclarations[?source.module=='react'].importModules[].importModule"'
+
+4.  **提取所有接口(interface)及其属性:**
+    'go run main.go query -i . -j "js_data.*.interfaceDeclarations.*.{name: name, properties: properties[].name}"'
+
+5.  **列出所有被解析文件的路径:**
+    'go run main.go query -i . -j "keys(js_data)"'
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// --- 步骤 1: 从标志中获取所有用户提供的参数 ---
+			// 通过 Cobra 的 Flags() 方法安全地获取用户通过命令行传入的各个参数值。
+			inputPath, _ := cmd.Flags().GetString("input")
+			outputPath, _ := cmd.Flags().GetString("output")
+			isMonorepo, _ := cmd.Flags().GetBool("monorepo")
+			excludePaths, _ := cmd.Flags().GetStringSlice("exclude")
+			stripPaths, _ := cmd.Flags().GetStringSlice("strip-fields")
+			jmespathExpr, _ := cmd.Flags().GetString("jmespath")
+
+			// --- 步骤 2: 执行项目解析 ---
+			// 这是核心分析步骤。它会遍历项目文件，解析 AST，并构建一个包含所有信息的结构体。
+			fmt.Fprintln(os.Stderr, "开始解析项目，这可能需要一些时间...")
+			config := projectParser.NewProjectParserConfig(inputPath, excludePaths, isMonorepo, []string{})
+			parsingResult := projectParser.NewProjectParserResult(config)
+			parsingResult.ProjectParser()
+			fmt.Fprintln(os.Stderr, "项目解析完成。")
+
+			// --- 步骤 3: 将 Go 结构体转换为通用的 interface{} ---
+			// 为了让 JMESPath 和递归字段剔除能够处理数据，需要将强类型的 Go 结构体转换为
+			// 由 map[string]interface{} 和 []interface{} 组成的通用数据结构。
+			var data interface{}
+			fullJSON, err := json.Marshal(parsingResult)
 			if err != nil {
-				fmt.Printf("错误: 解析项目失败: %v\n", err)
-				return
+				return fmt.Errorf("序列化解析结果失败: %w", err)
+			}
+			if err := json.Unmarshal(fullJSON, &data); err != nil {
+				return fmt.Errorf("反序列化至通用接口失败: %w", err)
 			}
 
-			// 3. 为节点注入类型信息，为后续处理做准备
-			typedData, err := injectNodeTypes(parsingResult)
-			if err != nil {
-				fmt.Printf("错误: 注入节点类型信息失败: %v\n", err)
-				return
-			}
-
-			// 4. 执行 JMESPath 查询
-			jmespathResult, err := jmespath.Search(jmespathQuery, typedData)
-			if err != nil {
-				fmt.Printf("错误: 执行 JMESPath 查询失败: %v\n", err)
-				return
-			}
-
-			// 5. 如果定义了 --omit-fields，则对结果进行处理
-			if len(omitFields) > 0 {
-				rules := parseOmitRules(omitFields)
-				recursiveOmit(jmespathResult, rules)
-			}
-
-			// 6. 输出最终结果
-			outputData, err := json.MarshalIndent(jmespathResult, "", "  ")
-			if err != nil {
-				fmt.Printf("错误: 序列化最终结果失败: %v\n", err)
-				return
-			}
-
-			if outputPath == "" {
-				// 如果未指定输出路径，则直接打印到控制台
-				fmt.Println(string(outputData))
-			} else {
-				// 如果指定了输出路径，则写入文件
-				outputFileName := GenerateOutputFileName(inputPath, "query_result")
-				err := WriteJSONResult(outputPath, outputFileName, jmespathResult)
-				if err != nil {
-					fmt.Printf("错误: 无法将结果写入文件: %v\n", err)
+			// --- 步骤 4: (可选) 执行递归字段剔除 ---
+			// 如果用户指定了 --strip-fields，则在此处清理数据。
+			if len(stripPaths) > 0 {
+				fmt.Fprintf(os.Stderr, "正在按名称/路径剔除指定的 %d 个字段...\n", len(stripPaths))
+				pathsToStrip := make(map[string]struct{}, len(stripPaths))
+				for _, path := range stripPaths {
+					pathsToStrip[path] = struct{}{}
 				}
+				stripRecursive(data, "", pathsToStrip)
 			}
+
+			// --- 步骤 5: (可选) 执行 JMESPath 查询与重塑 ---
+			// 如果用户提供了 --jmespath 表达式，则使用它来过滤和重塑数据。
+			var finalData interface{}
+			if jmespathExpr != "" {
+				fmt.Fprintln(os.Stderr, "正在应用 JMESPath 表达式...")
+				result, err := jmespath.Search(jmespathExpr, data)
+				if err != nil {
+					return fmt.Errorf("执行 JMESPath 表达式失败: %w", err)
+				}
+				finalData = result
+			} else {
+				// 如果没有提供表达式，则直接使用（可能已被剔除字段的）原始数据。
+				finalData = data
+			}
+
+			// --- 步骤 6: 格式化最终结果 ---
+			// 将最终数据格式化为易于阅读的 JSON 格式。
+			outputJSON, err := json.MarshalIndent(finalData, "", "  ")
+			if err != nil {
+				return fmt.Errorf("格式化最终输出 JSON 失败: %w", err)
+			}
+
+			// --- 步骤 7: 输出结果 ---
+			// 根据用户是否指定 --output 路径，将结果写入文件或打印到控制台。
+			if outputPath != "" {
+				return writeOutputToFile(outputPath, inputPath, outputJSON)
+			} else {
+				fmt.Println(string(outputJSON))
+			}
+
+			return nil
 		},
 	}
 
-	queryCmd.Flags().StringVarP(&inputPath, "input", "i", "", "项目根目录 (必需)")
-	queryCmd.Flags().StringVarP(&outputPath, "output", "o", "", "输出文件目录 (默认为打印到控制台)")
-	queryCmd.Flags().StringSliceVarP(&excludePath, "exclude", "x", []string{}, "排除的 glob 模式")
-	queryCmd.Flags().BoolVarP(&isMonorepo, "monorepo", "m", false, "是否为 monorepo")
-	queryCmd.Flags().StringSliceVarP(&omitFields, "omit-fields", "", []string{}, "需要从结果中剔除的字段 (例如: '*.raw', 'FunctionDeclaration.Parameters)")
-	queryCmd.Flags().BoolVar(&noCache, "no-cache", false, "禁用缓存，强制重新解析整个项目")
-	queryCmd.MarkFlagRequired("input")
+	// --- Flag 定义区 ---
+	// 定义了所有此命令接受的命令行标志。
+	queryCmd.Flags().StringP("input", "i", "", "要分析的项目根目录")
+	queryCmd.Flags().BoolP("monorepo", "m", false, "是否将项目作为 monorepo 进行解析")
+	queryCmd.Flags().StringSliceP("exclude", "x", []string{}, "要排除的目录或文件的 glob 模式 (可多次使用)")
+	queryCmd.Flags().StringP("output", "o", "", "输出文件目录 (如果为空，则输出到标准输出)")
+	queryCmd.Flags().StringSliceP("strip-fields", "s", []string{}, "要递归剔除的字段名或路径 (可多次使用)")
+	queryCmd.Flags().StringP("jmespath", "j", "", "(可选) 用于查询和重塑 JSON 数据的 JMESPath 表达式")
+
+	// 将 input 标志标记为必需，如果用户没有提供 -i 或 --input，Cobra 会自动报错。
+	if err := queryCmd.MarkFlagRequired("input"); err != nil {
+		// 在开发阶段，如果标记失败，直接 panic 以便快速发现问题。
+		panic(err)
+	}
 
 	return queryCmd
 }
 
-func ParseProjectWithCache(rootPath string, ignore []string, isMonorepo bool, useCache bool) (*projectParser.ProjectParserResult, error) {
-	cacheDir := filepath.Join(rootPath, ".analyzer_cache")
-	cacheFile := filepath.Join(cacheDir, "parser_result.gob")
-
-	if useCache {
-		stale, err := isQueryCacheStale(cacheFile, rootPath, ignore)
-		if err == nil && !stale {
-			fmt.Println("缓存有效，正在从缓存加载解析结果...")
-			file, err := os.Open(cacheFile)
-			if err == nil {
-				defer file.Close()
-				decoder := gob.NewDecoder(file)
-				var result projectParser.ProjectParserResult
-				if err := decoder.Decode(&result); err == nil {
-					fmt.Println("成功从缓存加载。")
-					return &result, nil
-				}
-			}
-			fmt.Println("无法读取或解码缓存，将执行完整解析。")
-		}
-	}
-
-	result, err := ParseProject(rootPath, ignore, isMonorepo)
-	if err != nil {
-		return nil, err
-	}
-
-	if useCache {
-		fmt.Println("正在保存解析结果到缓存...")
-		if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
-			return nil, fmt.Errorf("创建缓存目录失败: %w", err)
-		}
-		file, err := os.Create(cacheFile)
-		if err != nil {
-			return nil, fmt.Errorf("创建缓存文件失败: %w", err)
-		}
-		defer file.Close()
-
-		encoder := gob.NewEncoder(file)
-		if err := encoder.Encode(result); err != nil {
-			return nil, fmt.Errorf("写入缓存失败: %w", err)
-		}
-		fmt.Println("缓存写入成功: ", cacheFile)
-	}
-
-	return result, nil
-}
-
-func isQueryCacheStale(cacheFile string, rootPath string, ignorePatterns []string) (bool, error) {
-	cacheInfo, err := os.Stat(cacheFile)
-	if err != nil {
-		return true, err
-	}
-	cacheModTime := cacheInfo.ModTime()
-
-	var isStale bool
-	err = filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if isStale {
-			return filepath.SkipDir
-		}
-
-		for _, pattern := range ignorePatterns {
-			if matched, _ := filepath.Match(pattern, path); matched {
-				if info.IsDir() {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-		}
-
-		ext := filepath.Ext(path)
-		if ext == ".ts" || ext == ".tsx" || ext == ".js" || ext == ".jsx" || ext == "package.json" {
-			if info.ModTime().After(cacheModTime) {
-				fmt.Printf("缓存失效: 文件被修改过 %s\n", path)
-				isStale = true
-			}
-		}
-		return nil
-	})
-
-	return isStale, err
-}
-
-func injectNodeTypes(result *projectParser.ProjectParserResult) (interface{}, error) {
-	// 1. 先通过 JSON 序列化和反序列化，将整个结构体转换为 map[string]interface{}
-	jsonData, err := json.Marshal(result)
-	if err != nil {
-		return nil, err
-	}
-	var data interface{}
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return nil, err
-	}
-
-	// 2. 递归地为特定节点添加 __type 字段
-	if rootMap, ok := data.(map[string]interface{}); ok {
-		if jsData, ok := rootMap["js_data"].(map[string]interface{}); ok {
-			for _, fileData := range jsData {
-				if fileMap, ok := fileData.(map[string]interface{}); ok {
-					// 遍历文件中的所有可能的声明类型
-					for key, value := range fileMap {
-						// key 是 "functionsDeclarations", "importDeclarations" 等
-						// value 是这些声明的数组
-						if declarations, ok := value.([]interface{}); ok {
-							var typeName string
-							// 特殊处理 JsxElements
-							if key == "jsxElements" {
-								typeName = "JSXElement"
-							} else {
-								typeName = strings.TrimSuffix(key, "s")
-								typeName = strings.TrimSuffix(typeName, "Declaration")
-								typeName = strings.Title(typeName) + "Declaration"
-							}
-
-							// 为数组中的每个对象注入 __type
-							for _, decl := range declarations {
-								if declMap, ok := decl.(map[string]interface{}); ok {
-									declMap["__type"] = typeName
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return data, nil
-}
-
-// omitRule 表示一条剔除规则
-type omitRule struct {
-	// IsGlobal 标记这是否是一条全局规则 (例如 *.raw)
-	IsGlobal bool
-	// NodeType 是规则应用的目标节点类型 (例如 FunctionDeclaration)
-	NodeType string
-	// Path 是要剔除的字段路径 (例如 Parameters.raw)
-	Path string
-}
-
-// parseOmitRules 解析来自 --omit-fields 标志的字符串，并将其转换为结构化的规则。
-func parseOmitRules(fields []string) []omitRule {
-	var rules []omitRule
-	// --omit-fields 支持逗号分割的多个规则
-	fieldParts := strings.Split(strings.Join(fields, ","), ",")
-	for _, field := range fieldParts {
-		trimmedField := strings.TrimSpace(field)
-		if trimmedField == "" {
-			continue
-		}
-		parts := strings.SplitN(trimmedField, ".", 2)
-		if len(parts) == 2 {
-			nodeType := parts[0]
-			path := parts[1]
-			if nodeType == "*" {
-				rules = append(rules, omitRule{IsGlobal: true, Path: path})
-			} else {
-				rules = append(rules, omitRule{NodeType: nodeType, Path: path})
-			}
-		}
-	}
-	return rules
-}
-
-// recursiveOmit 递归地遍历查询结果，并根据规则剔除字段。
-func recursiveOmit(current interface{}, rules []omitRule) {
-	switch node := current.(type) {
+// stripRecursive 递归地遍历一个 interface{} 并根据一个“键名”或“父键.子键”的路径映射来删除字段。
+// 这个最终版本同时支持按名称剔除和按路径剔除两种模式。
+// data: 当前正在处理的数据片段 (map 或 slice)。
+// parentKey: 当前数据片段的父键，用于构建完整的访问路径。
+// fieldsToStrip: 一个包含所有需要被删除的键名和路径的 set。
+func stripRecursive(data interface{}, parentKey string, fieldsToStrip map[string]struct{}) {
+	switch value := data.(type) {
 	case map[string]interface{}:
-		// 规则应用: 对当前对象应用所有匹配的规则
-		typeName, _ := node["__type"].(string)
-		for _, rule := range rules {
-			if rule.IsGlobal {
-				// 应用全局规则
-				deleteFieldByPath(node, rule.Path)
-			} else if typeName != "" && rule.NodeType == typeName {
-				// 应用特定类型规则
-				deleteFieldByPath(node, rule.Path)
+		// 如果当前是 map (JSON object)
+		for k, v := range value {
+			// 检查1：直接按键名匹配 (例如 "raw")
+			_, stripByKey := fieldsToStrip[k]
+
+			// 检查2：按完整路径匹配 (例如 "importDeclarations.raw")
+			// 只有在 parentKey 非空时才构建路径，以避免在顶层产生如 ".field" 这样的无效路径。
+			checkPath := ""
+			if parentKey != "" {
+				checkPath = parentKey + "." + k
+			}
+			_, stripByPath := fieldsToStrip[checkPath]
+
+			// 如果键名或完整路径任意一个匹配，则从 map 中删除该键值对。
+			if stripByKey || stripByPath {
+				delete(value, k)
+			} else {
+				// 否则，继续向下一层递归。下一层的父键就是当前的键 k。
+				// 如果当前键是 "fileInfos"，下一层递归时 parentKey 就是 "fileInfos"。
+				newParentKey := k
+				if parentKey != "" {
+					newParentKey = parentKey + "." + k
+				}
+				stripRecursive(v, newParentKey, fieldsToStrip)
 			}
 		}
-
-		// 递归深入: 继续遍历对象的子字段
-		for _, value := range node {
-			recursiveOmit(value, rules)
-		}
-
 	case []interface{}:
-		// 如果是数组，则递归遍历其所有元素
-		for _, item := range node {
-			recursiveOmit(item, rules)
+		// 如果是 slice (JSON array)
+		// 遍历切片中的所有元素并递归处理。
+		// 将当前切片的父键(parentKey)直接传递下去，这样可以检查到 "arrayKey.field" 这样的路径。
+		for _, v := range value {
+			stripRecursive(v, parentKey, fieldsToStrip)
 		}
 	}
 }
 
-// deleteFieldByPath 根据点路径 (dot path) 从一个对象中删除字段。
-// 它能够处理嵌套对象和数组。
-func deleteFieldByPath(data interface{}, path string) {
-	parts := strings.Split(path, ".")
-	current := data
-
-	// 遍历路径的每一部分，除了最后一部分（因为最后一部分是要删除的键）
-	for i := 0; i < len(parts)-1; i++ {
-		part := parts[i]
-		// 将 current 断言为 map 类型，以便访问其字段
-		mapCurrent, ok := current.(map[string]interface{})
-		if !ok {
-			return // 如果路径中的某个环节不是 map，则无法继续，路径无效
-		}
-
-		next, exists := mapCurrent[part]
-		if !exists {
-			return // 路径不存在
-		}
-
-		// 如果路径的下一部分是数组，则递归地对数组中每个元素应用剩余的路径
-		if reflect.TypeOf(next).Kind() == reflect.Slice {
-			if nextSlice, ok := next.([]interface{}); ok {
-				remainingPath := strings.Join(parts[i+1:], ".")
-				for _, item := range nextSlice {
-					deleteFieldByPath(item, remainingPath)
-				}
-				return // 递归调用已经处理了剩余路径，直接返回
-			}
-		}
-		current = next
+// writeOutputToFile 将结果写入指定目录下的一个自动生成的文件中。
+func writeOutputToFile(outputDir, inputPath string, content []byte) error {
+	// 确保输出目录存在，如果不存在则创建它。
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return fmt.Errorf("创建输出目录失败: %w", err)
 	}
+	// 从输入路径中提取基本名称（例如，从 "/path/to/my-project" 得到 "my-project"）。
+	baseName := filepath.Base(inputPath)
+	// 将基本名称中的空格替换为下划线，以创建更安全的文件名。
+	safeBaseName := strings.ReplaceAll(baseName, " ", "_")
+	// 构建一个唯一的输出文件名。
+	outputFileName := fmt.Sprintf("%s_query_result.json", safeBaseName)
+	outputFile := filepath.Join(outputDir, outputFileName)
 
-	// 删除目标字段
-	if mapCurrent, ok := current.(map[string]interface{}); ok {
-		delete(mapCurrent, parts[len(parts)-1])
+	// 将内容写入文件。
+	if err := os.WriteFile(outputFile, content, 0644); err != nil {
+		return fmt.Errorf("写入 JSON 文件失败: %w", err)
 	}
+	// 在标准错误流中打印成功消息，告知用户文件已保存的位置。
+	fmt.Fprintf(os.Stderr, "✅ 结果已成功写入到 %s\n", outputFile)
+	return nil
 }
