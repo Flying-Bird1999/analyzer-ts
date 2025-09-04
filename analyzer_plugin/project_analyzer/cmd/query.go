@@ -42,22 +42,7 @@ func GetQueryCmd() *cobra.Command {
 
 分析结果的顶层是一个 JSON 对象，其关键字段是 "js_data"。"js_data" 是一个以文件绝对路径为键，以该文件的解析结果为值的 map/对象。
 
-**实用查询案例 (JMESPath 示例):**
-
-1.  **(最可靠) 提取所有 'as' 表达式:**
-    'go run main.go query -i . -j "js_data.*[?length(extractedNodes.asExpressions) > '0'].extractedNodes.asExpressions"'
-
-2.  **查找所有类型为 'any' 的变量声明:**
-    'go run main.go query -i . -j "js_data.*.variableDeclarations[?type=='any'].name"'
-
-3.  **列出所有从 'react' 导入的模块:**
-    'go run main.go query -i . -j "js_data.*.importDeclarations[?source.module=='react'].importModules[].importModule"'
-
-4.  **提取所有接口(interface)及其属性:**
-    'go run main.go query -i . -j "js_data.*.interfaceDeclarations.*.{name: name, properties: properties[].name}"'
-
-5.  **列出所有被解析文件的路径:**
-    'go run main.go query -i . -j "keys(js_data)"'
+**实用查询案例请参考: https://jmespath.org/tutorial.html:**
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// --- 步骤 1: 从标志中获取所有用户提供的参数 ---
@@ -104,7 +89,7 @@ func GetQueryCmd() *cobra.Command {
 			// 如果用户提供了 --jmespath 表达式，则使用它来过滤和重塑数据。
 			var finalData interface{}
 			if jmespathExpr != "" {
-				fmt.Fprintln(os.Stderr, "正在应用 JMESPath 表达式...")
+				fmt.Fprintf(os.Stderr, "正在应用 JMESPath 表达式: %s \n", jmespathExpr)
 				result, err := jmespath.Search(jmespathExpr, data)
 				if err != nil {
 					return fmt.Errorf("执行 JMESPath 表达式失败: %w", err)
