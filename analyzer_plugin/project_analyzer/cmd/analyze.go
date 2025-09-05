@@ -4,6 +4,8 @@ package cmd
 
 // example: go run main.go analyze find-callers -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ActivityPage/index.tsx" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/SettingPage/index.tsx"
 
+// example: go run main.go analyze trace -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**" -p "trace.targetPkgs=antd" -p "trace.targetPkgs=@yy/sl-admin-components"
+
 import (
 	"encoding/json"
 	"fmt"
@@ -18,6 +20,7 @@ import (
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
 	structuresimple "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/structureSimple"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
 
@@ -33,6 +36,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"count-as":                &countas.Counter{},
 	"npm-check":               &dependency.Checker{},
 	"structure-simple":        &structuresimple.StructureSimpleAnalyzer{},
+	"trace":                   &trace.Tracer{},
 }
 
 // GetAnalyzeCmd 返回分析命令的 Cobra 命令对象
@@ -48,20 +52,43 @@ func GetAnalyzeCmd() *cobra.Command {
 	analyzeCmd := &cobra.Command{
 		Use:   "analyze [analyzer_name...]",
 		Short: "对 TypeScript/JavaScript 项目进行代码分析。",
-		Long: "该命令是分析器的主要入口点，能够对 TypeScript/JavaScript 项目进行深度分析.\n\n" +
-			"您可以选择运行一个或多个内置的分析器，只需在命令后附上它们的名称即可.\n\n" +
-			"可用分析器列表:\n" +
-			"  - structure-simple: 输出一个简化的项目整体结构报告.\n" +
-			"  - unconsumed: 查找项目中所有已导出但从未被导入的符号.\n" +
-			"  - find-callers: 查找一个或多个指定文件的所有上游调用方.\n" +
-			"  - find-unreferenced-files: 查找项目中从未被任何其他文件引用的\"孤岛\"文件.\n" +
-			"  - count-any: 统计项目中所有 `any` 类型的使用情况.\n" +
-			"  - count-as: 统计项目中所有 `as` 类型断言的使用情况.\n" +
-			"  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.\n\n" +
-			"如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的原始 AST 结构.\n\n" +
-			"参数 (-p, --param) 使用示例:\n" +
-			"某些分析器需要额外的参数。例如，`find-callers` 需要知道要追踪哪个文件.\n" +
-			"analyze find-callers -i . -p \"find-callers.targetFiles=src/utils.ts\" -p \"find-callers.targetFiles=src/helper.ts\"",
+		Long: `该命令是分析器的主要入口点，能够对 TypeScript/JavaScript 项目进行深度分析.
+
+` +
+			`您可以选择运行一个或多个内置的分析器，只需在命令后附上它们的名称即可.
+
+` +
+			`可用分析器列表:
+` +
+			`  - structure-simple: 输出一个简化的项目整体结构报告.
+` +
+			`  - unconsumed: 查找项目中所有已导出但从未被导入的符号.
+` +
+			`  - find-callers: 查找一个或多个指定文件的所有上游调用方.
+` +
+			`  - find-unreferenced-files: 查找项目中从未被任何其他文件引用的"孤岛"文件.
+` +
+			`  - count-any: 统计项目中所有 'any' 类型的使用情况.
+` +
+			`  - count-as: 统计项目中所有 'as' 类型断言的使用情况.
+` +
+			`  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.
+` +
+			`  - trace: 追踪一个或多个NPM包的使用链路 (例如 antd).
+
+` +
+			`如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的原始 AST 结构.
+
+` +
+			`参数 (-p, --param) 使用示例:
+` +
+			`某些分析器需要额外的参数。例如，'find-callers' 需要知道要追踪哪个文件.
+` +
+			`analyze find-callers -i . -p "find-callers.targetFiles=src/utils.ts" -p "find-callers.targetFiles=src/helper.ts"
+` +
+			`'trace' 分析器需要 'trace.targetPkgs' 参数来指定要追踪的NPM包，用逗号分隔.
+` +
+			`analyze trace -i . -p "trace.targetPkgs=antd,@arco-design/web-react"`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// 0. 如果未提供输出路径，则默认为当前工作目录
 			if outputPath == "" {
@@ -197,18 +224,20 @@ func selectAnalyzers(args []string) []projectanalyzer.Analyzer {
 // 例如: {"targetFiles": "/path/to/file1.ts,/path/to/file2.ts"}
 func configureAnalyzers(analyzers []projectanalyzer.Analyzer, params map[string]map[string][]string) {
 	for _, analyzer := range analyzers {
+		// 无论是否有参数，都调用Configure方法，让分析器自己决定如何处理
+		// （例如，是使用默认值还是在缺少必要参数时报错）。
+		analyzerParams := make(map[string]string)
 		if p, ok := params[analyzer.Name()]; ok {
 			// 将 map[string][]string 转换为 map[string]string 以保持向后兼容
 			// 对于有多个值的参数，我们用逗号将它们连接起来
-			compatParams := make(map[string]string)
 			for paramName, paramValues := range p {
-				compatParams[paramName] = strings.Join(paramValues, ",")
+				analyzerParams[paramName] = strings.Join(paramValues, ",")
 			}
+		}
 
-			if err := analyzer.Configure(compatParams); err != nil {
-				fmt.Printf("错误: 配置分析器 '%s' 失败: %v\n", analyzer.Name(), err)
-				os.Exit(1)
-			}
+		if err := analyzer.Configure(analyzerParams); err != nil {
+			fmt.Printf("错误: 配置分析器 '%s' 失败: %v\n", analyzer.Name(), err)
+			os.Exit(1)
 		}
 	}
 }
