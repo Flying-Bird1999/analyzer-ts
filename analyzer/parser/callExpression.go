@@ -18,7 +18,7 @@ type CallExpression struct {
 	Arguments       []*VariableValue            `json:"arguments"`       // 调用时传递的参数列表。
 	InlineFunctions []FunctionDeclarationResult `json:"inlineFunctions"` // [新增] 在参数中发现的内联函数（例如 useEffect 的回调）
 	Raw             string                      `json:"raw,omitempty"`   // 节点在源码中的原始文本。
-	SourceLocation  SourceLocation              `json:"sourceLocation"`  // 节点在源码中的位置信息。
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 表达式在源码中的位置
 }
 
 // ReconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。

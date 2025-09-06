@@ -46,7 +46,6 @@ func GetQueryCmd() *cobra.Command {
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// --- 步骤 1: 从标志中获取所有用户提供的参数 ---
-			// 通过 Cobra 的 Flags() 方法安全地获取用户通过命令行传入的各个参数值。
 			inputPath, _ := cmd.Flags().GetString("input")
 			outputPath, _ := cmd.Flags().GetString("output")
 			isMonorepo, _ := cmd.Flags().GetBool("monorepo")
@@ -54,60 +53,37 @@ func GetQueryCmd() *cobra.Command {
 			stripPaths, _ := cmd.Flags().GetStringSlice("strip-fields")
 			jmespathExpr, _ := cmd.Flags().GetString("jmespath")
 
-			// --- 步骤 2: 执行项目解析 ---
-			// 这是核心分析步骤。它会遍历项目文件，解析 AST，并构建一个包含所有信息的结构体。
-			fmt.Fprintln(os.Stderr, "开始解析项目，这可能需要一些时间...")
-			config := projectParser.NewProjectParserConfig(inputPath, excludePaths, isMonorepo, []string{})
-			parsingResult := projectParser.NewProjectParserResult(config)
-			parsingResult.ProjectParser()
-			fmt.Fprintln(os.Stderr, "项目解析完成。")
-
-			// --- 步骤 3: 将 Go 结构体转换为通用的 interface{} ---
-			// 为了让 JMESPath 和递归字段剔除能够处理数据，需要将强类型的 Go 结构体转换为
-			// 由 map[string]interface{} 和 []interface{} 组成的通用数据结构。
-			var data interface{}
-			fullJSON, err := json.Marshal(parsingResult)
+			// --- 步骤 2: 调用公共函数执行项目解析和字段剔除 ---
+			// 重构后，所有数据获取和预处理都委托给了 ParseAndStripFields。
+			parsingResult, err := ParseAndStripFields(inputPath, excludePaths, isMonorepo, stripPaths)
 			if err != nil {
-				return fmt.Errorf("序列化解析结果失败: %w", err)
-			}
-			if err := json.Unmarshal(fullJSON, &data); err != nil {
-				return fmt.Errorf("反序列化至通用接口失败: %w", err)
+				return err // 直接返回错误，ParseAndStripFields 内部已经包含了足够的上下文信息
 			}
 
-			// --- 步骤 4: (可选) 执行递归字段剔除 ---
-			// 如果用户指定了 --strip-fields，则在此处清理数据。
-			if len(stripPaths) > 0 {
-				fmt.Fprintf(os.Stderr, "正在按名称/路径剔除指定的 %d 个字段...\n", len(stripPaths))
-				pathsToStrip := make(map[string]struct{}, len(stripPaths))
-				for _, path := range stripPaths {
-					pathsToStrip[path] = struct{}{}
-				}
-				stripRecursive(data, "", pathsToStrip)
-			}
-
-			// --- 步骤 5: (可选) 执行 JMESPath 查询与重塑 ---
-			// 如果用户提供了 --jmespath 表达式，则使用它来过滤和重塑数据。
-			var finalData interface{}
+			// --- 步骤 3: (可选) 执行 JMESPath 查询与重塑 ---
+			var finalData interface{} = parsingResult // 默认最终数据就是解析结果
+			// 如果用户提供了 JMESPath 表达式，则需要进行一次额外的转换和查询。
 			if jmespathExpr != "" {
 				fmt.Fprintf(os.Stderr, "正在应用 JMESPath 表达式: %s \n", jmespathExpr)
-				result, err := jmespath.Search(jmespathExpr, data)
+				// 为了执行jmespath，需要先将强类型的Go结构体转为通用的interface{}
+				var genericData interface{}
+				tempBytes, _ := json.Marshal(parsingResult)
+				json.Unmarshal(tempBytes, &genericData)
+
+				// 在通用数据结构上执行查询
+				result, err := jmespath.Search(jmespathExpr, genericData)
 				if err != nil {
 					return fmt.Errorf("执行 JMESPath 表达式失败: %w", err)
 				}
 				finalData = result
-			} else {
-				// 如果没有提供表达式，则直接使用（可能已被剔除字段的）原始数据。
-				finalData = data
 			}
 
-			// --- 步骤 6: 格式化最终结果 ---
-			// 将最终数据格式化为易于阅读的 JSON 格式。
+			// --- 步骤 4: 格式化并输出结果 ---
 			outputJSON, err := json.MarshalIndent(finalData, "", "  ")
 			if err != nil {
 				return fmt.Errorf("格式化最终输出 JSON 失败: %w", err)
 			}
 
-			// --- 步骤 7: 输出结果 ---
 			// 根据用户是否指定 --output 路径，将结果写入文件或打印到控制台。
 			if outputPath != "" {
 				return writeOutputToFile(outputPath, inputPath, outputJSON)
@@ -137,6 +113,80 @@ func GetQueryCmd() *cobra.Command {
 	return queryCmd
 }
 
+// ParseAndStripFields 是一个可被复用的公共函数，它封装了两个核心功能：
+// 1. 对指定的TypeScript/JavaScript项目进行完整的静态分析。
+// 2. （可选）根据用户提供的字段列表，对分析结果进行递归的字段剔除。
+//
+// 这个函数旨在被多个子命令（如 `analyze` 和 `query`）调用，以统一数据源的获取和预处理流程，
+// 避免代码重复，并确保一致的行为。
+//
+// 参数:
+//   - inputPath:    要分析的项目的根目录。
+//   - excludePaths: 需要从分析中排除的文件或目录的 glob 模式列表。
+//   - isMonorepo:   一个布尔值，指示项目是否应被视为 monorepo。
+//   - stripPaths:   一个字符串切片，其中每个字符串都是一个要被剔除的字段名（如 "raw"）或字段路径（如 "declarations.raw"）。如果该切片为空，则不执行剔除操作。
+//
+// 返回值:
+//   - *projectParser.ProjectParserResult: 指向（可能已被裁剪的）项目解析结果的指针。
+//   - error: 在解析或处理过程中发生的任何错误。
+func ParseAndStripFields(inputPath string, excludePaths []string, isMonorepo bool, stripPaths []string) (*projectParser.ProjectParserResult, error) {
+	// --- 步骤 1: 执行项目解析 ---
+	// 这是核心分析步骤。它会遍历项目文件，解析 AST，并构建一个包含所有信息的强类型Go结构体。
+	fmt.Println("开始解析项目，这可能需要一些时间...")
+	config := projectParser.NewProjectParserConfig(inputPath, excludePaths, isMonorepo, []string{})
+	parsingResult := projectParser.NewProjectParserResult(config)
+	parsingResult.ProjectParser()
+	fmt.Println("项目解析完成。")
+
+	// --- 步骤 2: (可选) 执行字段剔除 ---
+	// 如果用户没有提供任何需要剔除的字段，则直接返回原始的解析结果。
+	if len(stripPaths) == 0 {
+		return parsingResult, nil
+	}
+
+	fmt.Printf("正在根据 %d 个规则剔除字段...\n", len(stripPaths))
+
+	// --- 步骤 2a: 将 Go 结构体转换为通用的 interface{} ---
+	// 为了让递归字段剔除能够处理数据，需要将强类型的 Go 结构体转换为
+	// 由 map[string]interface{} 和 []interface{} 组成的通用数据结构。
+	var data interface{}
+	fullJSON, err := json.Marshal(parsingResult)
+	if err != nil {
+		return nil, fmt.Errorf("序列化解析结果失败: %w", err)
+	}
+	if err := json.Unmarshal(fullJSON, &data); err != nil {
+		return nil, fmt.Errorf("反序列化至通用接口失败: %w", err)
+	}
+
+	// --- 步骤 2b: 将用户提供的所有规则（支持逗号分割）存入一个set中以便快速查找 ---
+	pathsToStrip := make(map[string]struct{})
+	for _, pathEntry := range stripPaths {
+		// 支持用户用逗号传递多个规则，例如 -s "raw,sourceLocation"
+		for _, path := range strings.Split(pathEntry, ",") {
+			trimmedPath := strings.TrimSpace(path)
+			if trimmedPath != "" {
+				pathsToStrip[trimmedPath] = struct{}{}
+			}
+		}
+	}
+
+	// --- 步骤 2c: 执行递归字段剔除 ---
+	stripRecursive(data, "", pathsToStrip)
+
+	// --- 步骤 2d: 将通用的 interface{} 转回 Go 结构体 ---
+	// 为了让后续的分析器能够处理，需要将裁剪后的数据转回强类型的 Go 结构体。
+	var strippedResult projectParser.ProjectParserResult
+	strippedJSON, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("重新序列化已剔除字段的结果失败: %w", err)
+	}
+	if err := json.Unmarshal(strippedJSON, &strippedResult); err != nil {
+		return nil, fmt.Errorf("反序列化回强类型结构失败: %w", err)
+	}
+
+	return &strippedResult, nil
+}
+
 // stripRecursive 递归地遍历一个 interface{} 并根据一个“键名”或“父键.子键”的路径映射来删除字段。
 // 这个最终版本同时支持按名称剔除和按路径剔除两种模式。
 // data: 当前正在处理的数据片段 (map 或 slice)。
@@ -163,7 +213,6 @@ func stripRecursive(data interface{}, parentKey string, fieldsToStrip map[string
 				delete(value, k)
 			} else {
 				// 否则，继续向下一层递归。下一层的父键就是当前的键 k。
-				// 如果当前键是 "fileInfos"，下一层递归时 parentKey 就是 "fileInfos"。
 				newParentKey := k
 				if parentKey != "" {
 					newParentKey = parentKey + "." + k

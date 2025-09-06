@@ -69,7 +69,7 @@ type VariableDeclaration struct {
 	Raw string `json:"raw,omitempty"`
 
 	// SourceLocation 记录了该节点在源码中的精确位置。
-	SourceLocation SourceLocation `json:"sourceLocation"`
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"`
 }
 
 // NewVariableDeclaration 是创建和解析 VariableDeclaration 实例的工厂函数。

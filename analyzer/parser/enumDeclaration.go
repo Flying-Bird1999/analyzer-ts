@@ -12,8 +12,8 @@ import (
 type EnumDeclarationResult struct {
 	Identifier     string         `json:"identifier"`     // 枚举的名称。
 	Exported       bool           `json:"exported"`       // 新增：标记此枚举是否被导出。
-	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
-	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
+	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
 }
 
 // AnalyzeEnumDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析枚举声明。

@@ -48,8 +48,8 @@ type JSXElement struct {
 	// 对于简单标签如 <div />，则为 ["div"]。
 	ComponentChain []string       `json:"componentChain"`
 	Attrs          []JSXAttribute `json:"attrs"`
-	Raw            string         `json:"raw"`
-	SourceLocation SourceLocation `json:"sourceLocation"`
+	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
 }
 
 // NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。

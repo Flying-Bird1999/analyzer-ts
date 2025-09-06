@@ -164,12 +164,12 @@ func (p *Parser) addError(node *ast.Node, format string, args ...interface{}) {
 
 // NewSourceLocation 是一个辅助函数，用于从 AST 节点中创建并返回一个准确的 SourceLocation。
 // 它将节点的字符偏移位置转换为行列号。
-func NewSourceLocation(node *ast.Node, sourceCode string) SourceLocation {
+func NewSourceLocation(node *ast.Node, sourceCode string) *SourceLocation {
 	startPos, endPos := node.Pos(), node.End()
 	startLine, startChar := utils.GetLineAndCharacterOfPosition(sourceCode, startPos)
 	endLine, endChar := utils.GetLineAndCharacterOfPosition(sourceCode, endPos)
 
-	return SourceLocation{
+	return &SourceLocation{
 		Start: NodePosition{Line: startLine + 1, Column: startChar + 1},
 		End:   NodePosition{Line: endLine + 1, Column: endChar + 1},
 	}

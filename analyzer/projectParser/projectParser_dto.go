@@ -11,15 +11,15 @@ type JsFileParserResult struct {
 	// ExportDeclarations 存储了文件中所有的导出声明。
 	// 每个导出声明都包含了导出的模块、原始语句以及可能的来源信息（用于再导出场景）。
 	ExportDeclarations    []ExportDeclarationResult                    `json:"exportDeclarations"`
-	ExportAssignments     []parser.ExportAssignmentResult              `json:"exportAssignments"`     // 例如 `export default` 声明
-	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult `json:"interfaceDeclarations"` // 文件中定义的接口
-	TypeDeclarations      map[string]parser.TypeDeclarationResult      `json:"typeDeclarations"`      // 文件中定义的类型别名
-	EnumDeclarations      map[string]parser.EnumDeclarationResult      `json:"enumDeclarations"`      // 文件中定义的枚举
-	VariableDeclarations  []parser.VariableDeclaration                 `json:"variableDeclarations"`  // 文件中声明的变量
-	CallExpressions       []parser.CallExpression                      `json:"callExpressions"`       // 文件中的函数调用表达式
-	JsxElements           []JSXElementResult                           `json:"jsxElements"`           // 文件中的JSX元素
-	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations"` // 文件中所有函数声明的信息
-	ExtractedNodes        parser.ExtractedNodes                        `json:"extractedNodes"`        // 用于存储提取的节点信息
+	ExportAssignments     []parser.ExportAssignmentResult              `json:"exportAssignments,omitempty"`     // 例如 `export default` 声明
+	InterfaceDeclarations map[string]parser.InterfaceDeclarationResult `json:"interfaceDeclarations,omitempty"` // 文件中定义的接口
+	TypeDeclarations      map[string]parser.TypeDeclarationResult      `json:"typeDeclarations,omitempty"`      // 文件中定义的类型别名
+	EnumDeclarations      map[string]parser.EnumDeclarationResult      `json:"enumDeclarations,omitempty"`      // 文件中定义的枚举
+	VariableDeclarations  []parser.VariableDeclaration                 `json:"variableDeclarations,omitempty"`  // 文件中声明的变量
+	CallExpressions       []parser.CallExpression                      `json:"callExpressions,omitempty"`       // 文件中的函数调用表达式
+	JsxElements           []JSXElementResult                           `json:"jsxElements,omitempty"`           // 文件中的JSX元素
+	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations,omitempty"` // 文件中所有函数声明的信息
+	ExtractedNodes        parser.ExtractedNodes                        `json:"extractedNodes,omitempty"`        // 用于存储提取的节点信息
 	Errors                []error                                      `json:"errors,omitempty"`      // 新增：用于存储解析过程中遇到的错误
 }
 
@@ -59,7 +59,7 @@ type ImportDeclarationResult struct {
 	// 例如，`import { a, b as c } from './mod'` 会产生两个 ImportModule。
 	ImportModules []ImportModule `json:"importModules"`
 	// Raw 存储了该导入声明在源代码中的原始、未修改的文本。
-	Raw string `json:"raw"`
+	Raw string `json:"raw,omitempty"`
 	// Source 包含了对导入来源模块的解析结果，包括其绝对路径、类型（文件或NPM包）等。
 	Source SourceData `json:"source"`
 }
@@ -84,7 +84,7 @@ type ExportDeclarationResult struct {
 	// ExportModules 是一个切片，包含了该导出语句中所有被导出的模块。
 	ExportModules []ExportModule `json:"exportModules"`
 	// Raw 存储了该导出声明在源代码中的原始、未修改的文本。
-	Raw string `json:"raw"`
+	Raw string `json:"raw,omitempty"`
 	// Source 在 "re-export"（再导出）场景下（例如 `export { a } from './mod'`）不为 nil。
 	// 它包含了对来源模块的解析结果。对于常规的命名导出，此字段为 nil。
 	Source *SourceData `json:"source,omitempty"`
@@ -106,17 +106,17 @@ type ExportModule struct {
 // JSXElementResult 存储了单个JSX元素的解析结果，包括其来源信息。
 type JSXElementResult struct {
 	ComponentChain []string              `json:"componentChain"` // 组件的完整路径
-	Attrs          []parser.JSXAttribute `json:"attrs"`          // JSX 属性
-	Raw            string                `json:"raw"`            // 节点在源码中的原始文本
+	Attrs          []parser.JSXAttribute `json:"attrs,omitempty"`          // JSX 属性
+	Raw            string                `json:"raw,omitempty"`            // 节点在源码中的原始文本
 	Source         SourceData            `json:"source"`         // 解析后的来源信息
 }
 
 // SourceData 结构体用于存储对导入或再导出来源模块路径的解析结果。
 type SourceData struct {
 	// FilePath 是解析后的模块的绝对文件路径。如果来源是NPM包，则此字段为空。
-	FilePath string `json:"filePath"`
+	FilePath string `json:"filePath,omitempty"`
 	// NpmPkg 是NPM包的名称。如果来源是本地文件，则此字段为空。
-	NpmPkg string `json:"npmPkg"`
+	NpmPkg string `json:"npmPkg,omitempty"`
 	// Type 表示来源的类型，可以是 "file"（本地文件）, "npm"（NPM包）, 或 "unknown"（未知）。
 	Type string `json:"type"`
 }

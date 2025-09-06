@@ -23,11 +23,11 @@ type ExportModule struct {
 // ExportDeclarationResult 存储一个完整的导出声明的解析结果。
 // 一个导出声明（例如 `export { a, b } from './mod'`) 可能包含多个导出的模块。
 type ExportDeclarationResult struct {
-	ExportModules  []ExportModule `json:"exportModules"`  // 该导出声明中包含的所有导出模块的列表。
-	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
-	Source         string         `json:"source"`         // 导出来源的模块路径。例如 `export { a } from "../index.ts"` 中的 `"../index.ts"`。
-	Type           string         `json:"type"`           // 导出类型: `re-export` (重导出) 或 `named-export` (命名导出)。
-	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
+	ExportModules  []ExportModule `json:"exportModules"`            // 该导出声明中包含的所有导出模块的列表。
+	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	Source         string         `json:"source,omitempty"`         // 导出来源的模块路径。例如 `export { a } from "../index.ts"` 中的 `"../index.ts"`。
+	Type           string         `json:"type"`                      // 导出类型: `re-export` (重导出) 或 `named-export` (命名导出)。
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
 }
 
 // AnalyzeExportDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析导出声明的详细信息。
@@ -73,7 +73,7 @@ func AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) *E
 				ModuleName: "*",
 				Type:       "namespace",
 				Identifier: identifier,
-			})
+				})
 		}
 	} else {
 		// 处理 `export * from './module'`

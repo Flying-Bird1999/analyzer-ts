@@ -11,9 +11,9 @@ import (
 
 // ExportAssignmentResult 存储一个 `export default` 声明的解析结果。
 type ExportAssignmentResult struct {
-	Raw            string         `json:"raw"`            // `export default ...` 语句的完整原始文本。
-	Expression     string         `json:"expression"`     // 被导出的表达式本身的文本。
-	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
+	Expression     string         `json:"expression,omitempty"`     // 导出的表达式的文本。
+	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
 }
 
 // AnalyzeExportAssignment 是一个公共的、可复用的函数，用于从 AST 节点中解析 `export default` 声明。

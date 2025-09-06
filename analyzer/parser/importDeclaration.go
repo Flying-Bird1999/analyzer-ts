@@ -18,10 +18,10 @@ type ImportModule struct {
 // ImportDeclarationResult 存储一个完整的导入声明的解析结果。
 // 一个导入声明（例如 `import a, { b } from './mod'`) 可能包含多个导入的模块。
 type ImportDeclarationResult struct {
-	ImportModules  []ImportModule `json:"importModules"`  // 该导入声明中包含的所有导入模块的列表。
-	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
-	Source         string         `json:"source"`         // 导入来源的模块路径，例如 `'./school'`。
-	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
+	ImportModules  []ImportModule `json:"importModules"`            // 该导入声明中包含的所有导入模块的列表。
+	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	Source         string         `json:"source"`                   // 导入来源的模块路径，例如 `'./school'`。
+	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
 }
 
 // NewImportDeclarationResult 创建并初始化一个 ImportDeclarationResult 实例。

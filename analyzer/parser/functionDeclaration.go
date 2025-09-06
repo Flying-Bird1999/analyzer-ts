@@ -15,7 +15,7 @@ import (
 type ParameterResult struct {
 	Name         string `json:"name"`                   // 参数名称
 	Type         string `json:"type"`                   // 参数的类型文本
-	Raw          string `json:"raw"`                    // 参数在源码中的原始文本
+	Raw          string `json:"raw,omitempty"`                    // 参数在源码中的原始文本
 	Optional     bool   `json:"optional"`               // 新增：标记此参数是否可选 (e.g., name?: string)
 	DefaultValue string `json:"defaultValue,omitempty"` // 新增：存储参数的默认值 (e.g., port = 3000)
 	IsRest       bool   `json:"isRest"`                 // 新增：标记此参数是否为 rest 参数 (e.g., ...args)
@@ -28,11 +28,11 @@ type FunctionDeclarationResult struct {
 	Exported       bool              `json:"exported"`       // 标记此函数是否被导出。
 	IsAsync        bool              `json:"isAsync"`        // 标记此函数是否为异步函数 (async)。
 	IsGenerator    bool              `json:"isGenerator"`    // 新增：标记此函数是否为生成器函数 (function*)。
-	Generics       []string          `json:"generics"`       // 新增：存储泛型参数列表 (e.g., ["T", "K"])。
+	Generics       []string          `json:"generics,omitempty"`       // 新增：存储泛型参数列表 (e.g., ["T", "K"])。
 	Parameters     []ParameterResult `json:"parameters"`     // 函数的参数列表。
-	ReturnType     string            `json:"returnType"`     // 函数的返回类型文本。
-	Raw            string            `json:"raw"`            // 节点在源码中的原始文本。
-	SourceLocation SourceLocation    `json:"sourceLocation"` // 节点在源码中的位置信息。
+	ReturnType     string            `json:"returnType,omitempty"`     // 函数的返回类型文本。
+	Raw            string            `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	SourceLocation *SourceLocation    `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
 }
 
 // NewFunctionDeclarationResult 是基于 ast.FunctionDeclaration 节点创建函数解析结果的构造函数。
