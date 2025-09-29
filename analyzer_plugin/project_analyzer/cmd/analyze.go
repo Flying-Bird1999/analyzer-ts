@@ -19,6 +19,7 @@ import (
 	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
+	apit "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/api_tracer"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
@@ -38,6 +39,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"count-as":                &countas.Counter{},
 	"npm-check":               &dependency.Checker{},
 	"trace":                   &trace.Tracer{},
+	"api-tracer":              &apit.Tracer{},
 }
 
 // GetAnalyzeCmd 构建并返回 `analyze` 命令。
@@ -90,7 +92,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			`  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.
 ` +
 			`  - trace: 追踪一个或多个NPM包的使用链路 (例如 antd).
-
+` +
+			`  - api-tracer: 追踪一个或多个接口的调用链路.
 ` +
 			`如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的（但可能被剔除过的）原始AST结构.
 
@@ -98,6 +101,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			`特定分析器参数 (-p, --param) 使用示例:
 ` +
 			`'trace' 分析器需要 'trace.targetPkgs' 参数来指定要追踪的NPM包:
+` +
+			`'api-tracer' 分析器需要 'api-tracer.apiPaths' 参数来指定要追踪的接口:
 ` +
 			`analyze trace -i . -p "trace.targetPkgs=antd" -p "trace.targetPkgs=@yy/sl-admin-components"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
