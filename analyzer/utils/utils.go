@@ -10,8 +10,6 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/core"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/parser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/scanner"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/tspath"
 )
 
 // FormatSize 将字节大小格式化为更易读的 KB, MB, GB 字符串。
@@ -46,16 +44,24 @@ func ReadFileContent(filePath string) (string, error) {
 
 // 解析TypeScript文件为AST
 func ParseTypeScriptFile(filePath string, sourceCode string) *ast.SourceFile {
-	// 创建路径对象
-	path := tspath.Path(filePath)
-
+	scriptKind := core.ScriptKindUnknown
+	switch strings.ToLower(filepath.Ext(filePath)) {
+	case ".ts":
+		scriptKind = core.ScriptKindTS
+	case ".tsx":
+		scriptKind = core.ScriptKindTSX
+	case ".js":
+		scriptKind = core.ScriptKindJS
+	case ".jsx":
+		scriptKind = core.ScriptKindJSX
+	}
 	// 使用ParseSourceFile函数解析源代码
 	sourceFile := parser.ParseSourceFile(
-		filePath,
-		path,
+		ast.SourceFileParseOptions{
+			FileName: filePath,
+		},
 		sourceCode,
-		core.ScriptTargetESNext, // 使用最新的ECMAScript标准以支持现代语法
-		scanner.JSDocParsingModeParseAll,
+		scriptKind,
 	)
 
 	return sourceFile

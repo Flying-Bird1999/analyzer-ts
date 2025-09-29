@@ -1,12 +1,11 @@
 module github.com/Flying-Bird1999/analyzer-ts
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25
 
 require (
-	github.com/Zzzen/typescript-go v0.0.1
+	github.com/Zzzen/typescript-go v0.0.2-0.20250928002825-ab336b227e4d
 	github.com/gobwas/glob v0.2.3
+	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/samber/lo v1.50.0
 	github.com/spf13/cobra v1.9.1
@@ -16,11 +15,11 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874 // indirect
+	github.com/go-json-experiment/json v0.0.0-20250813233538-9b1f9ea2e11b // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
