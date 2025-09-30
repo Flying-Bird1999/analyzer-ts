@@ -26,6 +26,9 @@ func init() {
 	// 添加 ts_bundle 的子命令
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
 
+	// 添加 find 命令
+	RootCmd.AddCommand(findCmd)
+
 	// 添加其他顶级命令
 	RootCmd.AddCommand(ScanCmd)
 }
