@@ -17,14 +17,16 @@ type ExtractedNodes struct {
 
 // AnyInfo 存储了在文件中找到的 any 类型的信息。
 type AnyInfo struct {
-	SourceLocation SourceLocation
-	Raw            string // 存储 any 关键字的原始文本
+	SourceLocation SourceLocation `json:"sourceLocation"`
+	Raw            string         `json:"raw"` // 存储 any 关键字的原始文本
+	Node           *ast.Node      `json:"-"`   // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AsExpression 代表一个解析后的 'as' 类型断言表达式。
 type AsExpression struct {
 	Raw            string         `json:"raw"`            // 节点在源码中的原始文本。
 	SourceLocation SourceLocation `json:"sourceLocation"` // 节点在源码中的位置信息。
+	Node           *ast.Node      `json:"-"`              // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // VisitAnyKeyword 解析 any 关键字。
@@ -48,6 +50,7 @@ func (p *Parser) VisitAnyKeyword(node *ast.Node) {
 			}
 			return ""
 		}(),
+		Node: node,
 	}
 	p.Result.ExtractedNodes.AnyDeclarations = append(p.Result.ExtractedNodes.AnyDeclarations, anyInfo)
 }
@@ -73,6 +76,6 @@ func (p *Parser) VisitAsExpression(node *ast.AsExpression) {
 				return NodePosition{Line: line + 1, Column: character}
 			}(),
 		},
-	}
+		Node: node.AsNode()}
 	p.Result.ExtractedNodes.AsExpressions = append(p.Result.ExtractedNodes.AsExpressions, asExpr)
 }

@@ -15,6 +15,7 @@ type TypeDeclarationResult struct {
 	Raw            string                   `json:"raw,omitempty"`            // 节点在源码中的原始文本。
 	Reference      map[string]TypeReference `json:"reference,omitempty"`      // 该类型别名所依赖的其他类型的映射。
 	SourceLocation *SourceLocation           `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
+	Node           *ast.Node                `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewTypeDeclarationResult 基于 AST 节点创建一个新的 TypeDeclarationResult 实例。
@@ -27,6 +28,7 @@ func NewTypeDeclarationResult(node *ast.Node, sourceCode string) *TypeDeclaratio
 		Raw:            raw,
 		Reference:      make(map[string]TypeReference),
 		SourceLocation: NewSourceLocation(node, sourceCode),
+		Node:           node,
 	}
 }
 

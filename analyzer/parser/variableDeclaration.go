@@ -70,6 +70,9 @@ type VariableDeclaration struct {
 
 	// SourceLocation 记录了该节点在源码中的精确位置。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"`
+
+	// Node 存储了该变量声明语句对应的原始 AST 节点。
+	Node *ast.Node `json:"-"`
 }
 
 // NewVariableDeclaration 是创建和解析 VariableDeclaration 实例的工厂函数。
@@ -78,6 +81,7 @@ func NewVariableDeclaration(node *ast.VariableStatement, sourceCode string) *Var
 		Declarators:    make([]*VariableDeclarator, 0),
 		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
+		Node:           node.AsNode(),
 	}
 }
 

@@ -1,6 +1,9 @@
 package projectParser
 
-import "github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+import (
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+)
 
 // JsFileParserResult 结构体用于存储对单个JS或TS文件进行解析后得到的核心数据。
 // 这些数据主要包括文件中的导入和导出声明，为项目级别的依赖分析和代码理解提供基础。
@@ -20,7 +23,9 @@ type JsFileParserResult struct {
 	JsxElements           []JSXElementResult                           `json:"jsxElements,omitempty"`           // 文件中的JSX元素
 	FunctionDeclarations  []parser.FunctionDeclarationResult           `json:"functionsDeclarations,omitempty"` // 文件中所有函数声明的信息
 	ExtractedNodes        parser.ExtractedNodes                        `json:"extractedNodes,omitempty"`        // 用于存储提取的节点信息
-	Errors                []error                                      `json:"errors,omitempty"`      // 新增：用于存储解析过程中遇到的错误
+	Errors                []error                                      `json:"errors,omitempty"`                // 新增：用于存储解析过程中遇到的错误
+	Ast                   *ast.Node                                    `json:"-"`                               // Ast a a new field to store the ast of the file
+	Raw                   string                                       `json:"-"`                               // 文件的原始源码
 }
 
 // PackageJsonFileParserResult 存储了对 `package.json` 文件解析后的关键信息。
@@ -62,6 +67,8 @@ type ImportDeclarationResult struct {
 	Raw string `json:"raw,omitempty"`
 	// Source 包含了对导入来源模块的解析结果，包括其绝对路径、类型（文件或NPM包）等。
 	Source SourceData `json:"source"`
+	// Node 存储了该声明对应的原始 AST 节点。
+	Node *ast.Node `json:"-"`
 }
 
 // ImportModule 代表一个被导入的独立实体。
@@ -88,6 +95,8 @@ type ExportDeclarationResult struct {
 	// Source 在 "re-export"（再导出）场景下（例如 `export { a } from './mod'`）不为 nil。
 	// 它包含了对来源模块的解析结果。对于常规的命名导出，此字段为 nil。
 	Source *SourceData `json:"source,omitempty"`
+	// Node 存储了该声明对应的原始 AST 节点。
+	Node *ast.Node `json:"-"`
 }
 
 // ExportModule 代表一个被导出的独立实体。
@@ -105,10 +114,12 @@ type ExportModule struct {
 
 // JSXElementResult 存储了单个JSX元素的解析结果，包括其来源信息。
 type JSXElementResult struct {
-	ComponentChain []string              `json:"componentChain"` // 组件的完整路径
-	Attrs          []parser.JSXAttribute `json:"attrs,omitempty"`          // JSX 属性
-	Raw            string                `json:"raw,omitempty"`            // 节点在源码中的原始文本
-	Source         SourceData            `json:"source"`         // 解析后的来源信息
+	ComponentChain []string              `json:"componentChain"`  // 组件的完整路径
+	Attrs          []parser.JSXAttribute `json:"attrs,omitempty"` // JSX 属性
+	Raw            string                `json:"raw,omitempty"`   // 节点在源码中的原始文本
+	Source         SourceData            `json:"source"`          // 解析后的来源信息
+	// Node 存储了该元素对应的原始 AST 节点。
+	Node *ast.Node `json:"-"`
 }
 
 // SourceData 结构体用于存储对导入或再导出来源模块路径的解析结果。

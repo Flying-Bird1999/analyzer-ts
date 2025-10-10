@@ -22,6 +22,7 @@ type ImportDeclarationResult struct {
 	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
 	Source         string         `json:"source"`                   // 导入来源的模块路径，例如 `'./school'`。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
+	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewImportDeclarationResult 创建并初始化一个 ImportDeclarationResult 实例。
@@ -47,6 +48,7 @@ func (idr *ImportDeclarationResult) addModule(moduleType, importModule, identifi
 // 返回一个填充了信息的 `ImportDeclarationResult` 结构体。
 func AnalyzeImportDeclaration(node *ast.ImportDeclaration, sourceCode string) *ImportDeclarationResult {
 	idr := NewImportDeclarationResult()
+	idr.Node = node.AsNode()
 	idr.Raw = utils.GetNodeText(node.AsNode(), sourceCode)
 	idr.Source = node.ModuleSpecifier.Text()
 	idr.SourceLocation = NewSourceLocation(node.AsNode(), sourceCode)

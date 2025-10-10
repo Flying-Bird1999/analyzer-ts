@@ -5,6 +5,7 @@ package projectParser
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -99,12 +100,23 @@ func (ppr *ProjectParserResult) ProjectParser() {
 		}
 
 		if included {
-			ppr.parseJsFile(targetPath)
+			// 从磁盘读取文件内容
+			content, err := os.ReadFile(targetPath)
+			if err == nil {
+				ppr.parseJsFile(targetPath, string(content))
+			}
 		}
 
 		if fileDetail.FileName == "package.json" {
 			ppr.parsePackageJson(targetPath)
 		}
+	}
+}
+
+// ProjectParserFromMemory 是一个用于内存解析的入口方法。
+func (ppr *ProjectParserResult) ProjectParserFromMemory(sources map[string]string) {
+	for path, content := range sources {
+		ppr.parseJsFile(path, content)
 	}
 }
 
@@ -133,27 +145,34 @@ func (ppr *ProjectParserResult) getTsConfigForFile(targetPath string) (map[strin
 }
 
 // parseJsFile 负责处理单个 JS/TS 文件的解析流程。
-func (ppr *ProjectParserResult) parseJsFile(targetPath string) {
-	fileParserResult := parser.NewParserResult(targetPath)
-	fileParserResult.Traverse()
-	result := fileParserResult.GetResult()
+func (ppr *ProjectParserResult) parseJsFile(targetPath string, content string) {
+	fileParser, err := parser.NewParserFromSource(targetPath, content)
+	if err != nil {
+		// TODO: handle error
+		fmt.Printf("创建 parser 失败：%v\n", err)
+		return
+	}
+	fileParser.Traverse()
+	result := fileParser.Result.GetResult()
 
 	// 为当前文件获取最匹配的路径别名配置和其所在目录
 	aliasForFile, tsconfigDir, baseUrl := ppr.getTsConfigForFile(targetPath)
 
 	ppr.Js_Data[targetPath] = JsFileParserResult{
-		ImportDeclarations:    ppr.transformImportDeclarations(targetPath, result.ImportDeclarations, aliasForFile, tsconfigDir, baseUrl),
-		ExportDeclarations:    ppr.transformExportDeclarations(targetPath, result.ExportDeclarations, aliasForFile, tsconfigDir, baseUrl),
+		Ast:                   fileParser.Ast,
+		Raw:                   fileParser.SourceCode, // 传递原始源码
+		ImportDeclarations:    ppr.TransformImportDeclarations(targetPath, result.ImportDeclarations, aliasForFile, tsconfigDir, baseUrl),
+		ExportDeclarations:    ppr.TransformExportDeclarations(targetPath, result.ExportDeclarations, aliasForFile, tsconfigDir, baseUrl),
 		ExportAssignments:     result.ExportAssignments,
 		InterfaceDeclarations: result.InterfaceDeclarations,
 		TypeDeclarations:      result.TypeDeclarations,
 		EnumDeclarations:      result.EnumDeclarations,
 		VariableDeclarations:  result.VariableDeclarations,
 		CallExpressions:       result.CallExpressions,
-		JsxElements:           ppr.transformJsxElements(targetPath, result.JsxElements, aliasForFile, tsconfigDir, baseUrl),
+		JsxElements:           ppr.TransformJsxElements(targetPath, result.JsxElements, aliasForFile, tsconfigDir, baseUrl),
 		FunctionDeclarations:  result.FunctionDeclarations,
 		ExtractedNodes:        result.ExtractedNodes,
-		Errors:                result.Errors,
+		Errors:                fileParser.Result.Errors, // 使用 fileParser.Result.Errors 替换 result.Errors
 	}
 }
 
@@ -179,8 +198,8 @@ func (ppr *ProjectParserResult) parsePackageJson(targetPath string) {
 	}
 }
 
-// transformImportDeclarations 将导入声明转换为高级格式，并使用给定的别名映射来解析模块源。
-func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string, decls []parser.ImportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ImportDeclarationResult {
+// TransformImportDeclarations 将导入声明转换为高级格式，并使用给定的别名映射来解析模块源。
+func (ppr *ProjectParserResult) TransformImportDeclarations(importerPath string, decls []parser.ImportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ImportDeclarationResult {
 	return lo.Map(decls, func(decl parser.ImportDeclarationResult, _ int) ImportDeclarationResult {
 		sourceData := MatchImportSource(
 			importerPath,
@@ -200,12 +219,13 @@ func (ppr *ProjectParserResult) transformImportDeclarations(importerPath string,
 			}),
 			Raw:    decl.Raw,
 			Source: sourceData,
+			Node:   decl.Node, // 传递 Node 指针
 		}
 	})
 }
 
-// transformExportDeclarations 将导出声明转换为高级格式，并使用给定的别名映射来解析模块源。
-func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string, decls []parser.ExportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ExportDeclarationResult {
+// TransformExportDeclarations 将导出声明转换为高级格式，并使用给定的别名映射来解析模块源。
+func (ppr *ProjectParserResult) TransformExportDeclarations(importerPath string, decls []parser.ExportDeclarationResult, alias map[string]string, tsconfigDir string, baseUrl string) []ExportDeclarationResult {
 	return lo.Map(decls, func(decl parser.ExportDeclarationResult, _ int) ExportDeclarationResult {
 		var sourceData *SourceData
 		if decl.Source != "" {
@@ -230,12 +250,13 @@ func (ppr *ProjectParserResult) transformExportDeclarations(importerPath string,
 			}),
 			Raw:    decl.Raw,
 			Source: sourceData,
+			Node:   decl.Node, // 传递 Node 指针
 		}
 	})
 }
 
-// transformJsxElements 将JSX元素转换为高级格式，并解析其组件来源。
-func (ppr *ProjectParserResult) transformJsxElements(importerPath string, elements []parser.JSXElement, alias map[string]string, tsconfigDir string, baseUrl string) []JSXElementResult {
+// TransformJsxElements 将JSX元素转换为高级格式，并解析其组件来源。
+func (ppr *ProjectParserResult) TransformJsxElements(importerPath string, elements []parser.JSXElement, alias map[string]string, tsconfigDir string, baseUrl string) []JSXElementResult {
 	return lo.Map(elements, func(element parser.JSXElement, _ int) JSXElementResult {
 		// 构建组件名称（取最后一个作为组件名）
 		componentName := ""
@@ -263,6 +284,7 @@ func (ppr *ProjectParserResult) transformJsxElements(importerPath string, elemen
 			Attrs:          element.Attrs,
 			Raw:            element.Raw,
 			Source:         sourceData,
+			Node:           element.Node, // 传递 Node 指针
 		}
 	})
 }

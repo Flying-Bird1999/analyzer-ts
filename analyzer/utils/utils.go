@@ -54,6 +54,8 @@ func ParseTypeScriptFile(filePath string, sourceCode string) *ast.SourceFile {
 		scriptKind = core.ScriptKindJS
 	case ".jsx":
 		scriptKind = core.ScriptKindJSX
+	case ".json":
+		scriptKind = core.ScriptKindJSON
 	}
 	// 使用ParseSourceFile函数解析源代码
 	sourceFile := parser.ParseSourceFile(

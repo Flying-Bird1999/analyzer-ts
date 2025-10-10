@@ -50,6 +50,7 @@ type JSXElement struct {
 	Attrs          []JSXAttribute `json:"attrs"`
 	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
+	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。
@@ -59,6 +60,7 @@ func NewJSXNode(node *ast.Node, sourceCode string) *JSXElement {
 	return &JSXElement{
 		Raw:            utils.GetNodeText(node, sourceCode),
 		SourceLocation: NewSourceLocation(node, sourceCode),
+		Node:           node,
 	}
 }
 

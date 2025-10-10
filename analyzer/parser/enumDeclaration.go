@@ -14,6 +14,7 @@ type EnumDeclarationResult struct {
 	Exported       bool           `json:"exported"`       // 新增：标记此枚举是否被导出。
 	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
+	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AnalyzeEnumDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析枚举声明。
@@ -24,6 +25,7 @@ func AnalyzeEnumDeclaration(node *ast.EnumDeclaration, sourceCode string) *EnumD
 		Exported:       false, // 默认为 false
 		Raw:            raw,
 		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
+		Node:           node.AsNode(),
 	}
 
 	nameNode := node.Name()

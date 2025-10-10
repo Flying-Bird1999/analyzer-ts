@@ -19,6 +19,7 @@ type CallExpression struct {
 	InlineFunctions []FunctionDeclarationResult `json:"inlineFunctions"` // [新增] 在参数中发现的内联函数（例如 useEffect 的回调）
 	Raw             string                      `json:"raw,omitempty"`   // 节点在源码中的原始文本。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 表达式在源码中的位置
+	Node            *ast.Node                   `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // ReconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。
@@ -100,6 +101,7 @@ func AnalyzeCallExpression(node *ast.CallExpression, sourceCode string, processe
 		InlineFunctions: inlineFunctions, // 存储找到的内联函数
 		Raw:             utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation:  NewSourceLocation(node.AsNode(), sourceCode),
+		Node:            node.AsNode(),
 	}
 
 	return ce, nil

@@ -28,6 +28,7 @@ type ExportDeclarationResult struct {
 	Source         string         `json:"source,omitempty"`         // 导出来源的模块路径。例如 `export { a } from "../index.ts"` 中的 `"../index.ts"`。
 	Type           string         `json:"type"`                      // 导出类型: `re-export` (重导出) 或 `named-export` (命名导出)。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
+	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AnalyzeExportDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析导出声明的详细信息。
@@ -36,6 +37,7 @@ func AnalyzeExportDeclaration(node *ast.ExportDeclaration, sourceCode string) *E
 		ExportModules:  make([]ExportModule, 0),
 		Raw:            utils.GetNodeText(node.AsNode(), sourceCode),
 		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
+		Node:           node.AsNode(),
 	}
 
 	// 检查是否存在模块说明符（例如 `from './module'`），如果存在，则为重导出

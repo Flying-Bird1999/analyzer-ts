@@ -177,7 +177,7 @@ func TestTransformImportDeclarations(t *testing.T) {
 		},
 	}
 
-	transformed := ppr.transformImportDeclarations(importerPath, decls, ppr.Config.RootTsConfig.Alias, ppr.Config.RootPath, ppr.Config.RootTsConfig.BaseUrl)
+	transformed := ppr.TransformImportDeclarations(importerPath, decls, ppr.Config.RootTsConfig.Alias, ppr.Config.RootPath, ppr.Config.RootTsConfig.BaseUrl)
 
 	if len(transformed) != 1 {
 		t.Fatalf("预期转换后有 1 个声明, 得到 %d", len(transformed))

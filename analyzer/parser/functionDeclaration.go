@@ -33,6 +33,7 @@ type FunctionDeclarationResult struct {
 	ReturnType     string            `json:"returnType,omitempty"`     // 函数的返回类型文本。
 	Raw            string            `json:"raw,omitempty"`            // 节点在源码中的原始文本。
 	SourceLocation *SourceLocation    `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
+	Node           *ast.Node         `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewFunctionDeclarationResult 是基于 ast.FunctionDeclaration 节点创建函数解析结果的构造函数。
@@ -42,6 +43,7 @@ func NewFunctionDeclarationResult(node *ast.FunctionDeclaration, sourceCode stri
 		Parameters:     []ParameterResult{},
 		Generics:       []string{},
 		SourceLocation: NewSourceLocation(node.AsNode(), sourceCode),
+		Node:           node.AsNode(),
 	}
 
 	if node.Name() != nil {
@@ -66,6 +68,7 @@ func NewFunctionDeclarationResultFromExpression(identifier string, isExported bo
 		Parameters:     []ParameterResult{},
 		Generics:       []string{},
 		SourceLocation: NewSourceLocation(node, sourceCode),
+		Node:           node,
 	}
 
 	// 调用核心解析逻辑函数
