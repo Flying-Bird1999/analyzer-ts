@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/callgraph"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
@@ -32,12 +32,12 @@ import (
 // 这种设计使得添加新的分析器变得非常简单，只需在此 map 中增加一个条目即可。
 var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"unconsumed":              &unconsumed.Finder{},
-	"find-callers":            &callgraph.Finder{},
 	"find-unreferenced-files": &unreferenced.Finder{},
 	"count-any":               &countany.Counter{},
 	"count-as":                &countas.Counter{},
 	"npm-check":               &dependency.Checker{},
 	"trace":                   &trace.Tracer{},
+	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
 }
 
 // GetAnalyzeCmd 构建并返回 `analyze` 命令。
@@ -90,6 +90,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			`  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.
 ` +
 			`  - trace: 追踪一个或多个NPM包的使用链路 (例如 antd).
+` +
+			`  - component-deps: 分析组件之间的依赖关系. (必须使用 -p 'component-deps.entryPoint=path/to/entry.ts' 指定入口文件，支持 glob 模式)
 
 ` +
 			`如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的（但可能被剔除过的）原始AST结构.
