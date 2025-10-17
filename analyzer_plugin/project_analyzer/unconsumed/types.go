@@ -1,4 +1,11 @@
-// package unconsumed 包含了查找项目中已导出但未被消费的变量所需的所有类型定义。
+// Package unconsumed 包含了查找项目中已导出但未被消费的变量所需的所有类型定义。
+//
+// 这个包定义了 unconsumed 分析器的完整类型系统，包括：
+// - Finding: 单个未使用导出项的详细信息
+// - SummaryStats: 分析过程的统计数据
+// - Result: 完整的分析结果结构
+//
+// 所有类型都支持 JSON 序列化，便于数据导出和集成到其他系统。
 package unconsumed
 
 import (

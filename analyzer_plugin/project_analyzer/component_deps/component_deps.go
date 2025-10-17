@@ -1,11 +1,30 @@
-// 示例执行命令:
-
-// 分析 shopline-admin-components 项目
-// ./analyzer-ts analyze component-deps -i /Users/zxc/Desktop/analyzer/analyzer-ts/shopline-admin-components -m -p "component-deps.entryPoint=packages/sl-admin-components/src/v3.ts"
-
-// 分析 nova 项目
-// ./analyzer-ts analyze component-deps -i /Users/zxc/Desktop/analyzer/analyzer-ts/nova -m -p "component-deps.entryPoint=packages/*/src/index.ts"
-
+// Package component_deps 实现了分析组件依赖关系的核心业务逻辑。
+//
+// 功能说明：
+// 这个分析器专门用于分析 TypeScript/TSX 项目中组件之间的依赖关系。
+// 通过从指定的入口文件开始，递归分析组件的导入和导出关系，构建完整的
+// 组件依赖图。这对于理解项目架构、重构优化、循环依赖检测等场景非常有用。
+//
+// 主要用途：
+// 1. 架构分析：了解项目的组件依赖关系和模块结构
+// 2. 循环依赖检测：识别组件间的循环依赖问题
+// 3. 重构支持：在重构组件前了解其影响范围
+// 4. 包优化：识别可以合并或拆分的组件
+// 5. 文档生成：自动生成组件依赖关系文档
+//
+// 支持的组件类型：
+// - React 组件（函数组件和类组件）
+// - Vue 组件
+// - 普通 TypeScript 模块作为组件使用
+// - 默认导出的组件
+// - 命名导出的组件
+//
+// 实现特点：
+// - 支持 glob 模式匹配多个入口文件
+// - 自动识别公共组件和内部组件
+// - 支持多层依赖关系分析
+// - 生成可视化的依赖图数据
+// - 支持大型 monorepo 项目
 package component_deps
 
 import (
@@ -19,15 +38,43 @@ import (
 	"github.com/samber/lo"
 )
 
-// ComponentDependencyAnalyzer 实现了 Analyzer 接口，用于分析组件依赖关系
-// 该分析器能够从指定入口文件开始，识别公共组件并分析它们之间的依赖关系
-// 支持分析 TypeScript/TSX 项目的组件结构，生成详细的依赖图
+// =============================================================================
+// 分析器主体定义
+// =============================================================================
+
+// ComponentDependencyAnalyzer 实现了 Analyzer 接口，用于分析组件依赖关系。
+//
+// 功能概述：
+// 该分析器能够从指定入口文件开始，识别公共组件并分析它们之间的依赖关系。
+// 通过深度遍历项目的导入导出关系，构建完整的组件依赖图谱。
+//
+// 工作流程：
+// 1. 解析入口文件，识别根级别的组件
+// 2. 递归分析每个组件的依赖关系
+// 3. 构建组件依赖图和层级关系
+// 4. 生成包含完整依赖关系的分析报告
+//
+// 支持的功能：
+// - Glob 模式匹配：支持 `packages/*/src/index.ts` 这样的模式
+// - 公共组件识别：自动识别被多个文件使用的公共组件
+// - 内部组件分析：分析组件内部的私有子组件
+// - 循环依赖检测：识别并报告组件间的循环依赖
+// - 依赖层级分析：构建组件的依赖层次结构
 type ComponentDependencyAnalyzer struct {
-	EntryPoint string // 入口文件路径，支持 glob 模式匹配
+	// EntryPoint 入口文件路径，支持 glob 模式匹配。
+	// 可以是单个文件路径，也可以是 glob 模式，例如：
+	// - "packages/sl-admin-components/src/v3.ts"
+	// - "packages/*/src/index.ts"
+	// - "src/components/**/index.ts"
+	EntryPoint string
 }
 
-// Name 返回分析器的唯一标识符
-// 用于在插件系统中注册和识别该分析器
+// Name 返回分析器的唯一标识符。
+// 用于在插件系统中注册和识别该分析器。
+//
+// 返回值说明：
+// 返回 "component-deps" 作为分析器的标识符。
+// 这个名称用于在命令行中调用该分析器。
 func (a *ComponentDependencyAnalyzer) Name() string {
 	return "component-deps"
 }

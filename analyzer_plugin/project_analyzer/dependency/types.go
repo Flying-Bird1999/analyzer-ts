@@ -1,4 +1,12 @@
-// package dependency 包含了NPM依赖分析功能所需的所有类型定义。
+// Package dependency 包含了 NPM 依赖分析功能所需的所有类型定义。
+//
+// 这个包定义了依赖检查分析器的完整类型系统，用于：
+// - 隐式依赖（幽灵依赖）的检测和报告
+// - 未使用依赖的识别和分类
+// - 过时依赖的版本信息记录
+// - NPM Registry API 响应数据的解析
+//
+// 所有类型都支持 JSON 序列化，便于数据导出和集成到其他系统。
 package dependency
 
 // ImplicitDependency 代表一个隐式依赖（或称“幽灵依赖”）。
