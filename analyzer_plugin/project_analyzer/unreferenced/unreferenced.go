@@ -421,7 +421,14 @@ func classifyFiles(unreferencedFiles []string, excludePatterns []string) (trulyU
 		dir := filepath.Dir(filePath)
 
 		// 规则 1: 不在 src 目录下的文件标记为可疑
-		if !strings.Contains(dir, "/src/") {
+		isInChildrenOfSrc := false
+		for _, part := range strings.Split(dir, string(filepath.Separator)) {
+			if part == "src" {
+				isInChildrenOfSrc = true
+				break
+			}
+		}
+		if !isInChildrenOfSrc {
 			isSuspicious = true
 		} else {
 			// 规则 2: 入口文件模式标记为可疑

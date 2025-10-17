@@ -307,9 +307,15 @@ func (a *ComponentDependencyAnalyzer) Analyze(ctx *project_analyzer.ProjectConte
 
 	// 步骤 1: 发现所有入口文件并确定它们的归属包
 	entryPointPattern := filepath.Join(ctx.ProjectRoot, a.EntryPoint)
-	entryPointPaths, err := filepath.Glob(entryPointPattern)
-	if err != nil {
-		return nil, fmt.Errorf("解析 glob 模式失败: %w", err)
+	var entryPointPaths []string
+	for path := range fileResults {
+		matched, err := filepath.Match(entryPointPattern, path)
+		if err != nil {
+			return nil, fmt.Errorf("解析 glob 模式失败 '%s': %w", entryPointPattern, err)
+		}
+		if matched {
+			entryPointPaths = append(entryPointPaths, path)
+		}
 	}
 	if len(entryPointPaths) == 0 {
 		return nil, fmt.Errorf("未找到任何匹配的入口文件: %s", entryPointPattern)
