@@ -9,6 +9,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// complex_navigation_test.go
+//
+// 这个文件包含了复杂 AST 导航功能的综合测试用例，专注于验证 tsmorphgo 在处理
+// 深度嵌套、控制流、类型系统和装饰器等复杂 TypeScript 代码结构时的导航能力。
+//
+// 主要测试场景：
+// 1. 深度嵌套结构导航 - 验证在多层嵌套的对象、类、方法中的节点查找和导航
+// 2. 复杂控制流导航 - 测试在 if/else、switch、循环、try/catch 等控制流中的导航
+// 3. 复杂类型系统导航 - 验证在泛型、接口继承、类型别名等类型系统中的导航
+// 4. 装饰器和元数据导航 - 测试在 Angular/装饰器风格代码中的节点导航
+// 5. 项目级边界情况 - 验证大型项目、循环依赖、语法错误等边缘场景
+//
+// 测试目标：
+// - 验证 GetAncestors() 方法在复杂结构中的正确性
+// - 验证 GetFirstAncestorByKind() 方法在特定场景下的准确性
+// - 测试在极端复杂的 AST 结构中的性能和稳定性
+// - 确保在各种边缘情况下系统不会崩溃并返回合理结果
+
 // TestComplexASTNavigation 测试复杂的AST导航功能
 func TestComplexASTNavigation(t *testing.T) {
 	// 测试用例 1: 深度嵌套的AST结构导航

@@ -8,6 +8,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// declaration_test.go
+//
+// 这个文件包含了 TypeScript 声明处理功能的测试用例，专注于验证 tsmorphgo 对各种
+// TypeScript 声明节点的识别、转换和信息提取能力。
+//
+// 主要测试场景：
+// 1. 变量声明处理 - 测试变量名称获取和节点识别
+// 2. 函数声明处理 - 验证函数名称提取和声明结构分析
+// 3. 接口声明处理 - 测试接口定义的识别和转换
+// 4. 类型别名声明处理 - 验证类型别名的识别和信息提取
+// 5. 枚举声明处理 - 测试枚举定义的识别和转换
+// 6. 导入声明处理 - 验证各种导入语法的识别和别名处理
+// 7. 类型转换API - 测试 AsXXX 系列函数的类型安全性
+// 8. 边缘情况处理 - 验证无效节点和异常情况的处理
+//
+// 测试目标：
+// - 验证各种声明类型的正确识别和分类
+// - 确保类型转换 API 的类型安全和错误处理
+// - 测试声明节点的信息提取准确性
+// - 验证在异常情况下的系统稳定性
+
 func TestGetVariableName(t *testing.T) {
 	project := createTestProject(map[string]string{
 		"/test_var.ts": `const hello = "world";`,

@@ -8,6 +8,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// expression_test.go
+//
+// 这个文件包含了 TypeScript 表达式处理功能的测试用例，专注于验证 tsmorphgo 对各种
+// TypeScript 表达式节点的解析、访问和操作能力。
+//
+// 主要测试场景：
+// 1. 函数调用表达式 - 测试 myObj.method() 等函数调用的解析
+// 2. 属性访问表达式 - 验证 obj.property 和 obj.nested.prop 等属性访问
+// 3. 二元表达式 - 测试算术运算、逻辑运算等二元操作
+// 4. 复杂调用链 - 验证 obj.method().anotherMethod() 等链式调用
+// 5. 深度嵌套属性 - 测试 config.database.connection.timeout 等深度访问
+// 6. 各种操作符 - 测试 +、-、*、/、===、!== 等操作符的识别
+// 7. 无效输入处理 - 验证对非表达式节点的错误处理
+//
+// 测试目标：
+// - 验证表达式节点的正确识别和分类
+// - 确保表达式访问 API 的准确性和类型安全
+// - 测试复杂表达式结构的解析能力
+// - 验证在异常情况下的系统稳定性
+//
+// 核心 API 测试：
+// - GetCallExpressionExpression() - 获取调用表达式的被调用对象
+// - GetPropertyAccessName() - 获取属性访问的属性名
+// - GetPropertyAccessExpression() - 获取属性访问的表达式对象
+// - GetBinaryExpressionLeft/Right() - 获取二元表达式的左右操作数
+// - GetBinaryExpressionOperatorToken() - 获取二元表达式的操作符
+
 // TestExpressionAPIs 测试基础表达式API功能
 func TestExpressionAPIs(t *testing.T) {
 	// 测试用例 1: myObj.method()
