@@ -1,6 +1,10 @@
 package tsmorphgo
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -87,4 +91,75 @@ func GetFirstChild(node Node, predicate func(child Node) bool) (*Node, bool) {
 		return foundNode, true
 	}
 	return nil, false
+}
+
+// GetQuickInfo 获取该节点的 QuickInfo（类型提示）信息。
+// 这个方法提供了类似 VSCode 中悬停提示的功能，显示符号的类型、文档等信息。
+// 现在使用原生 TypeScript QuickInfo 集成，可以获取完整的显示部件信息。
+//
+// 返回值：
+//   - *lsp.QuickInfo: 类型提示信息，如果节点没有有效的符号则返回 nil
+//   - error: 错误信息
+//
+// 示例：
+//   quickInfo, err := node.GetQuickInfo()
+//   if err != nil {
+//       return err
+//   }
+//   if quickInfo != nil {
+//       fmt.Printf("类型: %s\n", quickInfo.TypeText)
+//       fmt.Printf("显示部件数: %d\n", len(quickInfo.DisplayParts))
+//   }
+func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
+	if n.sourceFile == nil || n.sourceFile.project == nil {
+		return nil, fmt.Errorf("node must belong to a source file and project")
+	}
+
+	// 创建 LSP 服务来获取 QuickInfo
+	lspService, err := createLSPService(n.sourceFile.project)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create LSP service: %w", err)
+	}
+	defer lspService.Close()
+
+	// 获取节点的位置信息
+	line := n.GetStartLineNumber()
+	char := 0 // 使用节点的起始字符位置
+
+	// 使用原生 QuickInfo 集成，获取更完整的显示部件信息
+	quickInfo, err := lspService.GetNativeQuickInfoAtPosition(
+		context.Background(),
+		n.sourceFile.GetFilePath(),
+		line,
+		char,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get native quick info: %w", err)
+	}
+
+	return quickInfo, nil
+}
+
+// createLSPService 创建 LSP 服务的辅助函数。
+// 这个函数为给定的项目创建一个 LSP 服务实例，用于执行 QuickInfo 查询等操作。
+//
+// 参数：
+//   - project: tsmorphgo 项目实例
+//
+// 返回值：
+//   - *lsp.Service: LSP 服务实例
+//   - error: 错误信息
+func createLSPService(project *Project) (*lsp.Service, error) {
+	if project == nil || project.parserResult == nil {
+		return nil, fmt.Errorf("invalid project or parser result")
+	}
+
+	// 构建源码映射，使用项目的解析结果
+	sources := make(map[string]any, len(project.parserResult.Js_Data))
+	for path, jsResult := range project.parserResult.Js_Data {
+		sources[path] = jsResult.Raw
+	}
+
+	// 创建 LSP 服务（使用测试构造函数，传入内存中的源码映射）
+	return lsp.NewServiceForTest(sources)
 }

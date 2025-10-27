@@ -78,6 +78,15 @@ func (p *Project) GetSourceFile(path string) *SourceFile {
 	return p.sourceFiles[path]
 }
 
+// GetSourceFiles 返回项目中的所有源文件
+func (p *Project) GetSourceFiles() []*SourceFile {
+	files := make([]*SourceFile, 0, len(p.sourceFiles))
+	for _, file := range p.sourceFiles {
+		files = append(files, file)
+	}
+	return files
+}
+
 // findNodeAt 在指定的源文件中，根据行列号查找最精确匹配的 AST 节点。
 func (p *Project) findNodeAt(filePath string, line, char int) *ast.Node {
 	sf, ok := p.sourceFiles[filePath]
