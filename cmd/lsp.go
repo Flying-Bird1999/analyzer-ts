@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer/query"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var (
 	queryInputPath string
 )
 
-// queryCmd represents the base command for all query-related actions
+// lspCmd represents the base command for all lsp-related actions
 var findCmd = &cobra.Command{
 	Use:   "find",
 	Short: "Perform language-aware queries on the TypeScript project",
@@ -57,15 +57,15 @@ var referencesCmd = &cobra.Command{
 			log.Fatalf("invalid character number: %v", err)
 		}
 
-		// 2. 创建新的查询服务
-		queryService, err := query.NewService(queryInputPath)
+		// 2. 创建新的 LSP 服务
+		lspService, err := lsp.NewService(queryInputPath)
 		if err != nil {
-			log.Fatalf("failed to create query service: %v", err)
+			log.Fatalf("failed to create lsp service: %v", err)
 		}
-		defer queryService.Close()
+		defer lspService.Close()
 
 		// 3. 执行查找引用
-		response, err := queryService.FindReferences(context.Background(), filePath, line, char)
+		response, err := lspService.FindReferences(context.Background(), filePath, line, char)
 		if err != nil {
 			log.Fatalf("error finding references: %v", err)
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer/query"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 )
 
@@ -17,13 +17,13 @@ func FindReferences(node Node) ([]*Node, error) {
 	startChar += 1 // a a new field to store the ast of the file
 	filePath := node.GetSourceFile().filePath
 
-	// 2. 创建并使用 query.Service
+	// 2. 创建并使用 lsp.Service
 	// 注意：每次调用都创建一个新服务可能效率不高，未来可以优化为在 Project 级别缓存。
 	sources := make(map[string]any, len(node.GetSourceFile().project.parserResult.Js_Data))
 	for k, v := range node.GetSourceFile().project.parserResult.Js_Data {
 		sources[k] = v.Raw
 	}
-	q, err := query.NewServiceForTest(sources)
+	q, err := lsp.NewServiceForTest(sources)
 	if err != nil {
 		return nil, err
 	}

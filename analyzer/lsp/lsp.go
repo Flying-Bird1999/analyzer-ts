@@ -1,4 +1,4 @@
-package query
+package lsp
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func (n *dummyNpmExecutor) NpmInstall(cwd string, args []string) ([]byte, error)
 	return nil, nil
 }
 
-// Service 管理一个 TypeScript 项目的分析会话。
+// Service 管理 TypeScript 项目的 LSP 语言服务会话。
 type Service struct {
 	session      *project.Session
 	rootPath     string
@@ -113,7 +113,7 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 	return service, nil
 }
 
-// FindReferences 在给定位置查找一个符号的所有引用。
+// FindReferences 在给定位置查找一个符号的所有引用 (LSP 实现)。
 func (s *Service) FindReferences(ctx context.Context, filePath string, line, char int) (response lsproto.ReferencesResponse, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -153,7 +153,7 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 	return response, nil
 }
 
-// GetSymbolAt 获取给定文件位置的符号信息。
+// GetSymbolAt 获取给定文件位置的符号信息 (LSP 实现)。
 func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char int) (*ast.Symbol, error) {
 	virtualPath, err := filepath.Rel(s.rootPath, filePath)
 	if err != nil {
@@ -197,7 +197,7 @@ func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char i
 	return checker.GetSymbolAtLocation(node), nil
 }
 
-// Close 关闭会话以释放资源。
+// Close 关闭 LSP 会话以释放资源。
 func (s *Service) Close() {
 	s.session.Close()
 }

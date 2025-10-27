@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer/query"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/checker"
 )
@@ -17,7 +17,7 @@ type Symbol struct {
 	inner        *ast.Symbol      // 底层符号对象
 	checker      *checker.Checker // 类型检查器实例
 	sourceFile   *SourceFile      // 所属的源文件
-	queryService *query.Service   // 查询服务（用于符号相关操作）
+	lspService *lsp.Service   // LSP 服务（用于符号相关操作）
 }
 
 // SymbolFlags 表示符号的种类和特性
@@ -235,7 +235,7 @@ func (s *Symbol) GetParent() (*Symbol, bool) {
 		inner:        s.inner.Parent,
 		checker:      s.checker,
 		sourceFile:   s.sourceFile,
-		queryService: s.queryService,
+		lspService: s.lspService,
 	}, true
 }
 
@@ -253,7 +253,7 @@ func (s *Symbol) GetMembers() map[string]*Symbol {
 				inner:        memberSymbol,
 				checker:      s.checker,
 				sourceFile:   s.sourceFile,
-				queryService: s.queryService,
+				lspService: s.lspService,
 			}
 		}
 	}
@@ -274,7 +274,7 @@ func (s *Symbol) GetExports() map[string]*Symbol {
 				inner:        exportSymbol,
 				checker:      s.checker,
 				sourceFile:   s.sourceFile,
-				queryService: s.queryService,
+				lspService: s.lspService,
 			}
 		}
 	}
@@ -284,7 +284,7 @@ func (s *Symbol) GetExports() map[string]*Symbol {
 // GetSymbolAtLocation 通过 LanguageService 获取指定位置的符号。
 // 这是一个更可靠的符号获取方法，利用了 LSP 服务的能力。
 func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
-	if s.queryService == nil {
+	if s.lspService == nil {
 		return nil, false
 	}
 
@@ -294,7 +294,7 @@ func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
 	char := 0
 
 	// 使用 query service 获取符号
-	symbol, err := s.queryService.GetSymbolAt(context.Background(), filePath, startLine, char)
+	symbol, err := s.lspService.GetSymbolAt(context.Background(), filePath, startLine, char)
 	if err != nil || symbol == nil {
 		return nil, false
 	}
@@ -303,7 +303,7 @@ func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
 		inner:        symbol,
 		checker:      s.checker,
 		sourceFile:   node.sourceFile,
-		queryService: s.queryService,
+		lspService: s.lspService,
 	}, true
 }
 
@@ -459,7 +459,7 @@ func GetSymbol(node Node) (*Symbol, bool) {
 		},
 		checker:      nil,
 		sourceFile:   node.sourceFile,
-		queryService: nil,
+		lspService: nil,
 	}, true
 }
 
@@ -474,7 +474,7 @@ func hasExportModifier(node Node) bool {
 }
 
 // createSymbolService 创建符号查询服务的辅助函数
-func createSymbolService(project *Project) (*query.Service, error) {
+func createSymbolService(project *Project) (*lsp.Service, error) {
 	if project == nil || project.parserResult == nil {
 		return nil, fmt.Errorf("invalid project or parser result")
 	}
@@ -486,5 +486,5 @@ func createSymbolService(project *Project) (*query.Service, error) {
 	}
 
 	// 创建查询服务
-	return query.NewServiceForTest(sources)
+	return lsp.NewServiceForTest(sources)
 }
