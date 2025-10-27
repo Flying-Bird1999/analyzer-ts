@@ -70,3 +70,24 @@ func GetImportSpecifierAliasNode(node Node) (*Node, bool) {
 		sourceFile: node.sourceFile,
 	}, true
 }
+
+// IsClassDeclaration 检查节点是否是类声明。
+func IsClassDeclaration(node Node) bool {
+	return node.Kind == ast.KindClassDeclaration
+}
+
+// IsMethodDeclaration 检查节点是否是方法声明。
+func IsMethodDeclaration(node Node) bool {
+	return node.Kind == ast.KindMethodDeclaration
+}
+
+// IsGetAccessor 检查节点是否是getter访问器。
+func IsGetAccessor(node Node) bool {
+	return node.Kind == ast.KindGetAccessor
+}
+
+// IsSetAccessor 检查节点是否是setter访问器。
+func IsSetAccessor(node Node) bool {
+	return node.Kind == ast.KindSetAccessor
+}
+

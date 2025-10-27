@@ -3,7 +3,7 @@ module github.com/Flying-Bird1999/analyzer-ts
 go 1.25
 
 require (
-	github.com/Zzzen/typescript-go v0.0.2-0.20250928002825-ab336b227e4d
+	github.com/Zzzen/typescript-go v0.0.2-0.20251026002838-56379f7eb31b
 	github.com/gobwas/glob v0.2.3
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mattn/go-sqlite3 v1.14.32
@@ -18,7 +18,7 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
-	github.com/go-json-experiment/json v0.0.0-20250813233538-9b1f9ea2e11b // indirect
+	github.com/go-json-experiment/json v0.0.0-20250910080747-cc2cfa0554c3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
