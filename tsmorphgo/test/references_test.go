@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/stretchr/testify/assert"
 )
@@ -78,7 +79,7 @@ func TestFindReferences(t *testing.T) {
 	// 4. 验证结果
 	t.Logf("FindReferences found %d locations:", len(refs))
 	for _, refNode := range refs {
-		t.Logf("  - Path: %s, Line: %d, Text: [%s]", refNode.GetSourceFile().filePath, refNode.GetStartLineNumber(), refNode.GetText())
+		t.Logf("  - Path: %s, Line: %d, Text: [%s]", refNode.GetSourceFile().GetFilePath(), refNode.GetStartLineNumber(), refNode.GetText())
 	}
 
 	// 我们期望至少找到 3 个引用：定义、导入、使用
@@ -91,7 +92,7 @@ func TestFindReferences(t *testing.T) {
 	}
 
 	for _, refNode := range refs {
-		path := refNode.GetSourceFile().filePath
+		path := refNode.GetSourceFile().GetFilePath()
 		if _, ok := locations[path]; ok {
 			assert.Equal(t, "myVar", strings.TrimSpace(refNode.GetText()))
 			locations[path] = true

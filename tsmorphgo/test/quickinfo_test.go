@@ -3,6 +3,7 @@ package tsmorphgo
 import (
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +20,7 @@ import (
 //
 // 主要测试场景：
 // 1. 无效节点处理 - 验证对没有关联文件的节点的错误处理
-// 2. LSP 服务创建 - 测试 createLSPService 函数的各种情况
+// 2. LSP 服务创建 - 测试 CreateTestProject 函数的各种情况
 // 3. 基础类型信息 - 获取变量和表达式的类型信息
 // 4. 函数参数信息 - 获取函数参数的类型和文档信息
 // 5. 接口属性信息 - 获取接口属性的类型和约束信息
@@ -33,7 +34,7 @@ import (
 //
 // 核心 API 测试：
 // - Node.GetQuickInfo() - 获取节点的类型提示信息
-// - createLSPService() - 创建用于 QuickInfo 查询的 LSP 服务
+// - CreateTestProject() - 创建用于 QuickInfo 查询的 LSP 服务
 //
 // 技术实现：
 // 该功能通过集成 TypeScript 原生的 QuickInfo API，利用 LSP 服务来提供完整的类型信息，
@@ -61,7 +62,7 @@ func TestNode_GetQuickInfo_InvalidNode(t *testing.T) {
 	assert.Nil(t, quickInfo, "无效节点应该返回 nil QuickInfo")
 }
 
-// TestCreateLSPService 测试 createLSPService 函数
+// TestCreateLSPService 测试 CreateTestProject 函数
 func TestCreateLSPService(t *testing.T) {
 	// 准备测试用的源码
 	testSources := map[string]string{
@@ -73,19 +74,19 @@ func TestCreateLSPService(t *testing.T) {
 	require.NotNil(t, project, "项目创建不应该失败")
 
 	// 测试正常情况
-	service, err := createLSPService(project)
+	service, err := CreateTestProject(project)
 	require.NoError(t, err, "LSP 服务创建不应该失败")
 	assert.NotNil(t, service, "LSP 服务不应该为空")
 	service.Close()
 
 	// 测试 nil 项目
-	service, err = createLSPService(nil)
+	service, err = CreateTestProject(nil)
 	assert.Error(t, err, "nil 项目应该返回错误")
 	assert.Nil(t, service, "nil 项目应该返回 nil service")
 
 	// 测试项目没有解析结果
 	emptyProject := &Project{}
-	service, err = createLSPService(emptyProject)
+	service, err = CreateTestProject(emptyProject)
 	assert.Error(t, err, "没有解析结果的项目应该返回错误")
 	assert.Nil(t, service, "无效项目应该返回 nil service")
 }

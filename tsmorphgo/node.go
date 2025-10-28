@@ -102,21 +102,22 @@ func GetFirstChild(node Node, predicate func(child Node) bool) (*Node, bool) {
 //   - error: 错误信息
 //
 // 示例：
-//   quickInfo, err := node.GetQuickInfo()
-//   if err != nil {
-//       return err
-//   }
-//   if quickInfo != nil {
-//       fmt.Printf("类型: %s\n", quickInfo.TypeText)
-//       fmt.Printf("显示部件数: %d\n", len(quickInfo.DisplayParts))
-//   }
+//
+//	quickInfo, err := node.GetQuickInfo()
+//	if err != nil {
+//	    return err
+//	}
+//	if quickInfo != nil {
+//	    fmt.Printf("类型: %s\n", quickInfo.TypeText)
+//	    fmt.Printf("显示部件数: %d\n", len(quickInfo.DisplayParts))
+//	}
 func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
 	if n.sourceFile == nil || n.sourceFile.project == nil {
 		return nil, fmt.Errorf("node must belong to a source file and project")
 	}
 
 	// 创建 LSP 服务来获取 QuickInfo
-	lspService, err := createLSPService(n.sourceFile.project)
+	lspService, err := CreateTestProject(n.sourceFile.project)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LSP service: %w", err)
 	}
@@ -140,7 +141,7 @@ func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
 	return quickInfo, nil
 }
 
-// createLSPService 创建 LSP 服务的辅助函数。
+// CreateTestProject 创建 LSP 服务的辅助函数。
 // 这个函数为给定的项目创建一个 LSP 服务实例，用于执行 QuickInfo 查询等操作。
 //
 // 参数：
@@ -149,7 +150,7 @@ func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
 // 返回值：
 //   - *lsp.Service: LSP 服务实例
 //   - error: 错误信息
-func createLSPService(project *Project) (*lsp.Service, error) {
+func CreateTestProject(project *Project) (*lsp.Service, error) {
 	if project == nil || project.parserResult == nil {
 		return nil, fmt.Errorf("invalid project or parser result")
 	}

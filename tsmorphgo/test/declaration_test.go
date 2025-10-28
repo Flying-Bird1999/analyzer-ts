@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/stretchr/testify/assert"
 )
@@ -346,11 +347,9 @@ func TestTypeConversionAPIs(t *testing.T) {
 		sf := project.GetSourceFile("/test_no_source.ts")
 		assert.NotNil(t, sf)
 
-		// 创建一个没有sourceFile的节点
-		invalidNode := Node{
-			Node:       sf.astNode,
-			sourceFile: nil,
-		}
+		// 创建一个没有sourceFile的节点（使用空值）
+		// 由于 Node 的字段都是未导出的，我们使用零值测试
+		invalidNode := Node{}
 
 		// 所有转换都应该失败
 		_, ok := AsImportDeclaration(invalidNode)

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/stretchr/testify/assert"
 )

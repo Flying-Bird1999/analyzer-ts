@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -316,11 +317,9 @@ func TestGetSymbolWithInvalidNode(t *testing.T) {
 	sf := project.GetSourceFile("/test_invalid.ts")
 	assert.NotNil(t, sf)
 
-	// 创建一个无效的节点（没有sourceFile）
-	invalidNode := Node{
-		Node:       sf.astNode, // 使用有效的AST节点
-		sourceFile: nil,        // 但是sourceFile为nil
-	}
+	// 创建一个无效的节点（使用空值）
+	// 由于 Node 的字段都是未导出的，我们使用零值测试
+	invalidNode := Node{}
 
 	// 测试无效节点的符号获取
 	symbol, found := GetSymbol(invalidNode)

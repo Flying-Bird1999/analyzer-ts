@@ -5,14 +5,14 @@ import (
 	"strings"
 	"testing"
 
+	. "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/stretchr/testify/assert"
 )
 
 // complex_navigation_test.go
 //
-// 这个文件包含了复杂 AST 导航功能的综合测试用例，专注于验证 tsmorphgo 在处理
-// 深度嵌套、控制流、类型系统和装饰器等复杂 TypeScript 代码结构时的导航能力。
+// 这个文件包含了复杂 AST 导航功能的综合测试用例，专注于验证 tsmorphgo 在处理深度嵌套、控制流、类型系统和装饰器等复杂 TypeScript 代码结构时的导航能力。
 //
 // 主要测试场景：
 // 1. 深度嵌套结构导航 - 验证在多层嵌套的对象、类、方法中的节点查找和导航

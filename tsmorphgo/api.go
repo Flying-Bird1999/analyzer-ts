@@ -95,7 +95,7 @@ type APIAnalyzer struct {
 
 // NewAPIAnalyzer 创建新的 API 分析器
 func NewAPIAnalyzer(project *Project) (*APIAnalyzer, error) {
-	lspService, err := createLSPService(project)
+	lspService, err := CreateTestProject(project)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create LSP service: %w", err)
 	}
