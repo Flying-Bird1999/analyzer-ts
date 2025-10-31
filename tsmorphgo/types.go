@@ -84,6 +84,11 @@ func IsPropertyAssignment(node Node) bool {
 	return node.Kind == ast.KindPropertyAssignment
 }
 
+// IsPropertyDeclaration 检查一个节点是否是属性声明 (PropertyDeclaration)。
+func IsPropertyDeclaration(node Node) bool {
+	return node.Kind == ast.KindPropertyDeclaration
+}
+
 // IsVariableDeclaration 检查一个节点是否是变量声明 (VariableDeclaration)。
 // 注意：这对应于 `const a = 1` 中的 `a = 1` 部分，而不是整个语句。
 func IsVariableDeclaration(node Node) bool {
@@ -131,6 +136,11 @@ func AsTypeAliasDeclaration(node Node) (parser.TypeDeclarationResult, bool) {
 // IsEnumDeclaration 检查一个节点是否是枚举声明 (EnumDeclaration)。
 func IsEnumDeclaration(node Node) bool {
 	return node.Kind == ast.KindEnumDeclaration
+}
+
+// IsImportClause 检查一个节点是否是导入子句 (ImportClause)。
+func IsImportClause(node Node) bool {
+	return node.Kind == ast.KindImportClause
 }
 
 // AsEnumDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的枚举声明结果。

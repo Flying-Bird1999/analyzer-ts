@@ -14,10 +14,10 @@ import (
 // 例如，一个变量的声明和它的所有使用之处，都指向同一个 Symbol。
 // 符号系统是 TypeScript 语义分析的基础，提供了代码元素之间的语义连接。
 type Symbol struct {
-	inner        *ast.Symbol      // 底层符号对象
-	checker      *checker.Checker // 类型检查器实例
-	sourceFile   *SourceFile      // 所属的源文件
-	lspService *lsp.Service   // LSP 服务（用于符号相关操作）
+	inner      *ast.Symbol      // 底层符号对象
+	checker    *checker.Checker // 类型检查器实例
+	sourceFile *SourceFile      // 所属的源文件
+	lspService *lsp.Service     // LSP 服务（用于符号相关操作）
 }
 
 // SymbolFlags 表示符号的种类和特性
@@ -232,9 +232,9 @@ func (s *Symbol) GetParent() (*Symbol, bool) {
 		return nil, false
 	}
 	return &Symbol{
-		inner:        s.inner.Parent,
-		checker:      s.checker,
-		sourceFile:   s.sourceFile,
+		inner:      s.inner.Parent,
+		checker:    s.checker,
+		sourceFile: s.sourceFile,
 		lspService: s.lspService,
 	}, true
 }
@@ -250,9 +250,9 @@ func (s *Symbol) GetMembers() map[string]*Symbol {
 	for name, memberSymbol := range s.inner.Members {
 		if memberSymbol != nil {
 			members[name] = &Symbol{
-				inner:        memberSymbol,
-				checker:      s.checker,
-				sourceFile:   s.sourceFile,
+				inner:      memberSymbol,
+				checker:    s.checker,
+				sourceFile: s.sourceFile,
 				lspService: s.lspService,
 			}
 		}
@@ -271,9 +271,9 @@ func (s *Symbol) GetExports() map[string]*Symbol {
 	for name, exportSymbol := range s.inner.Exports {
 		if exportSymbol != nil {
 			exports[name] = &Symbol{
-				inner:        exportSymbol,
-				checker:      s.checker,
-				sourceFile:   s.sourceFile,
+				inner:      exportSymbol,
+				checker:    s.checker,
+				sourceFile: s.sourceFile,
 				lspService: s.lspService,
 			}
 		}
@@ -300,9 +300,9 @@ func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
 	}
 
 	return &Symbol{
-		inner:        symbol,
-		checker:      s.checker,
-		sourceFile:   node.sourceFile,
+		inner:      symbol,
+		checker:    s.checker,
+		sourceFile: node.sourceFile,
 		lspService: s.lspService,
 	}, true
 }
@@ -351,8 +351,7 @@ func (s *Symbol) String() string {
 }
 
 // GetSymbol 获取给定节点关联的语义符号。
-//
-// 这个实现目前是一个基础的实现，返回一个模拟的符号对象用于测试。
+// 这是一个模拟实现，主要用于测试目的，它会尝试构建一个包含父子和成员关系的符号层级结构。
 // 完整的符号获取功能需要更复杂的底层API集成。
 //
 // 参数:
@@ -373,94 +372,123 @@ func GetSymbol(node Node) (*Symbol, bool) {
 	if node.sourceFile == nil || node.sourceFile.project == nil {
 		return nil, false
 	}
+	// 调用内部的递归构建函数，初始时没有父符号
+	return buildMockSymbol(node, nil)
+}
 
-	// 为了测试目的，创建一个基础的符号实现
-	// 在实际使用中，这里应该调用底层的符号获取API
-
-	// 根据节点类型设置相应的标志
-	flags := ast.SymbolFlagsNone
+// buildMockSymbol 是一个递归函数，用于构建模拟的符号及其层级关系。
+// node: 当前要为其构建符号的节点 (通常是一个标识符)。
+// parentAstSymbol: 父级的 ast.Symbol，用于构建层级关系。
+func buildMockSymbol(node Node, parentAstSymbol *ast.Symbol) (*Symbol, bool) {
+	// 1. 获取当前节点的基本信息
 	nodeText := strings.TrimSpace(node.GetText())
+	declarationNode := node.GetParent()
+	if declarationNode == nil {
+		return nil, false // 如果没有父节点（声明节点），则无法创建符号
+	}
 
-	// 注意：这里的判断需要基于父节点而不是当前标识符节点
-	parent := node.GetParent()
-	if parent != nil {
-		switch parent.Kind {
-		case ast.KindVariableDeclaration:
-			flags |= ast.SymbolFlagsBlockScopedVariable | ast.SymbolFlagsValue
-		case ast.KindFunctionDeclaration:
-			flags |= ast.SymbolFlagsFunction | ast.SymbolFlagsValue
-		case ast.KindClassDeclaration:
-			flags |= ast.SymbolFlagsClass | ast.SymbolFlagsValue | ast.SymbolFlagsType
-		case ast.KindInterfaceDeclaration:
-			flags |= ast.SymbolFlagsInterface | ast.SymbolFlagsType
-			// 接口只有类型标志，没有值标志 - 明确移除值标志
-			flags &^= ast.SymbolFlagsValue
-		case ast.KindMethodDeclaration:
-			flags |= ast.SymbolFlagsMethod
-		case ast.KindGetAccessor:
-			flags |= ast.SymbolFlagsGetAccessor
-		case ast.KindSetAccessor:
-			flags |= ast.SymbolFlagsSetAccessor
-		}
+	// 2. 根据声明节点的类型，确定符号的标志 (flags)
+	flags := ast.SymbolFlagsNone
+	switch declarationNode.Kind {
+	case ast.KindVariableDeclaration:
+		flags |= ast.SymbolFlagsBlockScopedVariable | ast.SymbolFlagsValue
+	case ast.KindFunctionDeclaration:
+		flags |= ast.SymbolFlagsFunction | ast.SymbolFlagsValue
+	case ast.KindClassDeclaration:
+		flags |= ast.SymbolFlagsClass | ast.SymbolFlagsValue | ast.SymbolFlagsType
+	case ast.KindInterfaceDeclaration:
+		flags |= ast.SymbolFlagsInterface | ast.SymbolFlagsType
+		// 接口只有类型，没有值
+		flags &^= ast.SymbolFlagsValue
+	case ast.KindMethodDeclaration:
+		flags |= ast.SymbolFlagsMethod | ast.SymbolFlagsValue
+	case ast.KindPropertyDeclaration, ast.KindPropertySignature:
+		flags |= ast.SymbolFlagsProperty | ast.SymbolFlagsValue
+	case ast.KindGetAccessor:
+		flags |= ast.SymbolFlagsGetAccessor | ast.SymbolFlagsValue
+	case ast.KindSetAccessor:
+		flags |= ast.SymbolFlagsSetAccessor | ast.SymbolFlagsValue
+	}
 
-		// 检查是否在导出声明中
-		// 在 typescript-go 中，export const 会被解析为带有修饰符的变量声明
-		grandParent := parent.GetParent()
-		if grandParent != nil {
-			// 检查父节点是否是 export declaration
-			switch grandParent.Kind {
-			case ast.KindExportDeclaration, ast.KindExportAssignment:
-				flags |= ast.SymbolFlagsExportValue
+	// 检查导出标志 (更鲁棒的检查)
+	if isNodeExported(*declarationNode) {
+		flags |= ast.SymbolFlagsExportValue
+	}
+
+	// 3. 创建底层的 ast.Symbol
+	innerSymbol := &ast.Symbol{
+		Name:         nodeText,
+		Flags:        flags,
+		Declarations: []*ast.Node{declarationNode.Node},
+		Parent:       parentAstSymbol, // 设置父符号
+	}
+
+	// 4. 如果是类或接口，则递归构建其成员符号
+	if declarationNode.Kind == ast.KindClassDeclaration || declarationNode.Kind == ast.KindInterfaceDeclaration {
+		members := make(map[string]*ast.Symbol)
+		// 遍历声明节点的子节点以查找成员
+		declarationNode.ForEachChild(func(memberNode *ast.Node) bool {
+			var memberNameNode *Node
+			// 找到成员的名称节点 (Identifier)
+			switch memberNode.Kind {
+			case ast.KindMethodDeclaration, ast.KindPropertyDeclaration, ast.KindPropertySignature, ast.KindGetAccessor, ast.KindSetAccessor:
+				// 查找第一个作为名称的 Identifier 子节点
+				memberNode.ForEachChild(func(child *ast.Node) bool {
+					if child.Kind == ast.KindIdentifier {
+						memberNameNode = &Node{Node: child, sourceFile: node.sourceFile}
+						return true // 找到后停止
+					}
+					return false
+				})
 			}
 
-			// 对于变量声明，检查 VariableStatement 是否有 export 修饰符
-			if parent.Kind == ast.KindVariableDeclaration {
-				variableList := grandParent // VariableDeclarationList
-				if variableList != nil {
-					variableStatement := variableList.GetParent()
-					if variableStatement != nil {
-						// 检查 VariableStatement 的修饰符
-						if hasExportModifier(*variableStatement) {
-							flags |= ast.SymbolFlagsExportValue
-						}
-					}
+			// 如果找到了成员名称，为其构建符号
+			if memberNameNode != nil {
+				// 递归调用，并传入当前类/接口的符号作为父符号
+				if memberSymbol, ok := buildMockSymbol(*memberNameNode, innerSymbol); ok {
+					members[memberSymbol.GetName()] = memberSymbol.inner
 				}
 			}
+			return false // 继续遍历其他成员
+		})
+		innerSymbol.Members = members
+	}
 
-			// 对于函数、类、接口、方法声明，检查它们的修饰符
-			if parent.Kind == ast.KindFunctionDeclaration ||
-			   parent.Kind == ast.KindClassDeclaration ||
-			   parent.Kind == ast.KindInterfaceDeclaration ||
-			   parent.Kind == ast.KindMethodDeclaration ||
-			   parent.Kind == ast.KindGetAccessor ||
-			   parent.Kind == ast.KindSetAccessor {
-				if hasExportModifier(*parent) {
-					flags |= ast.SymbolFlagsExportValue
+	// 5. 返回包装后的 tsmorphgo.Symbol
+	return &Symbol{
+		inner:      innerSymbol,
+		sourceFile: node.sourceFile,
+	}, true
+}
+
+// isNodeExported 检查一个声明节点是否被导出。
+func isNodeExported(declarationNode Node) bool {
+	// 方式1: 检查声明节点自身是否有 'export' 修饰符
+	if hasExportModifier(declarationNode) {
+		return true
+	}
+
+	// 方式2: 检查父节点是否是 ExportDeclaration
+	parent := declarationNode.GetParent()
+	if parent != nil {
+		if parent.Kind == ast.KindExportDeclaration {
+			return true
+		}
+
+		// 方式3: 针对 `export const x = 1` 的情况
+		// 结构是 VariableStatement -> VariableDeclarationList -> VariableDeclaration
+		if declarationNode.Kind == ast.KindVariableDeclaration {
+			// parent 是 VariableDeclarationList
+			grandParent := parent.GetParent()
+			if grandParent != nil && grandParent.Kind == ast.KindVariableStatement {
+				if hasExportModifier(*grandParent) {
+					return true
 				}
 			}
 		}
 	}
 
-	// 确定声明节点
-		var declarationNode *ast.Node
-		if parent != nil {
-			// 对于大多数情况，父节点就是声明节点
-			declarationNode = parent.Node
-		} else {
-			// 如果没有父节点，使用当前节点
-			declarationNode = node.Node
-		}
-
-	return &Symbol{
-		inner: &ast.Symbol{
-			Name:         nodeText, // 使用节点文本作为符号名称
-			Flags:        flags,
-			Declarations: []*ast.Node{declarationNode}, // 添加声明节点
-		},
-		checker:      nil,
-		sourceFile:   node.sourceFile,
-		lspService: nil,
-	}, true
+	return false
 }
 
 // hasExportModifier 检查节点是否具有 export 修饰符
