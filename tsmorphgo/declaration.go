@@ -6,7 +6,7 @@ import (
 
 // GetVariableName 获取变量声明节点的名称。
 // - 对于 `const foo = 1`，它返回 "foo"。
-// - 对于 `const { a, b } = c`，它返回 "{ a, b }"。
+// - 对于 `const { a, b } = c`，它返回 "destructured pattern"。
 // 如果节点不是一个有效的变量声明，则返回空字符串和 false。
 func GetVariableName(node Node) (string, bool) {
 	if node.Kind != ast.KindVariableDeclaration {
@@ -16,7 +16,31 @@ func GetVariableName(node Node) (string, bool) {
 	if decl == nil || decl.Name() == nil {
 		return "", false
 	}
-	return decl.Name().Text(), true
+
+	// Check if it's an identifier (simple variable name)
+	if decl.Name().Kind == ast.KindIdentifier {
+		return decl.Name().Text(), true
+	}
+
+	// Check if it's a binding pattern (destructuring)
+	if decl.Name().Kind == ast.KindObjectBindingPattern ||
+	   decl.Name().Kind == ast.KindArrayBindingPattern {
+		return "destructured pattern", true
+	}
+
+	// For other cases, try to get text but catch any panics
+	defer func() {
+		if r := recover(); r != nil {
+			// Silently recover and return false
+		}
+	}()
+
+	text := decl.Name().Text()
+	if text != "" {
+		return text, true
+	}
+
+	return "", false
 }
 
 // GetVariableDeclarationNameNode 获取变量声明节点的名称节点 (NameNode)。
