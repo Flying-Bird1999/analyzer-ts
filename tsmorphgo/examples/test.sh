@@ -88,7 +88,7 @@ if [ -f "api.json" ]; then
 fi
 if [ -d "docs" ]; then
     echo "  - docs/ (文档目录)"
-}
+fi
 
 echo ""
 echo "✅ 测试完成！"

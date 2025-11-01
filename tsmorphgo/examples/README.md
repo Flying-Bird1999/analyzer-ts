@@ -64,14 +64,12 @@
    - 引用关系深度分析
    - 模块和复杂度分析
 
-10. **10-quickinfo-test-working.go** - QuickInfo 底层能力验证
+10. **10-quickinfo-test-working.go** - QuickInfo 底层能力验证 (使用真实项目)
     - QuickInfo 功能框架验证
     - 原生 QuickInfo 对比测试
     - 属性级别 QuickInfo 分析
     - 复杂类型引用追踪
-    - JSDoc 注释处理框架
     - 显示部件类型分析
-    - API 衍生能力验证
 
 ## 📊 当前 API 覆盖分析
 
