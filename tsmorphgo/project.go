@@ -87,6 +87,25 @@ func (p *Project) GetSourceFiles() []*SourceFile {
 	return files
 }
 
+// FindNodeAt 在指定的源文件中，根据行列号查找最精确匹配的 AST 节点。
+// 返回包装后的Node类型，便于API使用。
+func (p *Project) FindNodeAt(filePath string, line, char int) *Node {
+	astNode := p.findNodeAt(filePath, line, char)
+	if astNode == nil {
+		return nil
+	}
+
+	sf, ok := p.sourceFiles[filePath]
+	if !ok {
+		return nil
+	}
+
+	return &Node{
+		Node:       astNode,
+		sourceFile: sf,
+	}
+}
+
 // findNodeAt 在指定的源文件中，根据行列号查找最精确匹配的 AST 节点。
 func (p *Project) findNodeAt(filePath string, line, char int) *ast.Node {
 	sf, ok := p.sourceFiles[filePath]

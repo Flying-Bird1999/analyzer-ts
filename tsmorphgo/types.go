@@ -115,10 +115,6 @@ func IsBinaryExpression(node Node) bool {
 	return node.Kind == ast.KindBinaryExpression
 }
 
-// IsTypeAliasDeclaration 检查一个节点是否是类型别名声明 (TypeAliasDeclaration)。
-func IsTypeAliasDeclaration(node Node) bool {
-	return node.Kind == ast.KindTypeAliasDeclaration
-}
 
 // AsTypeAliasDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的类型别名声明结果。
 func AsTypeAliasDeclaration(node Node) (parser.TypeDeclarationResult, bool) {
@@ -154,6 +150,173 @@ func AsEnumDeclaration(node Node) (parser.EnumDeclarationResult, bool) {
 		}
 	}
 	return parser.EnumDeclarationResult{}, false
+}
+
+// AsClassDeclaration 尝试获取节点的类声明信息。
+func AsClassDeclaration(node Node) (*Node, bool) {
+	if node.Kind == ast.KindClassDeclaration {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsMethodDeclaration 尝试获取节点的方法声明信息。
+func AsMethodDeclaration(node Node) (*Node, bool) {
+	if node.Kind == ast.KindMethodDeclaration {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsConstructor 尝试获取节点的构造函数声明信息。
+func AsConstructor(node Node) (*Node, bool) {
+	if node.Kind == ast.KindConstructor {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsGetAccessor 尝试获取节点的getter访问器信息。
+func AsGetAccessor(node Node) (*Node, bool) {
+	if node.Kind == ast.KindGetAccessor {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsSetAccessor 尝试获取节点的setter访问器信息。
+func AsSetAccessor(node Node) (*Node, bool) {
+	if node.Kind == ast.KindSetAccessor {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsTypeParameter 尝试获取节点的类型参数信息。
+func AsTypeParameter(node Node) (*Node, bool) {
+	if node.Kind == ast.KindTypeParameter {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsTypeReference 尝试获取节点的类型引用信息。
+func AsTypeReference(node Node) (*Node, bool) {
+	if node.Kind == ast.KindTypeReference {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsArrayLiteralExpression 尝试获取节点的数组字面量表达式信息。
+func AsArrayLiteralExpression(node Node) (*Node, bool) {
+	if node.Kind == ast.KindArrayLiteralExpression {
+		return &node, true
+	}
+	return nil, false
+}
+
+// AsTypeAssertionExpression 尝试获取节点的类型断言表达式信息。
+func AsTypeAssertionExpression(node Node) (*Node, bool) {
+	if node.Kind == ast.KindTypeAssertionExpression {
+		return &node, true
+	}
+	return nil, false
+}
+
+// 符号级别类型检查函数 - 推荐使用这些函数进行符号类型检查
+
+// IsConstructorSymbol 检查符号是否是构造函数。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的构造函数检查应该使用 node.Kind == ast.KindConstructor
+func IsConstructorSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsConstructor()
+}
+
+// IsAccessorSymbol 检查符号是否是访问器（getter/setter）。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的访问器检查应该使用 node.Kind == ast.KindGetAccessor || node.Kind == ast.KindSetAccessor
+func IsAccessorSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsAccessor()
+}
+
+// IsTypeParameterSymbol 检查符号是否是类型参数。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的类型参数检查应该使用 node.Kind == ast.KindTypeParameter
+func IsTypeParameterSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsTypeParameter()
+}
+
+// IsTypeReferenceSymbol 检查符号是否是类型引用。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的类型引用检查应该使用 node.Kind == ast.KindTypeReference
+func IsTypeReferenceSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	// 类型引用通常对应类型别名符号
+	return symbol.IsTypeAlias()
+}
+
+// IsArrayLiteralExpressionSymbol 检查符号是否是数组字面量表达式。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的数组字面量检查应该使用 node.Kind == ast.KindArrayLiteralExpression
+func IsArrayLiteralExpressionSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	// 数组字面量通常对应变量或属性符号
+	return symbol.IsVariable() || symbol.IsProperty()
+}
+
+// IsTypeAssertionExpressionSymbol 检查符号是否是类型断言表达式。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的类型断言检查应该使用 node.Kind == ast.KindTypeAssertionExpression
+func IsTypeAssertionExpressionSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	// 类型断言表达式通常对应变量或属性符号
+	return symbol.IsVariable() || symbol.IsProperty()
+}
+
+// IsClassDeclarationSymbol 检查符号是否是类声明。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的类声明检查应该使用 node.Kind == ast.KindClassDeclaration
+func IsClassDeclarationSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsClass()
+}
+
+// IsMethodDeclarationSymbol 检查符号是否是方法声明。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的方法声明检查应该使用 node.Kind == ast.KindMethodDeclaration
+func IsMethodDeclarationSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsMethod()
+}
+
+// IsInterfaceDeclarationSymbol 检查符号是否是接口声明。
+// 注意：这是符号级别的检查，不是节点级别的检查。
+// 节点级别的接口声明检查应该使用 node.Kind == ast.KindInterfaceDeclaration
+func IsInterfaceDeclarationSymbol(symbol *Symbol) bool {
+	if symbol == nil {
+		return false
+	}
+	return symbol.IsInterface()
 }
 
 // ... 后续可以按照此模式添加其他 IsXXX 和 AsXXX 函数 ...

@@ -24,7 +24,7 @@ func GetVariableName(node Node) (string, bool) {
 
 	// Check if it's a binding pattern (destructuring)
 	if decl.Name().Kind == ast.KindObjectBindingPattern ||
-	   decl.Name().Kind == ast.KindArrayBindingPattern {
+		decl.Name().Kind == ast.KindArrayBindingPattern {
 		return "destructured pattern", true
 	}
 
@@ -100,9 +100,9 @@ func IsClassDeclaration(node Node) bool {
 	return node.Kind == ast.KindClassDeclaration
 }
 
-// IsMethodDeclaration 检查节点是否是方法声明。
-func IsMethodDeclaration(node Node) bool {
-	return node.Kind == ast.KindMethodDeclaration
+// IsSetAccessor 检查节点是否是setter访问器。
+func IsSetAccessor(node Node) bool {
+	return node.Kind == ast.KindSetAccessor
 }
 
 // IsGetAccessor 检查节点是否是getter访问器。
@@ -110,8 +110,89 @@ func IsGetAccessor(node Node) bool {
 	return node.Kind == ast.KindGetAccessor
 }
 
-// IsSetAccessor 检查节点是否是setter访问器。
-func IsSetAccessor(node Node) bool {
+// 节点级别的类型检查函数
+
+// IsConstructor 检查节点是否是构造函数。
+func IsConstructor(node Node) bool {
+	return node.Kind == ast.KindConstructor
+}
+
+// IsAccessor 检查节点是否是访问器（getter/setter）。
+func IsAccessor(node Node) bool {
+	return node.Kind == ast.KindGetAccessor || node.Kind == ast.KindSetAccessor
+}
+
+// IsTypeParameter 检查节点是否是类型参数。
+func IsTypeParameter(node Node) bool {
+	return node.Kind == ast.KindTypeParameter
+}
+
+// IsTypeReference 检查节点是否是类型引用。
+func IsTypeReference(node Node) bool {
+	return node.Kind == ast.KindTypeReference
+}
+
+// IsArrayLiteralExpression 检查节点是否是数组字面量表达式。
+func IsArrayLiteralExpression(node Node) bool {
+	return node.Kind == ast.KindArrayLiteralExpression
+}
+
+// IsTypeAssertionExpression 检查节点是否是类型断言表达式。
+func IsTypeAssertionExpression(node Node) bool {
+	return node.Kind == ast.KindTypeAssertionExpression
+}
+
+// IsConstructorDeclaration 检查节点是否是构造函数声明。
+func IsConstructorDeclaration(node Node) bool {
+	return node.Kind == ast.KindConstructor
+}
+
+// IsMethodDeclaration 检查节点是否是方法声明。
+func IsMethodDeclaration(node Node) bool {
+	return node.Kind == ast.KindMethodDeclaration
+}
+
+// IsGetAccessorDeclaration 检查节点是否是getter访问器声明。
+func IsGetAccessorDeclaration(node Node) bool {
+	return node.Kind == ast.KindGetAccessor
+}
+
+// IsSetAccessorDeclaration 检查节点是否是setter访问器声明。
+func IsSetAccessorDeclaration(node Node) bool {
 	return node.Kind == ast.KindSetAccessor
 }
 
+// IsTypeAliasDeclaration 检查节点是否是类型别名声明。
+func IsTypeAliasDeclaration(node Node) bool {
+	return node.Kind == ast.KindTypeAliasDeclaration
+}
+
+// IsThisExpression 检查节点是否是this表达式。
+func IsThisExpression(node Node) bool {
+	return node.Kind == ast.KindThisKeyword
+}
+
+// IsSuperExpression 检查节点是否是super表达式。
+func IsSuperExpression(node Node) bool {
+	return node.Kind == ast.KindSuperKeyword
+}
+
+// IsTemplateExpression 检查节点是否是模板表达式。
+func IsTemplateExpression(node Node) bool {
+	return node.Kind == ast.KindTemplateExpression
+}
+
+// IsSpreadElement 检查节点是否是展开元素。
+func IsSpreadElement(node Node) bool {
+	return node.Kind == ast.KindSpreadElement
+}
+
+// IsYieldExpression 检查节点是否是yield表达式。
+func IsYieldExpression(node Node) bool {
+	return node.Kind == ast.KindYieldExpression
+}
+
+// IsAwaitExpression 检查节点是否是await表达式。
+func IsAwaitExpression(node Node) bool {
+	return node.Kind == ast.KindAwaitExpression
+}

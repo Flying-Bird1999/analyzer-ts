@@ -1,0 +1,28 @@
+{
+  "category": "accuracy-validation",
+  "tests": [
+    {
+      "name": "准确性验证",
+      "category": "accuracy-validation",
+      "description": "验证API调用的准确性",
+      "status": "passed",
+      "message": "准确性验证成功，测试5个用例，准确率60.0%",
+      "error": "",
+      "duration": 3765000,
+      "timestamp": "2025-11-02T18:40:18.670705+08:00",
+      "metrics": {
+        "totalItems": 5,
+        "successItems": 3,
+        "failedItems": 2,
+        "accuracyRate": 60,
+        "performanceMs": 0,
+        "extraInfo": {
+          "test_cases_loaded": 5,
+          "validation_type": "simulated"
+        }
+      }
+    }
+  ],
+  "timestamp": "20251102-184018",
+  "totalTests": 1
+}

@@ -1,0 +1,198 @@
+{
+  "advancedConversions": [
+    {
+      "name": "AsConstructor",
+      "category": "特殊",
+      "checkCount": 22524,
+      "successCount": 7,
+      "failureCount": 0,
+      "successRate": 0.03107796128573966
+    },
+    {
+      "name": "AsGetAccessor",
+      "category": "访问器",
+      "checkCount": 22524,
+      "successCount": 0,
+      "failureCount": 0,
+      "successRate": 0
+    },
+    {
+      "name": "AsSetAccessor",
+      "category": "访问器",
+      "checkCount": 22524,
+      "successCount": 0,
+      "failureCount": 0,
+      "successRate": 0
+    },
+    {
+      "name": "AsTypeParameter",
+      "category": "类型参数",
+      "checkCount": 22524,
+      "successCount": 157,
+      "failureCount": 0,
+      "successRate": 0.6970342745515894
+    },
+    {
+      "name": "AsTypeReference",
+      "category": "类型引用",
+      "checkCount": 22524,
+      "successCount": 859,
+      "failureCount": 0,
+      "successRate": 3.8137098206357662
+    }
+  ],
+  "basicConversions": [
+    {
+      "name": "AsImportDeclaration",
+      "category": "模块",
+      "checkCount": 22524,
+      "successCount": 31,
+      "failureCount": 0,
+      "successRate": 0.1376309714082756
+    },
+    {
+      "name": "AsVariableDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 0,
+      "failureCount": 297,
+      "successRate": 0
+    },
+    {
+      "name": "AsFunctionDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 15,
+      "failureCount": 0,
+      "successRate": 0.06659563132658498
+    },
+    {
+      "name": "AsInterfaceDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 86,
+      "failureCount": 0,
+      "successRate": 0.38181495293908724
+    },
+    {
+      "name": "AsTypeAliasDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 64,
+      "failureCount": 0,
+      "successRate": 0.28414136032676257
+    },
+    {
+      "name": "AsEnumDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 1,
+      "failureCount": 0,
+      "successRate": 0.004439708755105665
+    },
+    {
+      "name": "AsClassDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 15,
+      "failureCount": 0,
+      "successRate": 0.06659563132658498
+    },
+    {
+      "name": "AsMethodDeclaration",
+      "category": "声明",
+      "checkCount": 22524,
+      "successCount": 101,
+      "failureCount": 0,
+      "successRate": 0.44841058426567215
+    }
+  ],
+  "compatibilityResults": [
+    {
+      "sourceType": "FunctionDeclaration",
+      "targetType": "AsInterfaceDeclaration",
+      "testCount": 15,
+      "compatibleCount": 0,
+      "incompatibleCount": 15,
+      "compatibilityScore": 0
+    },
+    {
+      "sourceType": "InterfaceDeclaration",
+      "targetType": "AsFunctionDeclaration",
+      "testCount": 86,
+      "compatibleCount": 0,
+      "incompatibleCount": 86,
+      "compatibilityScore": 0
+    },
+    {
+      "sourceType": "VariableDeclaration",
+      "targetType": "AsFunctionDeclaration",
+      "testCount": 297,
+      "compatibleCount": 0,
+      "incompatibleCount": 297,
+      "compatibilityScore": 0
+    },
+    {
+      "sourceType": "FunctionDeclaration",
+      "targetType": "AsVariableDeclaration",
+      "testCount": 15,
+      "compatibleCount": 0,
+      "incompatibleCount": 15,
+      "compatibilityScore": 0
+    }
+  ],
+  "errorHandling": [
+    {
+      "testName": "变量声明转换错误处理",
+      "testNodeCount": 22524,
+      "errorHandledCount": 101,
+      "errorHandlingRate": 0.44841058426567215,
+      "handlingQuality": "较差"
+    },
+    {
+      "testName": "函数声明转换错误处理",
+      "testNodeCount": 22524,
+      "errorHandledCount": 383,
+      "errorHandlingRate": 1.7004084532054697,
+      "handlingQuality": "较差"
+    }
+  ],
+  "memoryUsage": {
+    "conversionCount": 579,
+    "memoryUsageKB": 579,
+    "memoryUsageTrend": "高",
+    "memoryEfficiencyGrade": "一般",
+    "memoryOptimizationAdvice": "内存使用一般，建议优化大文件处理"
+  },
+  "performance": {
+    "testNodeCount": 500,
+    "averageConversionTime": 0.0009999999999999638,
+    "fastestConversionTime": 0.001,
+    "slowestConversionTime": 0.001,
+    "performanceGrade": "优秀",
+    "performanceRecommendation": "性能表现优秀，无需优化"
+  },
+  "propertyValidation": [
+    {
+      "conversionName": "AsFunctionDeclaration",
+      "sourceKind": 263,
+      "conversionStatus": "成功",
+      "propertyValidity": true,
+      "methodUsability": true,
+      "typeAccessibility": true
+    },
+    {
+      "conversionName": "AsInterfaceDeclaration",
+      "sourceKind": 265,
+      "conversionStatus": "成功",
+      "propertyValidity": true,
+      "methodUsability": true,
+      "typeAccessibility": true
+    }
+  ],
+  "summary": {
+    "timestamp": "71804",
+    "totalAdvancedConversions": 5,
+    "totalBasicConversions": 8
+  }
+}

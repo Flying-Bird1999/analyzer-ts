@@ -3,6 +3,7 @@ package tsmorphgo
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
@@ -78,7 +79,7 @@ func (n *Node) GetStart() int {
 // GetFirstChild 按条件查找并返回第一个匹配的直接子节点。
 func GetFirstChild(node Node, predicate func(child Node) bool) (*Node, bool) {
 	var foundNode *Node
-	node.ForEachChild(func(child *ast.Node) bool {
+	node.Node.ForEachChild(func(child *ast.Node) bool {
 		wrappedChild := Node{Node: child, sourceFile: node.sourceFile}
 		if predicate(wrappedChild) {
 			foundNode = &wrappedChild
@@ -139,6 +140,217 @@ func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
 	}
 
 	return quickInfo, nil
+}
+
+// GetEndLineNumber 返回节点在源文件中的结束行号 (1-based)。
+func (n *Node) GetEndLineNumber() int {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return 0
+	}
+	line, _ := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.End())
+	return line + 1
+}
+
+// GetEnd 返回节点在文件中的结束字符偏移量 (0-based)。
+func (n *Node) GetEnd() int {
+	return n.End()
+}
+
+// GetTextLength 返回节点文本的长度。
+func (n *Node) GetTextLength() int {
+	return n.End() - n.Pos()
+}
+
+// GetChildCount 返回子节点的数量。
+func (n *Node) GetChildCount() int {
+	count := 0
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		count++
+		return false // 继续遍历
+	})
+	return count
+}
+
+// GetChildAt 返回指定索引位置的子节点。
+func (n *Node) GetChildAt(index int) (*Node, bool) {
+	if index < 0 {
+		return nil, false
+	}
+
+	currentIndex := 0
+	var foundNode *ast.Node
+	n.ForEachChild(func(child *ast.Node) bool {
+		if currentIndex == index {
+			foundNode = child
+			return true // 找到了，停止遍历
+		}
+		currentIndex++
+		return false // 继续遍历
+	})
+
+	if foundNode != nil {
+		return &Node{Node: foundNode, sourceFile: n.sourceFile}, true
+	}
+	return nil, false
+}
+
+// ForEachDescendant 遍历所有后代节点（包括自身）。
+// 这是对底层 ForEachChild 的封装，提供更直观的API。
+func (n *Node) ForEachDescendant(callback func(Node)) {
+	// 遍历自身
+	callback(*n)
+
+	// 遍历所有子节点
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		wrappedChild := Node{Node: child, sourceFile: n.sourceFile}
+		wrappedChild.ForEachDescendant(callback)
+		return false // 继续遍历其他子节点
+	})
+}
+
+
+// ContainsString 检查节点文本是否包含指定的字符串。
+// 这是对 strings.Contains 的包装，方便在AST分析中使用。
+func (n *Node) ContainsString(substr string) bool {
+	nodeText := n.GetText()
+	return strings.Contains(nodeText, substr)
+}
+
+// GetNextSibling 返回下一个兄弟节点。
+func (n *Node) GetNextSibling() (*Node, bool) {
+	if n.GetParent() == nil {
+		return nil, false
+	}
+
+	parent := n.GetParent()
+	foundCurrent := false
+
+	for i := 0; i < parent.GetChildCount(); i++ {
+		sibling, ok := parent.GetChildAt(i)
+		if !ok {
+			continue
+		}
+
+		if foundCurrent {
+			return sibling, true
+		}
+
+		if sibling.Node == n.Node {
+			foundCurrent = true
+		}
+	}
+
+	return nil, false
+}
+
+// GetPreviousSibling 返回上一个兄弟节点。
+func (n *Node) GetPreviousSibling() (*Node, bool) {
+	if n.GetParent() == nil {
+		return nil, false
+	}
+
+	parent := n.GetParent()
+	var previousSibling *Node
+
+	for i := 0; i < parent.GetChildCount(); i++ {
+		sibling, ok := parent.GetChildAt(i)
+		if !ok {
+			continue
+		}
+
+		if sibling.Node == n.Node {
+			if previousSibling != nil {
+				return previousSibling, true
+			}
+			break
+		}
+
+		previousSibling = sibling
+	}
+
+	return nil, false
+}
+
+// FindChildren 查找所有匹配指定类型的子节点。
+func (n *Node) FindChildren(kind ast.Kind) []Node {
+	var children []Node
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == kind {
+			children = append(children, Node{Node: child, sourceFile: n.sourceFile})
+		}
+		return false // 继续遍历
+	})
+	return children
+}
+
+// GetFirstChild 返回第一个子节点。
+func (n *Node) GetFirstChild() (*Node, bool) {
+	var firstChild *ast.Node
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		firstChild = child
+		return true // 找到第一个就停止
+	})
+	if firstChild != nil {
+		return &Node{Node: firstChild, sourceFile: n.sourceFile}, true
+	}
+	return nil, false
+}
+
+// GetLastChild 返回最后一个子节点。
+func (n *Node) GetLastChild() (*Node, bool) {
+	var lastChild *ast.Node
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		lastChild = child
+		return false // 继续遍历，最后一个会被保留
+	})
+	if lastChild != nil {
+		return &Node{Node: lastChild, sourceFile: n.sourceFile}, true
+	}
+	return nil, false
+}
+
+// FindFirstChild 查找第一个匹配指定类型的子节点。
+func (n *Node) FindFirstChild(kind ast.Kind) (*Node, bool) {
+	var foundNode *ast.Node
+	n.Node.ForEachChild(func(child *ast.Node) bool {
+		if child.Kind == kind {
+			foundNode = child
+			return true // 找到了，停止遍历
+		}
+		return false // 继续遍历
+	})
+	if foundNode != nil {
+		return &Node{Node: foundNode, sourceFile: n.sourceFile}, true
+	}
+	return nil, false
+}
+
+// IsValid 检查节点是否有效（非nil）。
+func (n *Node) IsValid() bool {
+	return n != nil && n.Node != nil
+}
+
+// Contains 检查该节点是否包含另一个节点。
+func (n *Node) Contains(other Node) bool {
+	return n.Pos() <= other.Pos() && other.End() <= n.End()
+}
+
+// GetStartColumnNumber 返回节点在源文件中的起始列号 (1-based)。
+func (n *Node) GetStartColumnNumber() int {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return 0
+	}
+	_, char := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.Pos())
+	return char + 1
+}
+
+// GetEndColumnNumber 返回节点在源文件中的结束列号 (1-based)。
+func (n *Node) GetEndColumnNumber() int {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return 0
+	}
+	_, char := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.End())
+	return char + 1
 }
 
 // CreateTestProject 创建 LSP 服务的辅助函数。
