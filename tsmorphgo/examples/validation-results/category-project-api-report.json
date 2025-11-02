@@ -8,8 +8,8 @@
       "status": "passed",
       "message": "项目API验证成功，共发现14个源文件",
       "error": "",
-      "duration": 1318125,
-      "timestamp": "2025-11-02T19:11:29.620993+08:00",
+      "duration": 384791,
+      "timestamp": "2025-11-02T19:47:49.029954+08:00",
       "metrics": {
         "totalItems": 14,
         "successItems": 3,
@@ -23,6 +23,6 @@
       }
     }
   ],
-  "timestamp": "20251102-191129",
+  "timestamp": "20251102-194749",
   "totalTests": 1
 }

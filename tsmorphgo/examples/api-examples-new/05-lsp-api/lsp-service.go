@@ -56,6 +56,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	project := tsmorphgo.NewProject(config)
+	defer project.Close()
 
 	// 获取项目中的源文件数量，用于验证 LSP 服务是否能处理
 	sourceFiles := project.GetSourceFiles()

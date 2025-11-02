@@ -27,6 +27,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	project := tsmorphgo.NewProject(config)
+	defer project.Close()
 
 	// 验证项目创建是否成功
 	sourceFiles := project.GetSourceFiles()

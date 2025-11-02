@@ -1,17 +1,37 @@
 {
   "metadata": {
-    "reportId": "val-1762081889",
-    "generatedAt": "2025-11-02T19:11:29.662125+08:00",
+    "reportId": "val-1762084069",
+    "generatedAt": "2025-11-02T19:47:49.073956+08:00",
     "generatedBy": "TSMorphGo Validation Suite",
     "version": "1.0.0",
     "format": "json",
     "totalTests": 6,
-    "testDuration": "92.778458ms"
+    "testDuration": "114.675709ms"
   },
   "suite": {
     "name": "TSMorphGo API Validation",
     "description": "完整的TSMorphGo API准确性验证套件",
     "tests": [
+      {
+        "name": "LSP API验证",
+        "category": "lsp-api",
+        "description": "验证LSP服务集成功能",
+        "status": "passed",
+        "message": "LSP API验证成功，执行3个测试，通过率100.0%",
+        "error": "",
+        "duration": 360166,
+        "timestamp": "2025-11-02T19:47:49.030036+08:00",
+        "metrics": {
+          "totalItems": 3,
+          "successItems": 3,
+          "failedItems": 0,
+          "accuracyRate": 100,
+          "performanceMs": 0,
+          "extraInfo": {
+            "lsp_service_status": "simulated"
+          }
+        }
+      },
       {
         "name": "准确性验证",
         "category": "accuracy-validation",
@@ -19,8 +39,8 @@
         "status": "passed",
         "message": "准确性验证成功，测试5个用例，准确率60.0%",
         "error": "",
-        "duration": 781250,
-        "timestamp": "2025-11-02T19:11:29.61969+08:00",
+        "duration": 444208,
+        "timestamp": "2025-11-02T19:47:49.030202+08:00",
         "metrics": {
           "totalItems": 5,
           "successItems": 3,
@@ -34,34 +54,14 @@
         }
       },
       {
-        "name": "LSP API验证",
-        "category": "lsp-api",
-        "description": "验证LSP服务集成功能",
-        "status": "passed",
-        "message": "LSP API验证成功，执行3个测试，通过率100.0%",
-        "error": "",
-        "duration": 1337958,
-        "timestamp": "2025-11-02T19:11:29.619594+08:00",
-        "metrics": {
-          "totalItems": 3,
-          "successItems": 3,
-          "failedItems": 0,
-          "accuracyRate": 100,
-          "performanceMs": 0,
-          "extraInfo": {
-            "lsp_service_status": "simulated"
-          }
-        }
-      },
-      {
         "name": "项目API验证",
         "category": "project-api",
         "description": "验证项目创建和基础API功能",
         "status": "passed",
         "message": "项目API验证成功，共发现14个源文件",
         "error": "",
-        "duration": 1318125,
-        "timestamp": "2025-11-02T19:11:29.620993+08:00",
+        "duration": 384791,
+        "timestamp": "2025-11-02T19:47:49.029954+08:00",
         "metrics": {
           "totalItems": 14,
           "successItems": 3,
@@ -79,15 +79,15 @@
         "category": "type-api",
         "description": "验证类型检查和转换API功能",
         "status": "passed",
-        "message": "类型API验证成功，测试16826个类型节点，通过率99.7%",
+        "message": "类型API验证成功，测试16838个类型节点，通过率99.7%",
         "error": "",
-        "duration": 2974125,
-        "timestamp": "2025-11-02T19:11:29.621339+08:00",
+        "duration": 2406917,
+        "timestamp": "2025-11-02T19:47:49.02999+08:00",
         "metrics": {
-          "totalItems": 16826,
-          "successItems": 16783,
+          "totalItems": 16838,
+          "successItems": 16795,
           "failedItems": 43,
-          "accuracyRate": 99.74444312373707,
+          "accuracyRate": 99.74462525240527,
           "performanceMs": 0,
           "extraInfo": {}
         }
@@ -97,15 +97,15 @@
         "category": "node-api",
         "description": "验证AST节点操作API功能",
         "status": "passed",
-        "message": "节点API验证成功，发现16826个节点，通过率99.7%",
+        "message": "节点API验证成功，发现16838个节点，通过率99.7%",
         "error": "",
-        "duration": 8700625,
-        "timestamp": "2025-11-02T19:11:29.621075+08:00",
+        "duration": 6385375,
+        "timestamp": "2025-11-02T19:47:49.030095+08:00",
         "metrics": {
-          "totalItems": 16826,
-          "successItems": 16783,
+          "totalItems": 16838,
+          "successItems": 16795,
           "failedItems": 43,
-          "accuracyRate": 99.74444312373707,
+          "accuracyRate": 99.74462525240527,
           "performanceMs": 0,
           "extraInfo": {
             "node_types": {
@@ -155,7 +155,7 @@
               "KindGreaterThanEqualsToken": 4,
               "KindGreaterThanToken": 7,
               "KindHeritageClause": 7,
-              "KindIdentifier": 5620,
+              "KindIdentifier": 5625,
               "KindIfStatement": 89,
               "KindImportClause": 29,
               "KindImportDeclaration": 31,
@@ -163,7 +163,7 @@
               "KindIndexSignature": 1,
               "KindIndexedAccessType": 7,
               "KindInstanceOfKeyword": 19,
-              "KindInterfaceDeclaration": 58,
+              "KindInterfaceDeclaration": 59,
               "KindIntersectionType": 3,
               "KindJsxAttribute": 306,
               "KindJsxAttributes": 177,
@@ -188,7 +188,7 @@
               "KindNewExpression": 71,
               "KindNonNullExpression": 11,
               "KindNullKeyword": 53,
-              "KindNumberKeyword": 67,
+              "KindNumberKeyword": 68,
               "KindNumericLiteral": 158,
               "KindObjectBindingPattern": 28,
               "KindObjectLiteralExpression": 157,
@@ -201,7 +201,7 @@
               "KindPropertyAccessExpression": 1086,
               "KindPropertyAssignment": 474,
               "KindPropertyDeclaration": 4,
-              "KindPropertySignature": 341,
+              "KindPropertySignature": 344,
               "KindQualifiedName": 27,
               "KindQuestionDotToken": 78,
               "KindQuestionToken": 209,
@@ -213,7 +213,7 @@
               "KindSourceFile": 14,
               "KindSpreadAssignment": 57,
               "KindSpreadElement": 10,
-              "KindStringKeyword": 182,
+              "KindStringKeyword": 183,
               "KindStringLiteral": 622,
               "KindSwitchStatement": 1,
               "KindTemplateExpression": 33,
@@ -232,7 +232,7 @@
               "KindTypeOfExpression": 6,
               "KindTypeOperator": 15,
               "KindTypeParameter": 29,
-              "KindTypeReference": 398,
+              "KindTypeReference": 399,
               "KindUnionType": 41,
               "KindVariableDeclaration": 242,
               "KindVariableDeclarationList": 225,
@@ -247,32 +247,32 @@
         "category": "symbol-api",
         "description": "验证符号系统API功能",
         "status": "passed",
-        "message": "符号API验证成功，发现16812个符号，通过率98.2%",
+        "message": "符号API验证成功，发现16824个符号，通过率98.2%",
         "error": "",
-        "duration": 42037708,
-        "timestamp": "2025-11-02T19:11:29.621012+08:00",
+        "duration": 41504792,
+        "timestamp": "2025-11-02T19:47:49.030091+08:00",
         "metrics": {
-          "totalItems": 16812,
-          "successItems": 16506,
+          "totalItems": 16824,
+          "successItems": 16518,
           "failedItems": 306,
-          "accuracyRate": 98.17987152034262,
+          "accuracyRate": 98.1811697574893,
           "performanceMs": 0,
           "extraInfo": {}
         }
       }
     ],
-    "startTime": "2025-11-02T19:11:29.569158+08:00",
-    "endTime": "2025-11-02T19:11:29.661938+08:00",
-    "duration": 92778458,
+    "startTime": "2025-11-02T19:47:48.95779+08:00",
+    "endTime": "2025-11-02T19:47:49.072467+08:00",
+    "duration": 114675709,
     "summary": {
       "totalTests": 6,
       "passedTests": 6,
       "failedTests": 0,
       "skippedTests": 0,
       "passRate": 100,
-      "totalDuration": 92778458,
-      "startTime": "2025-11-02T19:11:29.569158+08:00",
-      "endTime": "2025-11-02T19:11:29.661938+08:00",
+      "totalDuration": 114675709,
+      "startTime": "2025-11-02T19:47:48.95779+08:00",
+      "endTime": "2025-11-02T19:47:49.072467+08:00",
       "categoryStats": {
         "accuracy-validation": 1,
         "lsp-api": 1,
@@ -285,9 +285,9 @@
     }
   },
   "projectInfo": {
-    "path": "../../demo-react-app",
+    "path": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app",
     "sourceFiles": 14,
-    "totalNodes": 16826,
+    "totalNodes": 16838,
     "totalSymbols": 0,
     "apiVersions": {
       "tsmorphgo": "current"
@@ -304,7 +304,7 @@
     ]
   },
   "config": {
-    "projectPath": "../../demo-react-app",
+    "projectPath": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app",
     "ignorePatterns": [
       "node_modules",
       "dist",
@@ -347,7 +347,7 @@
         "category": "lsp-api",
         "testCount": 1,
         "passRate": 100,
-        "totalDuration": 1,
+        "totalDuration": 0,
         "performanceScore": 100,
         "stabilityScore": 100,
         "recommendations": []
@@ -356,7 +356,7 @@
         "category": "node-api",
         "testCount": 1,
         "passRate": 100,
-        "totalDuration": 8,
+        "totalDuration": 6,
         "performanceScore": 100,
         "stabilityScore": 100,
         "recommendations": []
@@ -365,7 +365,7 @@
         "category": "project-api",
         "testCount": 1,
         "passRate": 100,
-        "totalDuration": 1,
+        "totalDuration": 0,
         "performanceScore": 100,
         "stabilityScore": 100,
         "recommendations": []
@@ -374,7 +374,7 @@
         "category": "symbol-api",
         "testCount": 1,
         "passRate": 100,
-        "totalDuration": 42,
+        "totalDuration": 41,
         "performanceScore": 100,
         "stabilityScore": 100,
         "recommendations": []
@@ -397,5 +397,5 @@
       }
     }
   },
-  "timestamp": "2025-11-02T19:11:29.662862+08:00"
+  "timestamp": "2025-11-02T19:47:49.075431+08:00"
 }

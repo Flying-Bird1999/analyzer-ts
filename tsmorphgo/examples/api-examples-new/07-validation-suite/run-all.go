@@ -888,6 +888,7 @@ func (runner *ValidationRunner) initializeProject() error {
 
 	// 创建项目实例
 	runner.project = tsmorphgo.NewProject(config)
+	defer runner.project.Close()
 
 	// 验证项目创建
 	sourceFiles := runner.project.GetSourceFiles()

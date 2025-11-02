@@ -29,6 +29,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	project := tsmorphgo.NewProject(config)
+	defer project.Close()
 
 	sourceFiles := project.GetSourceFiles()
 	if len(sourceFiles) == 0 {

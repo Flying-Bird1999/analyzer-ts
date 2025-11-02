@@ -235,7 +235,6 @@ func (s *Symbol) GetParent() (*Symbol, bool) {
 		inner:      s.inner.Parent,
 		checker:    s.checker,
 		sourceFile: s.sourceFile,
-		lspService: s.lspService,
 	}, true
 }
 
@@ -253,7 +252,6 @@ func (s *Symbol) GetMembers() map[string]*Symbol {
 				inner:      memberSymbol,
 				checker:    s.checker,
 				sourceFile: s.sourceFile,
-				lspService: s.lspService,
 			}
 		}
 	}
@@ -274,7 +272,6 @@ func (s *Symbol) GetExports() map[string]*Symbol {
 				inner:      exportSymbol,
 				checker:    s.checker,
 				sourceFile: s.sourceFile,
-				lspService: s.lspService,
 			}
 		}
 	}
@@ -284,7 +281,8 @@ func (s *Symbol) GetExports() map[string]*Symbol {
 // GetSymbolAtLocation 通过 LanguageService 获取指定位置的符号。
 // 这是一个更可靠的符号获取方法，利用了 LSP 服务的能力。
 func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
-	if s.lspService == nil {
+	lspService, err := node.GetSourceFile().project.getLspService()
+	if err != nil {
 		return nil, false
 	}
 
@@ -294,7 +292,7 @@ func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
 	char := 0
 
 	// 使用 query service 获取符号
-	symbol, err := s.lspService.GetSymbolAt(context.Background(), filePath, startLine, char)
+	symbol, err := lspService.GetSymbolAt(context.Background(), filePath, startLine, char)
 	if err != nil || symbol == nil {
 		return nil, false
 	}
@@ -303,7 +301,6 @@ func (s *Symbol) GetSymbolAtLocation(node Node) (*Symbol, bool) {
 		inner:      symbol,
 		checker:    s.checker,
 		sourceFile: node.sourceFile,
-		lspService: s.lspService,
 	}, true
 }
 

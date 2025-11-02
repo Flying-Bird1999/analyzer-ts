@@ -9,9 +9,15 @@ interface User {
   active: boolean;
 }
 
+interface Msg {
+  code: number;
+  msg: string;
+}
+
 interface ApiResponse<T> {
   data: T;
   status: string;
+  msg: Msg
 }
 
 const App: React.FC = () => {

@@ -29,6 +29,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	basicProject := tsmorphgo.NewProject(basicConfig)
+	defer basicProject.Close()
 	basicFiles := basicProject.GetSourceFiles()
 	fmt.Printf("✅ 基础项目创建成功，发现 %d 个文件\n", len(basicFiles))
 
@@ -47,6 +48,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx", ".d.ts"},
 	}
 	advancedProject := tsmorphgo.NewProject(advancedConfig)
+	defer advancedProject.Close()
 	advancedFiles := advancedProject.GetSourceFiles()
 	fmt.Printf("✅ 高级项目配置成功，发现 %d 个文件\n", len(advancedFiles))
 
@@ -91,6 +93,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 }`,
 	}
 	memoryProject := tsmorphgo.NewProjectFromSources(memorySources)
+	defer memoryProject.Close()
 	memoryFiles := memoryProject.GetSourceFiles()
 	fmt.Printf("✅ 内存项目创建成功，发现 %d 个文件\n", len(memoryFiles))
 
@@ -112,6 +115,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	noIgnoreProject := tsmorphgo.NewProject(noIgnoreConfig)
+	defer noIgnoreProject.Close()
 	fmt.Printf("✅ 空忽略列表配置成功，发现 %d 个文件\n",
 		len(noIgnoreProject.GetSourceFiles()))
 
@@ -123,6 +127,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 		TargetExtensions: []string{".ts"},
 	}
 	tsOnlyProject := tsmorphgo.NewProject(tsOnlyConfig)
+	defer tsOnlyProject.Close()
 	fmt.Printf("✅ 仅 TypeScript 文件配置成功，发现 %d 个文件\n",
 		len(tsOnlyProject.GetSourceFiles()))
 
@@ -134,6 +139,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	jsxProject := tsmorphgo.NewProject(jsxConfig)
+	defer jsxProject.Close()
 	fmt.Printf("✅ 包含 JSX 配置成功，发现 %d 个文件\n",
 		len(jsxProject.GetSourceFiles()))
 
@@ -183,6 +189,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	invalidProject := tsmorphgo.NewProject(invalidConfig)
+	defer invalidProject.Close()
 	invalidFiles := invalidProject.GetSourceFiles()
 	fmt.Printf("✅ 不存在路径的处理正常：发现 %d 个文件（应为 0）\n", len(invalidFiles))
 
@@ -195,6 +202,7 @@ export const debounce = <T extends (...args: any[]) => any>(
 	for i := 0; i < 5; i++ {
 		perfProject := tsmorphgo.NewProject(basicConfig)
 		_ = len(perfProject.GetSourceFiles())
+		defer perfProject.Close()
 	}
 	duration := time.Since(startTime)
 	fmt.Printf("✅ 性能测试完成：连续创建 5 个项目，耗时: %v\n", duration)

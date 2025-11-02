@@ -117,12 +117,11 @@ func (n *Node) GetQuickInfo() (*lsp.QuickInfo, error) {
 		return nil, fmt.Errorf("node must belong to a source file and project")
 	}
 
-	// 创建 LSP 服务来获取 QuickInfo
-	lspService, err := CreateTestProject(n.sourceFile.project)
+	// 从项目获取共享的 LSP 服务
+	lspService, err := n.sourceFile.project.getLspService()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create LSP service: %w", err)
+		return nil, fmt.Errorf("failed to get LSP service: %w", err)
 	}
-	defer lspService.Close()
 
 	// 获取节点的位置信息
 	line := n.GetStartLineNumber()
@@ -207,7 +206,6 @@ func (n *Node) ForEachDescendant(callback func(Node)) {
 		return false // 继续遍历其他子节点
 	})
 }
-
 
 // ContainsString 检查节点文本是否包含指定的字符串。
 // 这是对 strings.Contains 的包装，方便在AST分析中使用。

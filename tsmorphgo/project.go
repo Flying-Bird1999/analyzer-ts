@@ -2,7 +2,9 @@ package tsmorphgo
 
 import (
 	"strings"
+	"sync"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -11,6 +13,8 @@ import (
 type Project struct {
 	parserResult *projectParser.ProjectParserResult
 	sourceFiles  map[string]*SourceFile
+	lspService   *lsp.Service
+	lspOnce      sync.Once
 }
 
 // ProjectConfig 定义了初始化一个新项目所需的配置。
@@ -71,6 +75,26 @@ func NewProjectFromSources(sources map[string]string) *Project {
 	}
 
 	return p
+}
+
+// getLspService 返回项目唯一的 LSP 服务实例，如果需要则进行初始化。
+func (p *Project) getLspService() (*lsp.Service, error) {
+	var err error
+	p.lspOnce.Do(func() {
+		sources := make(map[string]any, len(p.parserResult.Js_Data))
+		for k, v := range p.parserResult.Js_Data {
+			sources[k] = v.Raw
+		}
+		p.lspService, err = lsp.NewServiceForTest(sources)
+	})
+	return p.lspService, err
+}
+
+// Close 关闭并释放与项目关联的资源，特别是 LSP 服务。
+func (p *Project) Close() {
+	if p.lspService != nil {
+		p.lspService.Close()
+	}
 }
 
 // GetSourceFile 根据文件路径从项目中获取一个 SourceFile 实例。

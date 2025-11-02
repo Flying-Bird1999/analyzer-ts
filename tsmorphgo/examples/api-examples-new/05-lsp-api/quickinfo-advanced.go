@@ -50,6 +50,7 @@ func main() {
 		TargetExtensions: []string{".ts", ".tsx"},
 	}
 	project := tsmorphgo.NewProject(config)
+	defer project.Close()
 
 	sourceFiles := project.GetSourceFiles()
 	fmt.Printf("✅ 发现 %d 个 TypeScript 源文件\n", len(sourceFiles))
