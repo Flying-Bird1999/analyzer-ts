@@ -1,0 +1,25 @@
+{
+  "category": "type-api",
+  "tests": [
+    {
+      "name": "类型API验证",
+      "category": "type-api",
+      "description": "验证类型检查和转换API功能",
+      "status": "passed",
+      "message": "类型API验证成功，测试16826个类型节点，通过率99.7%",
+      "error": "",
+      "duration": 2974125,
+      "timestamp": "2025-11-02T19:11:29.621339+08:00",
+      "metrics": {
+        "totalItems": 16826,
+        "successItems": 16783,
+        "failedItems": 43,
+        "accuracyRate": 99.74444312373707,
+        "performanceMs": 0,
+        "extraInfo": {}
+      }
+    }
+  ],
+  "timestamp": "20251102-191129",
+  "totalTests": 1
+}

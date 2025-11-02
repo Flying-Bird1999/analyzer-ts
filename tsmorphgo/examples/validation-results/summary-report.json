@@ -1,0 +1,24 @@
+{
+  "health": "excellent",
+  "recommendations": [],
+  "summary": {
+    "totalTests": 6,
+    "passedTests": 6,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "passRate": 100,
+    "totalDuration": 92778458,
+    "startTime": "2025-11-02T19:11:29.569158+08:00",
+    "endTime": "2025-11-02T19:11:29.661938+08:00",
+    "categoryStats": {
+      "accuracy-validation": 1,
+      "lsp-api": 1,
+      "node-api": 1,
+      "project-api": 1,
+      "symbol-api": 1,
+      "type-api": 1
+    },
+    "projectInfo": null
+  },
+  "timestamp": "20251102-191129"
+}

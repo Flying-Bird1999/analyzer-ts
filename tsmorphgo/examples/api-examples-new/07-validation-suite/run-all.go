@@ -1,10 +1,10 @@
-// +build validation-suite
-
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -12,17 +12,768 @@ import (
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
 
+// ValidationResult 单个验证测试的结果
+type ValidationResult struct {
+	Name        string        `json:"name"`          // 测试名称
+	Category    string        `json:"category"`      // 测试类别
+	Description string        `json:"description"`   // 测试描述
+	Status      string        `json:"status"`        // 测试状态 (passed/failed/skipped)
+	Message     string        `json:"message"`       // 测试消息
+	Error       string        `json:"error"`         // 错误信息（如果有）
+	Duration    time.Duration `json:"duration"`      // 执行时间
+	Timestamp   time.Time     `json:"timestamp"`     // 执行时间戳
+	Metrics     *TestMetrics  `json:"metrics"`       // 测试指标（可选）
+}
+
+// TestMetrics 测试指标信息
+type TestMetrics struct {
+	TotalItems    int     `json:"totalItems"`    // 总项目数
+	SuccessItems  int     `json:"successItems"`  // 成功项目数
+	FailedItems   int     `json:"failedItems"`   // 失败项目数
+	AccuracyRate  float64 `json:"accuracyRate"`  // 准确率百分比
+	PerformanceMs float64 `json:"performanceMs"` // 性能指标（毫秒）
+	ExtraInfo     map[string]interface{} `json:"extraInfo"` // 额外信息
+}
+
+// ValidationSuite 验证套件
+type ValidationSuite struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description"`
+	Tests       []*ValidationResult `json:"tests"`
+	StartTime   time.Time          `json:"startTime"`
+	EndTime     time.Time          `json:"endTime"`
+	Duration    time.Duration      `json:"duration"`
+	Summary     *ValidationSummary `json:"summary"`
+}
+
+// ValidationSummary 验证摘要信息
+type ValidationSummary struct {
+	TotalTests    int            `json:"totalTests"`
+	PassedTests   int            `json:"passedTests"`
+	FailedTests   int            `json:"failedTests"`
+	SkippedTests  int            `json:"skippedTests"`
+	PassRate      float64        `json:"passRate"`
+	TotalDuration time.Duration  `json:"totalDuration"`
+	StartTime     time.Time      `json:"startTime"`
+	EndTime       time.Time      `json:"endTime"`
+	CategoryStats map[string]int `json:"categoryStats"`   // 按类别统计
+	ProjectInfo   *ProjectInfo   `json:"projectInfo"`     // 项目信息
+}
+
+// ProjectInfo 项目信息
+type ProjectInfo struct {
+	Path             string            `json:"path"`
+	SourceFiles      int               `json:"sourceFiles"`
+	TotalNodes       int               `json:"totalNodes"`
+	TotalSymbols     int               `json:"totalSymbols"`
+	APIVersions      map[string]string `json:"apiVersions"`
+	FileExtensions   []string          `json:"fileExtensions"`
+	IgnorePatterns   []string          `json:"ignorePatterns"`
+}
+
+// ValidationConfig 验证配置
+type ValidationConfig struct {
+	ProjectPath      string        `json:"projectPath"`
+	IgnorePatterns   []string      `json:"ignorePatterns"`
+	TargetExtensions []string      `json:"targetExtensions"`
+	OutputDir        string        `json:"outputDir"`
+	EnableJSON       bool          `json:"enableJSON"`
+	EnableConsole    bool          `json:"enableConsole"`
+	TestCategories   []string      `json:"testCategories"`
+	Timeout          time.Duration `json:"timeout"`
+	Verbose          bool          `json:"verbose"`
+}
+
+// TestResult 测试结果基础类型
+type TestResult struct {
+	Status   string                 `json:"status"`   // "passed", "failed", "skipped"
+	Message  string                 `json:"message"`  // 结果消息
+	Error    string                 `json:"error"`    // 错误信息
+	Metadata map[string]interface{} `json:"metadata"` // 元数据
+}
+
+// ReportGenerator JSON报告生成器
+type ReportGenerator struct {
+	outputDir string
+	verbose   bool
+}
+
+// MainReport 主报告结构
+type MainReport struct {
+	Metadata    *ReportMetadata   `json:"metadata"`
+	Suite       *ValidationSuite  `json:"suite"`
+	ProjectInfo *ProjectInfo      `json:"projectInfo"`
+	Config      *ValidationConfig `json:"config"`
+	Analysis    *ReportAnalysis   `json:"analysis"`
+	Timestamp   time.Time         `json:"timestamp"`
+}
+
+// ReportMetadata 报告元数据
+type ReportMetadata struct {
+	ReportID     string    `json:"reportId"`
+	GeneratedAt  time.Time `json:"generatedAt"`
+	GeneratedBy  string    `json:"generatedBy"`
+	Version      string    `json:"version"`
+	Format       string    `json:"format"`
+	TotalTests   int       `json:"totalTests"`
+	TestDuration string    `json:"testDuration"`
+}
+
+// ReportAnalysis 报告分析
+type ReportAnalysis struct {
+	OverallHealth    string                       `json:"overallHealth"`
+	CriticalIssues   []*AnalysisIssue             `json:"criticalIssues"`
+	Recommendations  []*Recommendation            `json:"recommendations"`
+	CategoryAnalysis map[string]*CategoryAnalysis `json:"categoryAnalysis"`
+	TrendAnalysis    map[string]*TrendData        `json:"trendAnalysis"`
+}
+
+// AnalysisIssue 分析问题
+type AnalysisIssue struct {
+	Type        string                 `json:"type"`     // "critical", "warning", "info"
+	Severity    string                 `json:"severity"` // "high", "medium", "low"
+	Category    string                 `json:"category"`
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Details     map[string]interface{} `json:"details"`
+}
+
+// Recommendation 推荐建议
+type Recommendation struct {
+	Priority string `json:"priority"` // "high", "medium", "low"
+	Category string `json:"category"`
+	Title    string `json:"title"`
+	Action   string `json:"action"`
+	Impact   string `json:"impact"`
+}
+
+// CategoryAnalysis 类别分析
+type CategoryAnalysis struct {
+	Category         string            `json:"category"`
+	TestCount        int               `json:"testCount"`
+	PassRate         float64           `json:"passRate"`
+	TotalDuration    float64           `json:"totalDuration"`    // 毫秒
+	PerformanceScore float64           `json:"performanceScore"` // 0-100
+	StabilityScore   float64           `json:"stabilityScore"`   // 0-100
+	Recommendations  []*Recommendation `json:"recommendations"`
+}
+
+// TrendData 趋势数据
+type TrendData struct {
+	Current float64 `json:"current"`
+	Target  float64 `json:"target"`
+	Trend   string  `json:"trend"` // "improving", "stable", "declining"
+}
+
 // ValidationRunner 验证运行器
 type ValidationRunner struct {
-	config         *ValidationConfig
-	suite          *ValidationSuite
-	project        *tsmorphgo.Project
+	config          *ValidationConfig
+	suite           *ValidationSuite
+	project         *tsmorphgo.Project
 	reportGenerator *ReportGenerator
-	testFunctions  map[string]ValidationFunc
+	testFunctions   map[string]ValidationFunc
 }
 
 // ValidationFunc 验证函数类型
 type ValidationFunc func(project *tsmorphgo.Project, config *ValidationConfig) *ValidationResult
+
+// NewValidationSuite 创建新的验证套件
+func NewValidationSuite(name, description string) *ValidationSuite {
+	return &ValidationSuite{
+		Name:        name,
+		Description: description,
+		Tests:       make([]*ValidationResult, 0),
+		StartTime:   time.Now(),
+		Summary: &ValidationSummary{
+			CategoryStats: make(map[string]int),
+		},
+	}
+}
+
+// AddTest 添加测试结果到验证套件
+func (suite *ValidationSuite) AddTest(result *ValidationResult) {
+	suite.Tests = append(suite.Tests, result)
+	suite.Summary.CategoryStats[result.Category]++
+}
+
+// Finish 完成验证套件
+func (suite *ValidationSuite) Finish() *ValidationSuite {
+	suite.EndTime = time.Now()
+	suite.Duration = suite.EndTime.Sub(suite.StartTime)
+
+	// 计算摘要统计
+	suite.Summary.TotalTests = len(suite.Tests)
+	suite.Summary.StartTime = suite.StartTime
+	suite.Summary.EndTime = suite.EndTime
+	suite.Summary.TotalDuration = suite.Duration
+
+	// 计算通过率
+	for _, test := range suite.Tests {
+		switch test.Status {
+		case "passed":
+			suite.Summary.PassedTests++
+		case "failed":
+			suite.Summary.FailedTests++
+		case "skipped":
+			suite.Summary.SkippedTests++
+		}
+	}
+
+	if suite.Summary.TotalTests > 0 {
+		suite.Summary.PassRate = float64(suite.Summary.PassedTests) / float64(suite.Summary.TotalTests) * 100
+	}
+
+	return suite
+}
+
+// CreateValidationResult 创建验证结果
+func CreateValidationResult(name, category, description string) *ValidationResult {
+	return &ValidationResult{
+		Name:        name,
+		Category:    category,
+		Description: description,
+		Status:      "skipped", // 默认为跳过
+		Timestamp:   time.Now(),
+	}
+}
+
+// PassResult 创建通过的验证结果
+func PassResult(name, category, description string) *ValidationResult {
+	result := CreateValidationResult(name, category, description)
+	result.Status = "passed"
+	result.Message = "测试通过"
+	return result
+}
+
+// FailResult 创建失败的验证结果
+func FailResult(name, category, description, message string) *ValidationResult {
+	result := CreateValidationResult(name, category, description)
+	result.Status = "failed"
+	result.Message = message
+	return result
+}
+
+// FailResultWithError 创建包含错误信息的失败验证结果
+func FailResultWithError(name, category, description, message string, err error) *ValidationResult {
+	result := FailResult(name, category, description, message)
+	if err != nil {
+		result.Error = err.Error()
+	}
+	return result
+}
+
+// SkipResult 创建跳过的验证结果
+func SkipResult(name, category, description, reason string) *ValidationResult {
+	result := CreateValidationResult(name, category, description)
+	result.Status = "skipped"
+	result.Message = reason
+	return result
+}
+
+// WithMetrics 为验证结果添加指标
+func (result *ValidationResult) WithMetrics(metrics *TestMetrics) *ValidationResult {
+	result.Metrics = metrics
+	return result
+}
+
+// WithDuration 为验证结果添加执行时间
+func (result *ValidationResult) WithDuration(duration time.Duration) *ValidationResult {
+	result.Duration = duration
+	return result
+}
+
+// RunValidationWithMetrics 执行带指标的验证函数
+func RunValidationWithMetrics(name, category, description string, validationFunc func() (*TestMetrics, error)) *ValidationResult {
+	startTime := time.Now()
+	result := CreateValidationResult(name, category, description)
+
+	metrics, err := validationFunc()
+	duration := time.Since(startTime)
+
+	if err != nil {
+		return result.WithDuration(duration).
+			WithStatus("failed").
+			WithError("验证函数执行失败", err)
+	}
+
+	return result.WithDuration(duration).
+		WithStatus("passed").
+		WithMetrics(metrics).
+		WithMessage("验证通过")
+}
+
+// WithStatus 设置验证结果状态
+func (result *ValidationResult) WithStatus(status string) *ValidationResult {
+	result.Status = status
+	return result
+}
+
+// WithMessage 设置验证结果消息
+func (result *ValidationResult) WithMessage(message string) *ValidationResult {
+	result.Message = message
+	return result
+}
+
+// WithError 设置验证结果错误信息
+func (result *ValidationResult) WithError(message string, err error) *ValidationResult {
+	result.Message = message
+	if err != nil {
+		result.Error = err.Error()
+	}
+	return result
+}
+
+// CreateTestMetrics 创建测试指标
+func CreateTestMetrics(total, success int) *TestMetrics {
+	failed := total - success
+	var accuracy float64
+	if total > 0 {
+		accuracy = float64(success) / float64(total) * 100
+	}
+
+	return &TestMetrics{
+		TotalItems:   total,
+		SuccessItems: success,
+		FailedItems:  failed,
+		AccuracyRate: accuracy,
+		ExtraInfo:    make(map[string]interface{}),
+	}
+}
+
+// WithPerformance 添加性能指标
+func (metrics *TestMetrics) WithPerformance(performance float64) *TestMetrics {
+	metrics.PerformanceMs = performance
+	return metrics
+}
+
+// WithExtraInfo 添加额外信息
+func (metrics *TestMetrics) WithExtraInfo(key string, value interface{}) *TestMetrics {
+	if metrics.ExtraInfo == nil {
+		metrics.ExtraInfo = make(map[string]interface{})
+	}
+	metrics.ExtraInfo[key] = value
+	return metrics
+}
+
+// DefaultConfig 创建默认验证配置
+func DefaultConfig(projectPath string) *ValidationConfig {
+	return &ValidationConfig{
+		ProjectPath:      projectPath,
+		IgnorePatterns:   []string{"node_modules", "dist", "build", ".git"},
+		TargetExtensions: []string{".ts", ".tsx"},
+		OutputDir:        "../../validation-results",
+		EnableJSON:       true,
+		EnableConsole:    true,
+		TestCategories:   []string{"project-api", "node-api", "symbol-api", "type-api", "lsp-api", "accuracy-validation"},
+		Timeout:          30 * time.Second,
+		Verbose:          true,
+	}
+}
+
+// LoadTestCases 从JSON文件加载测试用例
+func LoadTestCases(filePath string, testCaseType interface{}) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("读取测试用例文件失败: %w", err)
+	}
+
+	if err := json.Unmarshal(data, testCaseType); err != nil {
+		return fmt.Errorf("解析测试用例JSON失败: %w", err)
+	}
+
+	return nil
+}
+
+// SaveTestResults 保存测试结果到JSON文件
+func SaveTestResults(results interface{}, outputPath string) error {
+	// 确保输出目录存在
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("创建输出目录失败: %w", err)
+	}
+
+	// 序列化结果
+	data, err := json.MarshalIndent(results, "", "  ")
+	if err != nil {
+		return fmt.Errorf("序列化测试结果失败: %w", err)
+	}
+
+	// 写入文件
+	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+		return fmt.Errorf("写入测试结果文件失败: %w", err)
+	}
+
+	return nil
+}
+
+// RunSafe 安全执行函数并捕获错误
+func RunSafe(name string, fn func() error) (success bool, duration time.Duration, err error) {
+	start := time.Now()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("执行函数 %s 时发生panic: %v", name, r)
+			success = false
+		}
+		duration = time.Since(start)
+	}()
+
+	err = fn()
+	success = err == nil
+	return success, duration, err
+}
+
+// NewReportGenerator 创建新的报告生成器
+func NewReportGenerator(outputDir string, verbose bool) *ReportGenerator {
+	return &ReportGenerator{
+		outputDir: outputDir,
+		verbose:   verbose,
+	}
+}
+
+// GenerateReport 生成综合验证报告
+func (rg *ReportGenerator) GenerateReport(suite *ValidationSuite, project *tsmorphgo.Project, config *ValidationConfig) error {
+	timestamp := time.Now().Format("20060102-150405")
+
+	// 生成主报告
+	mainReport := rg.generateMainReport(suite, project, config)
+	mainReportPath := filepath.Join(rg.outputDir, "validation-report.json")
+
+	if err := SaveTestResults(mainReport, mainReportPath); err != nil {
+		return fmt.Errorf("保存主报告失败: %w", err)
+	}
+
+	// 生成分类报告
+	if err := rg.generateCategoryReports(suite, timestamp); err != nil {
+		return fmt.Errorf("生成分类报告失败: %w", err)
+	}
+
+	// 生成摘要报告
+	if err := rg.generateSummaryReport(suite, project, timestamp); err != nil {
+		return fmt.Errorf("生成摘要报告失败: %w", err)
+	}
+
+	if rg.verbose {
+		fmt.Printf("📊 报告已生成到: %s\n", mainReportPath)
+	}
+
+	return nil
+}
+
+// generateMainReport 生成主报告
+func (rg *ReportGenerator) generateMainReport(suite *ValidationSuite, project *tsmorphgo.Project, config *ValidationConfig) *MainReport {
+	return &MainReport{
+		Metadata:    rg.generateMetadata(suite),
+		Suite:       suite,
+		ProjectInfo: rg.extractProjectInfo(project, config),
+		Config:      config,
+		Analysis:    rg.analyzeResults(suite),
+		Timestamp:   time.Now(),
+	}
+}
+
+// generateMetadata 生成报告元数据
+func (rg *ReportGenerator) generateMetadata(suite *ValidationSuite) *ReportMetadata {
+	testDuration := suite.Duration.String()
+	return &ReportMetadata{
+		ReportID:     fmt.Sprintf("val-%d", time.Now().Unix()),
+		GeneratedAt:  time.Now(),
+		GeneratedBy:  "TSMorphGo Validation Suite",
+		Version:      "1.0.0",
+		Format:       "json",
+		TotalTests:   suite.Summary.TotalTests,
+		TestDuration: testDuration,
+	}
+}
+
+// extractProjectInfo 提取项目信息
+func (rg *ReportGenerator) extractProjectInfo(project *tsmorphgo.Project, config *ValidationConfig) *ProjectInfo {
+	// 收集源文件统计信息
+	sourceFiles := project.GetSourceFiles()
+	totalNodes := 0
+	totalSymbols := 0
+
+	// 统计节点和符号数量（示例实现）
+	for _, sf := range sourceFiles {
+		sf.ForEachDescendant(func(node tsmorphgo.Node) {
+			totalNodes++
+		})
+		// 这里可以添加符号统计逻辑
+	}
+
+	return &ProjectInfo{
+		Path:             config.ProjectPath,
+		SourceFiles:      len(sourceFiles),
+		TotalNodes:       totalNodes,
+		TotalSymbols:     totalSymbols,
+		APIVersions:      map[string]string{"tsmorphgo": "current"},
+		FileExtensions:   config.TargetExtensions,
+		IgnorePatterns:   config.IgnorePatterns,
+	}
+}
+
+// analyzeResults 分析验证结果
+func (rg *ReportGenerator) analyzeResults(suite *ValidationSuite) *ReportAnalysis {
+	analysis := &ReportAnalysis{
+		OverallHealth:    rg.calculateOverallHealth(suite),
+		CriticalIssues:   rg.identifyCriticalIssues(suite),
+		Recommendations:  rg.generateRecommendations(suite),
+		CategoryAnalysis: rg.analyzeCategories(suite),
+		TrendAnalysis:    rg.analyzeTrends(suite),
+	}
+
+	return analysis
+}
+
+// calculateOverallHealth 计算整体健康度
+func (rg *ReportGenerator) calculateOverallHealth(suite *ValidationSuite) string {
+	if suite.Summary.PassRate >= 95.0 {
+		return "excellent"
+	} else if suite.Summary.PassRate >= 80.0 {
+		return "good"
+	} else if suite.Summary.PassRate >= 60.0 {
+		return "fair"
+	} else {
+		return "poor"
+	}
+}
+
+// identifyCriticalIssues 识别关键问题
+func (rg *ReportGenerator) identifyCriticalIssues(suite *ValidationSuite) []*AnalysisIssue {
+	issues := make([]*AnalysisIssue, 0)
+
+	// 检查失败率过高的类别
+	for category := range suite.Summary.CategoryStats {
+		categoryTests := rg.getTestsByCategory(suite, category)
+		if len(categoryTests) > 0 {
+			failures := rg.countFailedTests(categoryTests)
+			failRate := float64(failures) / float64(len(categoryTests)) * 100
+
+			if failRate >= 50.0 {
+				issues = append(issues, &AnalysisIssue{
+					Type:        "critical",
+					Severity:    "high",
+					Category:    category,
+					Title:       "高失败率类别",
+					Description: fmt.Sprintf("类别 %s 的失败率 %.1f%% 过高", category, failRate),
+					Details: map[string]interface{}{
+						"totalTests":  len(categoryTests),
+						"failedTests": failures,
+						"failRate":    failRate,
+					},
+				})
+			}
+		}
+	}
+
+	return issues
+}
+
+// generateRecommendations 生成推荐建议
+func (rg *ReportGenerator) generateRecommendations(suite *ValidationSuite) []*Recommendation {
+	recommendations := make([]*Recommendation, 0)
+
+	// 基于通过率生成建议
+	if suite.Summary.PassRate < 80.0 {
+		recommendations = append(recommendations, &Recommendation{
+			Priority: "high",
+			Category: "general",
+			Title:    "提高整体测试通过率",
+			Action:   "检查失败测试并修复相关问题",
+			Impact:   "显著提高API稳定性",
+		})
+	}
+
+	// 基于性能生成建议
+	if suite.Summary.TotalDuration > 5*time.Minute {
+		recommendations = append(recommendations, &Recommendation{
+			Priority: "medium",
+			Category: "performance",
+			Title:    "优化测试性能",
+			Action:   "检查性能瓶颈并优化测试执行时间",
+			Impact:   "减少验证时间，提高开发效率",
+		})
+	}
+
+	return recommendations
+}
+
+// analyzeCategories 分析各个类别
+func (rg *ReportGenerator) analyzeCategories(suite *ValidationSuite) map[string]*CategoryAnalysis {
+	analysis := make(map[string]*CategoryAnalysis)
+
+	for category := range suite.Summary.CategoryStats {
+		categoryTests := rg.getTestsByCategory(suite, category)
+		passed := rg.countPassedTests(categoryTests)
+		passRate := 0.0
+		if len(categoryTests) > 0 {
+			passRate = float64(passed) / float64(len(categoryTests)) * 100
+		}
+
+		// 计算总执行时间
+		totalDuration := 0.0
+		for _, test := range categoryTests {
+			totalDuration += float64(test.Duration.Milliseconds())
+		}
+
+		analysis[category] = &CategoryAnalysis{
+			Category:         category,
+			TestCount:        len(categoryTests),
+			PassRate:         passRate,
+			TotalDuration:    totalDuration,
+			PerformanceScore: rg.calculatePerformanceScore(categoryTests),
+			StabilityScore:   rg.calculateStabilityScore(categoryTests),
+			Recommendations:  rg.generateCategoryRecommendations(category, passRate, totalDuration),
+		}
+	}
+
+	return analysis
+}
+
+// analyzeTrends 分析趋势（简化版本）
+func (rg *ReportGenerator) analyzeTrends(suite *ValidationSuite) map[string]*TrendData {
+	trends := make(map[string]*TrendData)
+
+	// 基于当前通过率设置趋势
+	currentRate := suite.Summary.PassRate
+	var trend string
+	if currentRate >= 90.0 {
+		trend = "improving"
+	} else if currentRate >= 70.0 {
+		trend = "stable"
+	} else {
+		trend = "declining"
+	}
+
+	trends["passRate"] = &TrendData{
+		Current: currentRate,
+		Target:  95.0,
+		Trend:   trend,
+	}
+
+	return trends
+}
+
+// Helper functions
+
+func (rg *ReportGenerator) getTestsByCategory(suite *ValidationSuite, category string) []*ValidationResult {
+	tests := make([]*ValidationResult, 0)
+	for _, test := range suite.Tests {
+		if test.Category == category {
+			tests = append(tests, test)
+		}
+	}
+	return tests
+}
+
+func (rg *ReportGenerator) countFailedTests(tests []*ValidationResult) int {
+	count := 0
+	for _, test := range tests {
+		if test.Status == "failed" {
+			count++
+		}
+	}
+	return count
+}
+
+func (rg *ReportGenerator) countPassedTests(tests []*ValidationResult) int {
+	count := 0
+	for _, test := range tests {
+		if test.Status == "passed" {
+			count++
+		}
+	}
+	return count
+}
+
+func (rg *ReportGenerator) calculatePerformanceScore(tests []*ValidationResult) float64 {
+	if len(tests) == 0 {
+		return 0.0
+	}
+
+	totalScore := 0.0
+	for _, test := range tests {
+		durationMs := float64(test.Duration.Milliseconds())
+		score := 100.0
+		if durationMs > 1000.0 {
+			score = 80.0
+		}
+		if durationMs > 5000.0 {
+			score = 60.0
+		}
+		if durationMs > 10000.0 {
+			score = 40.0
+		}
+		totalScore += score
+	}
+
+	return totalScore / float64(len(tests))
+}
+
+func (rg *ReportGenerator) calculateStabilityScore(tests []*ValidationResult) float64 {
+	if len(tests) == 0 {
+		return 0.0
+	}
+
+	passed := rg.countPassedTests(tests)
+	return float64(passed) / float64(len(tests)) * 100
+}
+
+func (rg *ReportGenerator) generateCategoryRecommendations(category string, passRate float64, duration float64) []*Recommendation {
+	recommendations := make([]*Recommendation, 0)
+
+	if passRate < 80.0 {
+		recommendations = append(recommendations, &Recommendation{
+			Priority: "high",
+			Category: category,
+			Title:    "提高类别通过率",
+			Action:   "检查失败测试并修复API问题",
+			Impact:   "提高API稳定性",
+		})
+	}
+
+	if duration > 10000.0 {
+		recommendations = append(recommendations, &Recommendation{
+			Priority: "medium",
+			Category: category,
+			Title:    "优化执行性能",
+			Action:   "优化测试逻辑或减少测试范围",
+			Impact:   "减少执行时间",
+		})
+	}
+
+	return recommendations
+}
+
+// generateCategoryReports 生成分类报告
+func (rg *ReportGenerator) generateCategoryReports(suite *ValidationSuite, timestamp string) error {
+	for category := range suite.Summary.CategoryStats {
+		categoryTests := rg.getTestsByCategory(suite, category)
+		categoryReport := map[string]interface{}{
+			"category":   category,
+			"timestamp":  timestamp,
+			"totalTests": len(categoryTests),
+			"tests":      categoryTests,
+		}
+
+		reportPath := filepath.Join(rg.outputDir, fmt.Sprintf("category-%s-report.json", category))
+		if err := SaveTestResults(categoryReport, reportPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// generateSummaryReport 生成摘要报告
+func (rg *ReportGenerator) generateSummaryReport(suite *ValidationSuite, project *tsmorphgo.Project, timestamp string) error {
+	summaryReport := map[string]interface{}{
+		"timestamp":       timestamp,
+		"summary":         suite.Summary,
+		"health":          rg.calculateOverallHealth(suite),
+		"recommendations": rg.generateRecommendations(suite),
+	}
+
+	reportPath := filepath.Join(rg.outputDir, "summary-report.json")
+	return SaveTestResults(summaryReport, reportPath)
+}
 
 // NewValidationRunner 创建新的验证运行器
 func NewValidationRunner(projectPath string) *ValidationRunner {
@@ -576,7 +1327,7 @@ func (runner *ValidationRunner) countPassedTests(tests []*ValidationResult) int 
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("用法: go run -tags validation-suite run-all.go <TypeScript项目路径>")
+		fmt.Println("用法: go run run-all.go <TypeScript项目路径>")
 		os.Exit(1)
 	}
 

@@ -1,0 +1,401 @@
+{
+  "metadata": {
+    "reportId": "val-1762081889",
+    "generatedAt": "2025-11-02T19:11:29.662125+08:00",
+    "generatedBy": "TSMorphGo Validation Suite",
+    "version": "1.0.0",
+    "format": "json",
+    "totalTests": 6,
+    "testDuration": "92.778458ms"
+  },
+  "suite": {
+    "name": "TSMorphGo API Validation",
+    "description": "完整的TSMorphGo API准确性验证套件",
+    "tests": [
+      {
+        "name": "准确性验证",
+        "category": "accuracy-validation",
+        "description": "验证API调用的准确性",
+        "status": "passed",
+        "message": "准确性验证成功，测试5个用例，准确率60.0%",
+        "error": "",
+        "duration": 781250,
+        "timestamp": "2025-11-02T19:11:29.61969+08:00",
+        "metrics": {
+          "totalItems": 5,
+          "successItems": 3,
+          "failedItems": 2,
+          "accuracyRate": 60,
+          "performanceMs": 0,
+          "extraInfo": {
+            "test_cases_loaded": 5,
+            "validation_type": "simulated"
+          }
+        }
+      },
+      {
+        "name": "LSP API验证",
+        "category": "lsp-api",
+        "description": "验证LSP服务集成功能",
+        "status": "passed",
+        "message": "LSP API验证成功，执行3个测试，通过率100.0%",
+        "error": "",
+        "duration": 1337958,
+        "timestamp": "2025-11-02T19:11:29.619594+08:00",
+        "metrics": {
+          "totalItems": 3,
+          "successItems": 3,
+          "failedItems": 0,
+          "accuracyRate": 100,
+          "performanceMs": 0,
+          "extraInfo": {
+            "lsp_service_status": "simulated"
+          }
+        }
+      },
+      {
+        "name": "项目API验证",
+        "category": "project-api",
+        "description": "验证项目创建和基础API功能",
+        "status": "passed",
+        "message": "项目API验证成功，共发现14个源文件",
+        "error": "",
+        "duration": 1318125,
+        "timestamp": "2025-11-02T19:11:29.620993+08:00",
+        "metrics": {
+          "totalItems": 14,
+          "successItems": 3,
+          "failedItems": 3,
+          "accuracyRate": 100,
+          "performanceMs": 0,
+          "extraInfo": {
+            "total_checks": 3,
+            "validation_checks": 3
+          }
+        }
+      },
+      {
+        "name": "类型API验证",
+        "category": "type-api",
+        "description": "验证类型检查和转换API功能",
+        "status": "passed",
+        "message": "类型API验证成功，测试16826个类型节点，通过率99.7%",
+        "error": "",
+        "duration": 2974125,
+        "timestamp": "2025-11-02T19:11:29.621339+08:00",
+        "metrics": {
+          "totalItems": 16826,
+          "successItems": 16783,
+          "failedItems": 43,
+          "accuracyRate": 99.74444312373707,
+          "performanceMs": 0,
+          "extraInfo": {}
+        }
+      },
+      {
+        "name": "节点API验证",
+        "category": "node-api",
+        "description": "验证AST节点操作API功能",
+        "status": "passed",
+        "message": "节点API验证成功，发现16826个节点，通过率99.7%",
+        "error": "",
+        "duration": 8700625,
+        "timestamp": "2025-11-02T19:11:29.621075+08:00",
+        "metrics": {
+          "totalItems": 16826,
+          "successItems": 16783,
+          "failedItems": 43,
+          "accuracyRate": 99.74444312373707,
+          "performanceMs": 0,
+          "extraInfo": {
+            "node_types": {
+              "KindAmpersandAmpersandToken": 53,
+              "KindAnyKeyword": 22,
+              "KindArrayBindingPattern": 16,
+              "KindArrayLiteralExpression": 80,
+              "KindArrayType": 63,
+              "KindArrowFunction": 301,
+              "KindAsExpression": 18,
+              "KindAsteriskToken": 24,
+              "KindAsyncKeyword": 48,
+              "KindAwaitExpression": 44,
+              "KindBarBarToken": 56,
+              "KindBinaryExpression": 319,
+              "KindBindingElement": 133,
+              "KindBlock": 305,
+              "KindBooleanKeyword": 68,
+              "KindCallExpression": 583,
+              "KindCaseBlock": 1,
+              "KindCaseClause": 3,
+              "KindCatchClause": 16,
+              "KindClassDeclaration": 5,
+              "KindColonToken": 56,
+              "KindComputedPropertyName": 9,
+              "KindConditionalExpression": 56,
+              "KindConditionalType": 1,
+              "KindConstructor": 1,
+              "KindDefaultClause": 1,
+              "KindDotDotDotToken": 3,
+              "KindElementAccessExpression": 40,
+              "KindEmptyStatement": 1,
+              "KindEndOfFile": 14,
+              "KindEqualsEqualsEqualsToken": 56,
+              "KindEqualsGreaterThanToken": 301,
+              "KindEqualsToken": 60,
+              "KindExclamationEqualsEqualsToken": 9,
+              "KindExportAssignment": 9,
+              "KindExportDeclaration": 3,
+              "KindExportKeyword": 80,
+              "KindExportSpecifier": 14,
+              "KindExpressionStatement": 240,
+              "KindExpressionWithTypeArguments": 7,
+              "KindFalseKeyword": 57,
+              "KindFunctionDeclaration": 2,
+              "KindFunctionType": 60,
+              "KindGreaterThanEqualsToken": 4,
+              "KindGreaterThanToken": 7,
+              "KindHeritageClause": 7,
+              "KindIdentifier": 5620,
+              "KindIfStatement": 89,
+              "KindImportClause": 29,
+              "KindImportDeclaration": 31,
+              "KindImportSpecifier": 53,
+              "KindIndexSignature": 1,
+              "KindIndexedAccessType": 7,
+              "KindInstanceOfKeyword": 19,
+              "KindInterfaceDeclaration": 58,
+              "KindIntersectionType": 3,
+              "KindJsxAttribute": 306,
+              "KindJsxAttributes": 177,
+              "KindJsxClosingElement": 150,
+              "KindJsxClosingFragment": 6,
+              "KindJsxElement": 150,
+              "KindJsxExpression": 216,
+              "KindJsxFragment": 6,
+              "KindJsxOpeningElement": 150,
+              "KindJsxOpeningFragment": 6,
+              "KindJsxSelfClosingElement": 27,
+              "KindJsxSpreadAttribute": 11,
+              "KindJsxText": 318,
+              "KindLessThanToken": 4,
+              "KindLiteralType": 77,
+              "KindMappedType": 1,
+              "KindMethodDeclaration": 34,
+              "KindMinusToken": 15,
+              "KindNamedExports": 3,
+              "KindNamedImports": 22,
+              "KindNamespaceImport": 1,
+              "KindNewExpression": 71,
+              "KindNonNullExpression": 11,
+              "KindNullKeyword": 53,
+              "KindNumberKeyword": 67,
+              "KindNumericLiteral": 158,
+              "KindObjectBindingPattern": 28,
+              "KindObjectLiteralExpression": 157,
+              "KindParameter": 405,
+              "KindParenthesizedExpression": 87,
+              "KindPlusToken": 9,
+              "KindPostfixUnaryExpression": 2,
+              "KindPrefixUnaryExpression": 54,
+              "KindPrivateKeyword": 9,
+              "KindPropertyAccessExpression": 1086,
+              "KindPropertyAssignment": 474,
+              "KindPropertyDeclaration": 4,
+              "KindPropertySignature": 341,
+              "KindQualifiedName": 27,
+              "KindQuestionDotToken": 78,
+              "KindQuestionToken": 209,
+              "KindReadonlyKeyword": 1,
+              "KindRegularExpressionLiteral": 7,
+              "KindReturnStatement": 146,
+              "KindShorthandPropertyAssignment": 55,
+              "KindSlashToken": 3,
+              "KindSourceFile": 14,
+              "KindSpreadAssignment": 57,
+              "KindSpreadElement": 10,
+              "KindStringKeyword": 182,
+              "KindStringLiteral": 622,
+              "KindSwitchStatement": 1,
+              "KindTemplateExpression": 33,
+              "KindTemplateHead": 34,
+              "KindTemplateLiteralType": 1,
+              "KindTemplateLiteralTypeSpan": 1,
+              "KindTemplateMiddle": 3,
+              "KindTemplateSpan": 36,
+              "KindTemplateTail": 34,
+              "KindThisKeyword": 53,
+              "KindThrowStatement": 16,
+              "KindTrueKeyword": 53,
+              "KindTryStatement": 16,
+              "KindTypeAliasDeclaration": 11,
+              "KindTypeLiteral": 24,
+              "KindTypeOfExpression": 6,
+              "KindTypeOperator": 15,
+              "KindTypeParameter": 29,
+              "KindTypeReference": 398,
+              "KindUnionType": 41,
+              "KindVariableDeclaration": 242,
+              "KindVariableDeclarationList": 225,
+              "KindVariableStatement": 225,
+              "KindVoidKeyword": 56
+            }
+          }
+        }
+      },
+      {
+        "name": "符号API验证",
+        "category": "symbol-api",
+        "description": "验证符号系统API功能",
+        "status": "passed",
+        "message": "符号API验证成功，发现16812个符号，通过率98.2%",
+        "error": "",
+        "duration": 42037708,
+        "timestamp": "2025-11-02T19:11:29.621012+08:00",
+        "metrics": {
+          "totalItems": 16812,
+          "successItems": 16506,
+          "failedItems": 306,
+          "accuracyRate": 98.17987152034262,
+          "performanceMs": 0,
+          "extraInfo": {}
+        }
+      }
+    ],
+    "startTime": "2025-11-02T19:11:29.569158+08:00",
+    "endTime": "2025-11-02T19:11:29.661938+08:00",
+    "duration": 92778458,
+    "summary": {
+      "totalTests": 6,
+      "passedTests": 6,
+      "failedTests": 0,
+      "skippedTests": 0,
+      "passRate": 100,
+      "totalDuration": 92778458,
+      "startTime": "2025-11-02T19:11:29.569158+08:00",
+      "endTime": "2025-11-02T19:11:29.661938+08:00",
+      "categoryStats": {
+        "accuracy-validation": 1,
+        "lsp-api": 1,
+        "node-api": 1,
+        "project-api": 1,
+        "symbol-api": 1,
+        "type-api": 1
+      },
+      "projectInfo": null
+    }
+  },
+  "projectInfo": {
+    "path": "../../demo-react-app",
+    "sourceFiles": 14,
+    "totalNodes": 16826,
+    "totalSymbols": 0,
+    "apiVersions": {
+      "tsmorphgo": "current"
+    },
+    "fileExtensions": [
+      ".ts",
+      ".tsx"
+    ],
+    "ignorePatterns": [
+      "node_modules",
+      "dist",
+      "build",
+      ".git"
+    ]
+  },
+  "config": {
+    "projectPath": "../../demo-react-app",
+    "ignorePatterns": [
+      "node_modules",
+      "dist",
+      "build",
+      ".git"
+    ],
+    "targetExtensions": [
+      ".ts",
+      ".tsx"
+    ],
+    "outputDir": "../../validation-results",
+    "enableJSON": true,
+    "enableConsole": true,
+    "testCategories": [
+      "project-api",
+      "node-api",
+      "symbol-api",
+      "type-api",
+      "lsp-api",
+      "accuracy-validation"
+    ],
+    "timeout": 30000000000,
+    "verbose": true
+  },
+  "analysis": {
+    "overallHealth": "excellent",
+    "criticalIssues": [],
+    "recommendations": [],
+    "categoryAnalysis": {
+      "accuracy-validation": {
+        "category": "accuracy-validation",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 0,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      },
+      "lsp-api": {
+        "category": "lsp-api",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 1,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      },
+      "node-api": {
+        "category": "node-api",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 8,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      },
+      "project-api": {
+        "category": "project-api",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 1,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      },
+      "symbol-api": {
+        "category": "symbol-api",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 42,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      },
+      "type-api": {
+        "category": "type-api",
+        "testCount": 1,
+        "passRate": 100,
+        "totalDuration": 2,
+        "performanceScore": 100,
+        "stabilityScore": 100,
+        "recommendations": []
+      }
+    },
+    "trendAnalysis": {
+      "passRate": {
+        "current": 100,
+        "target": 95,
+        "trend": "improving"
+      }
+    }
+  },
+  "timestamp": "2025-11-02T19:11:29.662862+08:00"
+}

@@ -1,0 +1,25 @@
+{
+  "category": "symbol-api",
+  "tests": [
+    {
+      "name": "符号API验证",
+      "category": "symbol-api",
+      "description": "验证符号系统API功能",
+      "status": "passed",
+      "message": "符号API验证成功，发现16812个符号，通过率98.2%",
+      "error": "",
+      "duration": 42037708,
+      "timestamp": "2025-11-02T19:11:29.621012+08:00",
+      "metrics": {
+        "totalItems": 16812,
+        "successItems": 16506,
+        "failedItems": 306,
+        "accuracyRate": 98.17987152034262,
+        "performanceMs": 0,
+        "extraInfo": {}
+      }
+    }
+  ],
+  "timestamp": "20251102-191129",
+  "totalTests": 1
+}
