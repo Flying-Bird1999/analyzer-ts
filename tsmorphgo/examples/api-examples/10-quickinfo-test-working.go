@@ -58,11 +58,19 @@ func main() {
 		char     int
 		desc     string
 	}{
-		{"/src/types.ts", 8, 1, "User 接口声明"},
-		{"/src/types.ts", 16, 1, "UserProfile 接口声明"},
-		{"/src/types.ts", 36, 1, "ApiResponse 接口声明"},
-		{"/src/types.ts", 30, 1, "UserRole 类型别名"},
-		{"/src/App.tsx", 10, 1, "App 组件"},
+		{"/src/types.ts", 8, 11, "User 接口声明"},
+		{"/src/types.ts", 16, 11, "UserProfile 接口声明"},
+		{"/src/types.ts", 36, 11, "ApiResponse 接口声明"},
+		{"/src/types.ts", 30, 12, "UserRole 类型别名"},
+		{"/src/App.tsx", 10, 7, "App 组件"},
+		{"/src/advanced-types.ts", 4, 6, "IsString 条件类型"},
+		{"/src/advanced-types.ts", 8, 6, "Readonly 映射类型"},
+		{"/src/advanced-types.ts", 20, 6, "Greeting 模板字面量类型"},
+		{"/src/advanced-types.ts", 24, 11, "ApiResponse 嵌套接口"},
+		{"/src/advanced-types.ts", 38, 11, "Product 接口"},
+		{"/src/advanced-types.ts", 60, 17, "processData 泛型函数"},
+		{"/src/components/UserProfile.tsx", 4, 11, "UserProfileProps 接口"},
+		{"/src/components/UserProfile.tsx", 10, 7, "UserProfile 组件"},
 	}
 
 	successCount := 0
@@ -133,8 +141,14 @@ func main() {
 		char     int
 		desc     string
 	}{
-		{"/src/types.ts", 9, 7, "User.name 属性"},
-		{"/src/types.ts", 37, 7, "ApiResponse.data 属性"},
+		{"/src/types.ts", 9, 3, "User.name 属性"},
+		{"/src/types.ts", 37, 3, "ApiResponse.data 属性"},
+		{"/src/advanced-types.ts", 40, 5, "Product.id 属性"},
+		{"/src/advanced-types.ts", 41, 5, "Product.name 属性"},
+		{"/src/advanced-types.ts", 42, 5, "Product.price 属性"},
+		{"/src/advanced-types.ts", 43, 5, "Product.details 属性"},
+		{"/src/components/UserProfile.tsx", 5, 5, "UserProfileProps.user 属性"},
+		{"/src/components/UserProfile.tsx", 6, 5, "UserProfileProps.onEdit 属性"},
 	}
 
 	for _, tc := range propertyTestCases {

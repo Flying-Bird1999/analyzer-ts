@@ -45,6 +45,41 @@
     {
       "name": "",
       "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/advanced-types.ts",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/advanced-types.ts",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/advanced-types.ts",
+      "line": 37,
+      "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/advanced-types.ts",
+      "line": 44,
+      "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/advanced-types.ts",
+      "line": 50,
+      "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
       "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/App.tsx",
       "line": 3,
       "exported": true
@@ -62,10 +97,17 @@
       "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/components/Button.tsx",
       "line": 2,
       "exported": true
+    },
+    {
+      "name": "",
+      "fields": [],
+      "file": "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app/src/components/UserProfile.tsx",
+      "line": 2,
+      "exported": true
     }
   ],
   "summary": {
-    "totalInterfaces": 9,
+    "totalInterfaces": 15,
     "totalTypeAliases": 0
   },
   "typeAliases": null
