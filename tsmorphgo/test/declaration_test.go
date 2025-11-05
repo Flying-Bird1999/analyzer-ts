@@ -365,3 +365,79 @@ func TestTypeConversionAPIs(t *testing.T) {
 		assert.False(t, ok)
 	})
 }
+
+// TestOptimizedDeclarationAccessor_Basic 测试声明访问器的基本功能
+func TestOptimizedDeclarationAccessor_Basic(t *testing.T) {
+	project := createTestProject(map[string]string{
+		"/test_accessor.ts": `const x = 1;
+function testFunc(param: string): number {
+    return 42;
+}
+interface TestInterface {
+    prop: string;
+}`,
+	})
+
+	sf := project.GetSourceFile("/test_accessor.ts")
+	assert.NotNil(t, sf)
+
+	// 查找变量声明节点
+	var varNode *Node
+	sf.ForEachDescendant(func(node Node) {
+		if node.Kind == ast.KindVariableDeclaration {
+			varNode = &node
+		}
+	})
+	assert.NotNil(t, varNode, "未能找到 VariableDeclaration 节点")
+
+	// 测试获取声明访问器
+	accessor := varNode.GetDeclarationAccessor()
+	assert.NotNil(t, accessor)
+
+	// 测试优化的变量声明获取
+	varDecl, ok := varNode.AsVariableDeclarationOptimized()
+	assert.True(t, ok)
+	assert.NotNil(t, varDecl)
+}
+
+// TestNode_GetDeclarationType 测试节点声明类型获取
+func TestNode_GetDeclarationType(t *testing.T) {
+	project := createTestProject(map[string]string{
+		"/test_types.ts": `const x = 1;
+function test() {}
+interface Test {}
+type Alias = string;
+enum Color {}`,
+	})
+
+	sf := project.GetSourceFile("/test_types.ts")
+	assert.NotNil(t, sf)
+
+	// 测试不同类型的声明获取
+	testCases := []struct {
+		kind     ast.Kind
+		expected string
+	}{
+		{ast.KindVariableDeclaration, "VariableDeclaration"},
+		{ast.KindFunctionDeclaration, "FunctionDeclaration"},
+		{ast.KindInterfaceDeclaration, "InterfaceDeclaration"},
+		{ast.KindTypeAliasDeclaration, "TypeDeclaration"},
+		{ast.KindEnumDeclaration, "EnumDeclaration"},
+		{ast.KindBinaryExpression, "Unknown"},
+	}
+
+	for _, tc := range testCases {
+		var foundNode *Node
+		sf.ForEachDescendant(func(node Node) {
+			if node.Kind == tc.kind && foundNode == nil {
+				foundNode = &node
+			}
+		})
+
+		if foundNode != nil {
+			typeName := foundNode.GetDeclarationType()
+			assert.Equal(t, tc.expected, typeName,
+				"节点类型 %v 的声明类型应该为 %s", tc.kind, tc.expected)
+		}
+	}
+}

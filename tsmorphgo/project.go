@@ -1,10 +1,12 @@
 package tsmorphgo
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -23,11 +25,38 @@ type ProjectConfig struct {
 	IgnorePatterns   []string
 	IsMonorepo       bool
 	TargetExtensions []string
+	// TypeScript 配置文件路径，如果为空则自动查找
+	TsConfigPath     string
+	// 是否使用 tsconfig.json 中的配置覆盖其他设置
+	UseTsConfig      bool
+	// 编译选项映射（从 tsconfig.json 解析而来）
+	CompilerOptions  map[string]interface{}
+	// 包含的文件模式（从 tsconfig.json 解析而来）
+	IncludePatterns  []string
+	// 排除的文件模式（从 tsconfig.json 解析而来）
+	ExcludePatterns  []string
 }
 
 // NewProject 是创建和初始化一个新项目实例的入口点。
+// 如果配置中启用了 tsconfig.json 支持，会先解析配置文件。
 func NewProject(config ProjectConfig) *Project {
-	ppConfig := projectParser.NewProjectParserConfig(config.RootPath, config.IgnorePatterns, config.IsMonorepo, config.TargetExtensions)
+	// 处理 TypeScript 配置
+	enhancedConfig := config
+	if config.UseTsConfig {
+		tsConfig := parseTsConfig(config)
+		if tsConfig != nil {
+			enhancedConfig = mergeTsConfig(config, tsConfig)
+		}
+	}
+
+	// 构建忽略模式列表
+	ignorePatterns := enhancedConfig.IgnorePatterns
+	// 将 ExcludePatterns 添加到忽略模式中
+	if len(enhancedConfig.ExcludePatterns) > 0 {
+		ignorePatterns = append(ignorePatterns, enhancedConfig.ExcludePatterns...)
+	}
+
+	ppConfig := projectParser.NewProjectParserConfig(enhancedConfig.RootPath, ignorePatterns, enhancedConfig.IsMonorepo, enhancedConfig.TargetExtensions)
 	ppResult := projectParser.NewProjectParserResult(ppConfig)
 	ppResult.ProjectParser()
 
@@ -37,6 +66,11 @@ func NewProject(config ProjectConfig) *Project {
 	}
 
 	for path, jsResult := range ppResult.Js_Data {
+		// 如果有 IncludePatterns，只处理匹配的文件
+		if len(enhancedConfig.IncludePatterns) > 0 && !PathMatchesPatterns(path, enhancedConfig.IncludePatterns) {
+			continue
+		}
+
 		sf := &SourceFile{
 			filePath:      path,
 			fileResult:    &jsResult,
@@ -99,7 +133,8 @@ func (p *Project) Close() {
 
 // GetSourceFile 根据文件路径从项目中获取一个 SourceFile 实例。
 func (p *Project) GetSourceFile(path string) *SourceFile {
-	return p.sourceFiles[path]
+	normalizedPath := p.normalizeFilePath(path)
+	return p.sourceFiles[normalizedPath]
 }
 
 // GetSourceFiles 返回项目中的所有源文件
@@ -173,3 +208,194 @@ func (p *Project) findNodeAt(filePath string, line, char int) *ast.Node {
 	walk(sf.astNode)
 	return foundNode
 }
+
+// CreateSourceFile 在项目中动态创建一个新的源文件。
+// 这个方法允许在运行时向项目添加新的源文件，非常适合代码生成和动态内容创建。
+// 参数:
+//   - filePath: 新文件的路径，可以是相对路径或绝对路径
+//   - sourceCode: 文件的源代码内容
+//   - options: 可选的创建选项，如是否覆盖已存在文件等
+// 返回值:
+//   - *SourceFile: 新创建的源文件实例
+//   - error: 操作过程中的错误信息
+func (p *Project) CreateSourceFile(filePath string, sourceCode string, options ...CreateSourceFileOptions) (*SourceFile, error) {
+	// 处理文件路径，确保使用规范化路径
+	normalizedPath := p.normalizeFilePath(filePath)
+
+	// 解析创建选项
+	opts := CreateSourceFileOptions{
+		Overwrite: false,
+		ScriptKind: "", // 自动检测
+	}
+	if len(options) > 0 {
+		opts = options[0]
+	}
+
+	// 检查文件是否已存在
+	if existingFile, exists := p.sourceFiles[normalizedPath]; exists {
+		if !opts.Overwrite {
+			return existingFile, fmt.Errorf("文件已存在: %s", normalizedPath)
+		}
+		// 如果允许覆盖，先移除现有文件
+		delete(p.sourceFiles, normalizedPath)
+		// 同时从 parserResult 中移除
+		if p.parserResult.Js_Data != nil {
+			delete(p.parserResult.Js_Data, normalizedPath)
+		}
+	}
+
+	// 使用 parser 解析源代码
+	fileParser, err := parser.NewParserFromSource(normalizedPath, sourceCode)
+	if err != nil {
+		return nil, fmt.Errorf("创建解析器失败: %w", err)
+	}
+
+	// 执行 AST 遍历和解析
+	fileParser.Traverse()
+
+	// 获取解析结果
+	parserResult := fileParser.Result.GetResult()
+
+	// 转换为 projectParser 的 JsFileParserResult 格式
+	jsFileResult := projectParser.JsFileParserResult{
+		Ast:                   fileParser.Ast,
+		Raw:                   fileParser.SourceCode,
+		ImportDeclarations:    make([]projectParser.ImportDeclarationResult, 0), // 暂时简化处理
+		ExportDeclarations:    make([]projectParser.ExportDeclarationResult, 0), // 暂时简化处理
+		ExportAssignments:     parserResult.ExportAssignments,
+		InterfaceDeclarations: parserResult.InterfaceDeclarations,
+		TypeDeclarations:      parserResult.TypeDeclarations,
+		EnumDeclarations:      parserResult.EnumDeclarations,
+		VariableDeclarations:  parserResult.VariableDeclarations,
+		CallExpressions:       parserResult.CallExpressions,
+		FunctionDeclarations:  parserResult.FunctionDeclarations,
+		ExtractedNodes:        parserResult.ExtractedNodes,
+		Errors:                fileParser.Result.Errors,
+	}
+
+	// 创建 SourceFile 实例
+	sourceFile := &SourceFile{
+		filePath:     normalizedPath,
+		fileResult:   &jsFileResult,
+		astNode:      fileParser.Ast,
+		project:      p,
+		nodeResultMap: make(map[*ast.Node]interface{}),
+	}
+
+	// 构建 node-result 映射
+	sourceFile.buildNodeResultMap()
+
+	// 将新文件添加到项目中
+	p.sourceFiles[normalizedPath] = sourceFile
+
+	// 同步更新 parserResult 中的数据
+	if p.parserResult.Js_Data == nil {
+		p.parserResult.Js_Data = make(map[string]projectParser.JsFileParserResult)
+	}
+	p.parserResult.Js_Data[normalizedPath] = jsFileResult
+
+	return sourceFile, nil
+}
+
+// RemoveSourceFile 从项目中移除指定的源文件。
+// 这个方法提供了动态文件管理能力，可以清理不再需要的文件。
+// 参数:
+//   - filePath: 要移除的文件路径
+// 返回值:
+//   - bool: 是否成功移除
+//   - error: 操作过程中的错误信息
+func (p *Project) RemoveSourceFile(filePath string) (bool, error) {
+	normalizedPath := p.normalizeFilePath(filePath)
+
+	// 检查文件是否存在
+	if _, exists := p.sourceFiles[normalizedPath]; !exists {
+		return false, fmt.Errorf("文件不存在: %s", normalizedPath)
+	}
+
+	// 从项目中移除文件
+	delete(p.sourceFiles, normalizedPath)
+
+	// 同步更新 parserResult
+	delete(p.parserResult.Js_Data, normalizedPath)
+
+	return true, nil
+}
+
+// UpdateSourceFile 更新项目中已存在的源文件内容。
+// 这个方法支持动态内容更新，适用于实时编辑和代码重构场景。
+// 参数:
+//   - filePath: 要更新的文件路径
+//   - newSourceCode: 新的源代码内容
+// 返回值:
+//   - *SourceFile: 更新后的源文件实例
+//   - error: 操作过程中的错误信息
+func (p *Project) UpdateSourceFile(filePath string, newSourceCode string) (*SourceFile, error) {
+	normalizedPath := p.normalizeFilePath(filePath)
+
+	// 检查文件是否存在
+	if _, exists := p.sourceFiles[normalizedPath]; !exists {
+		return nil, fmt.Errorf("文件不存在，无法更新: %s", normalizedPath)
+	}
+
+	// 使用覆盖选项重新创建文件
+	updatedFile, err := p.CreateSourceFile(normalizedPath, newSourceCode, CreateSourceFileOptions{
+		Overwrite: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("更新文件失败: %w", err)
+	}
+
+	// 确保返回的是同一个文件实例
+	return updatedFile, nil
+}
+
+// CreateSourceFileOptions 定义了创建源文件时的可选参数。
+// 这些选项提供了对文件创建过程的精细控制。
+type CreateSourceFileOptions struct {
+	// Overwrite 指示是否覆盖已存在的同名文件
+	Overwrite bool
+	// ScriptKind 指定脚本的种类（如 TypeScript、JavaScript 等）
+	// 如果为空，将根据文件扩展名自动检测
+	ScriptKind string
+	// AdditionalOptions 其他自定义创建选项的预留字段
+	AdditionalOptions map[string]interface{}
+}
+
+// normalizeFilePath 规范化文件路径，确保路径的一致性。
+// 这个辅助方法处理各种路径格式，确保文件路径在项目中的统一表示。
+// 参数:
+//   - filePath: 输入的文件路径
+// 返回值:
+//   - string: 规范化后的文件路径
+func (p *Project) normalizeFilePath(filePath string) string {
+	// 如果是相对路径，转换为基于项目根目录的绝对路径
+	if !strings.HasPrefix(filePath, "/") {
+		return fmt.Sprintf("%s/%s", p.parserResult.Config.RootPath, filePath)
+	}
+	return filePath
+}
+
+// GetFileCount 返回项目中当前包含的源文件数量。
+// 这个方法提供了项目规模的快速概览。
+func (p *Project) GetFileCount() int {
+	return len(p.sourceFiles)
+}
+
+// ContainsFile 检查项目中是否包含指定路径的文件。
+// 这个方法用于文件存在性检查，避免重复创建或访问不存在的文件。
+func (p *Project) ContainsFile(filePath string) bool {
+	normalizedPath := p.normalizeFilePath(filePath)
+	_, exists := p.sourceFiles[normalizedPath]
+	return exists
+}
+
+// GetFilePaths 返回项目中所有源文件的路径列表。
+// 这个方法提供了文件级别的项目概览，用于批量处理和统计分析。
+func (p *Project) GetFilePaths() []string {
+	paths := make([]string, 0, len(p.sourceFiles))
+	for path := range p.sourceFiles {
+		paths = append(paths, path)
+	}
+	return paths
+}
+

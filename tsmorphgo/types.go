@@ -115,7 +115,6 @@ func IsBinaryExpression(node Node) bool {
 	return node.Kind == ast.KindBinaryExpression
 }
 
-
 // AsTypeAliasDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的类型别名声明结果。
 func AsTypeAliasDeclaration(node Node) (parser.TypeDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
@@ -224,99 +223,11 @@ func AsTypeAssertionExpression(node Node) (*Node, bool) {
 	return nil, false
 }
 
-// 符号级别类型检查函数 - 推荐使用这些函数进行符号类型检查
-
-// IsConstructorSymbol 检查符号是否是构造函数。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的构造函数检查应该使用 node.Kind == ast.KindConstructor
-func IsConstructorSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsConstructor()
-}
-
-// IsAccessorSymbol 检查符号是否是访问器（getter/setter）。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的访问器检查应该使用 node.Kind == ast.KindGetAccessor || node.Kind == ast.KindSetAccessor
-func IsAccessorSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsAccessor()
-}
-
-// IsTypeParameterSymbol 检查符号是否是类型参数。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的类型参数检查应该使用 node.Kind == ast.KindTypeParameter
-func IsTypeParameterSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsTypeParameter()
-}
-
-// IsTypeReferenceSymbol 检查符号是否是类型引用。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的类型引用检查应该使用 node.Kind == ast.KindTypeReference
-func IsTypeReferenceSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	// 类型引用通常对应类型别名符号
-	return symbol.IsTypeAlias()
-}
-
-// IsArrayLiteralExpressionSymbol 检查符号是否是数组字面量表达式。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的数组字面量检查应该使用 node.Kind == ast.KindArrayLiteralExpression
-func IsArrayLiteralExpressionSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	// 数组字面量通常对应变量或属性符号
-	return symbol.IsVariable() || symbol.IsProperty()
-}
-
-// IsTypeAssertionExpressionSymbol 检查符号是否是类型断言表达式。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的类型断言检查应该使用 node.Kind == ast.KindTypeAssertionExpression
-func IsTypeAssertionExpressionSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	// 类型断言表达式通常对应变量或属性符号
-	return symbol.IsVariable() || symbol.IsProperty()
-}
-
-// IsClassDeclarationSymbol 检查符号是否是类声明。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的类声明检查应该使用 node.Kind == ast.KindClassDeclaration
-func IsClassDeclarationSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsClass()
-}
-
-// IsMethodDeclarationSymbol 检查符号是否是方法声明。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的方法声明检查应该使用 node.Kind == ast.KindMethodDeclaration
-func IsMethodDeclarationSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsMethod()
-}
-
-// IsInterfaceDeclarationSymbol 检查符号是否是接口声明。
-// 注意：这是符号级别的检查，不是节点级别的检查。
-// 节点级别的接口声明检查应该使用 node.Kind == ast.KindInterfaceDeclaration
-func IsInterfaceDeclarationSymbol(symbol *Symbol) bool {
-	if symbol == nil {
-		return false
-	}
-	return symbol.IsInterface()
+// IsImportSpecifier 检查一个节点是否是导入说明符 (ImportSpecifier)。
+// 导入说明符出现在 import { specifier } from 'module' 语句中。
+// 这个函数是新增的，用于完善类型守卫覆盖。
+func IsImportSpecifier(node Node) bool {
+	return node.Kind == ast.KindImportSpecifier
 }
 
 // ... 后续可以按照此模式添加其他 IsXXX 和 AsXXX 函数 ...

@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
@@ -16,6 +18,8 @@ type Node struct {
 	*ast.Node
 	// 指向其所在的 SourceFile，便于访问文件级和项目级信息
 	sourceFile *SourceFile
+	// 声明访问器，用于高效访问解析结果（懒加载）
+	declarationAccessor DeclarationAccessor
 }
 
 // GetSourceFile 返回该节点所属的 SourceFile。
@@ -69,6 +73,15 @@ func (n *Node) GetStartLineNumber() int {
 	}
 	line, _ := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.Pos())
 	return line + 1
+}
+
+// GetStartLineCharacter 返回节点在源文件中的起始列号 (0-based)。
+func (n *Node) GetStartLineCharacter() int {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return 0
+	}
+	_, char := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.Pos())
+	return char
 }
 
 // GetStart 返回节点在文件中的起始字符偏移量 (0-based)。
@@ -349,6 +362,335 @@ func (n *Node) GetEndColumnNumber() int {
 	}
 	_, char := utils.GetLineAndCharacterOfPosition(n.sourceFile.fileResult.Raw, n.End())
 	return char + 1
+}
+
+// GetKindName 将 ast.Kind 转换为可读的字符串名称。
+// 这个方法提供了对调试和日志输出非常有用的节点类型信息。
+// 支持所有常用的 TypeScript 语法节点类型。
+//
+// 返回值：
+//   - string: 节点类型的可读名称，如 "Identifier"、"CallExpression" 等
+//
+// 示例：
+//
+//	node.GetKindName() // 返回 "Identifier"
+func (n *Node) GetKindName() string {
+	kind := n.Kind
+	switch kind {
+	case ast.KindIdentifier:
+		return "Identifier"
+	case ast.KindCallExpression:
+		return "CallExpression"
+	case ast.KindPropertyAccessExpression:
+		return "PropertyAccessExpression"
+	case ast.KindVariableDeclaration:
+		return "VariableDeclaration"
+	case ast.KindFunctionDeclaration:
+		return "FunctionDeclaration"
+	case ast.KindMethodDeclaration:
+		return "MethodDeclaration"
+	case ast.KindInterfaceDeclaration:
+		return "InterfaceDeclaration"
+	case ast.KindTypeAliasDeclaration:
+		return "TypeAliasDeclaration"
+	case ast.KindClassDeclaration:
+		return "ClassDeclaration"
+	case ast.KindEnumDeclaration:
+		return "EnumDeclaration"
+	case ast.KindBinaryExpression:
+		return "BinaryExpression"
+	case ast.KindObjectLiteralExpression:
+		return "ObjectLiteralExpression"
+	case ast.KindArrayLiteralExpression:
+		return "ArrayLiteralExpression"
+	case ast.KindPropertyAssignment:
+		return "PropertyAssignment"
+	case ast.KindPropertyDeclaration:
+		return "PropertyDeclaration"
+	case ast.KindImportSpecifier:
+		return "ImportSpecifier"
+	case ast.KindImportClause:
+		return "ImportClause"
+	case ast.KindImportDeclaration:
+		return "ImportDeclaration"
+	case ast.KindExportDeclaration:
+		return "ExportDeclaration"
+	case ast.KindExportAssignment:
+		return "ExportAssignment"
+	case ast.KindEqualsToken:
+		return "EqualsToken"
+	case ast.KindPlusToken:
+		return "PlusToken"
+	case ast.KindMinusToken:
+		return "MinusToken"
+	case ast.KindAsteriskToken:
+		return "AsteriskToken"
+	case ast.KindSlashToken:
+		return "SlashToken"
+	case ast.KindSourceFile:
+		return "SourceFile"
+	case ast.KindTypeReference:
+		return "TypeReference"
+	case ast.KindTypeParameter:
+		return "TypeParameter"
+	case ast.KindConstructor:
+		return "Constructor"
+	case ast.KindGetAccessor:
+		return "GetAccessor"
+	case ast.KindSetAccessor:
+		return "SetAccessor"
+	case ast.KindTypeAssertionExpression:
+		return "TypeAssertionExpression"
+	case ast.KindParameter:
+		return "Parameter"
+	// 添加更多类型支持...
+	default:
+		return fmt.Sprintf("Unknown(%d)", kind)
+	}
+}
+
+// GetStartLinePos 返回节点所在行的起始字符位置 (0-based)。
+// 这个方法对于计算节点的精确列位置非常重要，通常与
+// GetStartLineNumber() 和 GetStartColumnNumber() 配合使用。
+//
+// 算法说明：
+//   - 从节点的起始位置 (GetStart()) 向前查找
+//   - 找到最近的换行符 (\n)
+//   - 如果没有找到换行符，说明节点在第一行，返回 0
+//
+// 返回值：
+//   - int: 节点所在行的起始字符位置 (0-based)
+//
+// 示例：
+//
+//	文件内容: "const x = 1;\nconst y = 2;"
+//	对于第二个 const 声明:
+//	- GetStart() 返回 14
+//	- GetStartLinePos() 返回 13 (第二行起始位置)
+//	- 列号 = 14 - 13 = 1
+func (n *Node) GetStartLinePos() int {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return 0
+	}
+
+	content := n.sourceFile.fileResult.Raw
+	startPos := n.GetStart()
+
+	// 从起始位置向前查找，找到最近的换行符
+	for i := startPos - 1; i >= 0; i-- {
+		if content[i] == '\n' {
+			return i + 1 // 返回换行符的下一个位置
+		}
+	}
+
+	// 如果没有找到换行符，说明节点在第一行
+	return 0
+}
+
+// PositionInfo 包含节点的完整位置信息，提供比单独方法
+// 更全面的节点位置描述。这对于调试、日志记录和位置
+// 相关的操作非常有用。
+type PositionInfo struct {
+	Line        int // 节点所在行号 (1-based)
+	Column      int // 节点所在列号 (1-based)
+	StartOffset int // 节点在文件中的起始字符偏移量 (0-based)
+	EndOffset   int // 节点在文件中的结束字符偏移量 (0-based)
+	StartLinePos int // 节点所在行的起始字符偏移量 (0-based)
+}
+
+// GetPositionInfo 返回节点的完整位置信息。
+// 这个方法整合了所有位置相关的计算，返回一个结构体
+// 包含了节点的行、列、偏移量等所有位置信息。
+//
+// 返回值：
+//   - *PositionInfo: 包含完整位置信息的结构体，如果节点无效则返回 nil
+//
+// 示例：
+//
+//	pos := node.GetPositionInfo()
+//	if pos != nil {
+//	    fmt.Printf("位置: %d:%d, 偏移量: %d-%d\n",
+//	        pos.Line, pos.Column, pos.StartOffset, pos.EndOffset)
+//	}
+func (n *Node) GetPositionInfo() *PositionInfo {
+	if n.sourceFile == nil || n.sourceFile.fileResult == nil {
+		return nil
+	}
+
+	content := n.sourceFile.fileResult.Raw
+	start := n.GetStart()
+	end := n.GetEnd()
+
+	// 获取行号和列号
+	line, char := utils.GetLineAndCharacterOfPosition(content, start)
+	startLinePos := n.GetStartLinePos()
+
+	return &PositionInfo{
+		Line:        line + 1,    // 转换为 1-based
+		Column:      char + 1,    // 转换为 1-based
+		StartOffset: start,      // 已是 0-based
+		EndOffset:   end,        // 已是 0-based
+		StartLinePos: startLinePos, // 已是 0-based
+	}
+}
+
+
+// GetDeclarationAccessor 获取节点的声明访问器。
+// 如果访问器尚未初始化，则会创建一个新的访问器实例。
+// 这个方法提供了对 analyzer/parser 能力的统一访问接口。
+//
+// 返回值：
+//   - DeclarationAccessor: 声明访问器实例
+func (n *Node) GetDeclarationAccessor() DeclarationAccessor {
+	if n.declarationAccessor == nil {
+		n.declarationAccessor = NewDeclarationAccessor(n.sourceFile)
+	}
+	return n.declarationAccessor
+}
+
+// AsVariableDeclarationOptimized 使用优化的声明访问器获取变量声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *parser.VariableDeclaration: 变量声明信息，如果节点不是变量声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsVariableDeclarationOptimized() (*parser.VariableDeclaration, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetVariableDeclaration(n.Node)
+}
+
+// AsFunctionDeclarationOptimized 使用优化的声明访问器获取函数声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *parser.FunctionDeclarationResult: 函数声明信息，如果节点不是函数声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsFunctionDeclarationOptimized() (*parser.FunctionDeclarationResult, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetFunctionDeclaration(n.Node)
+}
+
+// AsInterfaceDeclarationOptimized 使用优化的声明访问器获取接口声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *parser.InterfaceDeclarationResult: 接口声明信息，如果节点不是接口声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsInterfaceDeclarationOptimized() (*parser.InterfaceDeclarationResult, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetInterfaceDeclaration(n.Node)
+}
+
+// AsImportDeclarationOptimized 使用优化的声明访问器获取导入声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *projectParser.ImportDeclarationResult: 导入声明信息，如果节点不是导入声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsImportDeclarationOptimized() (*projectParser.ImportDeclarationResult, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetImportDeclaration(n.Node)
+}
+
+// AsTypeDeclarationOptimized 使用优化的声明访问器获取类型别名声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *parser.TypeDeclarationResult: 类型别名声明信息，如果节点不是类型别名声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsTypeDeclarationOptimized() (*parser.TypeDeclarationResult, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetTypeDeclaration(n.Node)
+}
+
+// AsEnumDeclarationOptimized 使用优化的声明访问器获取枚举声明信息。
+// 这个方法集成了 analyzer/parser 的能力，提供更好的性能和功能。
+//
+// 返回值：
+//   - *parser.EnumDeclarationResult: 枚举声明信息，如果节点不是枚举声明则返回 nil
+//   - bool: 转换是否成功
+func (n *Node) AsEnumDeclarationOptimized() (*parser.EnumDeclarationResult, bool) {
+	if n.sourceFile == nil {
+		return nil, false
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetEnumDeclaration(n.Node)
+}
+
+// GetDeclaration 通用声明获取方法。
+// 根据节点类型自动选择相应的声明获取方法，提供统一的访问接口。
+//
+// 返回值：
+//   - interface{}: 声明信息（具体类型取决于节点类型）
+//   - bool: 获取是否成功
+//   - string: 声明类型名称（如 "VariableDeclaration"、"FunctionDeclaration" 等）
+func (n *Node) GetDeclaration() (interface{}, bool, string) {
+	if n.sourceFile == nil {
+		return nil, false, "Unknown"
+	}
+	accessor := n.GetDeclarationAccessor()
+	return accessor.GetDeclaration(n.Node)
+}
+
+// IsDeclarationType 检查节点是否是指定类型的声明。
+// 这个方法提供了统一的类型检查接口，集成了 analyzer/parser 的能力。
+//
+// 参数：
+//   - kind: ast.Kind 要检查的节点类型
+//
+// 返回值：
+//   - bool: 节点是否是指定类型的声明
+func (n *Node) IsDeclarationType(kind ast.Kind) bool {
+	if n.sourceFile == nil {
+		return false
+	}
+	accessor := n.GetDeclarationAccessor()
+
+	switch kind {
+	case ast.KindVariableDeclaration, ast.KindVariableDeclarationList:
+		return accessor.IsVariableDeclaration(n.Node)
+	case ast.KindFunctionDeclaration, ast.KindFunctionExpression:
+		return accessor.IsFunctionDeclaration(n.Node)
+	case ast.KindInterfaceDeclaration:
+		return accessor.IsInterfaceDeclaration(n.Node)
+	case ast.KindImportDeclaration:
+		return accessor.IsImportDeclaration(n.Node)
+	case ast.KindTypeAliasDeclaration:
+		return accessor.IsTypeDeclaration(n.Node)
+	case ast.KindEnumDeclaration:
+		return accessor.IsEnumDeclaration(n.Node)
+	default:
+		return false
+	}
+}
+
+// GetDeclarationType 获取节点的声明类型名称。
+// 这个方法提供了统一的方式来获取节点的声明类型。
+//
+// 返回值：
+//   - string: 声明类型名称，如果节点不是声明类型则返回 "Unknown"
+func (n *Node) GetDeclarationType() string {
+	if n.sourceFile == nil {
+		return "Unknown"
+	}
+	accessor := n.GetDeclarationAccessor()
+	_, _, typeName := accessor.GetDeclaration(n.Node)
+	return typeName
 }
 
 // CreateTestProject 创建 LSP 服务的辅助函数。

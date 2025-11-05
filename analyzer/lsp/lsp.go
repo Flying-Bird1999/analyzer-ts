@@ -154,6 +154,43 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 	return response, nil
 }
 
+// GotoDefinition 在给定位置查找符号的定义位置 (LSP 实现)。
+func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, char int) (response lsproto.DefinitionResponse, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("recovered from panic in GotoDefinition: %v", r)
+		}
+	}()
+
+	virtualPath, err := filepath.Rel(s.rootPath, filePath)
+	if err != nil {
+		return lsproto.DefinitionResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
+	}
+	virtualPath = "/" + filepath.ToSlash(virtualPath)
+
+	content, ok := s.sourcesCache[virtualPath].(string)
+	if !ok {
+		return lsproto.DefinitionResponse{}, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
+	}
+	uri := ls.FileNameToDocumentURI(virtualPath)
+	s.session.DidOpenFile(ctx, uri, 0, content, "typescript")
+
+	langService, err := s.session.GetLanguageService(ctx, uri)
+	if err != nil {
+		return lsproto.DefinitionResponse{}, fmt.Errorf("无法获取语言服务: %w", err)
+	}
+
+	response, err = langService.ProvideDefinition(ctx, uri, lsproto.Position{
+		Line:      uint32(line - 1),
+		Character: uint32(char - 1),
+	})
+	if err != nil {
+		return lsproto.DefinitionResponse{}, fmt.Errorf("查找定义失败: %w", err)
+	}
+
+	return response, nil
+}
+
 // GetSymbolAt 获取给定文件位置的符号信息 (LSP 实现)。
 func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char int) (*ast.Symbol, error) {
 	virtualPath, err := filepath.Rel(s.rootPath, filePath)

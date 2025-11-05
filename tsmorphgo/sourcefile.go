@@ -23,6 +23,24 @@ func (sf *SourceFile) GetFilePath() string {
 	return sf.filePath
 }
 
+// GetFileResult 返回此源文件的解析结果。
+// 这个方法提供了对文件解析结果的访问，包括导入、导出、声明等信息。
+func (sf *SourceFile) GetFileResult() *projectParser.JsFileParserResult {
+	return sf.fileResult
+}
+
+// GetAstNode 返回此源文件的 AST 根节点。
+// 这个方法提供了对文件抽象语法树的直接访问。
+func (sf *SourceFile) GetAstNode() *ast.Node {
+	return sf.astNode
+}
+
+// GetProject 返回此源文件所属的项目。
+// 这个方法用于访问项目级别的功能和信息。
+func (sf *SourceFile) GetProject() *Project {
+	return sf.project
+}
+
 // ForEachDescendant 深度优先遍历该文件的所有后代节点。
 // 它为每个访问到的节点调用提供的回调函数。
 func (sf *SourceFile) ForEachDescendant(callback func(node Node)) {
