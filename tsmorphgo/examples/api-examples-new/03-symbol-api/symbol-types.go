@@ -54,7 +54,7 @@ func main() {
 			// 检查是否为接口声明节点
 			if node.Kind == ast.KindInterfaceDeclaration {
 				// 尝试获取接口符号
-				if symbol, ok := tsmorphgo.GetSymbol(node); ok {
+				if symbol, err := tsmorphgo.GetSymbol(node); err == nil && symbol != nil {
 					interfaceCount++
 
 					// 记录第一个接口符号用于后续测试
@@ -89,7 +89,7 @@ func main() {
 			// 检查是否为类型别名声明节点
 			if node.Kind == ast.KindTypeAliasDeclaration {
 				// 尝试获取类型别名符号
-				if symbol, ok := tsmorphgo.GetSymbol(node); ok {
+				if symbol, err := tsmorphgo.GetSymbol(node); err == nil && symbol != nil {
 					typeAliasCount++
 
 					// 记录第一个类型别名符号用于后续测试
@@ -114,7 +114,7 @@ func main() {
 	// 遍历所有符号，验证类型识别
 	for _, sf := range sourceFiles {
 		sf.ForEachDescendant(func(node tsmorphgo.Node) {
-			if symbol, ok := tsmorphgo.GetSymbol(node); ok {
+			if symbol, err := tsmorphgo.GetSymbol(node); err == nil && symbol != nil {
 				symbolTypeName := getSymbolTypeName(symbol)
 				symbolTypeCount[symbolTypeName]++
 
@@ -156,7 +156,7 @@ func main() {
 
 	for _, sf := range sourceFiles {
 		sf.ForEachDescendant(func(node tsmorphgo.Node) {
-			if symbol, ok := tsmorphgo.GetSymbol(node); ok {
+			if symbol, err := tsmorphgo.GetSymbol(node); err == nil && symbol != nil {
 				symbolTypeName := getSymbolTypeName(symbol)
 				if symbol.IsExported() {
 					exportedStats[symbolTypeName]++
@@ -391,24 +391,10 @@ func getSymbolTypeName(symbol *tsmorphgo.Symbol) string {
 		return "variable"
 	case symbol.IsMethod():
 		return "method"
-	case symbol.IsConstructor():
-		return "constructor"
-	case symbol.IsAccessor():
-		return "accessor"
-	case symbol.IsTypeParameter():
-		return "typeParameter"
-	case symbol.IsEnumMember():
-		return "enumMember"
 	case symbol.IsProperty():
 		return "property"
-	case symbol.IsObjectLiteral():
-		return "objectLiteral"
-	case symbol.IsTypeLiteral():
-		return "typeLiteral"
 	case symbol.IsModule():
 		return "module"
-	case symbol.IsAlias():
-		return "alias"
 	default:
 		return "unknown"
 	}

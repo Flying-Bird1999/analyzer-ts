@@ -14,36 +14,36 @@ import (
 
 // ValidationResult 单个验证测试的结果
 type ValidationResult struct {
-	Name        string        `json:"name"`          // 测试名称
-	Category    string        `json:"category"`      // 测试类别
-	Description string        `json:"description"`   // 测试描述
-	Status      string        `json:"status"`        // 测试状态 (passed/failed/skipped)
-	Message     string        `json:"message"`       // 测试消息
-	Error       string        `json:"error"`         // 错误信息（如果有）
-	Duration    time.Duration `json:"duration"`      // 执行时间
-	Timestamp   time.Time     `json:"timestamp"`     // 执行时间戳
-	Metrics     *TestMetrics  `json:"metrics"`       // 测试指标（可选）
+	Name        string        `json:"name"`        // 测试名称
+	Category    string        `json:"category"`    // 测试类别
+	Description string        `json:"description"` // 测试描述
+	Status      string        `json:"status"`      // 测试状态 (passed/failed/skipped)
+	Message     string        `json:"message"`     // 测试消息
+	Error       string        `json:"error"`       // 错误信息（如果有）
+	Duration    time.Duration `json:"duration"`    // 执行时间
+	Timestamp   time.Time     `json:"timestamp"`   // 执行时间戳
+	Metrics     *TestMetrics  `json:"metrics"`     // 测试指标（可选）
 }
 
 // TestMetrics 测试指标信息
 type TestMetrics struct {
-	TotalItems    int     `json:"totalItems"`    // 总项目数
-	SuccessItems  int     `json:"successItems"`  // 成功项目数
-	FailedItems   int     `json:"failedItems"`   // 失败项目数
-	AccuracyRate  float64 `json:"accuracyRate"`  // 准确率百分比
-	PerformanceMs float64 `json:"performanceMs"` // 性能指标（毫秒）
-	ExtraInfo     map[string]interface{} `json:"extraInfo"` // 额外信息
+	TotalItems    int                    `json:"totalItems"`    // 总项目数
+	SuccessItems  int                    `json:"successItems"`  // 成功项目数
+	FailedItems   int                    `json:"failedItems"`   // 失败项目数
+	AccuracyRate  float64                `json:"accuracyRate"`  // 准确率百分比
+	PerformanceMs float64                `json:"performanceMs"` // 性能指标（毫秒）
+	ExtraInfo     map[string]interface{} `json:"extraInfo"`     // 额外信息
 }
 
 // ValidationSuite 验证套件
 type ValidationSuite struct {
-	Name        string             `json:"name"`
-	Description string             `json:"description"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
 	Tests       []*ValidationResult `json:"tests"`
-	StartTime   time.Time          `json:"startTime"`
-	EndTime     time.Time          `json:"endTime"`
-	Duration    time.Duration      `json:"duration"`
-	Summary     *ValidationSummary `json:"summary"`
+	StartTime   time.Time           `json:"startTime"`
+	EndTime     time.Time           `json:"endTime"`
+	Duration    time.Duration       `json:"duration"`
+	Summary     *ValidationSummary  `json:"summary"`
 }
 
 // ValidationSummary 验证摘要信息
@@ -56,19 +56,19 @@ type ValidationSummary struct {
 	TotalDuration time.Duration  `json:"totalDuration"`
 	StartTime     time.Time      `json:"startTime"`
 	EndTime       time.Time      `json:"endTime"`
-	CategoryStats map[string]int `json:"categoryStats"`   // 按类别统计
-	ProjectInfo   *ProjectInfo   `json:"projectInfo"`     // 项目信息
+	CategoryStats map[string]int `json:"categoryStats"` // 按类别统计
+	ProjectInfo   *ProjectInfo   `json:"projectInfo"`   // 项目信息
 }
 
 // ProjectInfo 项目信息
 type ProjectInfo struct {
-	Path             string            `json:"path"`
-	SourceFiles      int               `json:"sourceFiles"`
-	TotalNodes       int               `json:"totalNodes"`
-	TotalSymbols     int               `json:"totalSymbols"`
-	APIVersions      map[string]string `json:"apiVersions"`
-	FileExtensions   []string          `json:"fileExtensions"`
-	IgnorePatterns   []string          `json:"ignorePatterns"`
+	Path           string            `json:"path"`
+	SourceFiles    int               `json:"sourceFiles"`
+	TotalNodes     int               `json:"totalNodes"`
+	TotalSymbols   int               `json:"totalSymbols"`
+	APIVersions    map[string]string `json:"apiVersions"`
+	FileExtensions []string          `json:"fileExtensions"`
+	IgnorePatterns []string          `json:"ignorePatterns"`
 }
 
 // ValidationConfig 验证配置
@@ -500,13 +500,13 @@ func (rg *ReportGenerator) extractProjectInfo(project *tsmorphgo.Project, config
 	}
 
 	return &ProjectInfo{
-		Path:             config.ProjectPath,
-		SourceFiles:      len(sourceFiles),
-		TotalNodes:       totalNodes,
-		TotalSymbols:     totalSymbols,
-		APIVersions:      map[string]string{"tsmorphgo": "current"},
-		FileExtensions:   config.TargetExtensions,
-		IgnorePatterns:   config.IgnorePatterns,
+		Path:           config.ProjectPath,
+		SourceFiles:    len(sourceFiles),
+		TotalNodes:     totalNodes,
+		TotalSymbols:   totalSymbols,
+		APIVersions:    map[string]string{"tsmorphgo": "current"},
+		FileExtensions: config.TargetExtensions,
+		IgnorePatterns: config.IgnorePatterns,
 	}
 }
 
@@ -1196,7 +1196,7 @@ func (runner *ValidationRunner) runSymbolValidation(project *tsmorphgo.Project) 
 
 	for _, sf := range sourceFiles {
 		sf.ForEachDescendant(func(node tsmorphgo.Node) {
-			if symbol, ok := tsmorphgo.GetSymbol(node); ok {
+			if symbol, err := tsmorphgo.GetSymbol(node); err == nil && symbol != nil {
 				totalSymbols++
 				// 基本符号验证：检查符号是否有有效名称
 				if symbol.GetName() != "" {
