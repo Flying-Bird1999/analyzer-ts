@@ -37,30 +37,28 @@ func main() {
 
 	fmt.Printf("项目包含 %d 个TypeScript文件:\n", len(sourceFiles))
 
-	// 分析所有文件中的函数声明
+	// 使用新的API分析函数声明
 	totalFunctions := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if tsmorphgo.IsFunctionDeclaration(node) {
-				if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
-					funcName := strings.TrimSpace(nameNode.GetText())
+			if node.IsFunction() {
+				if funcName, ok := node.GetName(); ok {
 					fmt.Printf("函数: %s (行 %d)\n", funcName, node.GetStartLineNumber())
 					totalFunctions++
 
-					// 获取参数数量
+					// 检查函数属性
+					fmt.Printf("  - 是否导出: %v\n", node.IsExported())
+					fmt.Printf("  - 是否异步: %v\n", node.IsAsyncFunction())
+					fmt.Printf("  - 返回类型: %s\n", node.GetType())
+
+					// 简单的参数统计
 					paramCount := 0
 					node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-						if descendant.Kind == 218 { // Parameter
+						if descendant.Kind == tsmorphgo.KindParameter {
 							paramCount++
 						}
 					})
 					fmt.Printf("  - 参数数量: %d\n", paramCount)
-
-					// 检查返回类型
-					text := strings.TrimSpace(node.GetText())
-					if strings.Contains(text, ": Promise<") {
-						fmt.Printf("  - 异步函数\n")
-					}
 				}
 			}
 		})
@@ -71,30 +69,27 @@ func main() {
 	// 示例2: 调用表达式处理
 	fmt.Println("\n⚡ 示例2: 调用表达式分析")
 
-	// 分析所有文件中的方法调用
+	// 使用新的API分析方法调用
 	totalCalls := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if tsmorphgo.IsCallExpression(node) {
-				// 获取被调用的表达式
-				if expr, ok := tsmorphgo.GetCallExpressionExpression(node); ok {
-					callText := strings.TrimSpace(expr.GetText())
+			if node.IsCallExpression() {
+				// 使用新的常量，替换魔法数字
+				if target, ok := tsmorphgo.GetCallExpressionExpression(node); ok {
 					totalCalls++
 
 					// 只显示前10个调用以避免输出过多
 					if totalCalls <= 10 {
-						fmt.Printf("方法调用: %s (行 %d)\n", callText, node.GetStartLineNumber())
+						fmt.Printf("方法调用: %s (行 %d)\n", target.GetText(), node.GetStartLineNumber())
 
-						// TODO: IsMemberExpression API not available yet, showing basic call analysis
-						fmt.Printf("  - 调用类型: 方法调用\n")
+						if node.IsMemberAccess() {
+							fmt.Printf("  - 调用类型: 成员方法调用\n")
+						} else {
+							fmt.Printf("  - 调用类型: 普通函数调用\n")
+						}
 
-						// 获取参数
-						argCount := 0
-						node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-							if descendant.Kind == 215 { // Argument
-								argCount++
-							}
-						})
+						// 获取参数（使用新的常量）
+						argCount := len(node.AsCallExpression().Arguments.Nodes)
 						fmt.Printf("  - 参数数量: %d\n", argCount)
 					}
 				}
@@ -107,13 +102,12 @@ func main() {
 	// 示例3: 属性访问表达式处理
 	fmt.Println("\n🔗 示例3: 属性访问表达式分析")
 
-	// 分析所有文件中的属性访问
+	// 使用新的API分析属性访问
 	propertyAccessCount := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// TODO: IsMemberExpression API not available yet
-			// Using node.Kind == 193 as a workaround for MemberExpression
-			if node.Kind == 193 { // MemberExpression
+			// 使用新的API和常量，替换魔法数字
+			if node.Kind == tsmorphgo.KindPropertyAccessExpression {
 				text := strings.TrimSpace(node.GetText())
 				// 只处理简单的属性访问，排除方法调用
 				if !strings.Contains(text, "()") {
@@ -130,40 +124,56 @@ func main() {
 
 	fmt.Printf("总计发现 %d 个属性访问\n", propertyAccessCount)
 
-	// 示例4: 变量声明处理
+	// 示例4: 变量声明分析 - 使用新的API
 	fmt.Println("\n📦 示例4: 变量声明分析")
 
 	variableCount := 0
+	exportedVariables := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if tsmorphgo.IsVariableDeclaration(node) {
+			if node.IsVariable() {
 				variableCount++
 				if variableCount <= 10 { // 只显示前10个
-					fmt.Printf("变量声明 (行 %d)\n", node.GetStartLineNumber())
+					if varName, ok := node.GetName(); ok {
+						fmt.Printf("变量: %s (行 %d)\n", varName, node.GetStartLineNumber())
+						fmt.Printf("  - 类型: %s\n", node.GetType())
+						fmt.Printf("  - 是否导出: %v\n", node.IsExported())
+						fmt.Printf("  - 声明方式: ", "")
+						if node.IsConst() {
+							fmt.Printf("const\n")
+						} else if node.IsLet() {
+							fmt.Printf("let\n")
+						} else {
+							fmt.Printf("var\n")
+						}
+					}
+				}
+				if node.IsExported() {
+					exportedVariables++
 				}
 			}
 		})
 	}
 
-	fmt.Printf("总计发现 %d 个变量声明\n", variableCount)
+	fmt.Printf("总计发现 %d 个变量声明，其中 %d 个导出变量\n", variableCount, exportedVariables)
 
-	// 示例5: 类型声明处理
+	// 示例5: 类型声明分析 - 使用新的常量
 	fmt.Println("\n🏷️ 示例5: 类型声明分析")
 
 	interfaceCount := 0
 	typeAliasCount := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if node.Kind == 257 { // InterfaceDeclaration
+			// 使用新的常量，替换魔法数字
+			if node.Kind == tsmorphgo.KindInterfaceDeclaration {
 				interfaceCount++
 				if interfaceCount <= 5 { // 只显示前5个
-					text := strings.TrimSpace(node.GetText())
-					if len(text) > 50 {
-						text = text[:50] + "..."
+					if ifaceName, ok := node.GetName(); ok {
+						fmt.Printf("接口 %d: %s (行 %d, 是否导出: %v)\n",
+							interfaceCount, ifaceName, node.GetStartLineNumber(), node.IsExported())
 					}
-					fmt.Printf("接口声明 %d: %s (行 %d)\n", interfaceCount, text, node.GetStartLineNumber())
 				}
-			} else if node.Kind == 258 { // TypeAliasDeclaration
+			} else if node.Kind == tsmorphgo.KindTypeAliasDeclaration {
 				typeAliasCount++
 				if typeAliasCount <= 5 { // 只显示前5个
 					text := strings.TrimSpace(node.GetText())
@@ -184,7 +194,7 @@ func main() {
 	conditionalCount := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if node.Kind == 268 { // ConditionalExpression
+			if node.Kind == tsmorphgo.KindConditionalExpression {
 				conditionalCount++
 				if conditionalCount <= 5 { // 只显示前5个
 					text := strings.TrimSpace(node.GetText())

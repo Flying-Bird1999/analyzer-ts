@@ -262,7 +262,7 @@ func TestRealProjectErrorHandling(t *testing.T) {
 	sourceFile.ForEachDescendant(func(node Node) {
 		if IsIdentifier(node) && node.GetText() == "errorTestVar" {
 			parent := node.GetParent()
-			if parent != nil && parent.Kind != 164 {
+			if parent != nil && parent.Kind != KindVariableDeclaration {
 				nodeCopy := node
 				targetNode = &nodeCopy
 			}
@@ -378,7 +378,7 @@ func TestRealProjectBatchProcessing(t *testing.T) {
 			for _, target := range targetVars {
 				if nodeText == target {
 					parent := node.GetParent()
-					if parent != nil && parent.Kind != 164 { // 不是变量声明
+					if parent != nil && parent.Kind != KindVariableDeclaration { // 不是变量声明
 						nodes = append(nodes, node)
 					}
 					break
@@ -576,7 +576,7 @@ func TestRealProjectCacheEffect(t *testing.T) {
 			// 选择一些代表性的标识符
 			if nodeText == "cacheTestVar" || nodeText == "mutableVar" || nodeText == "instance" {
 				parent := node.GetParent()
-				if parent != nil && parent.Kind != 164 { // 不是变量声明
+				if parent != nil && parent.Kind != KindVariableDeclaration { // 不是变量声明
 					nodeCopy := node
 					targetNodes = append(targetNodes, struct {
 						name string

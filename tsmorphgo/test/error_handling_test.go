@@ -137,7 +137,7 @@ func TestFallbackStrategies(t *testing.T) {
 	sourceFile.ForEachDescendant(func(node Node) {
 		if IsIdentifier(node) && node.GetText() == "sharedVar" {
 			parent := node.GetParent()
-			if parent != nil && parent.Kind != 164 { // 不是变量声明
+			if parent != nil && parent.Kind != KindVariableDeclaration { // 不是变量声明
 				nodeCopy := node
 				usageNode = &nodeCopy
 			}
@@ -198,7 +198,7 @@ func TestErrorRecovery(t *testing.T) {
 	sourceFile.ForEachDescendant(func(node Node) {
 		if IsIdentifier(node) && node.GetText() == "testVar" {
 			parent := node.GetParent()
-			if parent != nil && parent.Kind != 164 {
+			if parent != nil && parent.Kind != KindVariableDeclaration {
 				nodeCopy := node
 				usageNode = &nodeCopy
 			}
@@ -337,7 +337,7 @@ func BenchmarkErrorHandling(b *testing.B) {
 	sourceFile.ForEachDescendant(func(node Node) {
 		if IsIdentifier(node) && node.GetText() == "testVar" {
 			parent := node.GetParent()
-			if parent != nil && parent.Kind != 164 {
+			if parent != nil && parent.Kind != KindVariableDeclaration {
 				nodeCopy := node
 				usageNode = &nodeCopy
 			}
