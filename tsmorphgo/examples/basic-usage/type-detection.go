@@ -15,9 +15,8 @@ func main() {
 	fmt.Println("🏷️ TSMorphGo 类型检测示例")
 	fmt.Println("=" + repeat("=", 50))
 
-	// 使用真实的demo-react-app项目进行演示
+	// 初始化项目
 	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
-
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
 		RootPath:         realProjectPath,
 		TargetExtensions: []string{".ts", ".tsx"},
@@ -26,216 +25,140 @@ func main() {
 	})
 	defer project.Close()
 
-	// 示例1: 基础类型检测
-	fmt.Println("\n🔍 示例1: 基础类型检测")
-
-	// 获取项目中的所有源文件
-	sourceFiles := project.GetSourceFiles()
-	if len(sourceFiles) == 0 {
-		log.Fatal("未找到任何源文件")
-	}
-
-	fmt.Printf("项目包含 %d 个TypeScript文件:\n", len(sourceFiles))
-
-	// 选择第一个文件进行演示
-	var typesFile *tsmorphgo.SourceFile
-	for _, file := range sourceFiles {
-		if file != nil && strings.HasSuffix(file.GetFilePath(), ".ts") {
-			typesFile = file
-			break
-		}
-	}
-
+	// 我们选择 types.ts 文件作为分析的起点，因为它包含了丰富的类型定义。
+	typesFile := project.GetSourceFile(realProjectPath + "/src/types.ts")
 	if typesFile == nil {
-		log.Fatal("未找到可用的TypeScript文件")
+		log.Fatal("未找到 types.ts 文件")
 	}
-
 	fmt.Printf("分析文件: %s\n", typesFile.GetFilePath())
 
-	// 统计各种节点类型
+	// 示例1: 遍历并统计节点类型
+	// 演示如何获取节点的类型名称(KindName)并进行统计。
+	fmt.Println("\n🔍 示例1: 统计文件中的节点类型")
 	typeStats := make(map[string]int)
 	typesFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		// GetKindName() 获取节点类型的可读名称，如 "InterfaceDeclaration"。
+		// 对应 ts-morph 的 `node.getKindName()`。
 		typeName := node.GetKindName()
 		if typeName != "" {
 			typeStats[typeName]++
 		}
 	})
 
-	fmt.Println("文件中的节点类型统计:")
-	for _, typeName := range []string{"InterfaceDeclaration", "EnumDeclaration", "TypeAliasDeclaration", "PropertySignature"} {
+	fmt.Println("文件中的主要节点类型统计:")
+	for _, typeName := range []string{"InterfaceDeclaration", "TypeAliasDeclaration", "PropertySignature", "Identifier"} {
 		count := typeStats[typeName]
 		if count > 0 {
 			fmt.Printf("  - %s: %d 个\n", typeName, count)
 		}
 	}
 
-	// 示例2: 接口检测
+	// 示例2: 接口检测与分析 (InterfaceDeclaration)
+	// 演示如何找到所有的接口声明，并分析其内部结构。
 	fmt.Println("\n🔧 示例2: 接口检测与分析")
-
 	typesFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		// IsInterfaceDeclaration 判断节点是否为接口声明。
+		// 对应 ts-morph 的 `Node.isInterfaceDeclaration(node)`。
 		if tsmorphgo.IsInterfaceDeclaration(node) {
-			fmt.Printf("接口: %s (行 %d)\n",
-				strings.TrimSpace(node.GetText()[:30])+"...",
-				node.GetStartLineNumber())
+			// GetFirstChild 获取第一个子节点，这里用它来获取接口的名称。
+			if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
+				fmt.Printf("\n找到接口: %s (行 %d)\n", nameNode.GetText(), node.GetStartLineNumber())
+			}
 
-			// 统计接口属性数量
+			// 遍历接口内部，统计属性和方法的数量
 			propertyCount := 0
 			methodCount := 0
 			node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-				switch descendant.Kind {
-				case 298: // PropertySignature
+				// KindPropertySignature 和 KindMethodSignature 是属性和方法签名的类型枚举。
+				if descendant.Kind == tsmorphgo.KindPropertySignature {
 					propertyCount++
-				case 299: // MethodSignature
+				} else if descendant.Kind == tsmorphgo.KindMethodSignature {
 					methodCount++
 				}
 			})
 
 			fmt.Printf("  - 属性数量: %d\n", propertyCount)
 			fmt.Printf("  - 方法数量: %d\n", methodCount)
-
-			// 获取接口名称
-			if nameNode, ok := tsmorphgo.GetFirstChild(node, func(child tsmorphgo.Node) bool {
-				return tsmorphgo.IsIdentifier(child)
-			}); ok {
-				fmt.Printf("  - 接口名: %s\n", strings.TrimSpace(nameNode.GetText()))
-			}
 		}
 	})
 
-	// 示例3: 枚举检测
-	fmt.Println("\n🔤 示例3: 枚举检测")
-
+	// 示例3: 类型别名检测 (TypeAliasDeclaration)
+	// 演示如何找到 `type` 关键字定义的类型别名。
+	fmt.Println("\n📜 示例3: 类型别名检测")
 	typesFile.ForEachDescendant(func(node tsmorphgo.Node) {
-		if tsmorphgo.IsEnumDeclaration(node) {
-			fmt.Printf("枚举: %s (行 %d)\n",
-				strings.TrimSpace(node.GetText()[:50])+"...",
-				node.GetStartLineNumber())
-
-			// 获取枚举成员
-			memberCount := 0
-			node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-				if descendant.Kind == 258 { // EnumMember
-					memberCount++
-					if memberCount <= 5 { // 只显示前5个成员
-						fmt.Printf("  - 成员: %s\n", strings.TrimSpace(descendant.GetText()))
-					}
+		// IsTypeAliasDeclaration 判断节点是否为类型别名声明。
+		// 对应 ts-morph 的 `Node.isTypeAliasDeclaration(node)`。
+		if tsmorphgo.IsTypeAliasDeclaration(node) {
+			if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
+				fmt.Printf("\n找到类型别名: %s (行 %d)\n", nameNode.GetText(), node.GetStartLineNumber())
+				fullText := strings.TrimSpace(node.GetText())
+				if len(fullText) > 80 {
+					fullText = fullText[:80] + "..."
 				}
-			})
-			if memberCount > 5 {
-				fmt.Printf("  - ... 还有 %d 个成员\n", memberCount-5)
+				fmt.Printf("  - 完整定义: %s\n", fullText)
 			}
 		}
 	})
 
-	// 示例4: 函数和方法检测
+	// 示例4: 函数和方法检测 (FunctionDeclaration, MethodDeclaration)
 	fmt.Println("\n⚡ 示例4: 函数和方法检测")
-
-	serviceFile := project.GetSourceFile("/src/services/userService.ts")
+	serviceFile := project.GetSourceFile(realProjectPath + "/src/services/api.ts")
 	if serviceFile != nil {
-		var functions, methods, asyncFunctions []tsmorphgo.Node
-
+		fmt.Printf("\n分析文件: %s\n", serviceFile.GetFilePath())
+		// IsMethodDeclaration 判断节点是否为类的方法声明。
 		serviceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-			switch {
-			case tsmorphgo.IsFunctionDeclaration(node):
-				nodeCopy := node
-				functions = append(functions, nodeCopy)
-			case tsmorphgo.IsMethodDeclaration(node):
-				nodeCopy := node
-				methods = append(methods, nodeCopy)
-			}
+			if tsmorphgo.IsMethodDeclaration(node) {
+				if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
+					fmt.Printf("找到方法: %s (行 %d)\n", nameNode.GetText(), node.GetStartLineNumber())
 
-			// 检查异步函数
-			node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-				if descendant.Kind == 164 { // AsyncKeyword
-					if len(asyncFunctions) == 0 || asyncFunctions[len(asyncFunctions)-1].GetStartLineNumber() != node.GetStartLineNumber() {
-						nodeCopy := node
-						asyncFunctions = append(asyncFunctions, nodeCopy)
+					// 检查方法是否为异步 (async)
+					isAsync := false
+					if _, ok := tsmorphgo.GetFirstChild(node, func(n tsmorphgo.Node) bool { return n.Kind == tsmorphgo.KindAsyncKeyword }); ok {
+						isAsync = true
 					}
+					fmt.Printf("  - 是否异步: %v\n", isAsync)
 				}
-			})
+			}
 		})
-
-		fmt.Printf("发现 %d 个函数:\n", len(functions))
-		for i, fn := range functions {
-			if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(fn); ok {
-				fmt.Printf("  %d. %s (行 %d)\n", i+1, strings.TrimSpace(nameNode.GetText()), fn.GetStartLineNumber())
-			}
-		}
-
-		fmt.Printf("\n发现 %d 个方法:\n", len(methods))
-		for i, method := range methods {
-			if nameNode, ok := tsmorphgo.GetFirstChild(method, func(child tsmorphgo.Node) bool {
-				return tsmorphgo.IsIdentifier(child)
-			}); ok {
-				fmt.Printf("  %d. %s() (行 %d)\n", i+1, strings.TrimSpace(nameNode.GetText()), method.GetStartLineNumber())
-			}
-		}
-
-		fmt.Printf("\n发现 %d 个异步函数/方法:\n", len(asyncFunctions))
-		for i, asyncFn := range asyncFunctions {
-			text := strings.TrimSpace(asyncFn.GetText()[:60]) + "..."
-			fmt.Printf("  %d. async (行 %d): %s\n", i+1, asyncFn.GetStartLineNumber(), text)
-		}
 	}
 
-	// 示例5: 类型导入和导出检测
+	// 示例5: 导入和导出检测 (ImportDeclaration, ExportKeyword)
 	fmt.Println("\n📦 示例5: 导入导出检测")
-
-	allFiles := project.GetSourceFiles()
 	totalImports, totalExports := 0, 0
-
-	for _, file := range allFiles {
+	for _, file := range project.GetSourceFiles() {
 		fileImports, fileExports := 0, 0
-
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			switch {
-			case node.Kind == 266: // ImportDeclaration
+			// KindImportDeclaration 是导入声明的类型枚举。
+			if node.Kind == tsmorphgo.KindImportDeclaration {
 				fileImports++
-			case node.Kind == 148: // ExportKeyword
+			}
+			// KindExportKeyword 是 `export` 关键字的类型枚举。
+			if node.Kind == tsmorphgo.KindExportKeyword {
 				fileExports++
 			}
 		})
 
 		if fileImports > 0 || fileExports > 0 {
-			fmt.Printf("文件 %s: %d 个导入, %d 个导出\n",
-				file.GetFilePath(), fileImports, fileExports)
+			totalImports += fileImports
+			totalExports += fileExports
 		}
-
-		totalImports += fileImports
-		totalExports += fileExports
 	}
+	fmt.Printf("项目总计: %d 个导入声明, %d 个导出关键字\n", totalImports, totalExports)
 
-	fmt.Printf("\n总计: %d 个导入, %d 个导出\n", totalImports, totalExports)
-
-	// 示例6: 复杂类型分析
-	fmt.Println("\n🎯 示例6: 复杂类型分析")
-
-	helperFile := project.GetSourceFile("/src/utils/helpers.ts")
-	if helperFile != nil {
-		fmt.Println("分析高级类型工具...")
-
-		helperFile.ForEachDescendant(func(node tsmorphgo.Node) {
-			// 查找类型别名
-			if tsmorphgo.IsTypeAliasDeclaration(node) {
-				text := strings.TrimSpace(node.GetText())
-				if strings.Contains(text, "Optional<") || strings.Contains(text, "RequiredKeys<") {
-					fmt.Printf("高级类型工具: %s\n", text[:80]+"...")
-				}
-			}
-
-			// 查找函数重载
+	// 示例6: 类型守卫检测 (Type Guard)
+	// 类型守卫是一种特殊的函数，它会返回一个 `parameterName is Type` 形式的布尔值。
+	fmt.Println("\n🛡️ 示例6: 类型守卫分析")
+	utilsFile := project.GetSourceFile(realProjectPath + "/src/utils.ts")
+	if utilsFile != nil {
+		fmt.Printf("\n分析文件: %s\n", utilsFile.GetFilePath())
+		utilsFile.ForEachDescendant(func(node tsmorphgo.Node) {
 			if tsmorphgo.IsFunctionDeclaration(node) {
-				text := strings.TrimSpace(node.GetText())
-				if strings.Contains(text, "export function formatUserInfo") {
-					fmt.Printf("函数重载示例: %s\n", text[:80]+"...")
-				}
-			}
-
-			// 查找类型守卫
-			if tsmorphgo.IsFunctionDeclaration(node) {
-				text := strings.TrimSpace(node.GetText())
-				if strings.Contains(text, "is User") {
-					fmt.Printf("类型守卫函数: %s\n", text[:80]+"...")
+				// 这是一个简化的检查，通过检查函数文本中是否包含 `is User` 来判断。
+				// 在实际应用中，需要更精确地分析函数的返回类型节点。
+				if strings.Contains(node.GetText(), "is User") {
+					if name, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
+						fmt.Printf("可能是一个类型守卫函数: %s\n", name.GetText())
+					}
 				}
 			}
 		})

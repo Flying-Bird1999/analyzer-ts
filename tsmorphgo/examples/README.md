@@ -58,35 +58,7 @@ Shell脚本提供了丰富的功能、美观的输出和强大的错误处理能
 ./run-examples.sh clean       # 清理临时文件
 ```
 
-### 🔧 方法2：使用Makefile（备选）
-
-如果您更喜欢传统的构建系统，也可以使用改进的Makefile：
-
-```bash
-# 📋 查看所有可用命令
-make help
-
-# 🚀 运行所有示例
-make all
-
-# 📦 分类运行示例
-make basic      # 运行基础示例
-make advanced   # 运行高级示例
-
-# 🎯 运行单个示例
-make project-management
-make node-navigation
-make type-detection
-make reference-finding
-make specialized-apis
-
-# 🛠️ 开发工具
-make deps        # 检查依赖
-make clean       # 清理临时文件
-make test        # 运行测试
-```
-
-### 🎬 方法3：直接运行（不推荐）
+### 🎬 方法2：直接运行（不推荐）
 
 如果只想快速运行特定示例，也可以直接使用go命令：
 
@@ -105,16 +77,19 @@ go run -tags reference_finding reference-finding.go
 ### 🏗️ 基础示例 (basic-usage/)
 
 #### 1. 项目管理示例 (`project-management.go`)
+
 - **功能**: 展示项目创建、文件分析、动态添加文件
 - **API**: `tsmorphgo.NewProject()`, `project.GetSourceFiles()`, `project.CreateSourceFile()`
 - **输出**: 统计项目文件数量、分类、创建动态文件
 
 #### 2. 节点导航示例 (`node-navigation.go`)
+
 - **功能**: 展示AST节点遍历、父子关系查找、React组件结构分析
 - **API**: `node.ForEachDescendant()`, `node.GetParent()`, `node.GetAncestors()`
 - **输出**: 遍历函数声明、查找特定标识符、分析组件结构
 
 #### 3. 类型检测示例 (`type-detection.go`)
+
 - **功能**: 展示TypeScript类型识别、接口分析、导入导出统计
 - **API**: `node.Kind`, `node.IsInterfaceDeclaration()`, `node.IsEnumDeclaration()`
 - **输出**: 类型统计、接口分析、导入导出信息
@@ -122,11 +97,13 @@ go run -tags reference_finding reference-finding.go
 ### ⚡ 高级示例 (advanced-usage/)
 
 #### 1. 引用查找示例 (`reference-finding.go`)
+
 - **功能**: 展示符号引用查找、性能缓存优化、跳转到定义
 - **API**: `tsmorphgo.FindReferences()`, `tsmorphgo.FindReferencesWithCache()`, `tsmorphgo.GotoDefinition()`
 - **输出**: 引用列表、缓存性能对比、定义跳转结果
 
 #### 2. 专用API示例 (`specialized-apis.go`)
+
 - **功能**: 展示特定语法结构的深度分析、函数声明、调用表达式
 - **API**: `tsmorphgo.IsFunctionDeclaration()`, `tsmorphgo.IsCallExpression()`, `node.Kind`
 - **输出**: 函数分析、方法调用统计、属性访问统计
@@ -134,6 +111,7 @@ go run -tags reference_finding reference-finding.go
 ## 💻 运行结果示例
 
 ### 基础示例输出
+
 ```
 🏗️ TSMorphGo 项目管理示例
 ==================================================
@@ -155,6 +133,7 @@ go run -tags reference_finding reference-finding.go
 ```
 
 ### 高级示例输出
+
 ```
 🔗 TSMorphGo 引用查找示例
 ==================================================
@@ -189,38 +168,43 @@ go run -tags reference_finding reference-finding.go
 ## 💡 使用建议
 
 ### 🔰 对于新手用户
+
 1. **从基础开始**: 先运行 `./run-examples.sh basic` 了解基本概念
 2. **逐个学习**: 使用单个示例命令深入学习每个API
 3. **查看输出**: 仔细分析每个示例的输出，理解TSMorphGo的功能
 4. **环境检查**: 使用 `./run-examples.sh check` 确保环境正确配置
 
 ### 🚀 对于开发者
+
 1. **性能测试**: 观察引用查找的缓存效果和性能提升
 2. **真实项目**: 所有示例都基于真实React项目，可直接应用到实际工作
 3. **扩展功能**: 参考示例代码，开发自己的分析工具
 4. **集成CI/CD**: 使用脚本功能进行自动化测试和部署
 
 ### 🏢 对于团队协作
+
 1. **统一工具**: 推荐团队成员使用相同的构建工具
 2. **文档同步**: 参考本文档和代码注释，保持知识同步
 3. **版本兼容**: 确保Go版本和依赖库版本一致
 
 ## 📊 示例统计
 
-| 类别 | 示例数量 | 主要功能 |
-|------|----------|----------|
-| **基础示例** | 3个 | 项目管理、节点导航、类型检测 |
-| **高级示例** | 2个 | 引用查找、专用API |
-| **总计** | 5个 | 覻盖TSMorphGo主要功能 |
+| 类别               | 示例数量 | 主要功能                     |
+| ------------------ | -------- | ---------------------------- |
+| **基础示例** | 3个      | 项目管理、节点导航、类型检测 |
+| **高级示例** | 2个      | 引用查找、专用API            |
+| **总计**     | 5个      | 覻盖TSMorphGo主要功能        |
 
 ## 🔧 环境要求
 
 ### 必需
+
 - **Go 1.19+**: 运行环境
 - **Git**: 版本控制（可选）
 - **Terminal**: 命令行终端
 
 ### 项目文件
+
 - `demo-react-app/`: 真实React项目（14个TypeScript文件）
 - Go模块依赖：自动通过 `go mod` 管理
 

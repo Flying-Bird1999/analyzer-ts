@@ -100,6 +100,7 @@ const (
 	KindMinusToken               SyntaxKind = ast.KindMinusToken               // - 运算符
 	KindAsteriskToken            SyntaxKind = ast.KindAsteriskToken            // * 运算符
 	KindSlashToken               SyntaxKind = ast.KindSlashToken               // / 运算符
+	KindEqualsToken              SyntaxKind = ast.KindEqualsToken              // = 运算符
 	KindEqualsEqualsEqualsToken  SyntaxKind = ast.KindEqualsEqualsEqualsToken  // === 运算符
 	KindExclamationEqualsEqualsToken SyntaxKind = ast.KindExclamationEqualsEqualsToken // !== 运算符
 )
@@ -117,6 +118,15 @@ const (
 	KindImportClause             SyntaxKind = ast.KindImportClause             // 导入子句
 	KindImportSpecifier          SyntaxKind = ast.KindImportSpecifier          // 导入说明符
 	KindExportSpecifier          SyntaxKind = ast.KindExportSpecifier          // 导出说明符
+)
+
+// JSX 相关 (JSX Related)
+const (
+	KindJsxElement               SyntaxKind = ast.KindJsxElement               // JSX 元素
+	KindJsxSelfClosingElement    SyntaxKind = ast.KindJsxSelfClosingElement    // JSX 自闭合元素
+	KindJsxOpeningElement        SyntaxKind = ast.KindJsxOpeningElement        // JSX 开始元素
+	KindJsxClosingElement        SyntaxKind = ast.KindJsxClosingElement        // JSX 结束元素
+	KindJsxAttribute             SyntaxKind = ast.KindJsxAttribute             // JSX 属性
 )
 
 // 其他 (Other)

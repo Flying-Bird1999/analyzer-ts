@@ -13,8 +13,6 @@ require (
 	github.com/tidwall/jsonc v0.3.2
 )
 
-// replace github.com/Zzzen/typescript-go => ./typescript-go
-
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
