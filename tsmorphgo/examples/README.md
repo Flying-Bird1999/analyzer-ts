@@ -1,180 +1,260 @@
-# TSMorphGo API 验证示例
+# TSMorphGo Examples
 
-这个目录提供了 TSMorphGo 库的完整API验证示例，采用现代化的模块化架构设计。
-
-## 🎯 项目目标
-
-- **API验证**: 在真实React+TypeScript项目中验证TSMorphGo的API准确性
-- **性能测试**: 评估API在大型项目中的表现和响应时间
-- **功能覆盖**: 确保所有核心API功能正常工作
-- **文档完善**: 提供完整的API使用指南和最佳实践
-
-## 🏗️ 新架构概览
-
-### ✅ 6大核心API类别
-
-1. **01-project-api** - 项目管理API
-   - 项目创建和配置
-   - 源文件发现和管理
-   - 项目级统计信息
-
-2. **02-node-api** - 节点操作API
-   - AST节点导航
-   - 节点属性访问
-   - 遍历和搜索
-
-3. **03-symbol-api** - 符号系统API
-   - 符号获取和分类
-   - 符号关系分析
-   - 导出状态检查
-
-4. **04-type-api** - 类型检查API
-   - 类型节点识别
-   - 类型转换操作
-   - 类型系统验证
-
-5. **05-lsp-api** - LSP服务API
-   - 语言服务集成
-   - QuickInfo功能
-   - 诊断信息获取
-
-6. **06-accuracy-validation** - 准确性验证
-   - API结果对比
-   - 准确率统计
-   - 性能基准测试
-
-### 🔬 07-validation-suite - 验证套件
-
-完整的数据驱动验证框架，包含：
-- 自动化测试执行
-- JSON报告生成
-- 性能指标收集
-- 错误分析和建议
-
-## 📊 验证结果
-
-基于真实React项目的验证结果：
-
-| API类别 | 准确率 | 处理项目数 | 平均响应时间 |
-|---------|--------|-----------|------------|
-| Project API | 100.0% | 14个源文件 | <1ms |
-| Node API | 99.8% | 22,524个节点 | <10ms |
-| Symbol API | 98.6% | 22,508个符号 | <54ms |
-| Type API | 99.8% | 22,524个类型节点 | <6ms |
-| LSP API | 100.0% | 完整LSP服务 | <131µs |
+🎯 **基于真实React项目的TSMorphGo使用示例集合**，展示了如何使用TSMorphGo进行TypeScript代码分析。所有示例都基于真实的前端项目，确保实用性和准确性。
 
 ## 📁 目录结构
 
 ```
 examples/
-├── README.md                           # 项目说明（本文档）
-├── api-examples-new/                   # 新架构API示例
-│   ├── 01-project-api/                 # 项目管理API
-│   ├── 02-node-api/                     # 节点操作API
-│   ├── 03-symbol-api/                   # 符号系统API
-│   ├── 04-type-api/                     # 类型检查API
-│   ├── 05-lsp-api/                      # LSP服务API
-│   ├── 06-accuracy-validation/          # 准确性验证
-│   ├── 07-validation-suite/            # 验证套件
-│   └── API_DOCUMENTATION.md             # 完整API文档
-├── demo-react-app/                       # 真实React+TS项目
-│   ├── src/                            # 标准React项目结构
-│   │   ├── components/                 # React组件
-│   │   ├── hooks/                       # 自定义Hooks
-│   │   ├── services/                    # API服务
-│   │   ├── store/                       # 状态管理
-│   │   ├── types/                       # 类型定义
-│   │   └── forms/                       # 表单组件
-│   └── package.json
-└── validation-results/                  # 验证结果输出
+├── README.md                      # 📖 使用说明（本文档）
+├── run-examples.sh               # 🚀 推荐的Shell脚本构建工具
+├── Makefile                       # 🔧 备选的Makefile构建工具
+├── BUILD_SYSTEM_GUIDE.md          # 📚 构建系统对比指南
+├── demo-react-app/                # 📁 真实React项目（用作分析素材）
+│   ├── src/                       # 源代码目录
+│   │   ├── components/            # React组件
+│   │   ├── hooks/                 # 自定义Hook
+│   │   ├── types/                 # 类型定义
+│   │   ├── services/              # 服务模块
+│   │   └── forms/                 # 表单组件
+│   └── public/                    # 静态资源
+├── basic-usage/                   # 📦 基础API使用示例
+│   ├── project-management.go      # 🏗️ 项目管理示例
+│   ├── node-navigation.go         # 🔍 节点导航示例
+│   └── type-detection.go          # 🏷️ 类型检测示例
+└── advanced-usage/                 # ⚡ 高级API使用示例
+    ├── reference-finding.go       # 🔗 引用查找示例
+    └── specialized-apis.go         # 🛠️ 专用API示例
 ```
 
 ## 🚀 快速开始
 
-### 1. 运行单个API示例
+### 🎯 方法1：使用Shell脚本（推荐）
+
+Shell脚本提供了丰富的功能、美观的输出和强大的错误处理能力。
 
 ```bash
-# 项目管理API
-cd api-examples-new/01-project-api
-go run project-creation.go ../../demo-react-app
+# 📋 查看所有可用命令
+./run-examples.sh help
 
-# 节点操作API
-cd ../02-node-api
-go run node-navigation.go ../../demo-react-app
-go run node-properties.go ../../demo-react-app
+# 🚀 运行所有示例
+./run-examples.sh all
 
-# 符号系统API
-cd ../03-symbol-api
-go run symbol-basics.go ../../demo-react-app
-go run symbol-types.go ../../demo-react-app
+# 📦 分类运行示例
+./run-examples.sh basic      # 运行基础示例
+./run-examples.sh advanced   # 运行高级示例
+
+# 🎯 运行单个示例
+./run-examples.sh project-management
+./run-examples.sh node-navigation
+./run-examples.sh type-detection
+./run-examples.sh reference-finding
+./run-examples.sh specialized-apis
+
+# 🛠️ 开发工具
+./run-examples.sh check       # 检查环境配置
+./run-examples.sh install     # 安装项目依赖
+./run-examples.sh report      # 生成项目报告
+./run-examples.sh clean       # 清理临时文件
 ```
 
-### 2. 运行验证套件（推荐）
+### 🔧 方法2：使用Makefile（备选）
+
+如果您更喜欢传统的构建系统，也可以使用改进的Makefile：
 
 ```bash
-# 运行完整的API验证套件
-cd api-examples-new/07-validation-suite
-go run -tags validation-suite run-all.go validation-utils.go json-report.go ../../demo-react-app
+# 📋 查看所有可用命令
+make help
+
+# 🚀 运行所有示例
+make all
+
+# 📦 分类运行示例
+make basic      # 运行基础示例
+make advanced   # 运行高级示例
+
+# 🎯 运行单个示例
+make project-management
+make node-navigation
+make type-detection
+make reference-finding
+make specialized-apis
+
+# 🛠️ 开发工具
+make deps        # 检查依赖
+make clean       # 清理临时文件
+make test        # 运行测试
 ```
 
-### 3. 查看验证结果
+### 🎬 方法3：直接运行（不推荐）
+
+如果只想快速运行特定示例，也可以直接使用go命令：
 
 ```bash
-# 查看详细验证报告
-cat ../validation-results/validation-report-*.json
+# 运行项目管理示例
+cd basic-usage
+go run -tags project_management project-management.go
+
+# 运行引用查找示例
+cd advanced-usage
+go run -tags reference_finding reference-finding.go
 ```
 
-## 📋 API使用示例
+## 📋 示例详细介绍
 
-### 项目管理示例
-```go
-config := tsmorphgo.ProjectConfig{
-    RootPath:         "./demo-react-app",
-    IgnorePatterns:   []string{"node_modules", "dist"},
-    TargetExtensions: []string{".ts", ".tsx"},
-}
-project := tsmorphgo.NewProject(config)
-sourceFiles := project.GetSourceFiles()
-fmt.Printf("发现 %d 个源文件\n", len(sourceFiles))
+### 🏗️ 基础示例 (basic-usage/)
+
+#### 1. 项目管理示例 (`project-management.go`)
+- **功能**: 展示项目创建、文件分析、动态添加文件
+- **API**: `tsmorphgo.NewProject()`, `project.GetSourceFiles()`, `project.CreateSourceFile()`
+- **输出**: 统计项目文件数量、分类、创建动态文件
+
+#### 2. 节点导航示例 (`node-navigation.go`)
+- **功能**: 展示AST节点遍历、父子关系查找、React组件结构分析
+- **API**: `node.ForEachDescendant()`, `node.GetParent()`, `node.GetAncestors()`
+- **输出**: 遍历函数声明、查找特定标识符、分析组件结构
+
+#### 3. 类型检测示例 (`type-detection.go`)
+- **功能**: 展示TypeScript类型识别、接口分析、导入导出统计
+- **API**: `node.Kind`, `node.IsInterfaceDeclaration()`, `node.IsEnumDeclaration()`
+- **输出**: 类型统计、接口分析、导入导出信息
+
+### ⚡ 高级示例 (advanced-usage/)
+
+#### 1. 引用查找示例 (`reference-finding.go`)
+- **功能**: 展示符号引用查找、性能缓存优化、跳转到定义
+- **API**: `tsmorphgo.FindReferences()`, `tsmorphgo.FindReferencesWithCache()`, `tsmorphgo.GotoDefinition()`
+- **输出**: 引用列表、缓存性能对比、定义跳转结果
+
+#### 2. 专用API示例 (`specialized-apis.go`)
+- **功能**: 展示特定语法结构的深度分析、函数声明、调用表达式
+- **API**: `tsmorphgo.IsFunctionDeclaration()`, `tsmorphgo.IsCallExpression()`, `node.Kind`
+- **输出**: 函数分析、方法调用统计、属性访问统计
+
+## 💻 运行结果示例
+
+### 基础示例输出
+```
+🏗️ TSMorphGo 项目管理示例
+==================================================
+
+📁 示例1: 基于文件系统创建项目
+真实React项目包含 14 个TypeScript文件:
+  - App.tsx
+  - index.ts
+  - types.ts
+  ...
+
+项目文件分类:
+  - Components: 3 个
+  - Utils/Services: 2 个
+  - Types: 3 个
+  - Other: 6 个
+
+✅ 项目管理示例完成!
 ```
 
-### 符号分析示例
-```go
-for _, sf := range sourceFiles {
-    sf.ForEachDescendant(func(node tsmorphgo.Node) {
-        if symbol, ok := tsmorphgo.GetSymbol(node); ok {
-            fmt.Printf("符号: %s (类型: %d)\n", symbol.GetName(), symbol.GetFlags())
-        }
-    })
-}
+### 高级示例输出
+```
+🔗 TSMorphGo 引用查找示例
+==================================================
+
+🔍 示例1: 基础引用查找
+找到 16 个APP_CONFIG引用:
+  1. /src/config/app.ts:3 - APP_CONFIG = {...
+  2. /src/services/api.ts:6 - private config = APP_CONFIG;...
+
+⚡ 示例2: 带缓存的引用查找性能对比
+第一次查找:
+  - 耗时: 1.302ms
+  - 来源: LSP服务
+  - 引用数: 16
+第二次查找:
+  - 耗时: 137µs
+  - 来源: 缓存
+  - 引用数: 16
+  - 性能提升: 9.5x 倍
+
+✅ 引用查找示例完成!
 ```
 
-## 🔧 技术栈
+## 🛠️ 技术栈
 
 - **TSMorphGo**: 核心 TypeScript 分析库
-- **typescript-go**: AST 解析和遍历
-- **标准库**: JSON, 时间处理, 文件操作
-- **构建标签**: Go build tags for conditional compilation
+- **typescript-go**: AST 解析和遍历引擎
+- **Go 1.19+**: 编程语言和构建工具
+- **Go Build Tags**: 条件编译，支持不同示例
+- **Shell Script**: 现代化构建和自动化工具
 
 ## 💡 使用建议
 
-1. **新手用户**: 从 `01-project-api` 开始，了解基本概念
-2. **深入分析**: 查看 `03-symbol-api` 和 `04-type-api`
-3. **生产验证**: 使用 `07-validation-suite` 进行完整验证
-4. **性能优化**: 参考 `validation-results/` 中的性能指标
+### 🔰 对于新手用户
+1. **从基础开始**: 先运行 `./run-examples.sh basic` 了解基本概念
+2. **逐个学习**: 使用单个示例命令深入学习每个API
+3. **查看输出**: 仔细分析每个示例的输出，理解TSMorphGo的功能
+4. **环境检查**: 使用 `./run-examples.sh check` 确保环境正确配置
+
+### 🚀 对于开发者
+1. **性能测试**: 观察引用查找的缓存效果和性能提升
+2. **真实项目**: 所有示例都基于真实React项目，可直接应用到实际工作
+3. **扩展功能**: 参考示例代码，开发自己的分析工具
+4. **集成CI/CD**: 使用脚本功能进行自动化测试和部署
+
+### 🏢 对于团队协作
+1. **统一工具**: 推荐团队成员使用相同的构建工具
+2. **文档同步**: 参考本文档和代码注释，保持知识同步
+3. **版本兼容**: 确保Go版本和依赖库版本一致
+
+## 📊 示例统计
+
+| 类别 | 示例数量 | 主要功能 |
+|------|----------|----------|
+| **基础示例** | 3个 | 项目管理、节点导航、类型检测 |
+| **高级示例** | 2个 | 引用查找、专用API |
+| **总计** | 5个 | 覻盖TSMorphGo主要功能 |
+
+## 🔧 环境要求
+
+### 必需
+- **Go 1.19+**: 运行环境
+- **Git**: 版本控制（可选）
+- **Terminal**: 命令行终端
+
+### 项目文件
+- `demo-react-app/`: 真实React项目（14个TypeScript文件）
+- Go模块依赖：自动通过 `go mod` 管理
 
 ## 📚 扩展资源
 
-- [完整API文档](api-examples-new/API_DOCUMENTATION.md)
-- [验证套件说明](api-examples-new/07-validation-suite/README.md)
-- [准确性验证指南](api-examples-new/06-accuracy-validation/README.md)
+- **构建系统指南**: [BUILD_SYSTEM_GUIDE.md](BUILD_SYSTEM_GUIDE.md) - Makefile vs Shell Script 对比
+- **TSMorphGo文档**: 项目根目录的API文档
+- **TypeScript规范**: TypeScript官方文档
 
 ## 🐛 问题反馈
 
-遇到问题请访问：
-- [GitHub Issues](https://github.com/Flying-Bird1999/analyzer-ts/issues)
-- 项目路径: `/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo`
+遇到问题时，请按以下步骤排查：
+
+1. **检查环境**: 运行 `./run-examples.sh check` 检查配置
+2. **查看日志**: 仔细阅读错误信息和输出
+3. **检查文件**: 确认示例文件存在且可读
+4. **提交Issue**: [GitHub Issues](https://github.com/Flying-Bird1999/analyzer-ts/issues)
+
+## 🎉 开始使用
+
+```bash
+# 1. 检查环境
+./run-examples.sh check
+
+# 2. 运行基础示例
+./run-examples.sh basic
+
+# 3. 运行高级示例
+./run-examples.sh advanced
+
+# 4. 查看项目报告
+./run-examples.sh report
+```
 
 ---
 
-✨ 使用 TSMorphGo 构建强大的TypeScript代码分析工具！
+✨ **使用 TSMorphGo 构建强大的TypeScript代码分析工具！** 🚀
