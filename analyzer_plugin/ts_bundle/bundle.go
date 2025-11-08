@@ -31,7 +31,7 @@ type TypeBundler struct {
 	// 预编译的正则表达式缓存，避免重复编译
 	regexCache map[string]*regexp.Regexp
 	// 预编译的声明正则表达式模式和替换字符串
-	declarationPatterns []string
+	declarationPatterns     []string
 	declarationReplacements []string
 }
 
@@ -75,7 +75,7 @@ func NewTypeBundler() *TypeBundler {
 			"export enum %s",
 		},
 	}
-	
+
 	return tb
 }
 
@@ -86,7 +86,7 @@ func (b *TypeBundler) getCachedRegex(pattern string) *regexp.Regexp {
 	if re, exists := b.regexCache[pattern]; exists {
 		return re
 	}
-	
+
 	// 编译正则表达式并存入缓存
 	re := regexp.MustCompile(pattern)
 	b.regexCache[pattern] = re
@@ -364,7 +364,7 @@ func (b *TypeBundler) isTypeDeclaration(text string, start, end int, typeName st
 
 	// 清理空白字符，便于匹配
 	beforeMatch = strings.TrimSpace(beforeMatch)
-	
+
 	// 检查是否包含声明关键字的更精确模式
 	declarationPatterns := []string{
 		`(^|\s)interface\s+%s(\s|{)`,
