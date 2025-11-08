@@ -245,11 +245,9 @@ func projectConfigExample() {
 		config = tsmorphgo.DefaultReferencesConfig()
 	}
 
-	// 创建项目
-	project := tsmorphgo.NewProject(".", &tsmorphgo.ProjectOptions{})
-
-	// 添加测试文件
-	sourceFile := project.AddSourceFile("config_example.ts", `
+	// 创建项目 - 使用内存源码方式
+	sources := map[string]string{
+		"/config_example.ts": `
 		const configVar = "config test";
 
 	 function configFunction() {
@@ -259,7 +257,16 @@ func projectConfigExample() {
 
 	 configFunction();
 	 console.log(configVar);
-	`)
+		`,
+	}
+	project := tsmorphgo.NewProjectFromSources(sources)
+	defer project.Close()
+
+	// 获取源文件
+	sourceFile := project.GetSourceFile("/config_example.ts")
+	if sourceFile == nil {
+		log.Fatal("无法创建测试文件")
+	}
 
 	// 找到测试节点
 	var targetNode *tsmorphgo.Node

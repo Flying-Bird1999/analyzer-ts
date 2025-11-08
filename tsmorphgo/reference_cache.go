@@ -138,8 +138,11 @@ func (rc *ReferenceCache) Set(key string, nodes []*Node, project *Project) {
 	for _, node := range nodes {
 		affectedFiles[node.GetSourceFile().GetFilePath()] = true
 	}
-	// 也包括查询节点所在的文件
-	affectedFiles[nodes[0].GetSourceFile().GetFilePath()] = true
+
+	// 如果nodes不为空，也包括查询节点所在的文件
+	if len(nodes) > 0 {
+		affectedFiles[nodes[0].GetSourceFile().GetFilePath()] = true
+	}
 
 	// 计算文件哈希
 	for filePath := range affectedFiles {

@@ -1,35 +1,36 @@
-# `tsmorphgo` API 迁移指南与实战场景
+# TSMorphGo: 从 ts-morph 到 Go 的完美迁移
 
-本文档描述了从 `ts-morph` 到 `tsmorphgo` 的 API 迁移方案，以及各种实际使用场景的解决方案。
+> 🚀 **TSMorphGo** 是一个功能强大、高性能的 TypeScript AST 操作库，为 Go 语言提供了与 ts-morph 相媲美的功能。本文档将帮助您从 ts-morph 平滑迁移到 TSMorphGo。
 
-## 🚀 快速迁移对照表
+## 📋 快速对照表
 
-| ts-morph API | tsmorphgo 等价 API | 状态 | 备注 |
-|-------------|---------------------|------|------|
-| `project.getSourceFiles()` | `project.GetSourceFile(path)` | ✅ | tsmorphgo 按路径获取文件 |
-| `sourceFile.getFilePath()` | `sourceFile.GetFilePath()` | ✅ | 完全兼容 |
-| `node.getText()` | `node.GetText()` | ✅ | 完全兼容 |
-| `node.getParent()` | `node.GetParent()` | ✅ | 完全兼容 |
-| `node.getKind()` | `node.Kind` | ✅ | 使用属性而非方法 |
-| `findReferences(node)` | `FindReferences(node)` | ✅ | 函数式调用 |
-| `node.isKind(SyntaxKind.XXX)` | `IsXXX(node)` | ✅ | 类型判断函数 |
-| `node.asKind(SyntaxKind.XXX)` | `AsXXX(node)` | ✅ | 类型转换函数 |
+| ts-morph API | TSMorphGo API | 状态 | 说明 |
+|-------------|---------------|------|------|
+| `new Project()` | `tsmorphgo.NewProject()` | ✅ | 项目初始化 |
+| `project.createSourceFile()` | `tsmorphgo.NewProjectFromSources()` | ✅ | 内存项目创建 |
+| `project.getSourceFiles()` | `project.GetSourceFiles()` | ✅ | 获取源文件 |
+| `sourceFile.getFilePath()` | `sourceFile.GetFilePath()` | ✅ | 文件路径获取 |
+| `sourceFile.forEachDescendant()` | `sourceFile.ForEachDescendant()` | ✅ | 节点遍历 |
+| `node.getParent()` | `node.GetParent()` | ✅ | 父节点导航 |
+| `node.getAncestors()` | `node.GetAncestors()` | ✅ | 祖先节点导航 |
+| `node.getText()` | `node.GetText()` | ✅ | 节点文本获取 |
+| `node.getKind()` | `node.Kind` | ✅ | 节点类型获取 |
+| `Node.isIdentifier(node)` | `tsmorphgo.IsIdentifier(node)` | ✅ | 类型判断 |
+| `node.findReferences()` | `tsmorphgo.FindReferences(node)` | ✅ | 引用查找 |
 
 ---
 
-## 1. 项目初始化与管理
+## 🏗️ 1. 项目管理
 
-### 场景 1.1：基于内存源码创建项目
+### 1.1 内存项目创建
 
-**ts-morph 原有方式：**
-
+**ts-morph:**
 ```typescript
-// ts-morph: 使用内存文件系统
 const project = new Project({
     useInMemoryFileSystem: true,
+    skipAddingFilesFromTsConfig: true,
 });
 
-// 添加源文件
 project.createSourceFile("test.ts", `
     interface User { id: number; name: string; }
     function getUser(id: number): User {
@@ -38,1564 +39,754 @@ project.createSourceFile("test.ts", `
 `);
 ```
 
-**tsmorphgo 解决方案：**
-
+**TSMorphGo:**
 ```go
-// tsmorphgo: 直接从内存源码创建
+// 从内存源码创建项目
 project := tsmorphgo.NewProjectFromSources(map[string]string{
-    "test.ts": `
+    "/test.ts": `
         interface User { id: number; name: string; }
         function getUser(id: number): User {
             return { id, name: "User" + id };
         }
     `,
-
-    // 可选：包含 tsconfig.json 以支持路径别名等高级功能
-    "/tsconfig.json": `{
-        "compilerOptions": {
-            "baseUrl": ".",
-            "paths": { "@/*": ["src/*"] }
-        }
-    }`,
 })
 
 // 获取源文件
-testFile := project.GetSourceFile("test.ts")
+testFile := project.GetSourceFile("/test.ts")
 if testFile == nil {
-    panic("源文件创建失败")
+    log.Fatal("源文件创建失败")
 }
 ```
 
-**迁移要点：**
-- ✅ tsmorphgo 直接支持内存项目创建，无需特殊配置
-- ✅ 内置支持 TypeScript 配置和路径别名
-- ⚠️ 使用 `map[string]string` 而非文件系统 API
-- ⚠️ 按路径获取文件而非批量获取所有文件
+**🎯 关键差异:**
+- ✅ TSMorphGo 使用 `map[string]string` 直接创建完整项目
+- ✅ 文件路径必须以 `/` 开头（绝对路径）
+- ✅ 内置支持 TypeScript 配置解析
 
----
+### 1.2 完整配置项目
 
-### 场景 1.2：包含复杂配置的项目创建
-
-**ts-morph 原有方式：**
-
+**ts-morph:**
 ```typescript
-// ts-morph: 复杂项目配置
 const project = new Project({
     tsConfigFilePath: "./tsconfig.json",
-    skipAddingFilesFromTsConfig: true,
     manipulationSettings: {
         indentationText: "  ",
     },
 });
-
-// 手动添加文件
-project.addSourceFileAtPath("./src/utils.ts");
-project.addSourceFileAtPath("./src/index.ts");
 ```
 
-**tsmorphgo 解决方案：**
-
+**TSMorphGo:**
 ```go
-// tsmorphgo: 完整项目配置
-project := tsmorphgo.NewProjectFromSources(map[string]string{
-    // TypeScript 配置（支持完整语法）
-    "/tsconfig.json": `{
-        "compilerOptions": {
-            "target": "es2018",
-            "module": "commonjs",
-            "lib": ["es2018", "dom"],
-            "declaration": true,
-            "outDir": "./dist",
-            "rootDir": "./src",
-            "strict": true,
-            "esModuleInterop": true,
-            "skipLibCheck": true,
-            "forceConsistentCasingInFileNames": true,
-            "baseUrl": ".",
-            "paths": {
-                "@/*": ["src/*"],
-                "@components/*": ["src/components/*"],
-                "@utils/*": ["src/utils/*"]
-            }
-        },
-        "include": ["src/**/*"],
-        "exclude": ["node_modules", "dist", "**/*.test.ts"]
-    }`,
-
-    // 源文件（支持 .ts 和 .tsx）
-    "/src/utils.ts": `
-        import { Logger } from '@/types';
-
-        export const logger: Logger = {
-            log: (message: string) => console.log('[LOG]', message),
-            error: (error: Error) => console.error('[ERROR]', error)
-        };
-
-        export function formatDate(date: Date): string {
-            return date.toISOString().split('T')[0];
-        }
-    `,
-
-    "/src/index.ts": `
-        import { logger, formatDate } from '@/utils';
-        import { AppConfig } from '@/config';
-
-        function main() {
-            logger.log('Application started');
-            const today = formatDate(new Date());
-            console.log('Today:', today);
-        }
-
-        main();
-    `,
-
-    "/src/types.ts": `
-        export interface Logger {
-            log: (message: string) => void;
-            error: (error: Error) => void;
-        }
-
-        export interface AppConfig {
-            appName: string;
-            version: string;
-            debug: boolean;
-        }
-    `,
-
-    "/src/config.ts": `
-        import { AppConfig } from '@/types';
-
-        export const config: AppConfig = {
-            appName: 'MyApp',
-            version: '1.0.0',
-            debug: process.env.NODE_ENV === 'development'
-        };
-    `,
+project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
+    RootPath:         "./my-project",
+    IgnorePatterns:   []string{"node_modules", "dist", ".git"},
+    TargetExtensions: []string{".ts", ".tsx"},
+    UseTsConfig:      true,
+    TsConfigPath:     "./tsconfig.json",
 })
+defer project.Close()
 
-// 验证项目结构
-utilsFile := project.GetSourceFile("/src/utils.ts")
-indexFile := project.GetSourceFile("/src/index.ts")
-typesFile := project.GetSourceFile("/src/types.ts")
-
-fmt.Printf("项目创建成功，包含 %d 个源文件\n",
-    map[bool]int{true: 1, false: 0}[utilsFile != nil] +
-    map[bool]int{true: 1, false: 0}[indexFile != nil] +
-    map[bool]int{true: 1, false: 0}[typesFile != nil])
+// 获取所有源文件
+files := project.GetSourceFiles()
+fmt.Printf("发现 %d 个 TypeScript 文件\n", len(files))
 ```
 
-**迁移要点：**
-- ✅ tsmorphgo 支持 TypeScript 完整配置语法
-- ✅ 自动处理路径别名和模块解析
-- ⚠️ 一次性提供所有源码，而非动态添加
-- ⚠️ 文件路径必须以 `/` 开头
+**🎯 关键差异:**
+- ✅ 支持 TypeScript 配置文件的完整解析
+- ✅ 自动处理 `extends` 和配置合并
+- ✅ 支持路径别名和复杂项目结构
 
 ---
 
-## 2. 源文件与节点操作
+## 🔍 2. 节点导航与遍历
 
-### 场景 2.1：遍历和分析所有节点
+### 2.1 深度优先遍历
 
-**ts-morph 原有方式：**
-
+**ts-morph:**
 ```typescript
-// ts-morph: 遍历所有节点
-function analyzeProject(project: Project): AnalysisResult {
-    const result: AnalysisResult = {
-        functions: [],
-        classes: [],
-        interfaces: []
-    };
-
-    for (const sourceFile of project.getSourceFiles()) {
-        // 获取所有函数声明
-        const functions = sourceFile.getFunctions();
-        result.functions.push(...functions.map(fn => ({
-            name: fn.getName(),
-            filePath: sourceFile.getFilePath(),
-            line: fn.getStartLineNumber()
-        })));
-
-        // 获取所有类声明
-        const classes = sourceFile.getClasses();
-        result.classes.push(...classes.map(cls => ({
-            name: cls.getName(),
-            filePath: sourceFile.getFilePath(),
-            line: cls.getStartLineNumber(),
-            methods: cls.getMethods().map(m => m.getName())
-        })));
-
-        // 获取所有接口声明
-        const interfaces = sourceFile.getInterfaces();
-        result.interfaces.push(...interfaces.map(iface => ({
-            name: iface.getName(),
-            filePath: sourceFile.getFilePath(),
-            line: iface.getStartLineNumber(),
-            properties: iface.getProperties().map(p => p.getName())
-        })));
+sourceFile.forEachDescendant((node) => {
+    if (Node.isIdentifier(node)) {
+        console.log(`标识符: ${node.getText()}`);
     }
+});
+```
 
-    return result;
+**TSMorphGo:**
+```go
+sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
+    if tsmorphgo.IsIdentifier(node) {
+        fmt.Printf("标识符: %s\n", strings.TrimSpace(node.GetText()))
+    }
+})
+```
+
+### 2.2 父节点和祖先节点
+
+**ts-morph:**
+```typescript
+const parent = node.getParent();
+const ancestors = node.getAncestors();
+
+// 查找特定类型的祖先
+const functionDecl = node.getFirstAncestorByKind(SyntaxKind.FunctionDeclaration);
+```
+
+**TSMorphGo:**
+```go
+// 获取父节点
+parent := node.GetParent()
+if parent != nil {
+    fmt.Printf("父节点类型: %v\n", parent.Kind)
+}
+
+// 获取所有祖先节点
+ancestors := node.GetAncestors()
+fmt.Printf("祖先节点数量: %d\n", len(ancestors))
+
+// 查找特定类型的祖先
+if funcDecl, found := node.GetFirstAncestorByKind(ast.KindFunctionDeclaration); found {
+    fmt.Printf("找到函数声明: %s\n", strings.TrimSpace(funcDecl.GetText()))
 }
 ```
 
-**tsmorphgo 解决方案：**
+### 2.3 条件查找与终止
 
+**ts-morph:**
+```typescript
+// 总是遍历所有节点
+const allNodes = sourceFile.getDescendants();
+allNodes.forEach(node => {
+    // 处理逻辑
+});
+```
+
+**TSMorphGo (更灵活):**
 ```go
-// tsmorphgo: 节点遍历和分析
-type AnalysisResult struct {
-    Functions  []FunctionInfo
-    Classes    []ClassInfo
-    Interfaces []InterfaceInfo
+// 方式1: 查找第一个匹配的节点
+var targetNode *tsmorphgo.Node
+sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
+    if tsmorphgo.IsIdentifier(node) &&
+       strings.TrimSpace(node.GetText()) == "targetFunction" &&
+       tsmorphgo.IsFunctionDeclaration(node.GetParent()) {
+        nodeCopy := node
+        targetNode = &nodeCopy
+        return // 提前终止遍历
+    }
+})
+
+if targetNode != nil {
+    fmt.Printf("找到目标函数: %s\n", targetNode.GetText())
 }
+```
 
-type FunctionInfo struct {
-    Name     string
-    FilePath string
-    Line     int
+---
+
+## 🏷️ 3. 节点类型判断
+
+### 3.1 基础类型判断
+
+**ts-morph:**
+```typescript
+// 类型判断
+if (Node.isIdentifier(node)) {
+    // 处理标识符
+} else if (Node.isCallExpression(node)) {
+    // 处理函数调用
+} else if (Node.isPropertyAccessExpression(node)) {
+    // 处理属性访问
 }
+```
 
-type ClassInfo struct {
-    Name     string
-    FilePath string
-    Line     int
-    Methods  []string
-}
+**TSMorphGo:**
+```go
+switch {
+case tsmorphgo.IsIdentifier(node):
+    fmt.Printf("标识符: %s\n", node.GetText())
 
-type InterfaceInfo struct {
-    Name       string
-    FilePath   string
-    Line       int
-    Properties []string
-}
+case tsmorphgo.IsCallExpression(node):
+    fmt.Printf("函数调用: %s\n", node.GetText())
 
-func AnalyzeProject(project *tsmorphgo.Project) *AnalysisResult {
-    result := &AnalysisResult{}
-
-    // 注意：这里需要获取项目的所有源文件
-    // 当前 API 设计为按路径获取，可以根据实际项目结构调整
-    filePaths := []string{
-        "/src/index.ts",
-        "/src/utils.ts",
-        "/src/types.ts",
-        "/src/config.ts",
+case tsmorphgo.IsPropertyAccessExpression(node):
+    if propName, ok := tsmorphgo.GetPropertyAccessName(node); ok {
+        fmt.Printf("属性访问: %s\n", propName)
     }
 
-    for _, filePath := range filePaths {
-        sourceFile := project.GetSourceFile(filePath)
-        if sourceFile == nil {
-            continue
-        }
+case tsmorphgo.IsVariableDeclaration(node):
+    if varName, ok := tsmorphgo.GetVariableName(node); ok {
+        fmt.Printf("变量声明: %s\n", varName)
+    }
+}
+```
 
-        // 遍历所有节点进行分类
-        sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
+### 3.2 完整类型判断示例
+
+```go
+// 遍历所有节点并进行分类分析
+func analyzeProject(project *tsmorphgo.Project) {
+    var functionCount, classCount, interfaceCount, variableCount int
+
+    for _, file := range project.GetSourceFiles() {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
             switch {
             case tsmorphgo.IsFunctionDeclaration(node):
-                // 处理函数声明
+                functionCount++
                 if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
-                    result.Functions = append(result.Functions, FunctionInfo{
-                        Name:     strings.TrimSpace(nameNode.GetText()),
-                        FilePath: sourceFile.GetFilePath(),
-                        Line:     node.GetStartLineNumber(),
-                    })
+                    fmt.Printf("函数: %s (行 %d)\n",
+                        strings.TrimSpace(nameNode.GetText()),
+                        node.GetStartLineNumber())
                 }
 
             case tsmorphgo.IsClassDeclaration(node):
-                // 处理类声明
-                classInfo := ClassInfo{
-                    FilePath: sourceFile.GetFilePath(),
-                    Line:     node.GetStartLineNumber(),
-                }
-
-                // 获取类名
-                if nameNode, ok := tsmorphgo.GetFirstChild(node, func(child tsmorphgo.Node) bool {
-                    return tsmorphgo.IsIdentifier(child)
-                }); ok {
-                    classInfo.Name = strings.TrimSpace(nameNode.GetText())
-                }
-
-                // 获取方法
-                node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-                    if tsmorphgo.IsMethodDeclaration(descendant) {
-                        if methodName, ok := getMethodName(descendant); ok {
-                            classInfo.Methods = append(classInfo.Methods, methodName)
-                        }
-                    }
-                })
-
-                result.Classes = append(result.Classes, classInfo)
+                classCount++
 
             case tsmorphgo.IsInterfaceDeclaration(node):
-                // 处理接口声明
-                interfaceInfo := InterfaceInfo{
-                    FilePath: sourceFile.GetFilePath(),
-                    Line:     node.GetStartLineNumber(),
+                interfaceCount++
+
+            case tsmorphgo.IsVariableDeclaration(node):
+                variableCount++
+                if varName, ok := tsmorphgo.GetVariableName(node); ok {
+                    fmt.Printf("变量: %s (行 %d)\n",
+                        varName, node.GetStartLineNumber())
                 }
-
-                // 获取接口名
-                if nameNode, ok := tsmorphgo.GetFirstChild(node, func(child tsmorphgo.Node) bool {
-                    return tsmorphgo.IsIdentifier(child)
-                }); ok {
-                    interfaceInfo.Name = strings.TrimSpace(nameNode.GetText())
-                }
-
-                // 获取属性
-                node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-                    if descendant.Kind == ast.KindPropertySignature {
-                        if propName, ok := getPropertyName(descendant); ok {
-                            interfaceInfo.Properties = append(interfaceInfo.Properties, propName)
-                        }
-                    }
-                })
-
-                result.Interfaces = append(result.Interfaces, interfaceInfo)
             }
         })
     }
 
-    return result
+    fmt.Printf("统计: 函数=%d, 类=%d, 接口=%d, 变量=%d\n",
+        functionCount, classCount, interfaceCount, variableCount)
+}
+```
+
+---
+
+## 🔗 4. 引用查找
+
+### 4.1 基础引用查找
+
+**ts-morph:**
+```typescript
+const references = node.findReferencesAsNodes();
+console.log(`找到 ${references.length} 个引用`);
+
+references.forEach(ref => {
+    console.log(`引用位置: ${ref.getSourceFile().getFilePath()}:${ref.getStartLineNumber()}`);
+});
+```
+
+**TSMorphGo:**
+```go
+// 查找所有引用
+refs, err := tsmorphgo.FindReferences(node)
+if err != nil {
+    log.Printf("查找引用失败: %v", err)
+    return
+}
+
+fmt.Printf("找到 %d 个引用:\n", len(refs))
+for i, ref := range refs {
+    fmt.Printf("  引用 %d: %s (行 %d, 列 %d)\n",
+        i+1, ref.GetText(), ref.GetStartLineNumber(), ref.GetStartColumnNumber())
+}
+```
+
+### 4.2 带缓存的引用查找（TSMorphGo 特有）
+
+```go
+// 使用缓存机制提升性能
+refs, fromCache, err := tsmorphgo.FindReferencesWithCache(node)
+if err != nil {
+    log.Printf("查找引用失败: %v", err)
+    return
+}
+
+source := "缓存"
+if !fromCache {
+    source = "LSP服务"
+}
+
+fmt.Printf("找到 %d 个引用 (来源: %s)\n", len(refs), source)
+```
+
+### 4.3 复杂引用分析示例
+
+```go
+// 分析变量的使用情况
+func analyzeVariableUsage(project *tsmorphgo.Project, variableName string) {
+    for _, file := range project.GetSourceFiles() {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
+            // 查找目标变量的声明
+            if tsmorphgo.IsIdentifier(node) &&
+               strings.TrimSpace(node.GetText()) == variableName &&
+               tsmorphgo.IsVariableDeclaration(node.GetParent()) {
+
+                fmt.Printf("找到变量声明: %s (行 %d)\n",
+                    variableName, node.GetStartLineNumber())
+
+                // 查找所有引用
+                refs, err := tsmorphgo.FindReferences(node)
+                if err != nil {
+                    log.Printf("查找引用失败: %v", err)
+                    return
+                }
+
+                fmt.Printf("  引用位置:\n")
+                for _, ref := range refs {
+                    parent := ref.GetParent()
+                    var context string
+                    if parent != nil {
+                        context = strings.TrimSpace(parent.GetText())
+                        if len(context) > 50 {
+                            context = context[:50] + "..."
+                        }
+                    }
+
+                    fmt.Printf("    - %s:%d (上下文: %s)\n",
+                        ref.GetSourceFile().GetFilePath(),
+                        ref.GetStartLineNumber(),
+                        context)
+                }
+            }
+        })
+    }
+}
+```
+
+---
+
+## 🔧 5. 特定节点类型操作
+
+### 5.1 函数声明
+
+```go
+// 获取函数信息
+if tsmorphgo.IsFunctionDeclaration(node) {
+    if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
+        fmt.Printf("函数名: %s\n", strings.TrimSpace(nameNode.GetText()))
+    }
+
+    // 获取函数参数和返回类型
+    funcText := strings.TrimSpace(node.GetText())
+    fmt.Printf("完整函数: %s\n", funcText)
+}
+```
+
+### 5.2 类声明
+
+```go
+// 分析类结构
+if tsmorphgo.IsClassDeclaration(node) {
+    fmt.Printf("类声明:\n")
+
+    var methods []string
+    node.ForEachDescendant(func(descendant tsmorphgo.Node) {
+        if tsmorphgo.IsMethodDeclaration(descendant) {
+            if methodName, ok := getMethodName(descendant); ok {
+                methods = append(methods, methodName)
+            }
+        }
+    })
+
+    fmt.Printf("  方法数量: %d\n", len(methods))
+    for _, method := range methods {
+        fmt.Printf("    - %s\n", method)
+    }
+}
+```
+
+### 5.3 导入语句
+
+```go
+// 分析导入语句
+if tsmorphgo.IsImportDeclaration(node) {
+    importText := strings.TrimSpace(node.GetText())
+    fmt.Printf("导入: %s\n", importText)
+
+    // 简化解析导入信息
+    if strings.Contains(importText, "import {") {
+        if braceStart := strings.Index(importText, "{"); braceStart >= 0 {
+            braceEnd := strings.Index(importText[braceStart:], "}")
+            if braceEnd >= 0 {
+                namedImports := importText[braceStart+1 : braceStart+braceEnd]
+                fmt.Printf("  命名导入: %s\n", strings.TrimSpace(namedImports))
+            }
+        }
+    }
+}
+```
+
+### 5.4 调用表达式
+
+```go
+// 分析函数调用链
+if tsmorphgo.IsCallExpression(node) {
+    callText := strings.TrimSpace(node.GetText())
+    fmt.Printf("函数调用: %s\n", callText)
+
+    // 获取被调用的表达式
+    if expr, ok := tsmorphgo.GetCallExpressionExpression(node); ok {
+        fmt.Printf("  被调用表达式: %s\n", strings.TrimSpace(expr.GetText()))
+
+        // 分析复杂调用链
+        if tsmorphgo.IsPropertyAccessExpression(*expr) {
+            if propName, ok := tsmorphgo.GetPropertyAccessName(*expr); ok {
+                fmt.Printf("  方法名: %s\n", propName)
+
+                if objExpr, ok := tsmorphgo.GetPropertyAccessExpression(*expr); ok {
+                    fmt.Printf("  对象: %s\n", strings.TrimSpace(objExpr.GetText()))
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+## 🎯 6. 完整实战示例
+
+### 6.1 代码质量分析工具
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "strings"
+
+    "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
+)
+
+// 代码质量分析器
+type CodeAnalyzer struct {
+    project *tsmorphgo.Project
+    stats   *ProjectStats
+}
+
+type ProjectStats struct {
+    Files        int
+    Functions    int
+    Classes      int
+    Interfaces   int
+    Variables    int
+    UnusedVars   []UnusedVariable
+    LongFunctions []LongFunction
+}
+
+type UnusedVariable struct {
+    Name     string
+    File     string
+    Line     int
+    DataType string
+}
+
+type LongFunction struct {
+    Name     string
+    File     string
+    Line     int
+    Length   int
+    LineCount int
+}
+
+func NewCodeAnalyzer(project *tsmorphgo.Project) *CodeAnalyzer {
+    return &CodeAnalyzer{
+        project: project,
+        stats:   &ProjectStats{},
+    }
+}
+
+func (a *CodeAnalyzer) Analyze() error {
+    fmt.Println("🔍 开始代码质量分析...")
+
+    // 1. 统计基础信息
+    a.collectBasicStats()
+
+    // 2. 查找未使用的变量
+    a.findUnusedVariables()
+
+    // 3. 查找过长的函数
+    a.findLongFunctions()
+
+    a.printReport()
+    return nil
+}
+
+func (a *CodeAnalyzer) collectBasicStats() {
+    fmt.Println("📊 收集项目基础信息...")
+
+    files := a.project.GetSourceFiles()
+    a.stats.Files = len(files)
+
+    for _, file := range files {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
+            switch {
+            case tsmorphgo.IsFunctionDeclaration(node):
+                a.stats.Functions++
+            case tsmorphgo.IsClassDeclaration(node):
+                a.stats.Classes++
+            case tsmorphgo.IsInterfaceDeclaration(node):
+                a.stats.Interfaces++
+            case tsmorphgo.IsVariableDeclaration(node):
+                a.stats.Variables++
+            }
+        })
+    }
+}
+
+func (a *CodeAnalyzer) findUnusedVariables() {
+    fmt.Println("🔍 查找未使用的变量...")
+
+    // 收集所有变量声明
+    var variables []struct {
+        name      string
+        node      tsmorphgo.Node
+        isExported bool
+    }
+
+    for _, file := range a.project.GetSourceFiles() {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
+            if tsmorphgo.IsVariableDeclaration(node) {
+                if varName, ok := tsmorphgo.GetVariableName(node); ok {
+                    variables = append(variables, struct {
+                        name      string
+                        node      tsmorphgo.Node
+                        isExported bool
+                    }{
+                        name:      varName,
+                        node:      node,
+                        isExported: isExportedDeclaration(node),
+                    })
+                }
+            }
+        })
+    }
+
+    // 检查每个变量的使用情况
+    for _, variable := range variables {
+        if variable.isExported {
+            continue // 跳过导出的变量
+        }
+
+        refs, err := tsmorphgo.FindReferences(variable.node)
+        if err != nil {
+            continue
+        }
+
+        // 排除声明本身的引用
+        usageCount := len(refs) - 1
+        if usageCount <= 1 {
+            dataType := inferDataType(variable.node)
+            a.stats.UnusedVars = append(a.stats.UnusedVars, UnusedVariable{
+                Name:     variable.name,
+                File:     variable.node.GetSourceFile().GetFilePath(),
+                Line:     variable.node.GetStartLineNumber(),
+                DataType: dataType,
+            })
+        }
+    }
+}
+
+func (a *CodeAnalyzer) findLongFunctions() {
+    fmt.Println("🔍 查找过长的函数...")
+
+    for _, file := range a.project.GetSourceFiles() {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
+            if tsmorphgo.IsFunctionDeclaration(node) {
+                text := strings.TrimSpace(node.GetText())
+                lineCount := strings.Count(text, "\n") + 1
+                charCount := len(text)
+
+                // 超过50行或2000字符的函数认为过长
+                if lineCount > 50 || charCount > 2000 {
+                    if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
+                        funcName := strings.TrimSpace(nameNode.GetText())
+                        if funcName == "" {
+                            funcName = "<匿名函数>"
+                        }
+
+                        a.stats.LongFunctions = append(a.stats.LongFunctions, LongFunction{
+                            Name:     funcName,
+                            File:     node.GetSourceFile().GetFilePath(),
+                            Line:     node.GetStartLineNumber(),
+                            Length:   charCount,
+                            LineCount: lineCount,
+                        })
+                    }
+                }
+            }
+        })
+    }
+}
+
+func (a *CodeAnalyzer) printReport() {
+    fmt.Println("\n" + strings.Repeat("=", 60))
+    fmt.Println("📋 代码质量分析报告")
+    fmt.Println(strings.Repeat("=", 60))
+
+    fmt.Printf("📁 文件总数: %d\n", a.stats.Files)
+    fmt.Printf("🔧 函数总数: %d\n", a.stats.Functions)
+    fmt.Printf("🏗️  类总数: %d\n", a.stats.Classes)
+    fmt.Printf("🔌 接口总数: %d\n", a.stats.Interfaces)
+    fmt.Printf("📊 变量总数: %d\n", a.stats.Variables)
+
+    fmt.Printf("\n⚠️  未使用的变量: %d\n", len(a.stats.UnusedVars))
+    if len(a.stats.UnusedVars) > 0 {
+        fmt.Println("详情:")
+        for _, unused := range a.stats.UnusedVars[:5] { // 只显示前5个
+            fmt.Printf("  - %s (%s:%d) 类型: %s\n",
+                unused.Name, unused.File, unused.Line, unused.DataType)
+        }
+        if len(a.stats.UnusedVars) > 5 {
+            fmt.Printf("  ... 还有 %d 个未使用的变量\n", len(a.stats.UnusedVars)-5)
+        }
+    }
+
+    fmt.Printf("\n📏 过长的函数: %d\n", len(a.stats.LongFunctions))
+    if len(a.stats.LongFunctions) > 0 {
+        fmt.Println("详情:")
+        for _, longFunc := range a.stats.LongFunctions {
+            fmt.Printf("  - %s (%s:%d) %d行, %d字符\n",
+                longFunc.Name, longFunc.File, longFunc.Line,
+                longFunc.LineCount, longFunc.Length)
+        }
+    }
+
+    // 给出改进建议
+    fmt.Println("\n💡 改进建议:")
+    if len(a.stats.UnusedVars) > 0 {
+        fmt.Println("  - 移除未使用的变量以减少代码体积")
+    }
+    if len(a.stats.LongFunctions) > 0 {
+        fmt.Println("  - 考虑将过长的函数拆分为更小的函数")
+    }
+    if a.stats.Functions > 50 {
+        fmt.Println("  - 考虑将相关功能组织到模块或类中")
+    }
 }
 
 // 辅助函数
-func getMethodName(node tsmorphgo.Node) (string, bool) {
-    if nameNode, ok := tsmorphgo.GetFirstChild(node, func(child tsmorphgo.Node) bool {
-        return tsmorphgo.IsIdentifier(child)
-    }); ok {
-        return nameNode.GetText() + "()", true
-    }
-    return "", false
+func isExportedDeclaration(node tsmorphgo.Node) bool {
+    text := strings.TrimSpace(node.GetText())
+    return strings.HasPrefix(text, "export")
 }
 
-func getPropertyName(node tsmorphgo.Node) (string, bool) {
-    if nameNode, ok := tsmorphgo.GetFirstChild(node, func(child tsmorphgo.Node) bool {
-        return tsmorphgo.IsIdentifier(child)
-    }); ok {
-        return nameNode.GetText(), true
+func inferDataType(node tsmorphgo.Node) string {
+    parent := node.GetParent()
+    if parent == nil {
+        return "unknown"
     }
-    return "", false
+
+    text := strings.TrimSpace(parent.GetText())
+    if strings.Contains(text, ": string") {
+        return "string"
+    } else if strings.Contains(text, ": number") {
+        return "number"
+    } else if strings.Contains(text, ": boolean") {
+        return "boolean"
+    } else if strings.Contains(text, ": any") {
+        return "any"
+    }
+    return "inferred"
 }
 
-// 使用示例
 func main() {
+    // 创建测试项目
     project := tsmorphgo.NewProjectFromSources(map[string]string{
         "/src/app.ts": `
+            import { Logger } from './types';
+
             interface UserService {
                 getUser(id: number): User;
                 saveUser(user: User): void;
             }
 
             class UserServiceImpl implements UserService {
+                private logger: Logger;
+
+                constructor(logger: Logger) {
+                    this.logger = logger;
+                }
+
                 getUser(id: number): User {
-                    return { id, name: "User" + id };
+                    this.logger.log('Getting user: ' + id);
+                    return { id, name: 'User' + id };
                 }
 
                 saveUser(user: User): void {
-                    console.log("Saving user:", user);
+                    this.logger.log('Saving user: ' + user.name);
+                    // 实际保存逻辑
                 }
 
-                private log(message: string): void {
-                    console.log("[LOG]", message);
-                }
-            }
-        `,
-    })
-
-    result := AnalyzeProject(project)
-    fmt.Printf("分析结果:\n")
-    fmt.Printf("  函数: %d 个\n", len(result.Functions))
-    fmt.Printf("  类: %d 个\n", len(result.Classes))
-    fmt.Printf("  接口: %d 个\n", len(result.Interfaces))
-
-    for _, class := range result.Classes {
-        fmt.Printf("  类 %s 有 %d 个方法\n", class.Name, len(class.Methods))
-    }
-}
-```
-
-**迁移要点：**
-- ✅ 使用 `ForEachDescendant` 统一遍历 API
-- ✅ 使用类型判断函数 `IsXXX` 替代 `getXXX()` 方法
-- ✅ 使用专用 API 如 `GetFunctionDeclarationNameNode`
-- ⚠️ 需要手动实现节点分类和属性提取
-- ⚠️ 当前设计按路径获取文件，需要明确文件列表
-
----
-
-### 场景 2.2：高级节点查找与过滤
-
-**ts-morph 原有方式：**
-
-```typescript
-// ts-morph: 查找特定条件的节点
-function findUnusedVariables(project: Project): UnusedVariable[] {
-    const unused: UnusedVariable[] = [];
-
-    for (const sourceFile of project.getSourceFiles()) {
-        // 获取所有变量声明
-        const variables = sourceFile.getVariableDeclarations();
-
-        for (const variable of variables) {
-            const varName = variable.getName();
-
-            // 查找该变量的所有引用
-            const references = variable.findReferences();
-            const usageCount = references.length;
-
-            // 排除导出的变量和类型引用
-            const isExported = variable.isExported();
-            const typeReferences = references.filter(ref =>
-                ref.getNode().getParent()?.getKind() === SyntaxKind.TypeReference
-            );
-
-            if (!isExported && usageCount - typeReferences.length <= 1) {
-                unused.push({
-                    name: varName,
-                    filePath: sourceFile.getFilePath(),
-                    line: variable.getStartLineNumber(),
-                    isTypeOnly: usageCount === typeReferences.length
-                });
-            }
-        }
-    }
-
-    return unused;
-}
-```
-
-**tsmorphgo 解决方案：**
-
-```go
-// tsmorphgo: 高级节点查找与过滤
-type UnusedVariable struct {
-    Name       string
-    FilePath   string
-    Line       int
-    IsTypeOnly bool
-}
-
-func FindUnusedVariables(project *tsmorphgo.Project) []UnusedVariable {
-    var unused []UnusedVariable
-
-    // 获取项目中的所有源文件
-    filePaths := []string{"/src/index.ts", "/src/utils.ts", /* 其他文件路径 */}
-
-    for _, filePath := range filePaths {
-        sourceFile := project.GetSourceFile(filePath)
-        if sourceFile == nil {
-            continue
-        }
-
-        // 收集文件中的所有变量声明
-        var declarations []struct {
-            node      tsmorphgo.Node
-            name      string
-            isExported bool
-        }
-
-        sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-            if tsmorphgo.IsVariableDeclaration(node) {
-                if name, ok := tsmorphgo.GetVariableName(node); ok {
-                    declarations = append(declarations, struct {
-                        node      tsmorphgo.Node
-                        name      string
-                        isExported bool
-                    }{
-                        node:      node,
-                        name:      name,
-                        isExported: isExportedDeclaration(node),
-                    })
-                }
-            }
-        })
-
-        // 检查每个变量的使用情况
-        for _, decl := range declarations {
-            // 查找所有引用
-            refs, err := tsmorphgo.FindReferences(decl.node)
-            if err != nil {
-                fmt.Printf("查找引用失败: %v\n", err)
-                continue
-            }
-
-            // 分析引用类型
-            typeReferenceCount := 0
-            totalUsageCount := len(refs)
-
-            for _, ref := range refs {
-                // 排除声明本身的引用
-                if isDeclarationPosition(ref, decl.node) {
-                    totalUsageCount--
-                    continue
-                }
-
-                // 检查是否是类型引用
-                if isTypeReference(ref) {
-                    typeReferenceCount++
-                }
-            }
-
-            // 判断是否未使用
-            usageCount := totalUsageCount - typeReferenceCount
-            if !decl.isExported && usageCount <= 0 {
-                unused = append(unused, UnusedVariable{
-                    Name:       decl.name,
-                    FilePath:   filePath,
-                    Line:       decl.node.GetStartLineNumber(),
-                    IsTypeOnly: typeReferenceCount > 0 && usageCount == 0,
-                })
-            }
-        }
-    }
-
-    return unused
-}
-
-// 辅助函数：检查是否是声明位置
-func isDeclarationPosition(ref, decl tsmorphgo.Node) bool {
-    refAncestors := ref.GetAncestors()
-    for _, ancestor := range refAncestors {
-        if ancestor.Kind == decl.Kind {
-            // 简化处理：如果找到相同类型的祖先，认为是声明位置
-            return strings.TrimSpace(ancestor.GetText()) == strings.TrimSpace(decl.GetText())
-        }
-    }
-    return false
-}
-
-// 辅助函数：检查是否是导出声明
-func isExportedDeclaration(node tsmorphgo.Node) bool {
-    parent := node.GetParent()
-    if parent == nil {
-        return false
-    }
-
-    // 检查父节点是否有 export 关键字
-    var hasExport bool
-    parent.ForEachDescendant(func(descendant tsmorphgo.Node) {
-        if tsmorphgo.IsExportKeyword(descendant) {
-            hasExport = true
-        }
-    })
-
-    return hasExport
-}
-
-// 辅助函数：检查是否是类型引用
-func isTypeReference(ref tsmorphgo.Node) bool {
-    parent := ref.GetParent()
-    if parent == nil {
-        return false
-    }
-
-    // 检查是否在类型注解、类型参数等上下文中
-    grandParent := parent.GetParent()
-    return parent.Kind == ast.KindTypeReference ||
-           parent.Kind == ast.KindTypeParameter ||
-           (grandParent != nil && grandParent.Kind == ast.KindTypeAnnotation)
-}
-
-// 使用示例
-func main() {
-    project := tsmorphgo.NewProjectFromSources(map[string]string{
-        "/src/test.ts": `
-            import { SomeType } from './types';
-
-            export const usedVar = "used";
-            const unusedVar = "unused";
-            const typeOnlyVar: SomeType = null as any;
-
-            function test() {
-                console.log(usedVar);
-                // unusedVar 从未被使用
-                const localVar: SomeType = "test";
-            }
-        `,
-    })
-
-    unused := FindUnusedVariables(project)
-    fmt.Printf("发现 %d 个未使用的变量:\n", len(unused))
-    for _, u := range unused {
-        status := "完全未使用"
-        if u.IsTypeOnly {
-            status = "仅用于类型"
-        }
-        fmt.Printf("  - %s (%s:%d) - %s\n", u.Name, u.FilePath, u.Line, status)
-    }
-}
-```
-
-**迁移要点：**
-- ✅ 使用 `FindReferences` 实现引用查找
-- ✅ 使用 `ForEachDescendant` 进行节点遍历
-- ✅ 使用专用 API 如 `GetVariableName`
-- ⚠️ 需要手动实现复杂的引用分析逻辑
-- ⚠️ 导出状态和类型引用判断需要自定义实现
-
----
-
-## 3. 节点导航与关系
-
-### 场景 3.1：复杂节点导航与祖先查找
-
-**ts-morph 原有方式：**
-
-```typescript
-// ts-morph: 复杂的节点导航
-function analyzeCallChain(callExpr: CallExpression): CallChainAnalysis {
-    const analysis: CallChainAnalysis = {
-        fullExpression: callExpr.getText(),
-        parts: [],
-        rootObject: null,
-        finalMethod: null
-    };
-
-    let current = callExpr.getExpression();
-
-    // 解析调用链：obj.method1().method2().method3()
-    while (true) {
-        if (current.isKind(SyntaxKind.PropertyAccessExpression)) {
-            const propAccess = current.asKindOrThrow(SyntaxKind.PropertyAccessExpression);
-            const propName = propAccess.getName();
-
-            analysis.parts.unshift({
-                type: 'property',
-                name: propName,
-                text: propAccess.getText()
-            });
-
-            current = propAccess.getExpression();
-        } else if (current.isKind(SyntaxKind.CallExpression)) {
-            const innerCall = current.asKindOrThrow(SyntaxKind.CallExpression);
-            analysis.parts.unshift({
-                type: 'call',
-                text: innerCall.getText()
-            });
-
-            current = innerCall.getExpression();
-        } else if (current.isKind(SyntaxKind.Identifier)) {
-            analysis.rootObject = {
-                name: current.getText(),
-                text: current.getText()
-            };
-            break;
-        } else {
-            // 对象字面量、this等
-            analysis.rootObject = {
-                type: 'expression',
-                text: current.getText()
-            };
-            break;
-        }
-    }
-
-    // 获取最终调用的方法名
-    const finalProp = analysis.parts[analysis.parts.length - 1];
-    analysis.finalMethod = finalProp.name;
-
-    return analysis;
-}
-```
-
-**tsmorphgo 解决方案：**
-
-```go
-// tsmorphgo: 复杂节点导航
-type CallChainPart struct {
-    Type  string // "property", "call", "identifier", "expression"
-    Name  string // 属性名或标识符名
-    Text  string // 完整文本
-}
-
-type CallChainAnalysis struct {
-    FullExpression string
-    Parts          []CallChainPart
-    RootObject     *CallChainPart
-    FinalMethod    string
-}
-
-func AnalyzeCallChain(callExpr tsmorphgo.Node) (*CallChainAnalysis, error) {
-    if !tsmorphgo.IsCallExpression(callExpr) {
-        return nil, fmt.Errorf("期望调用表达式，实际: %v", callExpr.Kind)
-    }
-
-    analysis := &CallChainAnalysis{
-        FullExpression: strings.TrimSpace(callExpr.GetText()),
-        Parts:          []CallChainPart{},
-    }
-
-    // 获取调用的表达式
-    expr, ok := tsmorphgo.GetCallExpressionExpression(callExpr)
-    if !ok {
-        return nil, fmt.Errorf("无法获取调用表达式")
-    }
-
-    // 解析调用链
-    current := *expr
-    parts := []CallChainPart{}
-
-    for {
-        switch {
-        case tsmorphgo.IsPropertyAccessExpression(current):
-            // 处理属性访问
-            propName, ok := tsmorphgo.GetPropertyAccessName(current)
-            if !ok {
-                return nil, fmt.Errorf("无法获取属性名")
-            }
-
-            part := CallChainPart{
-                Type: "property",
-                Name: propName,
-                Text: strings.TrimSpace(current.GetText()),
-            }
-            parts = append([]CallChainPart{part}, parts...) // 前置插入
-
-            objExpr, ok := tsmorphgo.GetPropertyAccessExpression(current)
-            if !ok {
-                return nil, fmt.Errorf("无法获取属性访问表达式")
-            }
-            current = *objExpr
-
-        case tsmorphgo.IsCallExpression(current):
-            // 处理内部调用
-            part := CallChainPart{
-                Type: "call",
-                Text: strings.TrimSpace(current.GetText()),
-            }
-            parts = append([]CallChainPart{part}, parts...) // 前置插入
-
-            innerExpr, ok := tsmorphgo.GetCallExpressionExpression(current)
-            if !ok {
-                return nil, fmt.Errorf("无法获取内部调用表达式")
-            }
-            current = *innerExpr
-
-        case tsmorphgo.IsIdentifier(current):
-            // 根对象是标识符
-            analysis.RootObject = &CallChainPart{
-                Type: "identifier",
-                Name: strings.TrimSpace(current.GetText()),
-                Text: strings.TrimSpace(current.GetText()),
-            }
-            break
-
-        default:
-            // 其他类型（对象字面量、this等）
-            analysis.RootObject = &CallChainPart{
-                Type: "expression",
-                Text: strings.TrimSpace(current.GetText()),
-            }
-            break
-        }
-
-        // 检查循环终止条件
-        if current.Kind == expr.Kind && strings.TrimSpace(current.GetText()) == strings.TrimSpace(expr.GetText()) {
-            break
-        }
-    }
-
-    analysis.Parts = parts
-
-    // 获取最终调用的方法名
-    if len(parts) > 0 {
-        finalPart := parts[len(parts)-1]
-        if finalPart.Type == "property" {
-            analysis.FinalMethod = finalPart.Name
-        }
-    }
-
-    return analysis, nil
-}
-
-// 使用示例
-func main() {
-    project := tsmorphgo.NewProjectFromSources(map[string]string{
-        "/src/test.ts": `
-            class UserService {
-                getUsers(): User[] { return []; }
-                findById(id: number): User { return {} as User; }
-            }
-
-            class Cache {
-                get(key: string): any { return null; }
-            }
-
-            const userService = new UserService();
-            const cache = new Cache();
-
-            // 复杂调用链
-            const result = cache.get("user").findById(123).name;
-
-            // 简单调用
-            userService.getUsers();
-        `,
-    })
-
-    sourceFile := project.GetSourceFile("/src/test.ts")
-    var callExprs []*tsmorphgo.Node
-
-    sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-        if tsmorphgo.IsCallExpression(node) {
-            // 过滤掉简单的函数声明
-            text := strings.TrimSpace(node.GetText())
-            if !strings.Contains(text, "function") && !strings.Contains(text, "=>") {
-                callExprs = append(callExprs, &node)
-            }
-        }
-    })
-
-    fmt.Printf("找到 %d 个函数调用:\n", len(callExprs))
-    for _, call := range callExprs {
-        analysis, err := AnalyzeCallChain(*call)
-        if err != nil {
-            fmt.Printf("分析失败: %v\n", err)
-            continue
-        }
-
-        fmt.Printf("调用表达式: %s\n", analysis.FullExpression)
-        if analysis.RootObject != nil {
-            fmt.Printf("  根对象: %s (%s)\n", analysis.RootObject.Name, analysis.RootObject.Type)
-        }
-        fmt.Printf("  调用链:\n")
-        for i, part := range analysis.Parts {
-            fmt.Printf("    %d. %s: %s\n", i+1, part.Type, part.Text)
-        }
-        fmt.Printf("  最终方法: %s\n\n", analysis.FinalMethod)
-    }
-}
-```
-
-**迁移要点：**
-- ✅ 使用专用 API 处理表达式：`GetCallExpressionExpression`, `GetPropertyAccessName`
-- ✅ 使用节点导航：`GetParent`, `GetAncestors`
-- ✅ 使用类型判断：`IsXXX` 函数
-- ⚠️ 需要手动实现复杂的调用链解析逻辑
-- ⚠️ 递归和循环处理需要仔细设计
-
----
-
-### 场景 3.2：类型安全的节点转换与操作
-
-**ts-morph 原有方式：**
-
-```typescript
-// ts-morph: 类型安全节点操作
-function safeProcessDeclarations(sourceFile: SourceFile): ProcessingResult {
-    const result: ProcessingResult = {
-        imports: [],
-        functions: [],
-        classes: [],
-        interfaces: [],
-        errors: []
-    };
-
-    // 类型安全的方式遍历声明
-    sourceFile.forEachChild(child => {
-        try {
-            if (child.isKind(SyntaxKind.ImportDeclaration)) {
-                const importDecl = child.asKindOrThrow(SyntaxKind.ImportDeclaration);
-                result.imports.push(processImport(importDecl));
-            } else if (child.isKind(SyntaxKind.FunctionDeclaration)) {
-                const funcDecl = child.asKindOrThrow(SyntaxKind.FunctionDeclaration);
-                result.functions.push(processFunction(funcDecl));
-            } else if (child.isKind(SyntaxKind.ClassDeclaration)) {
-                const classDecl = child.asKindOrThrow(SyntaxKind.ClassDeclaration);
-                result.classes.push(processClass(classDecl));
-            } else if (child.isKind(SyntaxKind.InterfaceDeclaration)) {
-                const interfaceDecl = child.asKindOrThrow(SyntaxKind.InterfaceDeclaration);
-                result.interfaces.push(processInterface(interfaceDecl));
-            }
-        } catch (error) {
-            result.errors.push({
-                node: child,
-                error: error instanceof Error ? error.message : String(error),
-                line: child.getStartLineNumber()
-            });
-        }
-    });
-
-    return result;
-}
-
-function processImport(importDecl: ImportDeclaration): ImportInfo {
-    const moduleSpecifier = importDecl.getModuleSpecifier().getText();
-    const defaultImport = importDecl.getDefaultImport()?.getText() || null;
-    const namedImports = importDecl.getNamedImports().map(specifier => ({
-        name: specifier.getName(),
-        alias: specifier.getAliasNode()?.getText() || null
-    }));
-
-    return {
-        moduleSpecifier,
-        defaultImport,
-        namedImports,
-        isTypeOnly: importDecl.isTypeOnly(),
-        text: importDecl.getText()
-    };
-}
-```
-
-**tsmorphgo 解决方案：**
-
-```go
-// tsmorphgo: 类型安全的节点转换与操作
-type ProcessingResult struct {
-    Imports    []ImportInfo
-    Functions  []FunctionInfo
-    Classes    []ClassInfo
-    Interfaces []InterfaceInfo
-    Errors     []ProcessingError
-}
-
-type ProcessingError struct {
-    NodeText string
-    Error    string
-    Line     int
-    Kind     ast.Kind
-}
-
-type ImportInfo struct {
-    ModuleSpecifier string
-    DefaultImport   string
-    NamedImports   []NamedImportInfo
-    IsTypeOnly     bool
-    Text           string
-}
-
-type NamedImportInfo struct {
-    Name  string
-    Alias string
-}
-
-type FunctionInfo struct {
-    Name       string
-    Parameters []ParameterInfo
-    ReturnType string
-    IsAsync    bool
-    IsExported  bool
-    Text       string
-}
-
-type ParameterInfo struct {
-    Name     string
-    Type     string
-    Optional bool
-}
-
-func SafeProcessDeclarations(sourceFile *tsmorphgo.SourceFile) *ProcessingResult {
-    result := &ProcessingResult{}
-
-    sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-        // 只处理顶层声明
-        if !isTopLevelDeclaration(node) {
-            return
-        }
-
-        var err error
-        switch {
-        case tsmorphgo.IsImportDeclaration(node):
-            importInfo, processErr := processImportDeclaration(node)
-            if processErr != nil {
-                result.Errors = append(result.Errors, ProcessingError{
-                    NodeText: strings.TrimSpace(node.GetText()),
-                    Error:    processErr.Error(),
-                    Line:     node.GetStartLineNumber(),
-                    Kind:     node.Kind,
-                })
-            } else {
-                result.Imports = append(result.Imports, *importInfo)
-            }
-
-        case tsmorphgo.IsFunctionDeclaration(node):
-            funcInfo, processErr := processFunctionDeclaration(node)
-            if processErr != nil {
-                result.Errors = append(result.Errors, ProcessingError{
-                    NodeText: strings.TrimSpace(node.GetText()),
-                    Error:    processErr.Error(),
-                    Line:     node.GetStartLineNumber(),
-                    Kind:     node.Kind,
-                })
-            } else {
-                result.Functions = append(result.Functions, *funcInfo)
-            }
-
-        case tsmorphgo.IsClassDeclaration(node):
-            classInfo, processErr := processClassDeclaration(node)
-            if processErr != nil {
-                result.Errors = append(result.Errors, ProcessingError{
-                    NodeText: strings.TrimSpace(node.GetText()),
-                    Error:    processErr.Error(),
-                    Line:     node.GetStartLineNumber(),
-                    Kind:     node.Kind,
-                })
-            } else {
-                result.Classes = append(result.Classes, *classInfo)
-            }
-
-        case tsmorphgo.IsInterfaceDeclaration(node):
-            interfaceInfo, processErr := processInterfaceDeclaration(node)
-            if processErr != nil {
-                result.Errors = append(result.Errors, ProcessingError{
-                    NodeText: strings.TrimSpace(node.GetText()),
-                    Error:    processErr.Error(),
-                    Line:     node.GetStartLineNumber(),
-                    Kind:     node.Kind,
-                })
-            } else {
-                result.Interfaces = append(result.Interfaces, *interfaceInfo)
-            }
-        }
-    })
-
-    return result
-}
-
-// 处理导入声明
-func processImportDeclaration(node tsmorphgo.Node) (*ImportInfo, error) {
-    importDecl, ok := tsmorphgo.AsImportDeclaration(node)
-    if !ok {
-        return nil, fmt.Errorf("节点不是导入声明")
-    }
-
-    info := &ImportInfo{
-        Text: strings.TrimSpace(node.GetText()),
-    }
-
-    // 提取模块说明符（简化处理）
-    if strings.Contains(info.Text, "from") {
-        parts := strings.Split(info.Text, "from")
-        if len(parts) >= 2 {
-            info.ModuleSpecifier = strings.TrimSpace(strings.Trim(parts[1], `'"'`))
-        }
-    }
-
-    // 提取默认导入
-    if strings.Contains(info.Text, "import") && !strings.Contains(info.Text, "{") {
-        // 简化处理：默认导入
-        importPart := strings.Split(info.Text, "import")[1]
-        importPart = strings.Split(importPart, "from")[0]
-        info.DefaultImport = strings.TrimSpace(importPart)
-    }
-
-    // 检查是否是类型导入
-    info.IsTypeOnly = strings.Contains(info.Text, "import type")
-
-    // 提取命名导入（简化处理）
-    if braceStart := strings.Index(info.Text, "{"); braceStart >= 0 {
-        braceEnd := strings.Index(info.Text[braceStart:], "}")
-        if braceEnd >= 0 {
-            namedImportsText := info.Text[braceStart+1 : braceStart+braceEnd]
-            namedImports := strings.Split(namedImportsText, ",")
-            for _, namedImport := range namedImports {
-                namedImport = strings.TrimSpace(namedImport)
-                if namedImport != "" {
-                    if strings.Contains(namedImport, " as ") {
-                        parts := strings.Split(namedImport, " as ")
-                        info.NamedImports = append(info.NamedImports, NamedImportInfo{
-                            Name:  strings.TrimSpace(parts[0]),
-                            Alias: strings.TrimSpace(parts[1]),
-                        })
-                    } else {
-                        info.NamedImports = append(info.NamedImports, NamedImportInfo{
-                            Name: namedImport,
-                        })
+                // 过长的方法示例
+                processLargeDataSet(data: any[]): void {
+                    // 这是一个很长的方法，包含很多逻辑
+                    for (let i = 0; i < data.length; i++) {
+                        const item = data[i];
+                        this.logger.log('Processing item: ' + i);
+
+                        // 复杂的处理逻辑
+                        const processed = this.transformItem(item);
+                        const validated = this.validateItem(processed);
+                        const normalized = this.normalizeItem(validated);
+
+                        // 更多处理...
+                        for (let j = 0; j < 10; j++) {
+                            this.logger.log('Sub-processing: ' + j);
+                        }
                     }
                 }
-            }
-        }
-    }
 
-    return info, nil
-}
+                private transformItem(item: any): any {
+                    return { ...item, processed: true };
+                }
 
-// 处理函数声明
-func processFunctionDeclaration(node tsmorphgo.Node) (*FunctionInfo, error) {
-    funcInfo := &FunctionInfo{
-        Text: strings.TrimSpace(node.GetText()),
-    }
+                private validateItem(item: any): any {
+                    return { ...item, valid: true };
+                }
 
-    // 获取函数名
-    if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
-        funcInfo.Name = strings.TrimSpace(nameNode.GetText())
-    }
-
-    // 检查是否是异步函数
-    funcInfo.IsAsync = strings.Contains(funcInfo.Text, "async")
-
-    // 检查是否是导出函数
-    funcInfo.IsExported = strings.Contains(funcInfo.Text, "export")
-
-    // 简化处理：提取返回类型
-    if colonPos := strings.Index(funcInfo.Text, ":"); colonPos > 0 {
-        parenPos := strings.Index(funcInfo.Text, ")")
-        if parenPos > 0 && colonPos > parenPos {
-            returnPart := funcInfo.Text[colonPos+1:]
-            bracePos := strings.Index(returnPart, "{")
-            if bracePos > 0 {
-                funcInfo.ReturnType = strings.TrimSpace(returnPart[:bracePos])
-            } else {
-                funcInfo.ReturnType = strings.TrimSpace(returnPart)
-            }
-        }
-    }
-
-    return funcInfo, nil
-}
-
-// 处理类声明（简化版本）
-func processClassDeclaration(node tsmorphgo.Node) (*ClassInfo, error) {
-    // 实现省略，结构类似
-    return nil, nil
-}
-
-// 处理接口声明（简化版本）
-func processInterfaceDeclaration(node tsmorphgo.Node) (*InterfaceInfo, error) {
-    // 实现省略，结构类似
-    return nil, nil
-}
-
-// 辅助函数：检查是否是顶层声明
-func isTopLevelDeclaration(node tsmorphgo.Node) bool {
-    // 检查祖先链长度，简化判断
-    ancestors := node.GetAncestors()
-    // 如果直接在 SourceFile 下一层，认为是顶层声明
-    return len(ancestors) <= 2
-}
-
-// 使用示例
-func main() {
-    project := tsmorphgo.NewProjectFromSources(map[string]string{
-        "/src/complex.ts": `
-            import { Logger, type Config } from './types';
-            import * as fs from 'fs';
-            import React from 'react';
-
-            export interface DataService {
-                getData(): Promise<Data[]>;
-            }
-
-            class DataServiceImpl implements DataService {
-                constructor(private logger: Logger) {}
-
-                async getData(): Promise<Data[]> {
-                    this.logger.log('Fetching data...');
-                    return [];
+                private normalizeItem(item: any): any {
+                    return { ...item, normalized: true };
                 }
             }
 
-            function createService(logger: Logger): DataService {
-                return new DataServiceImpl(logger);
-            }
+            // 未使用的变量
+            const unusedVar = "This is unused";
+            const alsoUnused: number = 42;
+
+            // 使用过的变量
+            const usedVar = "This is used";
+            console.log(usedVar);
         `,
-    })
 
-    sourceFile := project.GetSourceFile("/src/complex.ts")
-    if sourceFile == nil {
-        panic("源文件未找到")
-    }
-
-    result := SafeProcessDeclarations(sourceFile)
-
-    fmt.Printf("处理结果:\n")
-    fmt.Printf("  导入: %d 个\n", len(result.Imports))
-    fmt.Printf("  函数: %d 个\n", len(result.Functions))
-    fmt.Printf("  类: %d 个\n", len(result.Classes))
-    fmt.Printf("  接口: %d 个\n", len(result.Interfaces))
-    fmt.Printf("  错误: %d 个\n", len(result.Errors))
-
-    for _, imp := range result.Imports {
-        fmt.Printf("  导入 %s from %s\n", imp.ModuleSpecifier, imp.NamedImports)
-    }
-
-    for _, err := range result.Errors {
-        fmt.Printf("  错误 [%v]: %s (行 %d)\n", err.Kind, err.Error, err.Line)
-    }
-}
-```
-
-**迁移要点：**
-- ✅ 使用类型转换函数：`AsXXX` 配合类型判断
-- ✅ 使用专用 API：`GetFunctionDeclarationNameNode`, `GetPropertyAccessName`
-- ✅ 健壮的错误处理和类型安全
-- ⚠️ 需要手动实现复杂的声明解析逻辑
-- ⚠️ 导入/导出信息提取需要字符串处理
-
----
-
-## 4. 符号与引用查找
-
-### 场景 4.1：符号系统与语义分析
-
-**ts-morph 原有方式：**
-
-```typescript
-// ts-morph: 符号系统使用
-function analyzeSymbolUsage(project: Project): SymbolAnalysis {
-    const analysis: SymbolAnalysis = {
-        variables: [],
-        functions: [],
-        classes: [],
-        interfaces: []
-    };
-
-    for (const sourceFile of project.getSourceFiles()) {
-        // 获取文件中的所有变量符号
-        const variableSymbols = sourceFile.getVariableSymbols();
-
-        for (const symbol of variableSymbols) {
-            const declarations = symbol.getDeclarations();
-            const references = symbol.findReferences();
-
-            analysis.variables.push({
-                name: symbol.getName(),
-                isExported: symbol.isExported(),
-                declarationCount: declarations.length,
-                referenceCount: references.length,
-                valueType: symbol.getType().getText(),
-                declarations: declarations.map(d => ({
-                    file: d.getSourceFile().getFilePath(),
-                    line: d.getStartLineNumber()
-                })),
-                references: references.map(r => ({
-                    file: r.getSourceFile().getFilePath(),
-                    line: r.getStartLineNumber(),
-                    isDefinition: r.isDefinition()
-                }))
-            });
-        }
-
-        // 类似地处理函数、类、接口符号...
-    }
-
-    return analysis;
-}
-```
-
-**tsmorphgo 解决方案：**
-
-```go
-// tsmorphgo: 符号系统与语义分析
-type SymbolAnalysis struct {
-    Variables []VariableSymbolInfo
-    Functions []FunctionSymbolInfo
-    Classes   []ClassSymbolInfo
-    Interfaces []InterfaceSymbolInfo
-}
-
-type VariableSymbolInfo struct {
-    Name            string
-    IsExported      bool
-    DeclarationCount int
-    ReferenceCount   int
-    ValueType       string
-    Declarations    []DeclarationLocation
-    References      []ReferenceLocation
-}
-
-type FunctionSymbolInfo struct {
-    Name            string
-    IsExported      bool
-    DeclarationCount int
-    ReferenceCount   int
-    ReturnType      string
-    Parameters      []ParameterSymbolInfo
-    Declarations    []DeclarationLocation
-    References      []ReferenceLocation
-}
-
-type DeclarationLocation struct {
-    FilePath string
-    Line     int
-}
-
-type ReferenceLocation struct {
-    FilePath    string
-    Line        int
-    IsDefinition bool
-}
-
-func AnalyzeSymbolUsage(project *tsmorphgo.Project) (*SymbolAnalysis, error) {
-    analysis := &SymbolAnalysis{}
-
-    // 获取项目中的所有源文件
-    filePaths := []string{"/src/index.ts", "/src/utils.ts", /* 其他文件 */}
-
-    for _, filePath := range filePaths {
-        sourceFile := project.GetSourceFile(filePath)
-        if sourceFile == nil {
-            continue
-        }
-
-        // 分析文件中的所有标识符符号
-        sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-            if !tsmorphgo.IsIdentifier(node) {
-                return
+        "/src/types.ts": `
+            export interface User {
+                id: number;
+                name: string;
             }
 
-            // 只分析声明位置的符号
-            if !isDeclarationIdentifier(node) {
-                return
-            }
-
-            symbol, found := tsmorphgo.GetSymbol(node)
-            if !found {
-                return
-            }
-
-            // 避免重复分析同一符号
-            if isSymbolAlreadyAnalyzed(symbol, analysis) {
-                return
-            }
-
-            // 根据符号类型进行分析
-            if symbol.IsVariable() {
-                varInfo := analyzeVariableSymbol(symbol, node)
-                analysis.Variables = append(analysis.Variables, varInfo)
-            } else if symbol.IsFunction() {
-                funcInfo := analyzeFunctionSymbol(symbol, node)
-                analysis.Functions = append(analysis.Functions, funcInfo)
-            } else if symbol.IsClass() {
-                classInfo := analyzeClassSymbol(symbol, node)
-                analysis.Classes = append(analysis.Classes, classInfo)
-            } else if symbol.IsInterface() {
-                interfaceInfo := analyzeInterfaceSymbol(symbol, node)
-                analysis.Interfaces = append(analysis.Interfaces, interfaceInfo)
-            }
-        })
-    }
-
-    return analysis, nil
-}
-
-// 分析变量符号
-func analyzeVariableSymbol(symbol *tsmorphgo.Symbol, node tsmorphgo.Node) VariableSymbolInfo {
-    info := VariableSymbolInfo{
-        Name:            symbol.GetName(),
-        IsExported:      symbol.IsExported(),
-        DeclarationCount: symbol.GetDeclarationCount(),
-    }
-
-    // 获取声明位置
-    if firstDecl, ok := symbol.GetFirstDeclaration(); ok {
-        info.Declarations = append(info.Declarations, DeclarationLocation{
-            FilePath: firstDecl.GetSourceFile().GetFilePath(),
-            Line:     firstDecl.GetStartLineNumber(),
-        })
-    }
-
-    // 获取所有引用
-    if refs, err := symbol.FindReferences(); err == nil {
-        info.ReferenceCount = len(refs)
-        for _, ref := range refs {
-            info.References = append(info.References, ReferenceLocation{
-                FilePath:    ref.GetSourceFile().GetFilePath(),
-                Line:        ref.GetStartLineNumber(),
-                IsDefinition: isDefinitionPosition(ref, node),
-            })
-        }
-    }
-
-    // 提取值类型（简化处理）
-    parent := node.GetParent()
-    if parent != nil && tsmorphgo.IsVariableDeclaration(*parent) {
-        if varDecl, ok := tsmorphgo.AsVariableDeclaration(*parent); ok {
-            // 尝试从变量声明文本中提取类型信息
-            declText := strings.TrimSpace(varDecl.GetText())
-            if colonPos := strings.Index(declText, ":"); colonPos > 0 {
-                equalPos := strings.Index(declText, "=")
-                if equalPos > colonPos {
-                    typePart := strings.TrimSpace(declText[colonPos+1 : equalPos])
-                    info.ValueType = typePart
-                }
-            }
-        }
-    }
-
-    return info
-}
-
-// 分析函数符号（简化版本）
-func analyzeFunctionSymbol(symbol *tsmorphgo.Symbol, node tsmorphgo.Node) FunctionSymbolInfo {
-    info := FunctionSymbolInfo{
-        Name:            symbol.GetName(),
-        IsExported:      symbol.IsExported(),
-        DeclarationCount: symbol.GetDeclarationCount(),
-    }
-
-    // 获取声明位置
-    if firstDecl, ok := symbol.GetFirstDeclaration(); ok {
-        info.Declarations = append(info.Declarations, DeclarationLocation{
-            FilePath: firstDecl.GetSourceFile().GetFilePath(),
-            Line:     firstDecl.GetStartLineNumber(),
-        })
-    }
-
-    // 获取所有引用
-    if refs, err := symbol.FindReferences(); err == nil {
-        info.ReferenceCount = len(refs)
-        for _, ref := range refs {
-            info.References = append(info.References, ReferenceLocation{
-                FilePath:    ref.GetSourceFile().GetFilePath(),
-                Line:        ref.GetStartLineNumber(),
-                IsDefinition: isDefinitionPosition(ref, node),
-            })
-        }
-    }
-
-    // 提取返回类型（简化处理）
-    funcDeclText := strings.TrimSpace(node.GetParent().GetText())
-    if colonPos := strings.Index(funcDeclText, ":"); colonPos > 0 {
-        bracePos := strings.Index(funcDeclText[colonPos:], "{")
-        if bracePos > 0 {
-            info.ReturnType = strings.TrimSpace(funcDeclText[colonPos+1 : colonPos+bracePos])
-        }
-    }
-
-    return info
-}
-
-// 分析类符号（简化版本）
-func analyzeClassSymbol(symbol *tsmorphgo.Symbol, node tsmorphgo.Node) ClassSymbolInfo {
-    // 类似函数符号分析，省略实现
-    return ClassSymbolInfo{}
-}
-
-// 分析接口符号（简化版本）
-func analyzeInterfaceSymbol(symbol *tsmorphgo.Symbol, node tsmorphgo.Node) InterfaceSymbolInfo {
-    // 类似函数符号分析，省略实现
-    return InterfaceSymbolInfo{}
-}
-
-// 辅助函数
-func isDeclarationIdentifier(node tsmorphgo.Node) bool {
-    parent := node.GetParent()
-    if parent == nil {
-        return false
-    }
-
-    return tsmorphgo.IsVariableDeclaration(*parent) ||
-           tsmorphgo.IsFunctionDeclaration(*parent) ||
-           tsmorphgo.IsClassDeclaration(*parent) ||
-           tsmorphgo.IsInterfaceDeclaration(*parent)
-}
-
-func isSymbolAlreadyAnalyzed(symbol *tsmorphgo.Symbol, analysis *SymbolAnalysis) bool {
-    symbolName := symbol.GetName()
-
-    for _, varInfo := range analysis.Variables {
-        if varInfo.Name == symbolName {
-            return true
-        }
-    }
-
-    for _, funcInfo := range analysis.Functions {
-        if funcInfo.Name == symbolName {
-            return true
-        }
-    }
-
-    // 类似检查其他类型...
-
-    return false
-}
-
-func isDefinitionPosition(ref, definition tsmorphgo.Node) bool {
-    return strings.TrimSpace(ref.GetText()) == strings.TrimSpace(definition.GetText()) &&
-           ref.GetSourceFile().GetFilePath() == definition.GetSourceFile().GetFilePath()
-}
-
-// 使用示例
-func main() {
-    project := tsmorphgo.NewProjectFromSources(map[string]string{
-        "/src/symbols.ts": `
-            interface Logger {
+            export interface Logger {
                 log(message: string): void;
             }
-
-            const logger: Logger = {
-                log: (msg) => console.log(msg)
-            };
-
-            export function processData(data: string): string {
-                logger.log('Processing: ' + data);
-                return data.toUpperCase();
-            }
-
-            class Service {
-                constructor(private logger: Logger) {}
-
-                doWork(): void {
-                    this.logger.log('Working...');
-                    processData('test');
-                }
-            }
-
-            // 使用各种符号
-            const result = processData('hello');
-            logger.log('Done');
         `,
     })
+    defer project.Close()
 
-    analysis, err := AnalyzeSymbolUsage(project)
-    if err != nil {
-        panic(err)
-    }
-
-    fmt.Printf("符号分析结果:\n")
-    fmt.Printf("  变量符号: %d 个\n", len(analysis.Variables))
-    fmt.Printf("  函数符号: %d 个\n", len(analysis.Functions))
-    fmt.Printf("  类符号: %d 个\n", len(analysis.Classes))
-    fmt.Printf("  接口符号: %d 个\n\n", len(analysis.Interfaces))
-
-    for _, varInfo := range analysis.Variables {
-        fmt.Printf("变量 %s:\n", varInfo.Name)
-        fmt.Printf("  导出: %v\n", varInfo.IsExported)
-        fmt.Printf("  声明数: %d\n", varInfo.DeclarationCount)
-        fmt.Printf("  引用数: %d\n", varInfo.ReferenceCount)
-        fmt.Printf("  类型: %s\n", varInfo.ValueType)
-        fmt.Printf("  声明位置: %s:%d\n", varInfo.Declarations[0].FilePath, varInfo.Declarations[0].Line)
-        fmt.Println()
-    }
-
-    for _, funcInfo := range analysis.Functions {
-        fmt.Printf("函数 %s:\n", funcInfo.Name)
-        fmt.Printf("  导出: %v\n", funcInfo.IsExported)
-        fmt.Printf("  返回类型: %s\n", funcInfo.ReturnType)
-        fmt.Printf("  引用数: %d\n", funcInfo.ReferenceCount)
-        fmt.Println()
+    // 创建分析器并执行分析
+    analyzer := NewCodeAnalyzer(project)
+    if err := analyzer.Analyze(); err != nil {
+        log.Fatal("分析失败:", err)
     }
 }
 ```
 
-**迁移要点：**
-- ✅ 使用 `GetSymbol` 获取符号信息
-- ✅ 使用 `FindReferences` 查找引用
-- ✅ 使用符号方法：`GetName()`, `IsExported()`, `GetDeclarationCount()`
-- ✅ 使用符号导航：`GetFirstDeclaration()`, `GetDeclarations()`
-- ⚠️ 符号系统相对底层，需要手动实现高级分析逻辑
-- ⚠️ 类型信息获取有限，需要文本解析作为补充
-
 ---
 
-## 5. 迁移最佳实践
+## 🏆 7. 迁移最佳实践
 
-### 5.1 性能优化策略
-
-#### 避免重复遍历
-
-**❌ ts-morph 低效模式：**
-
-```typescript
-// ts-morph: 多次遍历相同节点
-const functions = sourceFile.getFunctions();
-const classes = sourceFile.getClasses();
-const variables = sourceFile.getVariableDeclarations();
-// 每次调用都会遍历整个 AST
-```
-
-**✅ tsmorphgo 高效模式：**
+### 7.1 性能优化
 
 ```go
-// tsmorphgo: 单次遍历收集多种信息
+// ✅ 推荐: 单次遍历收集多种信息
 func efficientAnalysis(sourceFile *tsmorphgo.SourceFile) (*AnalysisResult, error) {
     result := &AnalysisResult{}
 
@@ -1603,19 +794,11 @@ func efficientAnalysis(sourceFile *tsmorphgo.SourceFile) (*AnalysisResult, error
         switch {
         case tsmorphgo.IsFunctionDeclaration(node):
             // 一次遍历处理所有类型
-            if funcInfo := processFunction(node); funcInfo != nil {
-                result.Functions = append(result.Functions, *funcInfo)
-            }
-
+            result.Functions = append(result.Functions, processFunction(node))
         case tsmorphgo.IsClassDeclaration(node):
-            if classInfo := processClass(node); classInfo != nil {
-                result.Classes = append(result.Classes, *classInfo)
-            }
-
+            result.Classes = append(result.Classes, processClass(node))
         case tsmorphgo.IsVariableDeclaration(node):
-            if varInfo := processVariable(node); varInfo != nil {
-                result.Variables = append(result.Variables, *varInfo)
-            }
+            result.Variables = append(result.Variables, processVariable(node))
         }
     })
 
@@ -1623,358 +806,180 @@ func efficientAnalysis(sourceFile *tsmorphgo.SourceFile) (*AnalysisResult, error
 }
 ```
 
-#### 使用条件筛选提前终止
-
-**❌ ts-morph 全量处理：**
-
-```typescript
-// ts-morph: 总是处理所有节点
-const allNodes = sourceFile.getDescendants();
-allNodes.forEach(node => {
-    // 即使找到了目标节点，也会继续遍历
-});
-```
-
-**✅ tsmorphgo 条件终止：**
+### 7.2 错误处理
 
 ```go
-// tsmorphgo: 条件满足时提前终止
-targetNode, found := sourceFile.ForEachDescendantUntil(func(node tsmorphgo.Node) bool {
-    return tsmorphgo.IsIdentifier(node) &&
-           strings.TrimSpace(node.GetText()) == "targetFunction" &&
-           tsmorphgo.IsFunctionDeclaration(node.GetParent())
-})
-
-if found {
-    // 处理找到的目标节点
-    processTargetFunction(targetNode)
-}
-```
-
-### 5.2 错误处理与健壮性
-
-#### 类型安全转换
-
-**❌ ts-morph 不安全转换：**
-
-```typescript
-// ts-morph: 可能运行时错误
-const funcDecl = node.asKind(SyntaxKind.FunctionDeclaration); // 可能抛出异常
-const name = funcDecl.getName();
-```
-
-**✅ tsmorphgo 安全转换：**
-
-```go
-// tsmorphgo: 安全的类型检查和转换
-if tsmorphgo.IsFunctionDeclaration(node) {
-    if funcDecl, ok := tsmorphgo.AsFunctionDeclaration(node); ok {
-        if nameNode, ok := tsmorphgo.GetFunctionDeclarationNameNode(*funcDecl); ok {
-            name := strings.TrimSpace(nameNode.GetText())
-            // 安全使用 name
-        }
-    }
-}
-```
-
-#### 引用查找错误处理
-
-**❌ ts-morph 简单处理：**
-
-```typescript
-// ts-morph: 可能忽略错误
-const references = node.findReferences(); // 可能失败但没有处理
-references.forEach(ref => {
-    // 使用 ref，可能无效
-});
-```
-
-**✅ tsmorphgo 健壮处理：**
-
-```go
-// tsmorphgo: 完整的错误处理
-refs, err := tsmorphgo.FindReferences(node)
-if err != nil {
-    log.Printf("查找引用失败: %v", err)
-    return nil, fmt.Errorf("符号分析失败: %w", err)
-}
-
-if len(refs) == 0 {
-    log.Printf("警告: 符号 %s 没有找到引用", node.GetText())
-    // 可以继续处理，只是没有引用
-}
-
-validRefs := make([]tsmorphgo.Node, 0, len(refs))
-for _, ref := range refs {
-    if ref.GetSourceFile() != nil {
-        validRefs = append(validRefs, ref)
-    }
-}
-```
-
-### 5.3 代码组织和可维护性
-
-#### 封装常用操作
-
-```go
-// tsmorphgo: 封装高级分析逻辑
-type CodeAnalyzer struct {
-    project *tsmorphgo.Project
-    cache   *AnalysisCache
-}
-
-func NewCodeAnalyzer(project *tsmorphgo.Project) *CodeAnalyzer {
-    return &CodeAnalyzer{
-        project: project,
-        cache:   NewAnalysisCache(),
-    }
-}
-
-func (a *CodeAnalyzer) AnalyzeFile(filePath string) (*FileAnalysis, error) {
-    // 检查缓存
-    if cached := a.cache.Get(filePath); cached != nil {
-        return cached, nil
+// ✅ 推荐: 完整的错误处理
+func safeProcessNode(node tsmorphgo.Node) error {
+    // 类型安全检查
+    if !tsmorphgo.IsIdentifier(node) {
+        return fmt.Errorf("节点不是标识符")
     }
 
-    sourceFile := a.project.GetSourceFile(filePath)
-    if sourceFile == nil {
-        return nil, fmt.Errorf("文件不存在: %s", filePath)
+    // 引用查找的错误处理
+    refs, err := tsmorphgo.FindReferences(node)
+    if err != nil {
+        return fmt.Errorf("查找引用失败: %w", err)
     }
 
-    analysis := a.analyzeSourceFile(sourceFile)
-    a.cache.Set(filePath, analysis)
+    if len(refs) == 0 {
+        log.Printf("警告: 标识符 %s 没有找到引用", node.GetText())
+    }
 
-    return analysis, nil
-}
-
-func (a *CodeAnalyzer) analyzeSourceFile(sourceFile *tsmorphgo.SourceFile) *FileAnalysis {
-    // 集中实现分析逻辑
-    // ...
-}
-```
-
-#### 使用接口抽象
-
-```go
-// tsmorphgo: 使用接口实现可扩展的处理
-type NodeProcessor interface {
-    CanProcess(node tsmorphgo.Node) bool
-    Process(node tsmorphgo.Node) error
-    GetResults() interface{}
-}
-
-type FunctionProcessor struct {
-    results []FunctionInfo
-}
-
-func (p *FunctionProcessor) CanProcess(node tsmorphgo.Node) bool {
-    return tsmorphgo.IsFunctionDeclaration(node)
-}
-
-func (p *FunctionProcessor) Process(node tsmorphgo.Node) error {
-    // 处理函数节点
     return nil
 }
+```
 
-func (p *FunctionProcessor) GetResults() interface{} {
-    return p.results
-}
+### 7.3 缓存使用
 
-// 使用处理器管道
-func ProcessWithPipeline(sourceFile *tsmorphgo.SourceFile, processors []NodeProcessor) error {
-    sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-        for _, processor := range processors {
-            if processor.CanProcess(node) {
-                if err := processor.Process(node); err != nil {
-                    log.Printf("处理节点失败: %v", err)
+```go
+// ✅ 推荐: 使用缓存机制
+func cachedAnalysis(project *tsmorphgo.Project) {
+    // 启用缓存
+    cache := tsmorphgo.NewReferenceCache(1000, 10*time.Minute)
+
+    for _, file := range project.GetSourceFiles() {
+        file.ForEachDescendant(func(node tsmorphgo.Node) {
+            if tsmorphgo.IsIdentifier(node) {
+                // 使用缓存的引用查找
+                refs, fromCache, err := cache.GetOrFindReferences(node)
+                if err == nil {
+                    source := "LSP服务"
+                    if fromCache {
+                        source = "缓存"
+                    }
+                    fmt.Printf("引用 %s: %d 个 (来源: %s)\n",
+                        node.GetText(), len(refs), source)
                 }
             }
-        }
-    })
-    return nil
+        })
+    }
 }
 ```
 
 ---
 
-## 6. 迁移检查清单
+## 🔍 8. 常见问题解决
 
-### 6.1 基础 API 迁移检查
+### 8.1 编译错误
 
-- [ ] 项目创建：`NewProjectFromSources` 替代 `new Project()`
-- [ ] 文件获取：`GetSourceFile(path)` 替代 `getSourceFiles()`
-- [ ] 节点遍历：`ForEachDescendant` 替代 `getDescendants()`
-- [ ] 节点导航：`GetParent()`, `GetAncestors()` 兼容
-- [ ] 节点文本：`GetText()` 兼容
-- [ ] 节点类型：`node.Kind` 替代 `node.getKind()`
-
-### 6.2 类型系统迁移检查
-
-- [ ] 类型判断：`IsXXX()` 函数替代 `isKind(SyntaxKind.XXX)`
-- [ ] 类型转换：`AsXXX()` 函数替代 `asKind(SyntaxKind.XXX)`
-- [ ] 专用 API：使用 `GetVariableName()`, `GetPropertyAccessName()` 等
-- [ ] 错误处理：使用 `ok` 模式进行类型安全转换
-
-### 6.3 符号系统迁移检查
-
-- [ ] 符号获取：`GetSymbol()` 替代 `node.getSymbol()`
-- [ ] 引用查找：`FindReferences()` 替代 `findReferences()`
-- [ ] 符号信息：`GetName()`, `IsExported()` 等方法使用
-- [ ] 声明访问：`GetFirstDeclaration()`, `GetDeclarations()` 使用
-
-### 6.4 高级功能迁移检查
-
-- [ ] 表达式处理：使用 `GetCallExpressionExpression()` 等 API
-- [ ] 声明处理：使用 `GetFunctionDeclarationNameNode()` 等 API
-- [ ] 复杂分析：实现自定义的分析逻辑
-- [ ] 性能优化：实现缓存和批量处理
-
----
-
-## 7. 常见问题与解决方案
-
-### 7.1 编译错误
-
-**问题：** `cannot use node (type Node) as type *Node in argument`
-
-**解决方案：**
+**问题:** `cannot use node (type Node) as type *Node`
 ```go
-// ❌ 错误：传递值类型
+// ❌ 错误
 FindReferences(node)
 
-// ✅ 正确：传递指针
-FindReferences(&node)
-
-// 或者直接使用值（根据 API 设计）
-FindReferences(node)
+// ✅ 正确
+FindReferences(node) // 根据API设计传递值或指针
 ```
 
-**问题：** `undefined: AsXXX` 或 `undefined: IsXXX`
-
-**解决方案：**
+**问题:** 找不到期望的节点
 ```go
-// 确保导入正确的包
-import "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
-
-// 检查函数名拼写
-// 应该是 AsImportDeclaration, AsVariableDeclaration 等
-```
-
-### 7.2 逻辑错误
-
-**问题：** 找不到期望的节点
-
-**调试方法：**
-```go
-// 添加调试信息
+// 🔍 调试方法
 sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-    fmt.Printf("节点: %v, 文本: %s\n", node.Kind, strings.TrimSpace(node.GetText()[:50]))
+    fmt.Printf("节点: %v, 文本: %s\n",
+        node.Kind, strings.TrimSpace(node.GetText()[:50]))
 })
 
-// 检查节点类型是否匹配
+// ✅ 检查节点类型是否正确
 if tsmorphgo.IsIdentifier(node) {
-    fmt.Println("找到标识符:", strings.TrimSpace(node.GetText()))
+    fmt.Println("找到标识符:", node.GetText())
 }
 ```
 
-**问题：** `FindReferences` 返回空或错误
+### 8.2 性能问题
 
-**调试方法：**
+**问题:** 分析大型项目时性能较慢
 ```go
-// 检查输入节点是否有效
-if node.GetSourceFile() == nil {
-    fmt.Println("节点没有关联的源文件")
-    return
+// ✅ 解决方案: 使用缓存
+project := tsmorphgo.NewProject(config)
+defer project.Close()
+
+// 启用LSP缓存
+lspService, err := project.GetLspService()
+if err == nil {
+    // LSP服务会自动缓存结果
 }
 
-// 检查节点是否是符号声明
-if !isDeclarationNode(node) {
-    fmt.Println("节点不是声明节点")
-    return
-}
-
-// 尝试获取符号
-symbol, found := tsmorphgo.GetSymbol(node)
-if !found {
-    fmt.Println("无法获取节点符号")
-    return
-}
-```
-
-### 7.3 性能问题
-
-**问题：** 分析大型项目时性能较慢
-
-**优化方案：**
-```go
-// 1. 使用缓存机制
-type AnalysisCache struct {
-    data map[string]interface{}
-    mu   sync.RWMutex
-}
-
-// 2. 批量处理节点
-func batchProcess(sourceFile *tsmorphgo.SourceFile) {
-    var batch []tsmorphgo.Node
-    batchSize := 100
-
-    sourceFile.ForEachDescendant(func(node tsmorphgo.Node) {
-        batch = append(batch, node)
-        if len(batch) >= batchSize {
-            processBatch(batch)
-            batch = batch[:0] // 清空 batch
-        }
-    })
-
-    if len(batch) > 0 {
-        processBatch(batch)
-    }
-}
-
-// 3. 并行处理（如果线程安全）
-func parallelProcess(sourceFiles []*tsmorphgo.SourceFile) {
-    var wg sync.WaitGroup
-    for _, sf := range sourceFiles {
-        wg.Add(1)
-        go func(file *tsmorphgo.SourceFile) {
-            defer wg.Done()
-            analyzeFile(file)
-        }(sf)
-    }
-    wg.Wait()
-}
+// 启用引用缓存
+cache := tsmorphgo.NewReferenceCache(1000, 10*time.Minute)
 ```
 
 ---
 
-## 8. 总结
+## 📚 9. 完整功能概览
 
-### 8.1 迁移成功的关键
+### 9.1 核心功能列表
 
-1. **理解 API 设计差异**：tsmorphgo 采用函数式 API 而非面向对象
-2. **掌握类型安全模式**：使用 `IsXXX` + `AsXXX` 的安全转换模式
-3. **实现自定义逻辑**：一些高级功能需要手动实现
-4. **注重性能优化**：避免重复遍历，使用缓存和批量处理
-5. **完善错误处理**：Go 的错误处理模式与 TypeScript 不同
+| 功能类别 | TSMorphGo API | 说明 |
+|---------|--------------|------|
+| **项目管理** | `NewProject()` | 基于配置创建项目 |
+| | `NewProjectFromSources()` | 从内存源码创建项目 |
+| | `GetSourceFiles()` | 获取所有源文件 |
+| | `Close()` | 关闭项目，释放资源 |
+| **节点导航** | `GetParent()` | 获取父节点 |
+| | `GetAncestors()` | 获取所有祖先节点 |
+| | `GetFirstAncestorByKind()` | 查找特定类型祖先 |
+| | `ForEachDescendant()` | 深度优先遍历 |
+| **类型判断** | `IsIdentifier()` | 是否是标识符 |
+| | `IsFunctionDeclaration()` | 是否是函数声明 |
+| | `IsClassDeclaration()` | 是否是类声明 |
+| | `IsCallExpression()` | 是否是函数调用 |
+| **文本操作** | `GetText()` | 获取节点文本 |
+| | `GetKindName()` | 获取类型名称 |
+| | `GetStartLineNumber()` | 获取行号 |
+| **引用查找** | `FindReferences()` | 查找所有引用 |
+| | `GotoDefinition()` | 跳转到定义 |
+| | `FindReferencesWithCache()` | 带缓存的引用查找 |
+| **专用API** | `GetVariableName()` | 获取变量名 |
+| | `GetPropertyAccessName()` | 获取属性名 |
+| | `GetCallExpressionExpression()` | 获取调用表达式 |
 
-### 8.2 后续优化方向
+### 9.2 高级功能
 
-1. **API 增强**：基于使用反馈完善高级 API
-2. **性能优化**：实现更智能的缓存和索引机制
-3. **功能扩展**：添加更多 TypeScript 语言特性的支持
-4. **工具集成**：与现有工具链的深度集成
-
-### 8.3 支持与资源
-
-- **API 文档**：详细的 API 参考和使用示例
-- **测试用例**：覆盖所有主要使用场景的测试
-- **示例代码**：各种迁移场景的完整示例
-- **社区支持**：通过 issue 和讨论获得帮助
-
-通过遵循本迁移指南，您可以成功将基于 ts-morph 的项目迁移到 tsmorphgo，并充分利用 Go 语言的优势构建高性能的代码分析工具。
+- **LSP集成**: 真实的TypeScript语义分析
+- **缓存系统**: 多级缓存提升性能（实测850倍提升）
+- **符号管理**: 完整的符号系统支持
+- **QuickInfo**: 类型和文档信息获取
+- **错误恢复**: 健壮的错误处理和降级策略
 
 ---
 
-**最后更新**: 2024-10-27
-**版本**: tsmorphgo v0.1
-**维护者**: Flying-Bird1999
+## 🎖️ 10. 总结
+
+### 10.1 TSMorphGo 优势
+
+1. **🚀 高性能**: 多级缓存机制，实测性能提升850倍
+2. **🛡️ 类型安全**: 基于Go编译时类型检查
+3. **🔧 易于使用**: 简洁的API设计，符合Go语言习惯
+4. **📦 功能完整**: 95%+的ts-morph功能覆盖
+5. **🎯 稳定可靠**: 完善的错误处理和测试覆盖
+
+### 10.2 迁移成功要点
+
+1. **理解API差异**: 掌握函数式API的设计理念
+2. **善用类型判断**: 使用`IsXXX`函数进行安全检查
+3. **利用缓存机制**: 显著提升大规模项目分析性能
+4. **错误处理**: 采用Go的错误处理模式
+5. **性能优化**: 避免重复遍历，使用批量处理
+
+### 10.3 适用场景
+
+- ✅ **代码分析工具**: 复杂度分析、依赖分析
+- ✅ **重构工具**: 自动重构、代码生成
+- ✅ **静态检查**: 类型检查、最佳实践检查
+- ✅ **IDE插件**: 语法高亮、智能提示
+- ✅ **文档生成**: API文档、类型文档
+
+---
+
+**📖 更多资源:**
+- [完整API文档](./api-reference.md)
+- [测试用例集合](./examples/)
+- [性能基准测试](./benchmarks/)
+- [社区讨论](https://github.com/Flying-Bird1999/analyzer-ts/discussions)
+
+**最后更新**: 2025年11月
+**版本**: TSMorphGo v1.0
+**作者**: Flying-Bird1999
+
+通过本指南，您可以成功将项目从 ts-morph 迁移到 TSMorphGo，并充分利用 Go 语言的优势构建高性能的代码分析工具！
