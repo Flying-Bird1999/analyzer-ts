@@ -7,9 +7,7 @@
 ```
 examples/
 ├── README.md                      # 📖 使用说明（本文档）
-├── run-examples.sh               # 🚀 推荐的Shell脚本构建工具
-├── Makefile                       # 🔧 备选的Makefile构建工具
-├── BUILD_SYSTEM_GUIDE.md          # 📚 构建系统对比指南
+├── run-examples.sh               # 🚀 运行脚本
 ├── demo-react-app/                # 📁 真实React项目（用作分析素材）
 │   ├── src/                       # 源代码目录
 │   │   ├── components/            # React组件
@@ -18,13 +16,12 @@ examples/
 │   │   ├── services/              # 服务模块
 │   │   └── forms/                 # 表单组件
 │   └── public/                    # 静态资源
-├── basic-usage/                   # 📦 基础API使用示例
-│   ├── project-management.go      # 🏗️ 项目管理示例
-│   ├── node-navigation.go         # 🔍 节点导航示例
-│   └── type-detection.go          # 🏷️ 类型检测示例
-└── advanced-usage/                 # ⚡ 高级API使用示例
-    ├── reference-finding.go       # 🔗 引用查找示例
-    └── specialized-apis.go         # 🛠️ 专用API示例
+└── pkg/                           # 📦 统一的示例目录
+    ├── project-management.go      # 🏗️ 项目管理和内存文件系统示例
+    ├── node-navigation.go         # 🔍 节点导航和位置信息示例
+    ├── type-detection.go          # 🏷️ 类型检测和代码质量分析示例
+    ├── reference-finding.go       # 🔗 引用查找和符号系统示例
+    └── specialized-apis.go        # 🛠️ 专用API示例
 ```
 
 ## 🚀 快速开始
@@ -37,19 +34,15 @@ Shell脚本提供了丰富的功能、美观的输出和强大的错误处理能
 # 📋 查看所有可用命令
 ./run-examples.sh help
 
-# 🚀 运行所有示例
-./run-examples.sh all
-
-# 📦 分类运行示例
-./run-examples.sh basic      # 运行基础示例
-./run-examples.sh advanced   # 运行高级示例
+# 🚀 运行所有示例（推荐）
+./run-examples.sh all         # 运行所有5个示例
 
 # 🎯 运行单个示例
-./run-examples.sh project-management
-./run-examples.sh node-navigation
-./run-examples.sh type-detection
-./run-examples.sh reference-finding
-./run-examples.sh specialized-apis
+./run-examples.sh project-management      # 项目管理和内存文件系统
+./run-examples.sh node-navigation         # 节点导航和位置信息
+./run-examples.sh type-detection          # 类型检测和代码质量分析
+./run-examples.sh reference-finding       # 引用查找和符号系统
+./run-examples.sh specialized-apis        # 专用API
 
 # 🛠️ 开发工具
 ./run-examples.sh check       # 检查环境配置
@@ -63,50 +56,114 @@ Shell脚本提供了丰富的功能、美观的输出和强大的错误处理能
 如果只想快速运行特定示例，也可以直接使用go命令：
 
 ```bash
-# 运行项目管理示例
-cd basic-usage
-go run -tags project_management project-management.go
+# 进入pkg目录
+cd pkg
 
-# 运行引用查找示例
-cd advanced-usage
+# 运行单个示例
+go run -tags project_management project-management.go
+go run -tags node_navigation node-navigation.go
+go run -tags type_detection type-detection.go
 go run -tags reference_finding reference-finding.go
+go run -tags specialized_apis specialized-apis.go
 ```
 
 ## 📋 示例详细介绍
 
-### 🏗️ 基础示例 (basic-usage/)
+### 1. 项目管理和内存文件系统示例 (`project-management.go`)
 
-#### 1. 项目管理示例 (`project-management.go`)
+**功能**：演示项目创建、源文件管理、内存文件系统和动态文件创建
 
-- **功能**: 展示项目创建、文件分析、动态添加文件
-- **API**: `tsmorphgo.NewProject()`, `project.GetSourceFiles()`, `project.CreateSourceFile()`
-- **输出**: 统计项目文件数量、分类、创建动态文件
+**涵盖API**：
+- `NewProject()` - 基于真实项目创建
+- `NewProjectFromSources()` - 内存文件系统
+- `CreateSourceFile()` - 动态文件创建
+- `GetSourceFiles()` - 文件枚举
+- `Close()` - 资源管理
 
-#### 2. 节点导航示例 (`node-navigation.go`)
+**应用场景**：
+- 测试环境搭建
+- 动态代码生成
+- 原型开发
+- 配置文件管理
 
-- **功能**: 展示AST节点遍历、父子关系查找、React组件结构分析
-- **API**: `node.ForEachDescendant()`, `node.GetParent()`, `node.GetAncestors()`
-- **输出**: 遍历函数声明、查找特定标识符、分析组件结构
+**学习级别**：初级 → 高级 | **预计时间**：30-45分钟
 
-#### 3. 类型检测示例 (`type-detection.go`)
+### 2. 节点导航和位置信息示例 (`node-navigation.go`)
 
-- **功能**: 展示TypeScript类型识别、接口分析、导入导出统计
-- **API**: `node.Kind`, `node.IsInterfaceDeclaration()`, `node.IsEnumDeclaration()`
-- **输出**: 类型统计、接口分析、导入导出信息
+**功能**：演示AST节点遍历、位置信息计算和IDE集成
 
-### ⚡ 高级示例 (advanced-usage/)
+**涵盖API**：
+- `ForEachDescendant()` - 节点遍历
+- `GetParent()` / `GetAncestors()` - 父节点导航
+- `GetFirstAncestorByKind()` - 条件祖先查找
+- `GetStart()` / `GetStartLineNumber()` / `GetStartColumnNumber()` - 位置信息
+- `GetPositionInfo()` - 完整位置信息
 
-#### 1. 引用查找示例 (`reference-finding.go`)
+**应用场景**：
+- 代码高亮
+- 错误定位
+- 跳转定义
+- IDE插件开发
 
-- **功能**: 展示符号引用查找、性能缓存优化、跳转到定义
-- **API**: `tsmorphgo.FindReferences()`, `tsmorphgo.FindReferencesWithCache()`, `tsmorphgo.GotoDefinition()`
-- **输出**: 引用列表、缓存性能对比、定义跳转结果
+**学习级别**：初级 → 高级 | **预计时间**：40-60分钟
 
-#### 2. 专用API示例 (`specialized-apis.go`)
+### 3. 类型检测和代码质量分析示例 (`type-detection.go`)
 
-- **功能**: 展示特定语法结构的深度分析、函数声明、调用表达式
-- **API**: `tsmorphgo.IsFunctionDeclaration()`, `tsmorphgo.IsCallExpression()`, `node.Kind`
-- **输出**: 函数分析、方法调用统计、属性访问统计
+**功能**：演示TypeScript类型识别、代码质量分析和依赖关系分析
+
+**涵盖API**：
+- `IsInterfaceDeclaration()` / `IsTypeAliasDeclaration()` - 类型识别
+- `IsFunctionDeclaration()` / `IsVariableDeclaration()` - 声明检测
+- `IsCallExpression()` / `IsPropertyAccessExpression()` - 表达式分析
+- `node.Kind == KindXxx` - 精确类型匹配
+- 复合类型守卫 - 复杂模式识别
+
+**应用场景**：
+- 静态代码分析
+- 重构工具
+- 代码质量检查
+- 依赖关系图
+
+**学习级别**：初级 → 高级 | **预计时间**：35-50分钟
+
+### 4. 引用查找和符号系统示例 (`reference-finding.go`)
+
+**功能**：演示符号引用查找、缓存优化、跳转定义和重命名安全分析
+
+**涵盖API**：
+- `FindReferences()` - 引用查找
+- `FindReferencesWithCache()` - 缓存优化
+- `GotoDefinition()` - 跳转定义
+- `GetSymbol()` / `symbol.GetName()` - 符号系统
+- 重命名安全性分析 - 影响范围评估
+
+**应用场景**：
+- IDE功能开发
+- 重构工具
+- 代码导航
+- 影响分析
+
+**学习级别**：中级 → 高级 | **预计时间**：45-60分钟
+
+### 5. 专用API示例 (`specialized-apis.go`)
+
+**功能**：演示特定语法结构的分析，包括函数声明、调用表达式、属性访问和导入别名
+
+**涵盖API**：
+- `IsFunctionDeclaration()` / `GetFunctionDeclarationNameNode()` - 函数声明
+- `IsCallExpression()` / `GetCallExpressionExpression()` - 调用表达式
+- `IsPropertyAccessExpression()` / `GetPropertyAccessName()` - 属性访问
+- `IsVariableDeclaration()` / `GetVariableName()` - 变量声明
+- `IsImportSpecifier()` / `GetImportSpecifierAliasNode()` - 导入别名
+- `IsBinaryExpression()` / `GetBinaryExpressionLeft/Right/OperatorToken()` - 二元表达式
+
+**应用场景**：
+- 语法分析器
+- 代码转换器
+- AST处理工具
+- 特定模式识别
+
+**学习级别**：中级 → 高级 | **预计时间**：40-55分钟
 
 ## 💻 运行结果示例
 
@@ -165,23 +222,43 @@ go run -tags reference_finding reference-finding.go
 - **Go Build Tags**: 条件编译，支持不同示例
 - **Shell Script**: 现代化构建和自动化工具
 
-## 💡 使用建议
+## 🎯 学习路径
 
-### 🔰 对于新手用户
+### 🔰 初学者路径
 
-1. **从基础开始**: 先运行 `./run-examples.sh basic` 了解基本概念
+1. **项目管理** → 理解项目创建和基本概念
+2. **节点导航** → 学习AST遍历和位置信息
+3. **类型检测** → 掌握类型识别和基础分析
+
+### 🚀 进阶路径
+
+4. **引用查找** → 学习符号系统和语义分析
+5. **专用API** → 掌握特定语法结构的处理
+
+### 💼 专业开发者
+
+- **性能优化**：学习缓存机制和批量处理
+- **IDE集成**：掌握位置计算和链接生成
+- **代码质量**：理解静态分析和质量检查
+- **重构工具**：学习影响分析和安全操作
+
+### 💡 使用建议
+
+#### 对于新手用户
+
+1. **从基础开始**: 先运行 `./run-examples.sh all` 了解整体功能
 2. **逐个学习**: 使用单个示例命令深入学习每个API
 3. **查看输出**: 仔细分析每个示例的输出，理解TSMorphGo的功能
 4. **环境检查**: 使用 `./run-examples.sh check` 确保环境正确配置
 
-### 🚀 对于开发者
+#### 对于开发者
 
 1. **性能测试**: 观察引用查找的缓存效果和性能提升
 2. **真实项目**: 所有示例都基于真实React项目，可直接应用到实际工作
 3. **扩展功能**: 参考示例代码，开发自己的分析工具
 4. **集成CI/CD**: 使用脚本功能进行自动化测试和部署
 
-### 🏢 对于团队协作
+#### 对于团队协作
 
 1. **统一工具**: 推荐团队成员使用相同的构建工具
 2. **文档同步**: 参考本文档和代码注释，保持知识同步
@@ -229,15 +306,44 @@ go run -tags reference_finding reference-finding.go
 # 1. 检查环境
 ./run-examples.sh check
 
-# 2. 运行基础示例
-./run-examples.sh basic
+# 2. 运行所有示例
+./run-examples.sh all
 
-# 3. 运行高级示例
-./run-examples.sh advanced
+# 3. 查看项目状态
+./run-examples.sh status
 
 # 4. 查看项目报告
 ./run-examples.sh report
 ```
+
+---
+
+## 🏗️ API对齐说明
+
+所有示例都严格按照 [ts-morph API](../doc/ts-morph.md) 设计，确保：
+
+1. **命名一致性**：Go版本API与ts-morph保持相似的命名模式
+2. **功能对齐**：每个API都对应ts-morph中的相应功能
+3. **使用模式**：演示正确的使用姿势和最佳实践
+4. **错误处理**：展示适当的错误处理和边界情况
+
+### API映射示例
+
+| ts-morph API | TSMorphGo API | 说明 |
+|-------------|---------------|------|
+| `node.isFunctionDeclaration()` | `IsFunctionDeclaration(node)` | 函数声明检测 |
+| `functionDeclaration.getName()` | `GetFunctionDeclarationNameNode(node)` | 获取函数名 |
+| `node.forEachDescendant()` | `node.ForEachDescendant()` | 节点遍历 |
+| `node.getParent()` | `node.GetParent()` | 获取父节点 |
+| `identifier.findReferences()` | `FindReferences(node)` | 引用查找 |
+
+## 📝 注意事项
+
+1. **项目路径**：所有示例都基于 `demo-react-app` 目录
+2. **构建标签**：运行时需要指定正确的构建标签
+3. **资源管理**：使用 `defer project.Close()` 确保资源释放
+4. **错误处理**：检查返回值，处理不存在的文件或符号
+5. **性能考虑**：大项目分析时注意内存和CPU使用
 
 ---
 

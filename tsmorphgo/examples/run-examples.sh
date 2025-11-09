@@ -5,7 +5,7 @@
 # =============================================================================
 # 描述: 用于运行和管理 TSMorphGo 示例项目的Shell脚本
 # 使用方法: ./run-examples.sh <command> [args...]
-# 示例: ./run-examples.sh help, ./run-examples.sh basic
+# 示例: ./run-examples.sh help, ./run-examples.sh all
 # =============================================================================
 
 # 脚本配置
@@ -23,8 +23,7 @@ NC='\033[0m' # No Color
 
 # 项目路径配置
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BASIC_DIR="$SCRIPT_DIR/basic-usage"
-ADVANCED_DIR="$SCRIPT_DIR/advanced-usage"
+PKG_DIR="$SCRIPT_DIR/pkg"
 PROJECT_ROOT="$SCRIPT_DIR"
 
 # =============================================================================
@@ -116,17 +115,15 @@ ${YELLOW}🚀 快速开始:${NC}
     deps        - 检查项目依赖
 
 ${YELLOW}📦 批量运行示例:${NC}
-    basic       - 运行所有基础API示例
-    advanced    - 运行所有高级API示例
-    all         - 运行所有示例
+    all         - 运行所有示例（推荐）
     test        - 运行项目测试
 
 ${YELLOW}🎯 单独运行示例:${NC}
-    project-management      - 项目管理示例
-    node-navigation         - 节点导航示例
-    type-detection         - 类型检测示例
-    reference-finding      - 引用查找示例
-    specialized-apis       - 专用API示例
+    project-management      - 项目管理和内存文件系统示例
+    node-navigation         - 节点导航和位置信息示例
+    type-detection          - 类型检测和代码质量分析示例
+    reference-finding       - 引用查找和符号系统示例
+    specialized-apis        - 专用API示例
 
 ${YELLOW}🧹 维护命令:${NC}
     clean       - 清理编译和临时文件
@@ -164,18 +161,9 @@ check_environment() {
     # 检查项目文件
     print_info "🔍 检查项目文件..."
 
-    local basic_files=("$BASIC_DIR/project-management.go" "$BASIC_DIR/node-navigation.go" "$BASIC_DIR/type-detection.go")
-    local advanced_files=("$ADVANCED_DIR/reference-finding.go" "$ADVANCED_DIR/specialized-apis.go")
+    local pkg_files=("$PKG_DIR/project-management.go" "$PKG_DIR/node-navigation.go" "$PKG_DIR/type-detection.go" "$PKG_DIR/reference-finding.go" "$PKG_DIR/specialized-apis.go")
 
-    for file in "${basic_files[@]}"; do
-        if [[ -f "$file" ]]; then
-            print_success "✓ $(basename "$file")"
-        else
-            print_error "✗ $(basename "$file") 不存在"
-        fi
-    done
-
-    for file in "${advanced_files[@]}"; do
+    for file in "${pkg_files[@]}"; do
         if [[ -f "$file" ]]; then
             print_success "✓ $(basename "$file")"
         else
@@ -235,55 +223,27 @@ check_dependencies() {
     fi
 }
 
-# 运行基础示例
-run_basic_examples() {
-    print_header "运行基础API示例"
-    print_info "📋 运行顺序:"
-    print_info "  1. 项目管理示例 - 展示项目创建和管理"
-    print_info "  2. 节点导航示例 - 展示AST节点遍历和导航"
-    print_info "  3. 类型检测示例 - 展示TypeScript类型分析"
-    print_info ""
-    print_info "▶️  开始运行..."
-    echo
-
-    run_example "项目管理示例" "$BASIC_DIR/project-management.go" "project_management" "项目创建、源文件管理、文件分类"
-    echo
-    run_example "节点导航示例" "$BASIC_DIR/node-navigation.go" "node_navigation" "节点遍历、祖先查找、React组件分析"
-    echo
-    run_example "类型检测示例" "$BASIC_DIR/type-detection.go" "type_detection" "类型识别、接口分析、导入导出统计"
-
-    print_success "基础API示例运行完成！"
-}
-
-# 运行高级示例
-run_advanced_examples() {
-    print_header "运行高级API示例"
-    print_info "📋 运行顺序:"
-    print_info "  1. 引用查找示例 - 展示符号引用查找和缓存"
-    print_info "  2. 专用API示例 - 展示特定语法结构的分析"
-    print_info ""
-    print_info "▶️  开始运行..."
-    echo
-
-    run_example "引用查找示例" "$ADVANCED_DIR/reference-finding.go" "reference_finding" "引用查找、缓存优化、跳转定义"
-    echo
-    run_example "专用API示例" "$ADVANCED_DIR/specialized-apis.go" "specialized_apis" "函数分析、调用表达式、属性访问"
-
-    print_success "高级API示例运行完成！"
-}
-
 # 运行所有示例
 run_all_examples() {
     print_header "运行所有TSMorphGo示例"
     print_info "📋 执行计划:"
-    print_info "  • 阶段1: 基础API示例 (3个示例)"
-    print_info "  • 阶段2: 高级API示例 (2个示例)"
-    print_info "  • 总计: 5个示例"
+    print_info "  • 阶段1: 项目管理示例 - 项目创建和内存文件系统"
+    print_info "  • 阶段2: 节点导航示例 - AST遍历和位置信息"
+    print_info "  • 阶段3: 类型检测示例 - 类型分析和代码质量"
+    print_info "  • 阶段4: 引用查找示例 - 符号系统和缓存优化"
+    print_info "  • 阶段5: 专用API示例 - 特定语法结构分析"
+    print_info "  • 总计: 5个综合示例"
     echo
 
-    run_basic_examples
+    run_example "项目管理示例" "$PKG_DIR/project-management.go" "project_management" "项目创建、源文件管理、内存文件系统、动态文件创建"
     echo
-    run_advanced_examples
+    run_example "节点导航示例" "$PKG_DIR/node-navigation.go" "node_navigation" "节点遍历、祖先查找、位置计算、IDE集成"
+    echo
+    run_example "类型检测示例" "$PKG_DIR/type-detection.go" "type_detection" "类型识别、接口分析、代码质量、依赖关系"
+    echo
+    run_example "引用查找示例" "$PKG_DIR/reference-finding.go" "reference_finding" "引用查找、缓存优化、跳转定义、重命名安全"
+    echo
+    run_example "专用API示例" "$PKG_DIR/specialized-apis.go" "specialized_apis" "函数声明、调用表达式、属性访问、导入别名"
 
     print_success "🎉 所有示例运行完成！"
 }
@@ -322,38 +282,29 @@ build_executables() {
     local bin_dir="$PROJECT_ROOT/bin"
     mkdir -p "$bin_dir"
 
-    print_info "🏗️ 构建基础示例..."
-    cd "$BASIC_DIR"
+    print_info "🏗️ 构建所有示例..."
+    cd "$PKG_DIR"
 
-    # 构建基础示例
-    if [[ -f "project-management.go" ]]; then
-        go build -tags project_management -o "$bin_dir/project-management" project-management.go
-        print_success "✓ project-management"
-    fi
+    # 构建所有示例
+    local examples=(
+        "project-management:project_management"
+        "node-navigation:node_navigation"
+        "type-detection:type_detection"
+        "reference-finding:reference_finding"
+        "specialized-apis:specialized_apis"
+    )
 
-    if [[ -f "node-navigation.go" ]]; then
-        go build -tags node_navigation -o "$bin_dir/node-navigation" node-navigation.go
-        print_success "✓ node-navigation"
-    fi
+    for example in "${examples[@]}"; do
+        local file="${example%:*}"
+        local tag="${example#*:}"
 
-    if [[ -f "type-detection.go" ]]; then
-        go build -tags type_detection -o "$bin_dir/type-detection" type-detection.go
-        print_success "✓ type-detection"
-    fi
-
-    print_info "🏗️ 构建高级示例..."
-    cd "$ADVANCED_DIR"
-
-    # 构建高级示例
-    if [[ -f "reference-finding.go" ]]; then
-        go build -tags reference_finding -o "$bin_dir/reference-finding" reference-finding.go
-        print_success "✓ reference-finding"
-    fi
-
-    if [[ -f "specialized-apis.go" ]]; then
-        go build -tags specialized_apis -o "$bin_dir/specialized-apis" specialized-apis.go
-        print_success "✓ specialized-apis"
-    fi
+        if [[ -f "$file.go" ]]; then
+            go build -tags "$tag" -o "$bin_dir/$file" "$file.go"
+            print_success "✓ $file"
+        else
+            print_warning "✗ $file.go 不存在"
+        fi
+    done
 
     print_success "构建完成！可执行文件位于 $bin_dir"
 }
@@ -406,8 +357,12 @@ generate_report() {
     echo "  • TypeScript文件数量: $ts_files"
 
     print_info "📋 示例文件:"
-    ls -la "$BASIC_DIR"/*.go 2>/dev/null | awk '{print "  " $9 " (" $5 " bytes)"}' || print_warning "未找到基础示例文件"
-    ls -la "$ADVANCED_DIR"/*.go 2>/dev/null | awk '{print "  " $9 " (" $5 " bytes)"}' || print_warning "未找到高级示例文件"
+    ls -la "$PKG_DIR"/*.go 2>/dev/null | awk '{print "  " $9 " (" $5 " bytes)"}' || print_warning "未找到示例文件"
+
+    print_info "📋 架构信息:"
+    echo "  • 新架构: 统一在 pkg/ 目录下管理所有示例"
+    echo "  • 示例数量: 5个综合示例"
+    echo "  • 覆盖范围: 基础和高级API的完整覆盖"
 }
 
 # 显示项目状态
@@ -416,16 +371,17 @@ show_status() {
 
     # 基本信息
     print_info "📁 项目目录: $PROJECT_ROOT"
-    print_info "🔧 脚本版本: 1.0.0"
+    print_info "🔧 脚本版本: 2.0.0"
     print_info "📅 最后更新: $(date)"
+    print_info "🏗️ 架构: 统一pkg目录结构"
 
     # 文件统计
-    local go_files=$(find "$PROJECT_ROOT" -maxdepth 2 -name "*.go" | wc -l)
+    local go_files=$(find "$PKG_DIR" -name "*.go" | wc -l)
     print_info "📄 Go示例文件: $go_files 个"
 
     # 目录状态
     print_info "📂 目录结构:"
-    for dir in basic-usage advanced-usage demo-react-app; do
+    for dir in pkg demo-react-app; do
         if [[ -d "$PROJECT_ROOT/$dir" ]]; then
             print_success "  ✓ $dir"
         else
@@ -433,12 +389,30 @@ show_status() {
         fi
     done
 
-    # 环境检查（简化版）
+    # 环境检查
     if command -v go &> /dev/null; then
         print_success "  ✓ Go 环境"
     else
         print_error "  ✗ Go 环境 (未安装)"
     fi
+
+    # 示例文件状态
+    print_info "📋 示例文件状态:"
+    local examples=(
+        "project-management"
+        "node-navigation"
+        "type-detection"
+        "reference-finding"
+        "specialized-apis"
+    )
+
+    for example in "${examples[@]}"; do
+        if [[ -f "$PKG_DIR/$example.go" ]]; then
+            print_success "  ✓ $example.go"
+        else
+            print_error "  ✗ $example.go (缺失)"
+        fi
+    done
 }
 
 # =============================================================================
@@ -462,12 +436,6 @@ main() {
         "deps")
             check_dependencies
             ;;
-        "basic")
-            run_basic_examples
-            ;;
-        "advanced")
-            run_advanced_examples
-            ;;
         "all")
             run_all_examples
             ;;
@@ -490,19 +458,19 @@ main() {
             show_status
             ;;
         "project-management")
-            run_example "项目管理示例" "$BASIC_DIR/project-management.go" "project_management" "项目创建、源文件管理、文件分类"
+            run_example "项目管理示例" "$PKG_DIR/project-management.go" "project_management" "项目创建、源文件管理、内存文件系统、动态文件创建"
             ;;
         "node-navigation")
-            run_example "节点导航示例" "$BASIC_DIR/node-navigation.go" "node_navigation" "节点遍历、祖先查找、React组件分析"
+            run_example "节点导航示例" "$PKG_DIR/node-navigation.go" "node_navigation" "节点遍历、祖先查找、位置计算、IDE集成"
             ;;
         "type-detection")
-            run_example "类型检测示例" "$BASIC_DIR/type-detection.go" "type_detection" "类型识别、接口分析、导入导出统计"
+            run_example "类型检测示例" "$PKG_DIR/type-detection.go" "type_detection" "类型识别、接口分析、代码质量、依赖关系"
             ;;
         "reference-finding")
-            run_example "引用查找示例" "$ADVANCED_DIR/reference-finding.go" "reference_finding" "引用查找、缓存优化、跳转定义"
+            run_example "引用查找示例" "$PKG_DIR/reference-finding.go" "reference_finding" "引用查找、缓存优化、跳转定义、重命名安全"
             ;;
         "specialized-apis")
-            run_example "专用API示例" "$ADVANCED_DIR/specialized-apis.go" "specialized_apis" "函数分析、调用表达式、属性访问"
+            run_example "专用API示例" "$PKG_DIR/specialized-apis.go" "specialized_apis" "函数声明、调用表达式、属性访问、导入别名"
             ;;
         *)
             print_error "未知命令: $command"
