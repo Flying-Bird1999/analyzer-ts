@@ -37,7 +37,7 @@ func main() {
 	// =============================================================================
 
 	// 初始化项目
-	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
+	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
 		RootPath:         realProjectPath,
 		TargetExtensions: []string{".ts", ".tsx"},

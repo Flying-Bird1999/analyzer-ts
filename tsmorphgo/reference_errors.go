@@ -8,15 +8,15 @@ import (
 
 // ReferenceError 引用查找错误的详细分类
 type ReferenceError struct {
-	Type        ReferenceErrorType `json:"type"`
-	Message     string              `json:"message"`
-	Cause       error               `json:"cause,omitempty"`
-	NodeInfo    string              `json:"nodeInfo,omitempty"`
-	FilePath    string              `json:"filePath,omitempty"`
-	LineNumber  int                 `json:"lineNumber,omitempty"`
-	Retryable   bool                `json:"retryable"`
-	RetryCount  int                 `json:"retryCount"`
-	Timestamp   time.Time           `json:"timestamp"`
+	Type       ReferenceErrorType `json:"type"`
+	Message    string             `json:"message"`
+	Cause      error              `json:"cause,omitempty"`
+	NodeInfo   string             `json:"nodeInfo,omitempty"`
+	FilePath   string             `json:"filePath,omitempty"`
+	LineNumber int                `json:"lineNumber,omitempty"`
+	Retryable  bool               `json:"retryable"`
+	RetryCount int                `json:"retryCount"`
+	Timestamp  time.Time          `json:"timestamp"`
 }
 
 // ReferenceErrorType 错误类型枚举
@@ -149,7 +149,7 @@ func NewReferenceErrorWithNode(errorType ReferenceErrorType, message string, nod
 		Cause:      cause,
 		NodeInfo:   nodeInfo,
 		FilePath:   filePath,
-	LineNumber: lineNumber,
+		LineNumber: lineNumber,
 		Retryable:  isRetryableErrorType(errorType),
 		Timestamp:  time.Now(),
 	}
@@ -210,18 +210,18 @@ type RetryConfig struct {
 	MaxRetries    int           `json:"maxRetries"`    // 最大重试次数
 	BaseDelay     time.Duration `json:"baseDelay"`     // 基础延迟
 	MaxDelay      time.Duration `json:"maxDelay"`      // 最大延迟
-	BackoffFactor  float64       `json:"backoffFactor"`  // 退避因子
+	BackoffFactor float64       `json:"backoffFactor"` // 退避因子
 	Enabled       bool          `json:"enabled"`       // 是否启用重试
 }
 
 // DefaultRetryConfig 默认重试配置
 func DefaultRetryConfig() *RetryConfig {
 	return &RetryConfig{
-	MaxRetries:   3,
-		BaseDelay:    100 * time.Millisecond,
-	MaxDelay:     5 * time.Second,
+		MaxRetries:    3,
+		BaseDelay:     100 * time.Millisecond,
+		MaxDelay:      5 * time.Second,
 		BackoffFactor: 2.0,
-		Enabled:      true,
+		Enabled:       true,
 	}
 }
 
