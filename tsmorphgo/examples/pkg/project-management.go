@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
@@ -315,15 +317,75 @@ export type AppConfig = typeof APP_CONFIG;
 	memoryProject.Close()
 	fmt.Printf("✅ 内存项目资源已清理\n")
 
+	// =============================================================================
+	// 示例6: 分析真实项目 (demo-react-app)
+	// =============================================================================
+	fmt.Println("\n\n" + strings.Repeat("=", 50))
+	fmt.Println("🚀 示例6: 分析真实前端项目 (demo-react-app)")
+	fmt.Println("展示如何使用 NewProject 加载和分析一个真实的文件系统项目")
+	analyzeRealProject()
+
+	fmt.Println("\n\n" + strings.Repeat("=", 50))
 	fmt.Println("\n🎯 项目管理使用总结:")
-	fmt.Println("1. 内存项目 → 使用 NewProjectFromSources() 创建")
-	fmt.Println("2. 文件管理 → 使用 CreateSourceFile() 动态创建文件")
-	fmt.Println("3. 项目分析 → 使用 GetSourceFiles() 和 ForEachDescendant() 遍历")
-	fmt.Println("4. 资源管理 → 始终使用 Close() 清理资源")
-	fmt.Println("5. 错误处理 → 检查返回值和错误信息")
+	fmt.Println("1. 内存项目 → 使用 NewProjectFromSources() 创建，用于测试和原型开发")
+	fmt.Println("2. 真实项目 → 使用 NewProject() 加载，用于分析实际代码库")
+	fmt.Println("3. 文件管理 → 使用 CreateSourceFile() 动态创建文件")
+	fmt.Println("4. 项目分析 → 使用 GetSourceFiles() 和 ForEachDescendant() 遍历")
+	fmt.Println("5. 资源管理 → 始终使用 defer project.Close() 清理资源")
 
 	fmt.Println("\n✅ 项目管理示例完成!")
 	fmt.Println("新API让项目管理变得更加简单和高效！")
+}
+
+// analyzeRealProject 分析一个真实的文件系统项目
+func analyzeRealProject() {
+	// 获取 demo-react-app 的绝对路径
+	realProjectPath, err := filepath.Abs("../demo-react-app")
+	if err != nil {
+		log.Fatalf("无法解析项目路径: %v", err)
+	}
+
+	// 使用 NewProject 加载真实项目
+	realProject := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
+		RootPath:         realProjectPath,
+		TargetExtensions: []string{".ts", ".tsx"},
+		UseTsConfig:      true, // 使用项目中的 tsconfig.json
+	})
+	defer realProject.Close()
+
+	allFiles := realProject.GetSourceFiles()
+	fmt.Printf("✅ 真实项目加载成功！\n")
+	fmt.Printf("📊 项目统计:\n")
+	fmt.Printf("  - 总文件数: %d\n", len(allFiles))
+
+	// 分析组件目录
+	fmt.Println("\n🔍 分析 'src/components' 目录:")
+	var components []string
+	var interfaceCount = 0
+	for _, file := range allFiles {
+		// 查找组件文件
+		if strings.Contains(file.GetFilePath(), "/src/components/") && strings.HasSuffix(file.GetFilePath(), ".tsx") {
+			components = append(components, extractFileName(file.GetFilePath()))
+		}
+
+		// 统计项目中的接口数量
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			if node.IsInterfaceDeclaration() {
+				interfaceCount++
+			}
+		})
+	}
+
+	if len(components) > 0 {
+		fmt.Printf("  - 找到 %d 个组件:\n", len(components))
+		for _, component := range components {
+			fmt.Printf("    - %s\n", component)
+		}
+	} else {
+		fmt.Println("  - 未在 'src/components' 目录中找到组件文件。")
+	}
+
+	fmt.Printf("\n🏷️  项目中总共找到 %d 个 'interface' 声明。\n", interfaceCount)
 }
 
 // 辅助函数

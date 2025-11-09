@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
@@ -22,9 +24,8 @@ func main() {
 	//
 	// 新API的优势:
 	// - 统一的接口设计，无需记忆大量函数名
-	// - 支持内存文件系统，便于测试和演示
+	// - 支持分析真实文件系统项目
 	// - 更简洁的方法调用
-	// - 更好的错误处理
 	//
 	// 新API功能:
 	// - node.IsFunctionDeclaration() → 函数声明检查
@@ -35,81 +36,24 @@ func main() {
 	// - node.GetAncestors() → 祖先节点列表
 	// =============================================================================
 
-	// 使用内存项目进行演示，包含完整的React组件代码
-	project := tsmorphgo.NewProjectFromSources(map[string]string{
-		"/src/App.tsx": `
-import React, { useState, useEffect } from 'react';
+	// 获取 demo-react-app 的绝对路径
+	realProjectPath, err := filepath.Abs("../demo-react-app")
+	if err != nil {
+		log.Fatalf("无法解析项目路径: %v", err)
+	}
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-const App: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // 获取用户数据
-  const fetchUsers = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/users');
-      const data = await response.json();
-      setUsers(data);
-    } catch (err) {
-      setError('Failed to fetch users');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 组件挂载时获取数据
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  // 渲染用户列表
-  const renderUserList = (): JSX.Element => {
-    if (loading) {
-      return <div>Loading...</div>;
-    }
-
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
-
-    return (
-      <ul>
-        {users.map(user => (
-          <li key={user.id}>
-            {user.name} ({user.email})
-          </li>
-        ))}
-      </ul>
-    );
-  };
-
-  return (
-    <div className="App">
-      <h1>User Management</h1>
-      {renderUserList()}
-    </div>
-  );
-};
-
-export default App;
-`,
+	// 使用 NewProject 加载真实的 React 项目进行演示
+	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
+		RootPath:    realProjectPath,
+		UseTsConfig: true,
 	})
-
 	defer project.Close()
 
 	// 获取演示文件
-	appFile := project.GetSourceFile("/src/App.tsx")
+	appFilePath := filepath.Join(realProjectPath, "src/App.tsx")
+	appFile := project.GetSourceFile(appFilePath)
 	if appFile == nil {
-		fmt.Println("❌ 未找到 App.tsx 文件")
+		fmt.Printf("❌ 未找到 App.tsx 文件 at %s\n", appFilePath)
 		return
 	}
 
@@ -197,7 +141,11 @@ export default App;
 	fmt.Println("展示如何根据节点类型查找特定祖先")
 
 	// 查找函数声明中的标识符
+	var foundFetchUsers = false
 	appFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		if foundFetchUsers {
+			return
+		}
 		if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "fetchUsers" {
 			// 查找最近的函数声明祖先
 			if funcAncestor, ok := node.GetFirstAncestorByKind(tsmorphgo.KindFunctionDeclaration); ok {
@@ -209,7 +157,7 @@ export default App;
 				if funcName, ok := funcAncestor.GetNodeName(); ok {
 					fmt.Printf("  - 函数名: %s\n", funcName)
 				}
-				return
+				foundFetchUsers = true
 			}
 		}
 	})
@@ -323,7 +271,11 @@ export default App;
 	fmt.Println("展示如何分析节点的层次结构")
 
 	// 找到export default语句并分析其层次
+	var foundExport = false
 	appFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		if foundExport {
+			return
+		}
 		if node.IsKind(tsmorphgo.KindExportDeclaration) {
 			fmt.Printf("\n找到导出语句:\n")
 			fmt.Printf("  - 位置: 行 %d\n", node.GetStartLineNumber())
@@ -342,7 +294,7 @@ export default App;
 			}
 			pathParts = append(pathParts, node.GetKind().String())
 			fmt.Printf("%s\n", strings.Join(pathParts, " → "))
-			return
+			foundExport = true
 		}
 	})
 
