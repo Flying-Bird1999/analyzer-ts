@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -36,8 +37,14 @@ func main() {
 	// - symbol.getName() → symbol.GetName()
 	// =============================================================================
 
+	// 计算 demo-react-app 的绝对路径
+	realProjectPath, err := filepath.Abs(filepath.Join("..", "demo-react-app"))
+	if err != nil {
+		log.Fatalf("无法解析项目路径: %v", err)
+	}
+	fmt.Printf("✅ 项目路径: %s\n", realProjectPath)
+
 	// 初始化项目
-	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
 		RootPath:         realProjectPath,
 		TargetExtensions: []string{".ts", ".tsx"},
@@ -265,10 +272,10 @@ func main() {
 		fmt.Printf("\n📋 分析 %s 中的符号:\n", extractFileName(typesFile.GetFilePath()))
 
 		var symbols []struct {
-			name    string
-			node    *tsmorphgo.Node
-			line    int
-			exports bool
+			name     string
+			node     *tsmorphgo.Node
+			line     int
+			exports  bool
 			typeInfo string
 		}
 
@@ -303,16 +310,16 @@ func main() {
 					}
 
 					symbols = append(symbols, struct {
-						name    string
-						node    *tsmorphgo.Node
-						line    int
-						exports bool
+						name     string
+						node     *tsmorphgo.Node
+						line     int
+						exports  bool
 						typeInfo string
 					}{
-						name:    symbol.GetName(),
-						node:    &node,
-						line:    node.GetStartLineNumber(),
-						exports: isExported,
+						name:     symbol.GetName(),
+						node:     &node,
+						line:     node.GetStartLineNumber(),
+						exports:  isExported,
 						typeInfo: typeInfo,
 					})
 				}
@@ -323,23 +330,23 @@ func main() {
 
 		// 按名称排序显示
 		symbolMap := make(map[string]struct {
-			node    *tsmorphgo.Node
-			line    int
-			exports bool
+			node     *tsmorphgo.Node
+			line     int
+			exports  bool
 			typeInfo string
 		})
 
 		for _, sym := range symbols {
 			if _, exists := symbolMap[sym.name]; !exists {
 				symbolMap[sym.name] = struct {
-					node    *tsmorphgo.Node
-					line    int
-					exports bool
+					node     *tsmorphgo.Node
+					line     int
+					exports  bool
 					typeInfo string
 				}{
-					node:    sym.node,
-					line:    sym.line,
-					exports: sym.exports,
+					node:     sym.node,
+					line:     sym.line,
+					exports:  sym.exports,
 					typeInfo: sym.typeInfo,
 				}
 			}

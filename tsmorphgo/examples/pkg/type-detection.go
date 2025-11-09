@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
@@ -37,8 +38,14 @@ func main() {
 	// - Node.isExportDeclaration() → node.Kind == KindExportDeclaration
 	// =============================================================================
 
+	// 计算 demo-react-app 的绝对路径
+	realProjectPath, err := filepath.Abs(filepath.Join("..", "demo-react-app"))
+	if err != nil {
+		log.Fatalf("无法解析项目路径: %v", err)
+	}
+	fmt.Printf("✅ 项目路径: %s\n", realProjectPath)
+
 	// 初始化项目
-	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
 		RootPath:         realProjectPath,
 		TargetExtensions: []string{".ts", ".tsx"},

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
@@ -39,8 +40,14 @@ func main() {
 	// - propertyAccessExpression.getName() → GetPropertyAccessName()
 	// =============================================================================
 
+	// 计算 demo-react-app 的绝对路径
+	realProjectPath, err := filepath.Abs(filepath.Join("..", "demo-react-app"))
+	if err != nil {
+		log.Fatalf("无法解析项目路径: %v", err)
+	}
+	fmt.Printf("✅ 项目路径: %s\n", realProjectPath)
+
 	// 初始化项目
-	realProjectPath := "/Users/bird/Desktop/alalyzer/analyzer-ts/tsmorphgo/examples/demo-react-app"
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
 		RootPath:         realProjectPath,
 		TargetExtensions: []string{".ts", ".tsx"},
@@ -63,10 +70,10 @@ func main() {
 	fmt.Println("功能: 识别和分析函数声明的关键信息")
 
 	var functions []struct {
-		name      string
-		line      int
+		name       string
+		line       int
 		isExported bool
-		file      string
+		file       string
 	}
 
 	totalFunctions := 0
@@ -82,15 +89,15 @@ func main() {
 						isExported := strings.HasPrefix(strings.TrimSpace(node.GetText()), "export")
 
 						functions = append(functions, struct {
-							name      string
-							line      int
+							name       string
+							line       int
 							isExported bool
-							file      string
+							file       string
 						}{
-							name:      funcName.GetText(),
-							line:      node.GetStartLineNumber(),
+							name:       funcName.GetText(),
+							line:       node.GetStartLineNumber(),
 							isExported: isExported,
-							file:      extractFileName(file.GetFilePath()),
+							file:       extractFileName(file.GetFilePath()),
 						})
 
 						fmt.Printf("  - %s", funcName.GetText())
@@ -113,11 +120,11 @@ func main() {
 	fmt.Println("功能: 分析函数和方法的调用模式")
 
 	var calls []struct {
-		target     string
-		line       int
-		file       string
-		isMethod   bool
-		argCount   int
+		target   string
+		line     int
+		file     string
+		isMethod bool
+		argCount int
 	}
 
 	totalCalls := 0
@@ -138,11 +145,11 @@ func main() {
 						argCount := len(node.AsCallExpression().Arguments.Nodes)
 
 						calls = append(calls, struct {
-							target     string
-							line       int
-							file       string
-							isMethod   bool
-							argCount   int
+							target   string
+							line     int
+							file     string
+							isMethod bool
+							argCount int
 						}{
 							target:   targetText,
 							line:     node.GetStartLineNumber(),
@@ -173,10 +180,10 @@ func main() {
 	fmt.Println("功能: 理解对象属性的访问模式")
 
 	var propertyAccesses []struct {
-		property  string
+		property   string
 		expression string
-		line      int
-		file      string
+		line       int
+		file       string
 	}
 
 	propertyAccessCount := 0
@@ -191,10 +198,10 @@ func main() {
 						fullText := strings.TrimSpace(node.GetText())
 
 						propertyAccesses = append(propertyAccesses, struct {
-							property  string
+							property   string
 							expression string
-							line      int
-							file      string
+							line       int
+							file       string
 						}{
 							property:   name,
 							expression: fullText,
@@ -219,9 +226,9 @@ func main() {
 	fmt.Println("功能: 跟踪变量的声明和导出状态")
 
 	var variables []struct {
-		name      string
-		line      int
-		file      string
+		name       string
+		line       int
+		file       string
 		isExported bool
 	}
 
@@ -249,14 +256,14 @@ func main() {
 						}
 
 						variables = append(variables, struct {
-							name      string
-							line      int
-							file      string
+							name       string
+							line       int
+							file       string
 							isExported bool
 						}{
-							name:      varName,
-							line:      node.GetStartLineNumber(),
-							file:      extractFileName(file.GetFilePath()),
+							name:       varName,
+							line:       node.GetStartLineNumber(),
+							file:       extractFileName(file.GetFilePath()),
 							isExported: isExported,
 						})
 
@@ -280,11 +287,11 @@ func main() {
 	fmt.Println("功能: 识别接口和类型别名的定义")
 
 	var types []struct {
-		kind      string
-		name      string
-		line      int
-		file      string
-		detail    string
+		kind   string
+		name   string
+		line   int
+		file   string
+		detail string
 	}
 
 	interfaceCount := 0
@@ -369,11 +376,11 @@ func main() {
 	fmt.Println("功能: 处理复杂的模块导入和别名模式")
 
 	var importAliases []struct {
-		original  string
-		alias     string
-		line      int
-		file      string
-		context   string
+		original string
+		alias    string
+		line     int
+		file     string
+		context  string
 	}
 
 	aliasCount := 0
@@ -438,12 +445,12 @@ func main() {
 	fmt.Println("功能: 理解赋值、比较和逻辑运算的表达式结构")
 
 	var binaryExpressions []struct {
-		left      string
-		right     string
-		operator  string
-		line      int
-		file      string
-		fullExpr  string
+		left     string
+		right    string
+		operator string
+		line     int
+		file     string
+		fullExpr string
 	}
 
 	foundCount := 0
