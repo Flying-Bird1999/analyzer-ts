@@ -200,8 +200,7 @@ export const APP_CONFIG = {
 	// 调试配置
 	debug: {
 		enabled: true,
-		logLevel: "info",
-		showPerformanceMetrics: true
+		logLevel: "info"
 	}
 };
 
