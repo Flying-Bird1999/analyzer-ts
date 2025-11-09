@@ -45,8 +45,10 @@ func main() {
 
 	// 使用真实项目进行演示
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:    realProjectPath,
-		UseTsConfig: true,
+		RootPath:         realProjectPath,
+		TargetExtensions: []string{".ts", ".tsx"},
+		IgnorePatterns:   []string{"node_modules", "dist", ".git", "build"},
+		UseTsConfig:      true,
 	})
 	defer project.Close()
 

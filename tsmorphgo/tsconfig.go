@@ -164,23 +164,27 @@ func mergeTsConfig(config ProjectConfig, tsConfig *TsConfig) ProjectConfig {
 	// 处理特定的编译选项
 	opts := tsConfig.CompilerOptions
 	if opts != nil {
-		// 处理目标扩展名
-		if target, ok := opts["target"]; ok {
-			if targetStr, ok := target.(string); ok {
-				ext := "." + strings.ToLower(targetStr)
-				// 避免重复添加
-				found := false
-				for _, existing := range result.TargetExtensions {
-					if existing == ext {
-						found = true
-						break
-					}
-				}
-				if !found {
-					result.TargetExtensions = append(result.TargetExtensions, ext)
-				}
+		// 确保基本的TypeScript扩展名存在
+		hasTsExt := false
+		hasTsxExt := false
+		for _, ext := range result.TargetExtensions {
+			if ext == ".ts" {
+				hasTsExt = true
+			}
+			if ext == ".tsx" {
+				hasTsxExt = true
 			}
 		}
+
+		if !hasTsExt {
+			result.TargetExtensions = append(result.TargetExtensions, ".ts")
+		}
+		if !hasTsxExt {
+			result.TargetExtensions = append(result.TargetExtensions, ".tsx")
+		}
+
+		// 注意：target 编译选项不应该是文件扩展名，这里移除错误的处理
+		// TypeScript 的 target 是编译目标 (如 es5, es6)，不是文件扩展名
 
 		// 处理模块解析策略
 		if module, ok := opts["module"]; ok {
@@ -220,8 +224,17 @@ func ConvertGlobPatterns(patterns []string, rootPath string) []string {
 				fullPattern := filepath.Join(rootPath, pattern)
 				result = append(result, fullPattern)
 			} else {
-				// 普通相对路径
+				// 普通相对路径，需要检查是否是目录模式
+				// TypeScript 中的 "src" 应该匹配 src 目录下的所有文件，包括子目录
 				fullPattern := filepath.Join(rootPath, pattern)
+
+				// 如果模式不包含通配符，假设它是目录，需要添加递归匹配
+				if !strings.Contains(pattern, "*") && !strings.Contains(pattern, "?") {
+					// 添加递归匹配模式，匹配目录下的所有文件
+					recursivePattern := filepath.Join(fullPattern, "**", "*")
+					result = append(result, recursivePattern)
+				}
+
 				result = append(result, fullPattern)
 			}
 		} else {
