@@ -15,13 +15,14 @@ import (
 
 // Project 代表一个完整的 TypeScript 项目的视图，提供了与 ts-morph 类似的 API。
 type Project struct {
-	parserResult   *projectParser.ProjectParserResult
-	sourceFiles    map[string]*SourceFile
-	lspService     *lsp.Service
-	lspOnce        sync.Once
-	symbolManager  *SymbolManager
+	parserResult    *projectParser.ProjectParserResult
+	sourceFiles     map[string]*SourceFile
+	lspService      *lsp.Service
+	lspOnce         sync.Once
+	symbolManager   *SymbolManager
 	symbolManagerMu sync.Once
 	// referenceCache 用于缓存 FindReferences 和 GotoDefinition 的结果
+	// 使用简化的缓存实现
 	referenceCache *ReferenceCache
 	// cacheOnce 确保缓存只初始化一次
 	cacheOnce sync.Once
@@ -34,15 +35,15 @@ type ProjectConfig struct {
 	IsMonorepo       bool
 	TargetExtensions []string
 	// TypeScript 配置文件路径，如果为空则自动查找
-	TsConfigPath     string
+	TsConfigPath string
 	// 是否使用 tsconfig.json 中的配置覆盖其他设置
-	UseTsConfig      bool
+	UseTsConfig bool
 	// 编译选项映射（从 tsconfig.json 解析而来）
-	CompilerOptions  map[string]interface{}
+	CompilerOptions map[string]interface{}
 	// 包含的文件模式（从 tsconfig.json 解析而来）
-	IncludePatterns  []string
+	IncludePatterns []string
 	// 排除的文件模式（从 tsconfig.json 解析而来）
-	ExcludePatterns  []string
+	ExcludePatterns []string
 }
 
 // NewProject 是创建和初始化一个新项目实例的入口点。
@@ -132,13 +133,13 @@ func (p *Project) getLspService() (*lsp.Service, error) {
 	return p.lspService, err
 }
 
-
 // getReferenceCache 获取或初始化引用缓存
 // 使用单例模式确保每个项目只有一个缓存实例
+// 现在使用简化的缓存实现
 func (p *Project) getReferenceCache() *ReferenceCache {
 	p.cacheOnce.Do(func() {
-		// 创建缓存，最大1000条目，TTL为10分钟
-		p.referenceCache = NewReferenceCache(1000, 10*time.Minute)
+		// 创建简化缓存，最大500条目，TTL为5分钟
+		p.referenceCache = NewSimpleReferenceCache(500, 5*time.Minute)
 	})
 	return p.referenceCache
 }
@@ -238,6 +239,7 @@ func (p *Project) findNodeAt(filePath string, line, char int) *ast.Node {
 //   - filePath: 新文件的路径，可以是相对路径或绝对路径
 //   - sourceCode: 文件的源代码内容
 //   - options: 可选的创建选项，如是否覆盖已存在文件等
+//
 // 返回值:
 //   - *SourceFile: 新创建的源文件实例
 //   - error: 操作过程中的错误信息
@@ -247,7 +249,7 @@ func (p *Project) CreateSourceFile(filePath string, sourceCode string, options .
 
 	// 解析创建选项
 	opts := CreateSourceFileOptions{
-		Overwrite: false,
+		Overwrite:  false,
 		ScriptKind: "", // 自动检测
 	}
 	if len(options) > 0 {
@@ -298,10 +300,10 @@ func (p *Project) CreateSourceFile(filePath string, sourceCode string, options .
 
 	// 创建 SourceFile 实例
 	sourceFile := &SourceFile{
-		filePath:     normalizedPath,
-		fileResult:   &jsFileResult,
-		astNode:      fileParser.Ast,
-		project:      p,
+		filePath:      normalizedPath,
+		fileResult:    &jsFileResult,
+		astNode:       fileParser.Ast,
+		project:       p,
 		nodeResultMap: make(map[*ast.Node]interface{}),
 	}
 
@@ -324,6 +326,7 @@ func (p *Project) CreateSourceFile(filePath string, sourceCode string, options .
 // 这个方法提供了动态文件管理能力，可以清理不再需要的文件。
 // 参数:
 //   - filePath: 要移除的文件路径
+//
 // 返回值:
 //   - bool: 是否成功移除
 //   - error: 操作过程中的错误信息
@@ -349,6 +352,7 @@ func (p *Project) RemoveSourceFile(filePath string) (bool, error) {
 // 参数:
 //   - filePath: 要更新的文件路径
 //   - newSourceCode: 新的源代码内容
+//
 // 返回值:
 //   - *SourceFile: 更新后的源文件实例
 //   - error: 操作过程中的错误信息
@@ -388,6 +392,7 @@ type CreateSourceFileOptions struct {
 // 这个辅助方法处理各种路径格式，确保文件路径在项目中的统一表示。
 // 参数:
 //   - filePath: 输入的文件路径
+//
 // 返回值:
 //   - string: 规范化后的文件路径
 func (p *Project) normalizeFilePath(filePath string) string {
@@ -504,4 +509,3 @@ func (scope *SymbolScope) GetName() string {
 	defer scope.mu.RUnlock()
 	return scope.name
 }
-

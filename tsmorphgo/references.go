@@ -2,14 +2,13 @@ package tsmorphgo
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
+	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
 )
 
 // =============================================================================
@@ -146,9 +145,9 @@ func (t ReferenceErrorType) String() string {
 
 // RetryConfig 重试配置
 type RetryConfig struct {
-	MaxRetries      int           `json:"maxRetries"`
-	BaseDelay       time.Duration `json:"baseDelay"`
-	MaxDelay        time.Duration `json:"maxDelay"`
+	MaxRetries      int                  `json:"maxRetries"`
+	BaseDelay       time.Duration        `json:"baseDelay"`
+	MaxDelay        time.Duration        `json:"maxDelay"`
 	RetryableErrors []ReferenceErrorType `json:"retryableErrors"`
 }
 
@@ -167,187 +166,162 @@ func DefaultRetryConfig() *RetryConfig {
 }
 
 // =============================================================================
-// 缓存机制 - 来自 reference_cache.go (简化版)
+// 简化的引用缓存机制
 // =============================================================================
 
-// ReferenceCache 引用查找结果的缓存
-// 用于缓存 FindReferences 和 GotoDefinition 的结果，避免重复的 LSP 调用
+// ReferenceCache 简化的引用查找结果缓存
+// 移除复杂的文件哈希检查，采用基于时间的过期策略
 type ReferenceCache struct {
-	// cache 存储缓存结果，key 为文件路径+节点位置+内容哈希
-	cache map[string]*CachedReference
+	// cache 存储缓存结果
+	cache map[string]*SimpleCacheEntry
 	// mu 读写锁，保护并发访问
 	mu sync.RWMutex
-	// maxEntries 缓存最大条目数
-	maxEntries int
+	// maxSize 缓存最大条目数
+	maxSize int
 	// ttl 缓存条目的生存时间
 	ttl time.Duration
+	// 清理间隔
+	cleanupInterval time.Duration
+	// 最后清理时间
+	lastCleanup time.Time
 }
 
-// CachedReference 缓存的引用查找结果
-type CachedReference struct {
+// SimpleCacheEntry 简化的缓存条目
+type SimpleCacheEntry struct {
 	// nodes 查找到的节点列表
 	nodes []*Node
 	// timestamp 缓存创建时间戳
 	timestamp time.Time
-	// fileHashes 相关文件的内容哈希，用于检测文件变化
-	fileHashes map[string]string
 }
 
-// NewReferenceCache 创建新的引用缓存
-func NewReferenceCache(maxEntries int, ttl time.Duration) *ReferenceCache {
+// NewSimpleReferenceCache 创建新的简化引用缓存
+func NewSimpleReferenceCache(maxSize int, ttl time.Duration) *ReferenceCache {
 	return &ReferenceCache{
-		cache:      make(map[string]*CachedReference),
-		maxEntries: maxEntries,
-		ttl:        ttl,
+		cache:           make(map[string]*SimpleCacheEntry),
+		maxSize:         maxSize,
+		ttl:             ttl,
+		cleanupInterval: ttl / 4, // 每1/4 TTL时间清理一次过期条目
+		lastCleanup:     time.Now(),
 	}
 }
 
-// GenerateCacheKey 生成缓存键
-// 基于文件路径、行列号和文件内容生成唯一键
-func (rc *ReferenceCache) GenerateCacheKey(node Node) string {
-	// 1. 获取基本信息
+// GenerateSimpleCacheKey 生成简化的缓存键
+// 只基于文件路径和节点位置，不包含文件内容哈希
+func (sc *ReferenceCache) GenerateSimpleCacheKey(node Node) string {
+	// 简化的键生成：文件路径 + 行号 + 列号
 	filePath := node.GetSourceFile().GetFilePath()
 	line := node.GetStartLineNumber()
 	col := node.GetStartColumnNumber()
 
-	// 2. 计算文件内容哈希
-	content := node.GetSourceFile().fileResult.Raw
-	contentHash := rc.md5Hash(content)
-
-	// 3. 生成唯一键
-	return fmt.Sprintf("%s:%d:%d:%s", filePath, line, col, contentHash[:8])
+	return fmt.Sprintf("%s:%d:%d", filePath, line, col)
 }
 
-// md5Hash 计算 MD5 哈希
-func (rc *ReferenceCache) md5Hash(content string) string {
-	return fmt.Sprintf("%x", md5.Sum([]byte(content)))
-}
+// Get 从简化缓存中获取引用查找结果
+func (sc *ReferenceCache) Get(key string) ([]*Node, bool) {
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
 
-// isExpired 检查缓存条目是否过期
-func (cr *CachedReference) isExpired(ttl time.Duration) bool {
-	return time.Since(cr.timestamp) > ttl
-}
-
-// isValid 检查缓存条目是否仍然有效
-// 通过比较文件内容哈希来检测文件是否发生变化
-func (cr *CachedReference) isValid(project *Project, ttl time.Duration) bool {
-	// 1. 检查时间过期
-	if cr.isExpired(ttl) {
-		return false
-	}
-
-	// 2. 检查文件内容是否发生变化
-	for filePath, expectedHash := range cr.fileHashes {
-		if sourceFile := project.GetSourceFile(filePath); sourceFile != nil {
-			currentContent := sourceFile.fileResult.Raw
-			currentHash := md5.Sum([]byte(currentContent))
-			currentHashStr := fmt.Sprintf("%x", currentHash)
-
-			if currentHashStr != expectedHash {
-				return false
-			}
-		} else {
-			// 文件不存在了，缓存失效
-			return false
-		}
-	}
-
-	return true
-}
-
-// Get 从缓存中获取引用查找结果
-func (rc *ReferenceCache) Get(key string, project *Project) ([]*Node, bool) {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
-	cached, exists := rc.cache[key]
+	entry, exists := sc.cache[key]
 	if !exists {
 		return nil, false
 	}
 
-	// 检查缓存是否有效
-	if !cached.isValid(project, rc.ttl) {
-		// 缓存已过期，需要清理
-		// 注意：这里不能直接删除，因为只有读锁
+	// 检查是否过期
+	if time.Since(entry.timestamp) > sc.ttl {
 		return nil, false
 	}
 
-	return cached.nodes, true
+	return entry.nodes, true
 }
 
-// Set 将引用查找结果存入缓存
-func (rc *ReferenceCache) Set(key string, nodes []*Node, project *Project) {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
+// Set 将引用查找结果存入简化缓存
+func (sc *ReferenceCache) Set(key string, nodes []*Node) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	// 定期清理过期条目
+	sc.cleanupExpired()
 
 	// 检查是否需要清理空间
-	if len(rc.cache) >= rc.maxEntries {
-		rc.evictOldest()
+	if len(sc.cache) >= sc.maxSize {
+		sc.evictRandom()
 	}
 
-	// 计算相关文件的哈希
-	fileHashes := make(map[string]string)
-	affectedFiles := make(map[string]bool)
-
-	// 收集所有相关的文件
-	for _, node := range nodes {
-		affectedFiles[node.GetSourceFile().GetFilePath()] = true
-	}
-
-	// 如果nodes不为空，也包括查询节点所在的文件
-	if len(nodes) > 0 {
-		affectedFiles[nodes[0].GetSourceFile().GetFilePath()] = true
-	}
-
-	// 计算文件哈希
-	for filePath := range affectedFiles {
-		if sourceFile := project.GetSourceFile(filePath); sourceFile != nil {
-			content := sourceFile.fileResult.Raw
-			hash := rc.md5Hash(content)
-			fileHashes[filePath] = hash
-		}
-	}
-
-	// 创建缓存条目
-	currentTime := time.Now()
-	rc.cache[key] = &CachedReference{
-		nodes:       nodes,
-		timestamp:   currentTime,
-		fileHashes:  fileHashes,
+	// 存储新的缓存条目
+	sc.cache[key] = &SimpleCacheEntry{
+		nodes:     nodes,
+		timestamp: time.Now(),
 	}
 }
 
-// evictOldest 清理最旧的缓存条目
-func (rc *ReferenceCache) evictOldest() {
-	if len(rc.cache) == 0 {
+// cleanupExpired 清理过期的缓存条目
+func (sc *ReferenceCache) cleanupExpired() {
+	// 如果距离上次清理时间还不够，跳过清理
+	if time.Since(sc.lastCleanup) < sc.cleanupInterval {
 		return
 	}
 
-	// 找到最旧的条目
-	var oldestKey string
-	var oldestTime time.Time
-	first := true
-
-	for key, cached := range rc.cache {
-		if first || cached.timestamp.Before(oldestTime) {
-			oldestKey = key
-			oldestTime = cached.timestamp
-			first = false
+	now := time.Now()
+	for key, entry := range sc.cache {
+		if now.Sub(entry.timestamp) > sc.ttl {
+			delete(sc.cache, key)
 		}
 	}
+	sc.lastCleanup = now
+}
 
-	// 删除最旧的条目
-	if oldestKey != "" {
-		delete(rc.cache, oldestKey)
+// evictRandom 随机清理一个缓存条目
+// 比LRU更简单，性能更好
+func (sc *ReferenceCache) evictRandom() {
+	if len(sc.cache) == 0 {
+		return
+	}
+
+	// 简单策略：删除第一个找到的条目
+	for key := range sc.cache {
+		delete(sc.cache, key)
+		break
 	}
 }
 
 // Clear 清空所有缓存
-func (rc *ReferenceCache) Clear() {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
+func (sc *ReferenceCache) Clear() {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
 
-	rc.cache = make(map[string]*CachedReference)
+	sc.cache = make(map[string]*SimpleCacheEntry)
+	sc.lastCleanup = time.Now()
+}
+
+// Stats 返回缓存统计信息
+func (sc *ReferenceCache) Stats() CacheStats {
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
+
+	expiredCount := 0
+	now := time.Now()
+	for _, entry := range sc.cache {
+		if now.Sub(entry.timestamp) > sc.ttl {
+			expiredCount++
+		}
+	}
+
+	return CacheStats{
+		TotalEntries:   len(sc.cache),
+		ExpiredEntries: expiredCount,
+		MaxSize:        sc.maxSize,
+		TTL:            sc.ttl,
+		LastCleanup:    sc.lastCleanup,
+	}
+}
+
+// CacheStats 缓存统计信息
+type CacheStats struct {
+	TotalEntries   int           `json:"totalEntries"`
+	ExpiredEntries int           `json:"expiredEntries"`
+	MaxSize        int           `json:"maxSize"`
+	TTL            time.Duration `json:"ttl"`
+	LastCleanup    time.Time     `json:"lastCleanup"`
 }
 
 // =============================================================================
@@ -462,16 +436,17 @@ func FindReferencesWithCache(node Node) ([]*Node, bool, error) {
 
 // FindReferencesWithCacheAndRetry 带缓存和重试机制的引用查找
 // 允许自定义重试配置，提供更细粒度的错误控制
+// 使用简化的缓存实现
 func FindReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*Node, bool, error) {
 	// 1. 获取项目和缓存
 	project := node.GetSourceFile().GetProject()
 	cache := project.getReferenceCache()
 
-	// 2. 生成缓存键
-	cacheKey := cache.GenerateCacheKey(node)
+	// 2. 生成简化的缓存键
+	cacheKey := cache.GenerateSimpleCacheKey(node)
 
 	// 3. 尝试从缓存获取
-	if cached, hit := cache.Get(cacheKey, project); hit {
+	if cached, hit := cache.Get(cacheKey); hit {
 		return cached, true, nil
 	}
 
@@ -483,7 +458,7 @@ func FindReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*No
 			refs = FindReferencesFallback(node)
 			if len(refs) > 0 {
 				// 降级策略成功，缓存结果
-				cache.Set(cacheKey, refs, project)
+				cache.Set(cacheKey, refs)
 				return refs, false, nil
 			}
 		}
@@ -491,7 +466,7 @@ func FindReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*No
 	}
 
 	// 6. 将结果存入缓存
-	cache.Set(cacheKey, refs, project)
+	cache.Set(cacheKey, refs)
 
 	return refs, false, nil
 }
