@@ -132,6 +132,7 @@ func (p *Project) getLspService() (*lsp.Service, error) {
 	return p.lspService, err
 }
 
+
 // getReferenceCache 获取或初始化引用缓存
 // 使用单例模式确保每个项目只有一个缓存实例
 func (p *Project) getReferenceCache() *ReferenceCache {

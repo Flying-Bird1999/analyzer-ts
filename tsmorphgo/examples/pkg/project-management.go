@@ -5,94 +5,37 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
 
 func main() {
-	fmt.Println("🏗️ TSMorphGo 项目管理 - 正确使用姿势")
-	fmt.Println("=" + repeat("=", 50))
+	fmt.Println("🏗️ TSMorphGo 项目管理 - 新API演示")
+	fmt.Println("=" + strings.Repeat("=", 50))
 
 	// =============================================================================
-	// 本文件演示 TSMorphGo 项目管理的正确使用方法
+	// 本文件演示新的统一API在项目管理中的应用
 	// =============================================================================
 	// 学习级别: 初级 → 高级
-	// 预计时间: 30-45分钟
+	// 预计时间: 15-20分钟
 	//
-	// 功能覆盖:
-	// - 基础: 项目初始化、文件管理、tsconfig支持
-	// - 高级: 内存文件系统 ⭐、动态文件创建 ⭐
-	// - 应用: 测试场景、原型开发
+	// 新API的优势:
+	// - 统一的接口设计，更简洁的方法调用
+	// - 支持内存文件系统，便于测试和原型开发
+	// - 支持动态文件创建和修改
+	// - 更好的资源管理
 	//
-	// ⭐ = 高级功能，初学者可先跳过
-	//
-	// 对齐 ts-morph API:
-	// - new Project({tsConfigFilePath}) → NewProject(ProjectConfig{UseTsConfig: true})
-	// - new Project({useInMemoryFileSystem: true}) → NewProjectFromSources()
-	// - project.createSourceFile() → project.CreateSourceFile()
+	// 新API功能:
+	// - NewProjectFromSources() → 内存项目创建
+	// - project.CreateSourceFile() → 动态文件创建
+	// - project.GetSourceFiles() → 获取所有源文件
+	// - project.Close() → 资源清理
 	// =============================================================================
 
-	// 示例1: 基于真实项目的初始化 (初级)
-	// 对应 ts-morph: new Project({tsConfigFilePath: "path/to/tsconfig.json"})
-	fmt.Println("\n📁 示例1: 基于tsconfig.json的项目初始化 (初级)")
-	fmt.Println("对齐 ts-morph: new Project({tsConfigFilePath})")
-
-	// 计算 demo-react-app 的绝对路径
-	realProjectPath, err := filepath.Abs(filepath.Join("..", "demo-react-app"))
-	if err != nil {
-		log.Fatalf("无法解析项目路径: %v", err)
-	}
-	fmt.Printf("✅ 项目路径: %s\n", realProjectPath)
-
-	// 初始化项目，自动加载tsconfig.json配置
-	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:         realProjectPath,
-		TargetExtensions: []string{".ts", ".tsx"},
-		IgnorePatterns:   []string{"node_modules", "dist", ".git", "build"},
-		UseTsConfig:      true, // 对应 ts-morph 的 tsConfigFilePath 配置
-	})
-	defer project.Close()
-
-	// 验证项目创建成功
-	sourceFiles := project.GetSourceFiles()
-	if len(sourceFiles) == 0 {
-		log.Fatal("项目初始化失败：未找到任何源文件")
-	}
-
-	fmt.Printf("✅ 项目初始化成功！\n")
-	fmt.Printf("📊 项目统计:\n")
-	fmt.Printf("  - 项目路径: %s\n", realProjectPath)
-	fmt.Printf("  - 源文件数量: %d\n", len(sourceFiles))
-
-	// 按类型分类文件
-	var types, components, utils, other int
-	for _, file := range sourceFiles {
-		filePath := file.GetFilePath()
-		switch {
-		case strings.Contains(filePath, "types"):
-			types++
-		case strings.Contains(filePath, "components"):
-			components++
-		case strings.Contains(filePath, "utils") || strings.Contains(filePath, "services"):
-			utils++
-		default:
-			other++
-		}
-	}
-
-	fmt.Printf("  - 类型文件: %d\n", types)
-	fmt.Printf("  - 组件文件: %d\n", components)
-	fmt.Printf("  - 工具文件: %d\n", utils)
-	fmt.Printf("  - 其他文件: %d\n", other)
-
-	// 示例2: 内存文件系统项目 (高级 ⭐)
-	// 对应 ts-morph: new Project({useInMemoryFileSystem: true, skipAddingFilesFromTsConfig: true})
-	fmt.Println("\n🧠 示例2: 内存文件系统项目 (高级 ⭐)")
-	fmt.Println("对齐 ts-morph: new Project({useInMemoryFileSystem: true})")
-	fmt.Println("应用场景: 单元测试、原型开发、代码生成")
+	// 示例1: 内存文件系统项目 (基础)
+	fmt.Println("\n🧠 示例1: 内存文件系统项目 (基础)")
+	fmt.Println("展示如何创建和管理内存中的TypeScript项目")
 
 	// 创建内存项目，完全在内存中操作，不依赖真实文件系统
 	memoryProject := tsmorphgo.NewProjectFromSources(map[string]string{
@@ -210,7 +153,6 @@ func main() {
 			}
 		`,
 	})
-	defer memoryProject.Close()
 
 	// 验证内存项目
 	memFiles := memoryProject.GetSourceFiles()
@@ -220,16 +162,15 @@ func main() {
 
 	for _, file := range memFiles {
 		fileName := extractFileName(file.GetFilePath())
-		fmt.Printf("  - %s (%d行)\n", fileName, countLines(file))
+		lineCount := strings.Count(file.GetFileResult().Raw, "\n") + 1
+		fmt.Printf("  - %s (%d行)\n", fileName, lineCount)
 	}
 
-	// 示例3: 动态文件管理 (高级 ⭐)
-	// 对应 ts-morph: project.createSourceFile(filePath, content)
-	fmt.Println("\n➕ 示例3: 动态文件管理 (高级 ⭐)")
-	fmt.Println("对齐 ts-morph: project.createSourceFile(filePath, content)")
-	fmt.Println("应用场景: 配置文件生成、临时文件创建、动态内容注入")
+	// 示例2: 动态文件管理 (高级)
+	fmt.Println("\n➕ 示例2: 动态文件管理 (高级)")
+	fmt.Println("展示如何动态创建和管理项目文件")
 
-	// 在真实项目中动态创建配置文件
+	// 在内存项目中动态创建配置文件
 	configContent := `
 // 动态生成的配置文件
 // 生成时间: ${new Date().toISOString()}
@@ -266,71 +207,128 @@ export const APP_CONFIG = {
 export type AppConfig = typeof APP_CONFIG;
 `
 
-	// 动态创建文件到真实项目中
-	configFile, err := project.CreateSourceFile(
-		realProjectPath+"/src/config/app-config.ts",
+	// 动态创建文件到内存项目中
+	configFile, err := memoryProject.CreateSourceFile(
+		"/src/config/app-config.ts",
 		configContent,
 		tsmorphgo.CreateSourceFileOptions{Overwrite: true},
 	)
 	if err != nil {
-		log.Printf("❌ 创建配置文件失败: %v", err)
+		fmt.Printf("❌ 创建配置文件失败: %v\n", err)
 	} else {
 		fmt.Printf("✅ 配置文件创建成功: %s\n", configFile.GetFilePath())
-		fmt.Printf("  - 文件行数: %d\n", countLines(configFile))
+		lineCount := strings.Count(configFile.GetFileResult().Raw, "\n") + 1
+		fmt.Printf("  - 文件行数: %d\n", lineCount)
 	}
 
 	// 验证文件已创建
-	updatedFiles := project.GetSourceFiles()
+	updatedFiles := memoryProject.GetSourceFiles()
 	fmt.Printf("📊 更新后项目统计: %d 个文件\n", len(updatedFiles))
 
-	// 示例4: 文件内容操作和验证 (中级)
-	fmt.Println("\n📖 示例4: 文件内容操作和验证 (中级)")
+	// 示例3: 项目分析和统计
+	fmt.Println("\n📊 示例3: 项目分析和统计")
+	fmt.Println("展示如何分析项目结构和统计信息")
 
-	// 读取并分析特定文件
-	userTypesFile := project.GetSourceFile(realProjectPath + "/src/types.ts")
-	if userTypesFile != nil {
-		content := userTypesFile.GetFileResult().Raw
-		interfaceCount := strings.Count(content, "export interface")
-		typeCount := strings.Count(content, "export type")
+	// 分析所有文件
+	var totalLines = 0
+	var totalNodes = 0
+	var fileStats = make(map[string]int)
 
-		fmt.Printf("📋 types.ts 文件分析:\n")
-		fmt.Printf("  - 接口数量: %d\n", interfaceCount)
-		fmt.Printf("  - 类型别名数量: %d\n", typeCount)
-		fmt.Printf("  - 总行数: %d\n", strings.Count(content, "\n")+1)
+	for _, file := range updatedFiles {
+		filePath := file.GetFilePath()
+		content := file.GetFileResult().Raw
+		lineCount := strings.Count(content, "\n") + 1
+		totalLines += lineCount
+
+		// 按目录分类统计
+		dir := extractDirectory(filePath)
+		fileStats[dir]++
+
+		// 统计节点数量
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			totalNodes++
+		})
 	}
 
-	// 示例5: 错误处理和最佳实践 (中级)
-	fmt.Println("\n🛡️ 示例5: 错误处理和最佳实践 (中级)")
+	fmt.Printf("\n📈 项目统计:\n")
+	fmt.Printf("  - 总文件数: %d\n", len(updatedFiles))
+	fmt.Printf("  - 总行数: %d\n", totalLines)
+	fmt.Printf("  - 总节点数: %d\n", totalNodes)
 
-	// 演示错误处理
-	nonExistentFile := project.GetSourceFile(realProjectPath + "/src/non-existent.ts")
-	if nonExistentFile == nil {
-		fmt.Printf("✅ 正确处理不存在的文件: 返回 nil\n")
+	fmt.Printf("\n📁 目录统计:\n")
+	for dir, count := range fileStats {
+		fmt.Printf("  - %s: %d 个文件\n", dir, count)
 	}
 
-	// 演示安全的项目关闭
-	fmt.Printf("✅ 项目资源管理: 使用 defer 确保资源正确释放\n")
+	// 示例4: 节点类型分析
+	fmt.Println("\n🔍 示例4: 节点类型分析")
+	fmt.Println("展示如何分析项目中的节点类型分布")
 
-	fmt.Println("\n🎯 项目管理使用姿势总结:")
-	fmt.Println("1. 基础项目 → 使用 NewProject() + UseTsConfig: true")
-	fmt.Println("2. 测试项目 → 使用 NewProjectFromSources() + 内存文件")
-	fmt.Println("3. 动态文件 → 使用 CreateSourceFile() + Overwrite 选项")
-	fmt.Println("4. 资源管理 → 始终使用 defer 关闭项目")
-	fmt.Println("5. 错误处理 → 检查返回值是否为 nil")
+	var nodeTypeStats = make(map[tsmorphgo.SyntaxKind]int)
+
+	for _, file := range updatedFiles {
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			kind := node.GetKind()
+			nodeTypeStats[kind]++
+		})
+	}
+
+	fmt.Printf("\n🏷️ 节点类型分布:\n")
+	// 显示最常见的10种节点类型
+	count := 0
+	for kind, num := range nodeTypeStats {
+		if count >= 10 {
+			break
+		}
+		fmt.Printf("  - %s: %d 个\n", kind.String(), num)
+		count++
+	}
+
+	// 示例5: 声用和引用分析
+	fmt.Println("\n🔗 示例5: 调用和引用分析")
+	fmt.Println("展示如何分析函数调用和引用关系")
+
+	var callExpressions = 0
+	var importStatements = 0
+	var exportStatements = 0
+
+	for _, file := range updatedFiles {
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			if node.IsCallExpr() {
+				callExpressions++
+			}
+			if node.IsImportDeclaration() {
+				importStatements++
+			}
+			if node.IsKind(tsmorphgo.KindExportDeclaration) {
+				exportStatements++
+			}
+		})
+	}
+
+	fmt.Printf("\n📞 调用和引用统计:\n")
+	fmt.Printf("  - 函数调用: %d\n", callExpressions)
+	fmt.Printf("  - 导入语句: %d\n", importStatements)
+	fmt.Printf("  - 导出语句: %d\n", exportStatements)
+
+	// 清理资源
+	memoryProject.Close()
+	fmt.Printf("✅ 内存项目资源已清理\n")
+
+	fmt.Println("\n🎯 项目管理使用总结:")
+	fmt.Println("1. 内存项目 → 使用 NewProjectFromSources() 创建")
+	fmt.Println("2. 文件管理 → 使用 CreateSourceFile() 动态创建文件")
+	fmt.Println("3. 项目分析 → 使用 GetSourceFiles() 和 ForEachDescendant() 遍历")
+	fmt.Println("4. 资源管理 → 始终使用 Close() 清理资源")
+	fmt.Println("5. 错误处理 → 检查返回值和错误信息")
 
 	fmt.Println("\n✅ 项目管理示例完成!")
+	fmt.Println("新API让项目管理变得更加简单和高效！")
 }
 
-// 辅助函数：重复字符串
-func repeat(s string, count int) string {
-	result := ""
-	for i := 0; i < count; i++ {
-		result += s
-	}
-	return result
-}
+// 辅助函数
 
-// 辅助函数：提取文件名
+// extractFileName 提取文件名
 func extractFileName(filePath string) string {
 	parts := strings.Split(filePath, "/")
 	if len(parts) > 0 {
@@ -339,10 +337,11 @@ func extractFileName(filePath string) string {
 	return filePath
 }
 
-// 辅助函数：统计文件行数
-func countLines(file *tsmorphgo.SourceFile) int {
-	if fileResult := file.GetFileResult(); fileResult != nil && fileResult.Raw != "" {
-		return len(strings.Split(fileResult.Raw, "\n"))
+// extractDirectory 提取目录路径
+func extractDirectory(filePath string) string {
+	parts := strings.Split(filePath, "/")
+	if len(parts) > 1 {
+		return strings.Join(parts[:len(parts)-1], "/")
 	}
-	return 0
+	return "/"
 }

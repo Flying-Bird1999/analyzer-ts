@@ -3,33 +3,33 @@ package tsmorphgo
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
-// AsImportDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的导入声明结果。
-// 这种方式提供了类型安全的、针对特定节点类型的数据访问。
-// 如果转换成功，返回具体的导入声明结果和 true；否则返回零值和 false。
+// =============================================================================
+// 简化的类型转换函数
+// 配合 node_unified.go 中的统一 API 使用
+// =============================================================================
+
+// AsImportDeclaration 转换为导入声明结果
 func AsImportDeclaration(node Node) (projectParser.ImportDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return projectParser.ImportDeclarationResult{}, false
 	}
 
-	// 从预先构建的 map 中查找当前 ast.Node 对应的解析结果
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
-		// 使用类型断言检查结果是否是我们期望的类型
 		if castedResult, ok := result.(projectParser.ImportDeclarationResult); ok {
 			return castedResult, true
 		}
 	}
-
 	return projectParser.ImportDeclarationResult{}, false
 }
 
-// AsVariableDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的变量声明结果。
+// AsVariableDeclaration 转换为变量声明结果
 func AsVariableDeclaration(node Node) (parser.VariableDeclaration, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return parser.VariableDeclaration{}, false
 	}
+
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
 		if castedResult, ok := result.(parser.VariableDeclaration); ok {
 			return castedResult, true
@@ -38,11 +38,12 @@ func AsVariableDeclaration(node Node) (parser.VariableDeclaration, bool) {
 	return parser.VariableDeclaration{}, false
 }
 
-// AsFunctionDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的函数声明结果。
+// AsFunctionDeclaration 转换为函数声明结果
 func AsFunctionDeclaration(node Node) (parser.FunctionDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return parser.FunctionDeclarationResult{}, false
 	}
+
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
 		if castedResult, ok := result.(parser.FunctionDeclarationResult); ok {
 			return castedResult, true
@@ -51,11 +52,12 @@ func AsFunctionDeclaration(node Node) (parser.FunctionDeclarationResult, bool) {
 	return parser.FunctionDeclarationResult{}, false
 }
 
-// AsInterfaceDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的接口声明结果。
+// AsInterfaceDeclaration 转换为接口声明结果
 func AsInterfaceDeclaration(node Node) (parser.InterfaceDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return parser.InterfaceDeclarationResult{}, false
 	}
+
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
 		if castedResult, ok := result.(parser.InterfaceDeclarationResult); ok {
 			return castedResult, true
@@ -64,62 +66,12 @@ func AsInterfaceDeclaration(node Node) (parser.InterfaceDeclarationResult, bool)
 	return parser.InterfaceDeclarationResult{}, false
 }
 
-// IsIdentifier 检查一个节点是否是标识符 (Identifier)。
-func IsIdentifier(node Node) bool {
-	return node.Kind == ast.KindIdentifier
-}
-
-// IsCallExpression 检查一个节点是否是函数调用表达式 (CallExpression)。
-func IsCallExpression(node Node) bool {
-	return node.Kind == ast.KindCallExpression
-}
-
-// IsPropertyAccessExpression 检查一个节点是否是属性访问表达式 (PropertyAccessExpression)。
-func IsPropertyAccessExpression(node Node) bool {
-	return node.Kind == ast.KindPropertyAccessExpression
-}
-
-// IsPropertyAssignment 检查一个节点是否是属性分配 (PropertyAssignment)。
-func IsPropertyAssignment(node Node) bool {
-	return node.Kind == ast.KindPropertyAssignment
-}
-
-// IsPropertyDeclaration 检查一个节点是否是属性声明 (PropertyDeclaration)。
-func IsPropertyDeclaration(node Node) bool {
-	return node.Kind == ast.KindPropertyDeclaration
-}
-
-// IsVariableDeclaration 检查一个节点是否是变量声明 (VariableDeclaration)。
-// 注意：这对应于 `const a = 1` 中的 `a = 1` 部分，而不是整个语句。
-func IsVariableDeclaration(node Node) bool {
-	return node.Kind == ast.KindVariableDeclaration
-}
-
-// IsFunctionDeclaration 检查一个节点是否是函数声明 (FunctionDeclaration)。
-func IsFunctionDeclaration(node Node) bool {
-	return node.Kind == ast.KindFunctionDeclaration
-}
-
-// IsObjectLiteralExpression 检查一个节点是否是对象字面量表达式 (ObjectLiteralExpression)。
-func IsObjectLiteralExpression(node Node) bool {
-	return node.Kind == ast.KindObjectLiteralExpression
-}
-
-// IsInterfaceDeclaration 检查一个节点是否是接口声明 (InterfaceDeclaration)。
-func IsInterfaceDeclaration(node Node) bool {
-	return node.Kind == ast.KindInterfaceDeclaration
-}
-
-// IsBinaryExpression 检查一个节点是否是二元表达式 (BinaryExpression)。
-func IsBinaryExpression(node Node) bool {
-	return node.Kind == ast.KindBinaryExpression
-}
-
-// AsTypeAliasDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的类型别名声明结果。
+// AsTypeAliasDeclaration 转换为类型别名声明结果
 func AsTypeAliasDeclaration(node Node) (parser.TypeDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return parser.TypeDeclarationResult{}, false
 	}
+
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
 		if castedResult, ok := result.(parser.TypeDeclarationResult); ok {
 			return castedResult, true
@@ -128,21 +80,12 @@ func AsTypeAliasDeclaration(node Node) (parser.TypeDeclarationResult, bool) {
 	return parser.TypeDeclarationResult{}, false
 }
 
-// IsEnumDeclaration 检查一个节点是否是枚举声明 (EnumDeclaration)。
-func IsEnumDeclaration(node Node) bool {
-	return node.Kind == ast.KindEnumDeclaration
-}
-
-// IsImportClause 检查一个节点是否是导入子句 (ImportClause)。
-func IsImportClause(node Node) bool {
-	return node.Kind == ast.KindImportClause
-}
-
-// AsEnumDeclaration 尝试将一个通用节点 (Node) 转换为一个具体的枚举声明结果。
+// AsEnumDeclaration 转换为枚举声明结果
 func AsEnumDeclaration(node Node) (parser.EnumDeclarationResult, bool) {
 	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
 		return parser.EnumDeclarationResult{}, false
 	}
+
 	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
 		if castedResult, ok := result.(parser.EnumDeclarationResult); ok {
 			return castedResult, true
@@ -151,83 +94,74 @@ func AsEnumDeclaration(node Node) (parser.EnumDeclarationResult, bool) {
 	return parser.EnumDeclarationResult{}, false
 }
 
-// AsClassDeclaration 尝试获取节点的类声明信息。
+// AsClassDeclaration 转换为类声明节点
 func AsClassDeclaration(node Node) (*Node, bool) {
-	if node.Kind == ast.KindClassDeclaration {
+	if node.Kind == KindClassDeclaration {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsMethodDeclaration 尝试获取节点的方法声明信息。
+// AsMethodDeclaration 转换为方法声明节点
 func AsMethodDeclaration(node Node) (*Node, bool) {
-	if node.Kind == ast.KindMethodDeclaration {
+	if node.Kind == KindMethodDeclaration {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsConstructor 尝试获取节点的构造函数声明信息。
+// AsConstructor 转换为构造函数节点
 func AsConstructor(node Node) (*Node, bool) {
-	if node.Kind == ast.KindConstructor {
+	if node.Kind == KindConstructor {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsGetAccessor 尝试获取节点的getter访问器信息。
+// AsGetAccessor 转换为 getter 访问器节点
 func AsGetAccessor(node Node) (*Node, bool) {
-	if node.Kind == ast.KindGetAccessor {
+	if node.Kind == KindGetAccessor {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsSetAccessor 尝试获取节点的setter访问器信息。
+// AsSetAccessor 转换为 setter 访问器节点
 func AsSetAccessor(node Node) (*Node, bool) {
-	if node.Kind == ast.KindSetAccessor {
+	if node.Kind == KindSetAccessor {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsTypeParameter 尝试获取节点的类型参数信息。
+// AsTypeParameter 转换为类型参数节点
 func AsTypeParameter(node Node) (*Node, bool) {
-	if node.Kind == ast.KindTypeParameter {
+	if node.Kind == KindTypeParameter {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsTypeReference 尝试获取节点的类型引用信息。
+// AsTypeReference 转换为类型引用节点
 func AsTypeReference(node Node) (*Node, bool) {
-	if node.Kind == ast.KindTypeReference {
+	if node.Kind == KindTypeReference {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsArrayLiteralExpression 尝试获取节点的数组字面量表达式信息。
+// AsArrayLiteralExpression 转换为数组字面量表达式节点
 func AsArrayLiteralExpression(node Node) (*Node, bool) {
-	if node.Kind == ast.KindArrayLiteralExpression {
+	if node.Kind == KindArrayLiteralExpression {
 		return &node, true
 	}
 	return nil, false
 }
 
-// AsTypeAssertionExpression 尝试获取节点的类型断言表达式信息。
+// AsTypeAssertionExpression 转换为类型断言表达式节点
 func AsTypeAssertionExpression(node Node) (*Node, bool) {
-	if node.Kind == ast.KindTypeAssertionExpression {
+	if node.Kind == KindTypeAssertionExpression {
 		return &node, true
 	}
 	return nil, false
 }
-
-// IsImportSpecifier 检查一个节点是否是导入说明符 (ImportSpecifier)。
-// 导入说明符出现在 import { specifier } from 'module' 语句中。
-// 这个函数是新增的，用于完善类型守卫覆盖。
-func IsImportSpecifier(node Node) bool {
-	return node.Kind == ast.KindImportSpecifier
-}
-
-// ... 后续可以按照此模式添加其他 IsXXX 和 AsXXX 函数 ...

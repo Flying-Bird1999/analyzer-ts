@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 	"strings"
 
@@ -13,37 +12,35 @@ import (
 )
 
 func main() {
-	fmt.Println("🛠️ TSMorphGo 专用API - 正确使用姿势")
-	fmt.Println("=" + repeat("=", 50))
+	fmt.Println("🛠️ TSMorphGo 专用API - 新API演示")
+	fmt.Println("=" + strings.Repeat("=", 50))
 
 	// =============================================================================
-	// 本文件演示 TSMorphGo 专用API的正确使用方法
+	// 本文件演示新的统一API在专用场景中的应用
 	// =============================================================================
 	// 学习级别: 中级 → 高级
-	// 预计时间: 40-55分钟
+	// 预计时间: 15-20分钟
 	//
-	// 功能覆盖:
-	// - 函数声明处理: IsFunctionDeclaration, GetFunctionDeclarationNameNode
-	// - 调用表达式分析: IsCallExpression, GetCallExpressionExpression
-	// - 属性访问表达式: IsPropertyAccessExpression, GetPropertyAccessName
-	// - 变量声明分析: IsVariableDeclaration, GetVariableName
-	// - 类型声明分析: IsInterfaceDeclaration, IsTypeAliasDeclaration
-	// - 导入别名处理: IsImportSpecifier, GetImportSpecifierAliasNode
-	// - 二元表达式分析: IsBinaryExpression, GetBinaryExpressionLeft/Right
+	// 新API的优势:
+	// - 统一的接口设计，无需记忆大量专用函数
+	// - 支持类别检查，简化类型判断
+	// - 更好的错误处理和调试信息
+	// - 性能优化的遍历机制
 	//
-	// 对齐 ts-morph API:
-	// - node.isFunctionDeclaration() → IsFunctionDeclaration()
-	// - functionDeclaration.getName() → GetFunctionDeclarationNameNode()
-	// - node.isCallExpression() → IsCallExpression()
-	// - callExpression.getExpression() → GetCallExpressionExpression()
-	// - node.isPropertyAccessExpression() → IsPropertyAccessExpression()
-	// - propertyAccessExpression.getName() → GetPropertyAccessName()
+	// 新API功能:
+	// - node.IsFunctionDeclaration() → 函数声明检查
+	// - node.IsCallExpr() → 函数调用检查
+	// - node.IsPropertyAccessExpression() → 属性访问检查
+	// - node.IsVariableDeclaration() → 变量声明检查
+	// - node.IsKind() → 精确类型检查
+	// - node.GetNodeName() → 获取节点名称
 	// =============================================================================
 
-	// 计算 demo-react-app 的绝对路径
-	realProjectPath, err := filepath.Abs(filepath.Join("..", "demo-react-app"))
+	// 使用真实的demo-react-app项目
+	realProjectPath, err := filepath.Abs("../demo-react-app")
 	if err != nil {
-		log.Fatalf("无法解析项目路径: %v", err)
+		fmt.Printf("无法解析项目路径: %v\n", err)
+		return
 	}
 	fmt.Printf("✅ 项目路径: %s\n", realProjectPath)
 
@@ -58,16 +55,15 @@ func main() {
 
 	sourceFiles := project.GetSourceFiles()
 	if len(sourceFiles) == 0 {
-		log.Fatal("未找到任何源文件")
+		fmt.Println("❌ 未找到任何源文件")
+		return
 	}
 
 	fmt.Printf("📊 项目统计: %d 个TypeScript文件\n", len(sourceFiles))
 
 	// 示例1: 函数声明处理 (中级)
-	// 对应 ts-morph: node.isFunctionDeclaration(), functionDeclaration.getName()
 	fmt.Println("\n🔧 示例1: 函数声明处理 (中级)")
-	fmt.Println("对齐 ts-morph: node.isFunctionDeclaration(), functionDeclaration.getName()")
-	fmt.Println("功能: 识别和分析函数声明的关键信息")
+	fmt.Println("展示如何使用新API识别和分析函数声明")
 
 	var functions []struct {
 		name       string
@@ -79,11 +75,11 @@ func main() {
 	totalFunctions := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// IsFunctionDeclaration 检查节点是否为函数声明
-			if tsmorphgo.IsFunctionDeclaration(node) {
+			// 使用新API检查函数声明
+			if node.IsFunctionDeclaration() {
 				totalFunctions++
-				// GetFunctionDeclarationNameNode 获取函数声明的名称节点
-				if funcName, ok := tsmorphgo.GetFunctionDeclarationNameNode(node); ok {
+				// 使用新API获取函数名
+				if funcName, ok := node.GetNodeName(); ok {
 					if totalFunctions <= 8 { // 显示前8个
 						// 检查是否导出
 						isExported := strings.HasPrefix(strings.TrimSpace(node.GetText()), "export")
@@ -94,503 +90,435 @@ func main() {
 							isExported bool
 							file       string
 						}{
-							name:       funcName.GetText(),
+							name:       funcName,
 							line:       node.GetStartLineNumber(),
 							isExported: isExported,
 							file:       extractFileName(file.GetFilePath()),
 						})
-
-						fmt.Printf("  - %s", funcName.GetText())
-						if isExported {
-							fmt.Printf(" (导出)")
-						}
-						fmt.Printf(" - 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
 					}
 				}
 			}
 		})
 	}
 
-	fmt.Printf("✅ 总计发现 %d 个函数声明\n", totalFunctions)
+	fmt.Printf("📊 函数声明统计: 找到 %d 个函数\n", totalFunctions)
+	if len(functions) > 0 {
+		fmt.Printf("前 %d 个函数:\n", len(functions))
+		for i, fn := range functions {
+			fmt.Printf("  %d. %s() - 行 %d - %s - %s\n",
+				i+1, fn.name, fn.line, fn.file,
+				map[bool]string{true: "导出", false: "内部"}[fn.isExported])
+		}
+	}
 
 	// 示例2: 调用表达式分析 (中级)
-	// 对应 ts-morph: node.isCallExpression(), callExpression.getExpression()
-	fmt.Println("\n⚡ 示例2: 调用表达式分析 (中级)")
-	fmt.Println("对齐 ts-morph: node.isCallExpression(), callExpression.getExpression()")
-	fmt.Println("功能: 分析函数和方法的调用模式")
+	fmt.Println("\n📞 示例2: 调用表达式分析 (中级)")
+	fmt.Println("展示如何分析函数调用表达式")
 
 	var calls []struct {
-		target   string
-		line     int
-		file     string
-		isMethod bool
-		argCount int
+		expr    string
+		line    int
+		file    string
+		context string
 	}
 
 	totalCalls := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// IsCallExpression 检查节点是否为函数或方法调用
-			if tsmorphgo.IsCallExpression(node) {
+			// 使用新API检查函数调用
+			if node.IsCallExpr() {
 				totalCalls++
-				// GetCallExpressionExpression 获取被调用的表达式部分
-				if target, ok := tsmorphgo.GetCallExpressionExpression(node); ok {
-					if totalCalls <= 10 { // 显示前10个
-						targetText := strings.TrimSpace(target.GetText())
-
-						// IsPropertyAccessExpression 检查是否为成员方法调用
-						isMethod := tsmorphgo.IsPropertyAccessExpression(*target)
-
-						// 获取参数数量
-						argCount := len(node.AsCallExpression().Arguments.Nodes)
-
-						calls = append(calls, struct {
-							target   string
-							line     int
-							file     string
-							isMethod bool
-							argCount int
-						}{
-							target:   targetText,
-							line:     node.GetStartLineNumber(),
-							file:     extractFileName(file.GetFilePath()),
-							isMethod: isMethod,
-							argCount: argCount,
-						})
-
-						fmt.Printf("  - %s", targetText)
-						if isMethod {
-							fmt.Printf(" (方法调用)")
-						} else {
-							fmt.Printf(" (函数调用)")
-						}
-						fmt.Printf(" - 行 %d, 参数: %d\n", node.GetStartLineNumber(), argCount)
+				if totalCalls <= 10 { // 显示前10个
+					expr := node.GetText()
+					if len(expr) > 40 {
+						expr = expr[:40] + "..."
 					}
+
+					// 获取调用上下文
+					parent := node.GetParent()
+					context := "表达式"
+					if parent != nil {
+						if parent.IsVariableDeclaration() {
+							context = "变量声明"
+						} else if parent.IsKind(tsmorphgo.KindReturnStatement) {
+							context = "返回语句"
+						} else if parent.IsKind(tsmorphgo.KindBinaryExpression) {
+							context = "赋值表达式"
+						}
+					}
+
+					calls = append(calls, struct {
+						expr    string
+						line    int
+						file    string
+						context string
+					}{
+						expr:    expr,
+						line:    node.GetStartLineNumber(),
+						file:    extractFileName(file.GetFilePath()),
+						context: context,
+					})
 				}
 			}
 		})
 	}
 
-	fmt.Printf("✅ 总计发现 %d 个方法调用\n", totalCalls)
+	fmt.Printf("📊 函数调用统计: 找到 %d 个调用\n", totalCalls)
+	if len(calls) > 0 {
+		fmt.Printf("前 %d 个调用:\n", len(calls))
+		for i, call := range calls {
+			fmt.Printf("  %d. %s - 行 %d - %s - %s\n",
+				i+1, call.expr, call.line, call.file, call.context)
+		}
+	}
 
 	// 示例3: 属性访问表达式分析 (中级)
-	// 对应 ts-morph: node.isPropertyAccessExpression(), propertyAccessExpression.getName()
 	fmt.Println("\n🔗 示例3: 属性访问表达式分析 (中级)")
-	fmt.Println("对齐 ts-morph: node.isPropertyAccessExpression(), propertyAccessExpression.getName()")
-	fmt.Println("功能: 理解对象属性的访问模式")
+	fmt.Println("展示如何分析对象属性访问")
 
-	var propertyAccesses []struct {
-		property   string
-		expression string
-		line       int
-		file       string
+	var propertyAccess []struct {
+		object  string
+		property string
+		line     int
+		file     string
 	}
 
-	propertyAccessCount := 0
+	totalPropertyAccess := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// 通过节点的 Kind 属性直接判断类型
-			if node.Kind == tsmorphgo.KindPropertyAccessExpression {
-				propertyAccessCount++
-				if propertyAccessCount <= 12 { // 显示前12个
-					// GetPropertyAccessName 获取属性访问的名称
-					if name, ok := tsmorphgo.GetPropertyAccessName(node); ok {
-						fullText := strings.TrimSpace(node.GetText())
+			// 使用新API检查属性访问
+			if node.IsPropertyAccessExpression() {
+				totalPropertyAccess++
+				if totalPropertyAccess <= 15 { // 显示前15个
+					expr := node.GetText()
+					parts := strings.Split(expr, ".")
+					if len(parts) >= 2 {
+						object := parts[0]
+						property := strings.Join(parts[1:], ".")
 
-						propertyAccesses = append(propertyAccesses, struct {
-							property   string
-							expression string
-							line       int
-							file       string
+						propertyAccess = append(propertyAccess, struct {
+							object   string
+							property string
+							line     int
+							file     string
 						}{
-							property:   name,
-							expression: fullText,
-							line:       node.GetStartLineNumber(),
-							file:       extractFileName(file.GetFilePath()),
+							object:   object,
+							property: property,
+							line:     node.GetStartLineNumber(),
+							file:     extractFileName(file.GetFilePath()),
 						})
-
-						fmt.Printf("  - 属性: %s (完整表达式: %s)\n", name, truncateString(fullText, 40))
-						fmt.Printf("    位置: 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
 					}
 				}
 			}
 		})
 	}
 
-	fmt.Printf("✅ 总计发现 %d 个属性访问\n", propertyAccessCount)
-
-	// 示例4: 变量声明分析 (中级)
-	// 对应 ts-morph: node.isVariableDeclaration(), variableDeclaration.getName()
-	fmt.Println("\n📦 示例4: 变量声明分析 (中级)")
-	fmt.Println("对齐 ts-morph: node.isVariableDeclaration(), variableDeclaration.getName()")
-	fmt.Println("功能: 跟踪变量的声明和导出状态")
-
-	var variables []struct {
-		name       string
-		line       int
-		file       string
-		isExported bool
+	fmt.Printf("📊 属性访问统计: 找到 %d 个访问\n", totalPropertyAccess)
+	if len(propertyAccess) > 0 {
+		fmt.Printf("前 %d 个属性访问:\n", len(propertyAccess))
+		for i, access := range propertyAccess {
+			fmt.Printf("  %d. %s.%s - 行 %d - %s\n",
+				i+1, access.object, access.property, access.line, access.file)
+		}
 	}
 
-	variableCount := 0
-	exportedVariables := 0
+	// 示例4: 变量声明分析 (中级)
+	fmt.Println("\n📦 示例4: 变量声明分析 (中级)")
+	fmt.Println("展示如何分析变量声明")
+
+	var variables []struct {
+		name     string
+		typeHint string
+		line     int
+		file     string
+	}
+
+	totalVariables := 0
 	for _, file := range sourceFiles {
 		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// IsVariableDeclaration 检查节点是否为变量声明
-			if tsmorphgo.IsVariableDeclaration(node) {
-				variableCount++
-				// GetVariableName 获取变量名
-				if varName, ok := tsmorphgo.GetVariableName(node); ok {
-					if variableCount <= 10 { // 显示前10个
-						// 检查是否导出
+			// 使用新API检查变量声明
+			if node.IsVariableDeclaration() {
+				totalVariables++
+				if totalVariables <= 12 { // 显示前12个
+					if varName, ok := node.GetNodeName(); ok {
+						// 尝试提取类型信息
+						typeHint := "any"
 						parent := node.GetParent()
-						isExported := false
-						for parent != nil {
-							parentText := strings.ToLower(strings.TrimSpace(parent.GetText()))
-							if strings.HasPrefix(parentText, "export") {
-								isExported = true
-								exportedVariables++
-								break
+						if parent != nil {
+							parentText := parent.GetText()
+							if strings.Contains(parentText, ":") {
+								// 简单的类型提取
+								parts := strings.Split(parentText, ":")
+								if len(parts) >= 2 {
+									typePart := strings.TrimSpace(parts[1])
+									if idx := strings.Index(typePart, "="); idx != -1 {
+										typeHint = strings.TrimSpace(typePart[:idx])
+									} else {
+										typeHint = strings.Split(typePart, ";")[0]
+										typeHint = strings.TrimSpace(typeHint)
+									}
+								}
 							}
-							parent = parent.GetParent()
 						}
 
 						variables = append(variables, struct {
-							name       string
-							line       int
-							file       string
-							isExported bool
-						}{
-							name:       varName,
-							line:       node.GetStartLineNumber(),
-							file:       extractFileName(file.GetFilePath()),
-							isExported: isExported,
-						})
-
-						fmt.Printf("  - %s", varName)
-						if isExported {
-							fmt.Printf(" (导出)")
-						}
-						fmt.Printf(" - 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
-					}
-				}
-			}
-		})
-	}
-
-	fmt.Printf("✅ 总计发现 %d 个变量声明，其中 %d 个导出变量\n", variableCount, exportedVariables)
-
-	// 示例5: 类型声明分析 (中级)
-	// 对应 ts-morph: node.isInterfaceDeclaration(), node.isTypeAliasDeclaration()
-	fmt.Println("\n🏷️ 示例5: 类型声明分析 (中级)")
-	fmt.Println("对齐 ts-morph: node.isInterfaceDeclaration(), node.isTypeAliasDeclaration()")
-	fmt.Println("功能: 识别接口和类型别名的定义")
-
-	var types []struct {
-		kind   string
-		name   string
-		line   int
-		file   string
-		detail string
-	}
-
-	interfaceCount := 0
-	typeAliasCount := 0
-	for _, file := range sourceFiles {
-		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			// 使用 Kind 判断接口声明
-			if node.Kind == tsmorphgo.KindInterfaceDeclaration {
-				interfaceCount++
-				if interfaceCount <= 6 { // 显示前6个
-					if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
-						// 简单统计接口成员
-						propertyCount := 0
-						node.ForEachDescendant(func(descendant tsmorphgo.Node) {
-							if descendant.Kind == tsmorphgo.KindPropertySignature {
-								propertyCount++
-							}
-						})
-
-						types = append(types, struct {
-							kind   string
-							name   string
-							line   int
-							file   string
-							detail string
-						}{
-							kind:   "接口",
-							name:   nameNode.GetText(),
-							line:   node.GetStartLineNumber(),
-							file:   extractFileName(file.GetFilePath()),
-							detail: fmt.Sprintf("%d个属性", propertyCount),
-						})
-
-						fmt.Printf("  - 接口: %s (%d个属性)\n", nameNode.GetText(), propertyCount)
-						fmt.Printf("    位置: 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
-					}
-				}
-			} else if node.Kind == tsmorphgo.KindTypeAliasDeclaration { // 使用 Kind 判断类型别名
-				typeAliasCount++
-				if typeAliasCount <= 6 { // 显示前6个
-					text := strings.TrimSpace(node.GetText())
-					if len(text) > 50 {
-						text = text[:47] + "..."
-					}
-
-					// 检查是否是泛型类型
-					isGeneric := strings.Contains(text, "<") && strings.Contains(text, ">")
-					detail := "类型别名"
-					if isGeneric {
-						detail += " (泛型)"
-					}
-
-					if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
-						types = append(types, struct {
-							kind   string
-							name   string
-							line   int
-							file   string
-							detail string
-						}{
-							kind:   "类型别名",
-							name:   nameNode.GetText(),
-							line:   node.GetStartLineNumber(),
-							file:   extractFileName(file.GetFilePath()),
-							detail: detail,
-						})
-
-						fmt.Printf("  - 类型别名: %s (%s)\n", nameNode.GetText(), detail)
-						fmt.Printf("    位置: 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
-					}
-				}
-			}
-		})
-	}
-
-	fmt.Printf("✅ 总计发现 %d 个接口声明, %d 个类型别名\n", interfaceCount, typeAliasCount)
-
-	// 示例6: 导入别名分析 (高级 ⭐)
-	// 对应 ts-morph: importSpecifier.getAliasNode()
-	fmt.Println("\n📛 示例6: 导入别名分析 (高级 ⭐)")
-	fmt.Println("对齐 ts-morph: importSpecifier.getAliasNode()")
-	fmt.Println("功能: 处理复杂的模块导入和别名模式")
-
-	var importAliases []struct {
-		original string
-		alias    string
-		line     int
-		file     string
-		context  string
-	}
-
-	aliasCount := 0
-	for _, file := range sourceFiles {
-		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if aliasCount >= 8 { // 只演示前8个
-				return
-			}
-
-			// IsImportSpecifier 检查节点是否为导入说明符
-			if tsmorphgo.IsImportSpecifier(node) {
-				// GetImportSpecifierAliasNode 获取导入项的别名节点
-				if alias, ok := tsmorphgo.GetImportSpecifierAliasNode(node); ok {
-					// 获取原始名称
-					originalName := "unknown"
-					if prop, ok := tsmorphgo.GetFirstChild(node, func(n tsmorphgo.Node) bool {
-						return n.Kind == tsmorphgo.KindIdentifier && n.GetText() != alias.GetText()
-					}); ok {
-						originalName = prop.GetText()
-					}
-
-					// 获取导入语句的上下文
-					context := ""
-					grandParent := node.GetParent()
-					if grandParent != nil {
-						context = truncateString(strings.TrimSpace(grandParent.GetText()), 60)
-					}
-
-					importAliases = append(importAliases, struct {
-						original string
-						alias    string
-						line     int
-						file     string
-						context  string
-					}{
-						original: originalName,
-						alias:    alias.GetText(),
-						line:     node.GetStartLineNumber(),
-						file:     extractFileName(file.GetFilePath()),
-						context:  context,
-					})
-
-					aliasCount++
-					fmt.Printf("  - 导入别名: '%s' as '%s'\n", originalName, alias.GetText())
-					fmt.Printf("    位置: 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
-					fmt.Printf("    上下文: %s\n", context)
-				}
-			}
-		})
-	}
-
-	if aliasCount == 0 {
-		fmt.Println("  - 未找到导入别名")
-	} else {
-		fmt.Printf("✅ 在项目中找到 %d 个导入别名\n", aliasCount)
-	}
-
-	// 示例7: 二元表达式分析 (高级 ⭐)
-	// 对应 ts-morph: binaryExpression.getLeft(), binaryExpression.getRight(), binaryExpression.getOperatorToken()
-	fmt.Println("\n⚖️ 示例7: 二元表达式分析 (高级 ⭐)")
-	fmt.Println("对齐 ts-morph: binaryExpression.getLeft(), binaryExpression.getRight(), binaryExpression.getOperatorToken()")
-	fmt.Println("功能: 理解赋值、比较和逻辑运算的表达式结构")
-
-	var binaryExpressions []struct {
-		left     string
-		right    string
-		operator string
-		line     int
-		file     string
-		fullExpr string
-	}
-
-	foundCount := 0
-	for _, file := range sourceFiles {
-		if foundCount >= 8 { // 只演示前8个
-			break
-		}
-
-		file.ForEachDescendant(func(node tsmorphgo.Node) {
-			if foundCount >= 8 {
-				return
-			}
-
-			// IsBinaryExpression 检查节点是否为二元表达式
-			if tsmorphgo.IsBinaryExpression(node) {
-				// GetBinaryExpressionOperatorToken 获取操作符节点
-				if operator, ok := tsmorphgo.GetBinaryExpressionOperatorToken(node); ok {
-					operatorText := strings.TrimSpace(operator.GetText())
-
-					// 重点关注赋值操作符和逻辑操作符
-					if operatorText == "=" || operatorText == "+=" || operatorText == "-=" ||
-						operatorText == "&&" || operatorText == "||" || operatorText == "==" ||
-						operatorText == "!=" || operatorText == "<" || operatorText == ">" {
-
-						// 获取左右操作数
-						leftText := ""
-						if left, ok := tsmorphgo.GetBinaryExpressionLeft(node); ok {
-							leftText = truncateString(strings.TrimSpace(left.GetText()), 25)
-						}
-
-						rightText := ""
-						if right, ok := tsmorphgo.GetBinaryExpressionRight(node); ok {
-							rightText = truncateString(strings.TrimSpace(right.GetText()), 25)
-						}
-
-						fullExpr := truncateString(strings.TrimSpace(node.GetText()), 40)
-
-						binaryExpressions = append(binaryExpressions, struct {
-							left     string
-							right    string
-							operator string
+							name     string
+							typeHint string
 							line     int
 							file     string
-							fullExpr string
 						}{
-							left:     leftText,
-							right:    rightText,
-							operator: operatorText,
+							name:     varName,
+							typeHint: typeHint,
 							line:     node.GetStartLineNumber(),
 							file:     extractFileName(file.GetFilePath()),
-							fullExpr: fullExpr,
 						})
-
-						foundCount++
-						fmt.Printf("  - 表达式: %s\n", fullExpr)
-						fmt.Printf("    左操作数: %s\n", leftText)
-						fmt.Printf("    操作符: %s\n", operatorText)
-						fmt.Printf("    右操作数: %s\n", rightText)
-						fmt.Printf("    位置: 行 %d, 文件: %s\n", node.GetStartLineNumber(), extractFileName(file.GetFilePath()))
 					}
 				}
 			}
 		})
 	}
 
-	if foundCount == 0 {
-		fmt.Println("  - 未找到二元表达式")
-	} else {
-		fmt.Printf("✅ 分析了 %d 个二元表达式\n", foundCount)
-	}
-
-	// 示例8: 符号分析应用 (高级 ⭐)
-	// 对应 ts-morph: node.getSymbol(), symbol.getName()
-	fmt.Println("\n🧬 示例8: 符号分析应用 (高级 ⭐)")
-	fmt.Println("对齐 ts-morph: node.getSymbol(), symbol.getName()")
-	fmt.Println("功能: 语义级别的代码分析，理解标识符的真实含义")
-
-	// 选择App.tsx进行符号分析演示
-	appFile := project.GetSourceFile(realProjectPath + "/src/App.tsx")
-	if appFile != nil {
-		symbolAnalysisCount := 0
-		appFile.ForEachDescendant(func(node tsmorphgo.Node) {
-			if symbolAnalysisCount >= 5 { // 只演示前5个
-				return
-			}
-
-			// 重点关注变量声明的符号
-			if tsmorphgo.IsVariableDeclaration(node) {
-				if name, ok := tsmorphgo.GetVariableName(node); ok && len(name) > 2 {
-					// 获取标识符节点
-					if nameNode, ok := tsmorphgo.GetFirstChild(node, tsmorphgo.IsIdentifier); ok {
-						// GetSymbol 获取节点的符号信息
-						symbol, err := tsmorphgo.GetSymbol(*nameNode)
-						if err == nil && symbol != nil {
-							symbolAnalysisCount++
-							fmt.Printf("  - 变量: '%s'\n", name)
-							fmt.Printf("    符号名称: %s\n", symbol.GetName())
-							fmt.Printf("    位置: 行 %d\n", node.GetStartLineNumber())
-
-							// 检查符号是否有类型信息
-							if symbol.HasType() {
-								fmt.Printf("    类型信息: 有\n")
-							} else {
-								fmt.Printf("    类型信息: 无\n")
-							}
-						}
-					}
-				}
-			}
-		})
-
-		if symbolAnalysisCount == 0 {
-			fmt.Println("  - 未找到可分析的符号")
-		} else {
-			fmt.Printf("✅ 成功分析了 %d 个符号\n", symbolAnalysisCount)
+	fmt.Printf("📊 变量声明统计: 找到 %d 个变量\n", totalVariables)
+	if len(variables) > 0 {
+		fmt.Printf("前 %d 个变量:\n", len(variables))
+		for i, v := range variables {
+			fmt.Printf("  %d. %s: %s - 行 %d - %s\n",
+				i+1, v.name, v.typeHint, v.line, v.file)
 		}
-	} else {
-		fmt.Println("  - 未找到 App.tsx 文件")
 	}
 
-	fmt.Println("\n🎯 专用API使用姿势总结:")
-	fmt.Println("1. 函数声明 → IsFunctionDeclaration() + GetFunctionDeclarationNameNode()")
-	fmt.Println("2. 调用分析 → IsCallExpression() + GetCallExpressionExpression()")
-	fmt.Println("3. 属性访问 → IsPropertyAccessExpression() + GetPropertyAccessName()")
-	fmt.Println("4. 变量分析 → IsVariableDeclaration() + GetVariableName()")
-	fmt.Println("5. 类型声明 → Kind == KindInterfaceDeclaration/KindTypeAliasDeclaration")
-	fmt.Println("6. 导入别名 → IsImportSpecifier() + GetImportSpecifierAliasNode()")
-	fmt.Println("7. 二元表达式 → IsBinaryExpression() + GetBinaryExpressionLeft/Right/OperatorToken()")
-	fmt.Println("8. 符号分析 → GetSymbol() + symbol.GetName() + symbol.HasType()")
+	// 示例5: 类型声明分析 (高级)
+	fmt.Println("\n🏷️ 示例5: 类型声明分析 (高级)")
+	fmt.Println("展示如何分析接口和类型别名")
+
+	var typeDeclarations []struct {
+		kind    string // "interface" 或 "type"
+		name    string
+		line    int
+		file    string
+		members int
+	}
+
+	totalTypes := 0
+	for _, file := range sourceFiles {
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			// 使用新API检查接口声明
+			if node.IsKind(tsmorphgo.KindInterfaceDeclaration) {
+				totalTypes++
+				if typeName, ok := node.GetNodeName(); ok {
+					// 计算成员数量
+					memberCount := 0
+					node.ForEachDescendant(func(child tsmorphgo.Node) {
+						if child.IsKind(tsmorphgo.KindPropertySignature) || child.IsKind(tsmorphgo.KindMethodSignature) {
+							memberCount++
+						}
+					})
+
+					typeDeclarations = append(typeDeclarations, struct {
+						kind    string
+						name    string
+						line    int
+						file    string
+						members int
+					}{
+						kind:    "interface",
+						name:    typeName,
+						line:    node.GetStartLineNumber(),
+						file:    extractFileName(file.GetFilePath()),
+						members: memberCount,
+					})
+				}
+			}
+
+			// 使用新API检查类型别名
+			if node.IsKind(tsmorphgo.KindTypeAliasDeclaration) {
+				totalTypes++
+				if typeName, ok := node.GetNodeName(); ok {
+					typeDeclarations = append(typeDeclarations, struct {
+						kind    string
+						name    string
+						line    int
+						file    string
+						members int
+					}{
+						kind:    "type",
+						name:    typeName,
+						line:    node.GetStartLineNumber(),
+						file:    extractFileName(file.GetFilePath()),
+						members: 0,
+					})
+				}
+			}
+		})
+	}
+
+	fmt.Printf("📊 类型声明统计: 找到 %d 个类型\n", totalTypes)
+	if len(typeDeclarations) > 0 {
+		fmt.Printf("类型声明详情:\n")
+		for i, td := range typeDeclarations {
+			membersInfo := ""
+			if td.kind == "interface" && td.members > 0 {
+				membersInfo = fmt.Sprintf(" (%d个成员)", td.members)
+			}
+			fmt.Printf("  %d. %s %s%s - 行 %d - %s\n",
+				i+1, td.kind, td.name, membersInfo, td.line, td.file)
+		}
+	}
+
+	// 示例6: 导入语句分析 (高级)
+	fmt.Println("\n📥 示例6: 导入语句分析 (高级)")
+	fmt.Println("展示如何分析模块导入")
+
+	var imports []struct {
+		source     string
+		items      []string
+		line       int
+		file       string
+		importType string // "default", "named", "namespace", "side-effect"
+	}
+
+	totalImports := 0
+	for _, file := range sourceFiles {
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			// 使用新API检查导入声明
+			if node.IsImportDeclaration() {
+				totalImports++
+				importText := node.GetText()
+
+				// 分析导入类型
+				importType := "named"
+				if strings.Contains(importText, "import * as") {
+					importType = "namespace"
+				} else if strings.Contains(importText, "import") && !strings.Contains(importText, "{") && !strings.Contains(importText, "*") {
+					importType = "default"
+				} else if strings.Contains(importText, "import") && !strings.Contains(importText, "from") {
+					importType = "side-effect"
+				}
+
+				// 提取导入源
+				source := ""
+				items := []string{}
+				if strings.Contains(importText, "from") {
+					parts := strings.Split(importText, "from")
+					if len(parts) == 2 {
+						source = strings.TrimSpace(strings.Trim(parts[1], `'"`))
+						items = extractImportItems(parts[0])
+					}
+				}
+
+				imports = append(imports, struct {
+					source     string
+					items      []string
+					line       int
+					file       string
+					importType string
+				}{
+					source:     source,
+					items:      items,
+					line:       node.GetStartLineNumber(),
+					file:       extractFileName(file.GetFilePath()),
+					importType: importType,
+				})
+			}
+		})
+	}
+
+	fmt.Printf("📊 导入语句统计: 找到 %d 个导入\n", totalImports)
+	if len(imports) > 0 {
+		fmt.Printf("导入语句详情:\n")
+		for i, imp := range imports {
+			itemsStr := ""
+			if len(imp.items) > 0 {
+				if len(imp.items) <= 3 {
+					itemsStr = fmt.Sprintf(" [%s]", strings.Join(imp.items, ", "))
+				} else {
+					itemsStr = fmt.Sprintf(" [%s, ... (%d more)]", strings.Join(imp.items[:3], ", "), len(imp.items)-3)
+				}
+			}
+			fmt.Printf("  %d. %s %s%s - 行 %d - %s\n",
+				i+1, imp.importType, imp.source, itemsStr, imp.line, imp.file)
+		}
+	}
+
+	// 示例7: 控制流分析 (高级)
+	fmt.Println("\n🌊 示例7: 控制流分析 (高级)")
+	fmt.Println("展示如何分析程序的控制流结构")
+
+	var controlFlow []struct {
+		kind      string
+		condition string
+		line      int
+		file      string
+	}
+
+	totalControlFlow := 0
+	for _, file := range sourceFiles {
+		file.ForEachDescendant(func(node tsmorphgo.Node) {
+			// 分析不同类型的控制流
+			kind := ""
+			condition := ""
+
+			if node.IsKind(tsmorphgo.KindIfStatement) {
+				kind = "if"
+				// 提取条件
+				condition = truncateString(node.GetText(), 30)
+			} else if node.IsKind(tsmorphgo.KindForStatement) {
+				kind = "for"
+				// 提取循环条件
+				condition = truncateString(node.GetText(), 30)
+			} else if node.IsKind(tsmorphgo.KindWhileStatement) {
+				kind = "while"
+				condition = truncateString(node.GetText(), 30)
+			}
+
+			if kind != "" {
+				totalControlFlow++
+				if totalControlFlow <= 10 {
+					controlFlow = append(controlFlow, struct {
+						kind      string
+						condition string
+						line      int
+						file      string
+					}{
+						kind:      kind,
+						condition: condition,
+						line:      node.GetStartLineNumber(),
+						file:      extractFileName(file.GetFilePath()),
+					})
+				}
+			}
+		})
+	}
+
+	fmt.Printf("📊 控制流统计: 找到 %d 个控制流语句\n", totalControlFlow)
+	if len(controlFlow) > 0 {
+		fmt.Printf("控制流语句详情:\n")
+		for i, cf := range controlFlow {
+			fmt.Printf("  %d. %s (%s) - 行 %d - %s\n",
+				i+1, cf.kind, cf.condition, cf.line, cf.file)
+		}
+	}
+
+	fmt.Println("\n🎯 新API使用总结:")
+	fmt.Println("1. 函数分析 → 使用 IsFunctionDeclaration() + GetNodeName()")
+	fmt.Println("2. 调用分析 → 使用 IsCallExpr() + 遍历子节点")
+	fmt.Println("3. 属性访问 → 使用 IsPropertyAccessExpression() + GetText()")
+	fmt.Println("4. 变量分析 → 使用 IsVariableDeclaration() + GetNodeName()")
+	fmt.Println("5. 类型分析 → 使用 IsKind(KindXxx) + 精确匹配")
+	fmt.Println("6. 导入分析 → 使用 IsImportDeclaration() + 文本解析")
+	fmt.Println("7. 控制流 → 使用 IsKind() + 条件提取")
 
 	fmt.Println("\n✅ 专用API示例完成!")
+	fmt.Println("新API让复杂的AST分析变得简单直观！")
 }
 
-// 辅助函数：重复字符串
-func repeat(s string, count int) string {
-	result := ""
-	for i := 0; i < count; i++ {
-		result += s
+// 辅助函数：提取文件名
+func extractFileName(filePath string) string {
+	parts := strings.Split(filePath, "/")
+	if len(parts) > 0 {
+		return parts[len(parts)-1]
 	}
-	return result
+	return filePath
 }
 
 // 辅助函数：截断字符串
@@ -601,11 +529,39 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
-// 辅助函数：提取文件名
-func extractFileName(filePath string) string {
-	parts := strings.Split(filePath, "/")
-	if len(parts) > 0 {
-		return parts[len(parts)-1]
+// 辅助函数：提取导入项
+func extractImportItems(importClause string) []string {
+	items := []string{}
+	importClause = strings.TrimSpace(importClause)
+
+	if strings.HasPrefix(importClause, "import") {
+		importClause = strings.TrimSpace(importClause[6:])
 	}
-	return filePath
+
+	if strings.HasPrefix(importClause, "{") {
+		// 具名导入
+		importClause = strings.Trim(importClause, "{}")
+		parts := strings.Split(importClause, ",")
+		for _, part := range parts {
+			item := strings.TrimSpace(strings.Split(part, " as ")[0])
+			if item != "" {
+				items = append(items, item)
+			}
+		}
+	} else if strings.HasPrefix(importClause, "* as") {
+		// 命名空间导入
+		namespace := strings.TrimSpace(importClause[4:])
+		if namespace != "" {
+			items = append(items, namespace)
+		}
+	} else {
+		// 默认导入
+		item := strings.Split(importClause, " as ")[0]
+		item = strings.TrimSpace(item)
+		if item != "" {
+			items = append(items, item)
+		}
+	}
+
+	return items
 }
