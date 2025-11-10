@@ -1,8 +1,11 @@
 package tsmorphgo
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
@@ -96,12 +99,12 @@ var (
 	CategoryLiterals = NodeCategory{
 		name: "literals",
 		kinds: map[SyntaxKind]bool{
-			KindStringLiteral:     true,
-			KindNumericLiteral:    true,
-			KindTrueKeyword:       true,
-			KindFalseKeyword:      true,
-			KindNullKeyword:       true,
-			KindUndefinedKeyword:  true,
+			KindStringLiteral:    true,
+			KindNumericLiteral:   true,
+			KindTrueKeyword:      true,
+			KindFalseKeyword:     true,
+			KindNullKeyword:      true,
+			KindUndefinedKeyword: true,
 		},
 	}
 
@@ -421,17 +424,17 @@ func (n Node) IsExportDeclaration() bool {
 func (n Node) AsDeclaration() (interface{}, bool) {
 	switch n.GetKind() {
 	case KindImportDeclaration:
-		return AsImportDeclaration(n)
+		return n.AsImportDeclaration()
 	case KindVariableDeclaration:
-		return AsVariableDeclaration(n)
+		return n.AsVariableDeclaration()
 	case KindFunctionDeclaration:
-		return AsFunctionDeclaration(n)
+		return n.AsFunctionDeclaration()
 	case KindInterfaceDeclaration:
-		return AsInterfaceDeclaration(n)
+		return n.AsInterfaceDeclaration()
 	case KindTypeAliasDeclaration:
-		return AsTypeAliasDeclaration(n)
+		return n.AsTypeAliasDeclaration()
 	case KindEnumDeclaration:
-		return AsEnumDeclaration(n)
+		return n.AsEnumDeclaration()
 	default:
 		return nil, false
 	}
@@ -623,4 +626,293 @@ func isSpace(r rune) bool {
 // IsIdentifier 检查节点是否为标识符 (全局函数)
 func IsIdentifier(node Node) bool {
 	return node.IsKind(KindIdentifier)
+}
+
+// =============================================================================
+// 透传API实现 - 透明访问analyzer/parser解析数据
+// =============================================================================
+
+// GetParserData 获取节点对应的analyzer/parser解析数据
+// 这是透传API的核心方法，提供对底层解析结构的直接访问
+// 返回值: 解析结果接口和是否成功找到对应的解析数据
+func (node Node) GetParserData() (interface{}, bool) {
+	// 安全检查：确保节点和源文件有效
+	if node.sourceFile == nil || node.sourceFile.nodeResultMap == nil {
+		return nil, false
+	}
+
+	// 从节点-结果映射中查找对应的解析数据
+	// 这个映射在sourcefile.go的buildNodeResultMap()方法中构建
+	if result, ok := node.sourceFile.nodeResultMap[node.Node]; ok {
+		return result, true
+	}
+
+	// 未找到对应的解析数据
+	return nil, false
+}
+
+// GetParserDataWithFallback 带降级策略的解析数据获取
+// 当无法从缓存获取时，提供实时解析或基础信息降级
+func (node Node) GetParserDataWithFallback() (interface{}, bool, error) {
+	// 策略1: 从缓存获取
+	if data, ok := node.GetParserData(); ok {
+		return data, true, nil
+	}
+
+	// 策略2: 实时解析 (如果可能)
+	if data, err := parseNodeOnDemand(node); err == nil {
+		return data, false, nil
+	}
+
+	// 策略3: 返回基础AST信息作为降级
+	return node.getBasicInfo(), false, fmt.Errorf("no parser data available, using fallback")
+}
+
+// getBasicInfo 获取节点的基础信息作为降级策略
+func (node Node) getBasicInfo() map[string]interface{} {
+	info := make(map[string]interface{})
+
+	// 基础节点信息
+	info["kind"] = node.GetKind().String()
+	info["text"] = node.GetText()
+	info["start"] = node.GetStart()
+	info["end"] = node.GetEnd()
+	info["line"] = node.GetStartLineNumber()
+	info["column"] = node.GetStartColumnNumber()
+
+	// 如果有源文件，添加文件信息
+	if node.sourceFile != nil {
+		info["filePath"] = node.sourceFile.GetFilePath()
+	}
+
+	return info
+}
+
+// TryGetParserData 带错误处理的类型安全获取
+// 这是一个泛型辅助方法，提供更友好的错误信息
+func TryGetParserData[T any](node Node) (T, error) {
+	data, ok := GetParserData[T](node)
+	if !ok {
+		var zero T
+		return zero, fmt.Errorf("node is not of expected type %T, actual type: %T", zero, getNodeActualType(node))
+	}
+	return data, nil
+}
+
+// getNodeActualType 获取节点的实际类型（用于错误信息）
+func getNodeActualType(node Node) interface{} {
+	data, ok := node.GetParserData()
+	if ok {
+		return fmt.Sprintf("%T", data)
+	}
+	return fmt.Sprintf("ast.Node kind: %s", node.GetKind().String())
+}
+
+// =============================================================================
+// 常用类型的便利方法 - 基于透传API的快捷访问
+// =============================================================================
+
+// AsCallExpression 获取函数调用表达式的解析数据
+// 返回: parser.CallExpression结构和是否成功
+func (node Node) AsCallExpression() (parser.CallExpression, bool) {
+	return GetParserData[parser.CallExpression](node)
+}
+
+// AsVariableDeclaration 获取变量声明的解析数据
+// 返回: parser.VariableDeclaration结构和是否成功
+func (node Node) AsVariableDeclaration() (parser.VariableDeclaration, bool) {
+	return GetParserData[parser.VariableDeclaration](node)
+}
+
+// AsInterfaceDeclaration 获取接口声明的解析数据
+// 返回: parser.InterfaceDeclarationResult结构和是否成功
+func (node Node) AsInterfaceDeclaration() (parser.InterfaceDeclarationResult, bool) {
+	return GetParserData[parser.InterfaceDeclarationResult](node)
+}
+
+// AsFunctionDeclaration 获取函数声明的解析数据
+// 返回: parser.FunctionDeclarationResult结构和是否成功
+func (node Node) AsFunctionDeclaration() (parser.FunctionDeclarationResult, bool) {
+	return GetParserData[parser.FunctionDeclarationResult](node)
+}
+
+// AsImportDeclaration 获取导入声明的解析数据
+// 返回: projectParser.ImportDeclarationResult结构和是否成功
+func (node Node) AsImportDeclaration() (projectParser.ImportDeclarationResult, bool) {
+	return GetParserData[projectParser.ImportDeclarationResult](node)
+}
+
+// AsTypeAliasDeclaration 获取类型别名声明的解析数据
+// 返回: parser.TypeDeclarationResult结构和是否成功
+func (node Node) AsTypeAliasDeclaration() (parser.TypeDeclarationResult, bool) {
+	return GetParserData[parser.TypeDeclarationResult](node)
+}
+
+// AsEnumDeclaration 获取枚举声明的解析数据
+// 返回: parser.EnumDeclarationResult结构和是否成功
+func (node Node) AsEnumDeclaration() (parser.EnumDeclarationResult, bool) {
+	return GetParserData[parser.EnumDeclarationResult](node)
+}
+
+// AsExportDeclaration 获取导出声明的解析数据
+// 返回: projectParser.ExportDeclarationResult结构和是否成功
+func (node Node) AsExportDeclaration() (projectParser.ExportDeclarationResult, bool) {
+	return GetParserData[projectParser.ExportDeclarationResult](node)
+}
+
+// AsPropertyAssignment 获取属性赋值的解析数据
+// 这个通常在对象字面量中使用
+func (node Node) AsPropertyAssignment() (interface{}, bool) {
+	// PropertyAssignment可能在不同的解析结构中
+	// 我们先尝试从通用的ExtractedNodes中获取
+	if extractedNodes, ok := node.GetParserData(); ok {
+		// 检查是否是ExtractedNodes.AnyDeclarations类型
+		if nodes, ok := extractedNodes.([]interface{}); ok {
+			for _, item := range nodes {
+				// 这里可以根据实际的数据结构进行更精确的匹配
+				if item != nil {
+					return item, true
+				}
+			}
+		}
+	}
+	return nil, false
+}
+
+// HasParserData 检查节点是否有对应的解析数据
+// 这是一个便捷的检查方法，避免直接使用GetParserData()的第二个返回值
+func (node Node) HasParserData() bool {
+	_, ok := node.GetParserData()
+	return ok
+}
+
+// GetParserDataType 获取解析数据的类型名称
+// 用于调试和日志记录
+func (node Node) GetParserDataType() string {
+	data, ok := node.GetParserData()
+	if !ok {
+		return "none"
+	}
+	return fmt.Sprintf("%T", data)
+}
+
+// =============================================================================
+// 泛型辅助函数 - 透传API的类型安全支持
+// =============================================================================
+
+// GetParserData 类型安全的获取解析数据
+// 利用Go 1.18+的泛型特性，在编译时提供类型安全检查
+// 这是透传API的核心泛型函数，为所有类型安全访问提供基础
+func GetParserData[T any](node Node) (T, bool) {
+	var zero T // 声明泛型的零值
+
+	data, ok := node.GetParserData()
+	if !ok {
+		return zero, false
+	}
+
+	// 类型断言：确保返回的是预期的类型
+	// 如果类型不匹配，返回零值和false
+	if typed, ok := data.(T); ok {
+		return typed, true
+	}
+
+	return zero, false
+}
+
+// parseNodeOnDemand 按需解析节点
+// 当缓存中没有解析数据时，提供实时解析功能
+// 这是一个降级策略，确保即使缓存失效也能获得基础解析结果
+func parseNodeOnDemand(node Node) (interface{}, error) {
+	// 检查节点类型，尝试使用analyzer/parser的实时解析功能
+	switch node.GetKind() {
+	case KindCallExpression:
+		// 尝试实时解析函数调用表达式
+		if node.IsCallExpr() {
+			// 这里需要调用analyzer/parser的实时解析函数
+			// 暂时返回基础信息，后续可以集成完整的解析逻辑
+			return map[string]interface{}{
+				"type":       "CallExpression",
+				"expression": node.GetText(),
+				"runtime":    true,
+			}, nil
+		}
+
+	case KindVariableDeclaration:
+		// 尝试实时解析变量声明
+		if node.IsVariableDeclaration() {
+			return map[string]interface{}{
+				"type":     "VariableDeclaration",
+				"variable": node.GetText(),
+				"runtime":  true,
+			}, nil
+		}
+
+	default:
+		// 对于不支持的节点类型，返回基础信息
+		return node.getBasicInfo(), nil
+	}
+
+	return nil, fmt.Errorf("unsupported node type for on-demand parsing: %s", node.GetKind().String())
+}
+
+// =============================================================================
+// 透传API使用示例和最佳实践函数
+// =============================================================================
+
+// DebugParserData 调试输出解析数据
+// 用于开发阶段查看节点对应的解析数据内容
+func (node Node) DebugParserData() {
+	fmt.Printf("=== 节点解析数据调试 ===\n")
+	fmt.Printf("节点类型: %s\n", node.GetKind().String())
+	fmt.Printf("节点文本: %s\n", node.GetText())
+	fmt.Printf("位置: %d:%d\n", node.GetStartLineNumber(), node.GetStartColumnNumber())
+
+	if data, ok := node.GetParserData(); ok {
+		fmt.Printf("解析数据类型: %T\n", data)
+		fmt.Printf("解析数据内容: %+v\n", data)
+	} else {
+		fmt.Printf("解析数据: 无\n")
+	}
+	fmt.Printf("========================\n")
+}
+
+// ForEachWithParserData 遍历节点并检查是否有解析数据
+// 这是一个便利方法，结合了节点遍历和解析数据检查
+func (node Node) ForEachWithParserData(callback func(Node, interface{})) {
+	// 检查当前节点是否有解析数据
+	if data, ok := node.GetParserData(); ok {
+		callback(node, data)
+	}
+
+	// 递归遍历子节点
+	node.ForEachChild(func(child *ast.Node) bool {
+		childNode := Node{
+			Node:       child,
+			sourceFile: node.sourceFile,
+		}
+		childNode.ForEachWithParserData(callback)
+		return false
+	})
+}
+
+// CountNodesWithParserData 统计有解析数据的子节点数量
+// 用于性能分析和调试
+func (node Node) CountNodesWithParserData() int {
+	count := 0
+
+	if node.HasParserData() {
+		count++
+	}
+
+	node.ForEachChild(func(child *ast.Node) bool {
+		childNode := Node{
+			Node:       child,
+			sourceFile: node.sourceFile,
+		}
+		count += childNode.CountNodesWithParserData()
+		return false
+	})
+
+	return count
 }

@@ -159,6 +159,8 @@ ${YELLOW}🎯 单独运行示例 (新API):${NC}
 
     symbol-analysis         - 符号系统深度分析和重构
 
+    transparent-api          - 透传API验证和parser数据访问
+
 
 
 ${YELLOW}📚 学习路径:${NC}
@@ -594,6 +596,8 @@ verify_examples() {
         "reference-finding:reference_finding:引用查找示例"
 
         "symbol-analysis:symbol_analysis:符号分析示例"
+
+        "transparent-api:transparent_api:透传API示例"
 
     )
 
@@ -1200,6 +1204,12 @@ main() {
         "symbol-analysis")
 
             run_example "符号分析示例" "$PKG_DIR/symbol-analysis.go" "symbol_analysis" "符号系统深度分析和重构"
+
+            ;;
+
+        "transparent-api")
+
+            run_example "透传API示例" "$PKG_DIR/transparent-api.go" "transparent_api" "透传API验证和parser数据访问"
 
             ;;
 
