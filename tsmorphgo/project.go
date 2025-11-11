@@ -10,17 +10,14 @@ import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/checker"
 )
 
 // Project 代表一个完整的 TypeScript 项目的视图，提供了与 ts-morph 类似的 API。
 type Project struct {
-	parserResult    *projectParser.ProjectParserResult
-	sourceFiles     map[string]*SourceFile
-	lspService      *lsp.Service
-	lspOnce         sync.Once
-	symbolManager   *SymbolManager
-	symbolManagerMu sync.Once
+	parserResult *projectParser.ProjectParserResult
+	sourceFiles  map[string]*SourceFile
+	lspService   *lsp.Service
+	lspOnce      sync.Once
 	// referenceCache 用于缓存 FindReferences 和 GotoDefinition 的结果
 	// 使用简化的缓存实现
 	referenceCache *ReferenceCache
@@ -425,87 +422,4 @@ func (p *Project) GetFilePaths() []string {
 		paths = append(paths, path)
 	}
 	return paths
-}
-
-// ============================================================================
-// TypeChecker 集成和符号管理
-// ============================================================================
-
-// getTypeCheckerProvider 获取 TypeChecker 提供者
-func (p *Project) getTypeCheckerProvider() TypeCheckerProvider {
-	return p
-}
-
-// GetTypeChecker 实现 TypeCheckerProvider 接口
-func (p *Project) GetTypeChecker() (*checker.Checker, error) {
-	// 这里需要集成 TypeScript-Go 的 TypeChecker
-	// 由于 TypeScript-Go 的 TypeChecker 需要一个 Program，我们需要创建或获取它
-	// 临时实现，需要根据 TypeScript-Go 的实际 API 调整
-
-	// 暂时返回错误，让 SymbolManager 使用 fallback 机制
-	return nil, fmt.Errorf("TypeChecker integration not yet implemented - using fallback")
-}
-
-// GetProgram 实现 TypeCheckerProvider 接口
-func (p *Project) GetProgram() (*ast.Node, error) {
-	// 返回项目的根节点
-	if len(p.sourceFiles) == 0 {
-		return nil, fmt.Errorf("no source files in project")
-	}
-
-	// 返回第一个源文件的 AST 根节点
-	for _, sf := range p.sourceFiles {
-		if sf.astNode != nil {
-			return sf.astNode, nil
-		}
-	}
-
-	return nil, fmt.Errorf("no valid AST found in project")
-}
-
-// getSymbolManager 获取符号管理器（单例模式）
-func (p *Project) getSymbolManager() *SymbolManager {
-	p.symbolManagerMu.Do(func() {
-		p.symbolManager = NewSymbolManager(p.getTypeCheckerProvider())
-	})
-	return p.symbolManager
-}
-
-// GetSymbolManager 获取符号管理器（公共API）
-func (p *Project) GetSymbolManager() *SymbolManager {
-	return p.getSymbolManager()
-}
-
-// GetGlobalSymbolScope 获取全局符号作用域
-func (p *Project) GetGlobalSymbolScope() *SymbolScope {
-	return p.getSymbolManager().GetGlobalScope()
-}
-
-// FindSymbolsByName 在项目中查找指定名称的符号
-func (p *Project) FindSymbolsByName(name string) []*Symbol {
-	globalScope := p.GetGlobalSymbolScope()
-	return p.getSymbolManager().FindSymbolsByName(globalScope, name)
-}
-
-// ClearSymbolCache 清空符号缓存
-func (p *Project) ClearSymbolCache() {
-	if p.symbolManager != nil {
-		p.symbolManager.ClearCache()
-	}
-}
-
-// SymbolScope 表示符号的作用域
-type SymbolScope struct {
-	name     string
-	parent   *SymbolScope
-	children []*SymbolScope
-	symbols  map[string]*Symbol
-	mu       sync.RWMutex
-}
-
-// GetName 返回作用域名称
-func (scope *SymbolScope) GetName() string {
-	scope.mu.RLock()
-	defer scope.mu.RUnlock()
-	return scope.name
 }
