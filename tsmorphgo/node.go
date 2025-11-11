@@ -40,7 +40,7 @@ func (n *Node) GetText() string {
 	if !n.IsValid() {
 		return ""
 	}
-	return n.sourceFile.fileResult.Raw[n.Pos():n.End()]
+	return strings.TrimLeft(n.sourceFile.fileResult.Raw[n.Pos():n.End()], " ")
 }
 
 // GetStartLineNumber 获取起始行号（1-based）
@@ -139,7 +139,7 @@ func (n *Node) GetFirstAncestorByKind(kind SyntaxKind) (*Node, bool) {
 
 // getLineAndColumn 统一的位置计算方法，避免重复计算
 func (n *Node) getLineAndColumn() (line, column int) {
-	if !n.IsValid() || n.sourceFile == nil {
+	if !n.IsValid() || n.sourceFile == nil || n.sourceFile.fileResult == nil {
 		return 0, 0
 	}
 
@@ -304,7 +304,7 @@ func (n *Node) GetKindName() string {
 
 // getEndLineAndColumn 获取结束位置的行号和列号
 func (n *Node) getEndLineAndColumn() (line, column int) {
-	if !n.IsValid() || n.sourceFile == nil {
+	if !n.IsValid() || n.sourceFile == nil || n.sourceFile.fileResult == nil {
 		return 0, 0
 	}
 
@@ -349,8 +349,6 @@ func (n Node) IsPropertyAssignment() bool { return n.IsKind(KindPropertyAssignme
 func (n Node) IsImportSpecifier() bool    { return n.IsKind(KindImportSpecifier) }
 func (n Node) IsImportDeclaration() bool  { return n.IsKind(KindImportDeclaration) }
 func (n Node) IsExportDeclaration() bool  { return n.IsKind(KindExportDeclaration) }
-
-
 
 // =============================================================================
 // 全局辅助函数 - 来自原 node.go
@@ -445,13 +443,11 @@ func getNodeActualType(node Node) interface{} {
 // 常用类型的便利方法 - 基于透传API的快捷访问
 // =============================================================================
 
-
 // AsInterfaceDeclaration 获取接口声明的解析数据
 // 返回: parser.InterfaceDeclarationResult结构和是否成功
 func (node Node) AsInterfaceDeclaration() (parser.InterfaceDeclarationResult, bool) {
 	return GetParserData[parser.InterfaceDeclarationResult](node)
 }
-
 
 // AsImportDeclaration 获取导入声明的解析数据
 // 返回: projectParser.ImportDeclarationResult结构和是否成功
@@ -524,7 +520,6 @@ func (node Node) GetParserDataType() string {
 // =============================================================================
 // 辅助方法 - 支持特定节点类型 API 的内部实现
 // =============================================================================
-
 
 // getTextFromChild 从指定类型的子节点中提取文本
 func (n Node) getTextFromChild(kind SyntaxKind) string {
@@ -908,6 +903,78 @@ func (f *FunctionDeclaration) IsAnonymous() bool {
 // GetParserData 获取透传API的解析数据
 func (f *FunctionDeclaration) GetParserData() (parser.FunctionDeclarationResult, bool) {
 	return GetParserData[parser.FunctionDeclarationResult](*f.Node)
+}
+
+// =============================================================================
+// BinaryExpression 特定API
+// =============================================================================
+
+// BinaryExpression 提供二元表达式节点的专有API
+type BinaryExpression struct {
+	*Node
+}
+
+// GetNode 返回基础Node节点
+func (b *BinaryExpression) GetNode() *Node {
+	return b.Node
+}
+
+// GetKind 返回节点类型
+func (b *BinaryExpression) GetKind() SyntaxKind {
+	return KindBinaryExpression
+}
+
+// AsBinaryExpression 将Node转换为BinaryExpression，提供类型安全的转换
+func (n *Node) AsBinaryExpression() (*BinaryExpression, bool) {
+	if !n.IsBinaryExpression() {
+		return nil, false
+	}
+	return &BinaryExpression{Node: n}, true
+}
+
+// GetLeft 获取左操作数
+func (b *BinaryExpression) GetLeft() *Node {
+	if !b.Node.IsValid() {
+		return nil
+	}
+	children := b.Node.GetChildren()
+	if len(children) > 0 {
+		return children[0]
+	}
+	return nil
+}
+
+// GetRight 获取右操作数
+func (b *BinaryExpression) GetRight() *Node {
+	if !b.Node.IsValid() {
+		return nil
+	}
+	children := b.Node.GetChildren()
+	if len(children) >= 2 {
+		return children[1]
+	}
+	return nil
+}
+
+// GetOperatorToken 获取操作符节点
+func (b *BinaryExpression) GetOperatorToken() *Node {
+	if !b.Node.IsValid() {
+		return nil
+	}
+	children := b.Node.GetChildren()
+	if len(children) > 1 {
+		// 寻找操作符
+		for _, child := range children {
+			if isOperatorKind(child.GetKind()) {
+				return child
+			}
+		}
+	}
+	// for some binary expressions, the operator is not a child
+	if len(children) > 1 {
+		return children[1]
+	}
+	return nil
 }
 
 // =============================================================================
