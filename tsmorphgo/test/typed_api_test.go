@@ -37,10 +37,42 @@ func TestTypedAPI_CoreFunctionality(t *testing.T) {
 		sf.ForEachDescendant(func(node tsmorphgo.Node) {
 			if varDecl, ok := node.AsVariableDeclaration(); ok {
 				varDecls = append(varDecls, varDecl)
+				name := varDecl.GetName()
+				t.Logf("变量 %q: HasInitializer=%t", name, varDecl.HasInitializer())
+				if varDecl.HasInitializer() {
+					initializer := varDecl.GetInitializer()
+					if initializer != nil {
+						t.Logf("  初始值: %q", initializer.GetText())
+					} else {
+						t.Logf("  初始值: nil")
+					}
+				}
 			}
 		})
 
 		assert.GreaterOrEqual(t, len(varDecls), 2, "应该找到变量声明")
+
+		// 调试：检查所有找到的变量
+		for i, varDecl := range varDecls {
+			name := varDecl.GetName()
+			hasInit := varDecl.HasInitializer()
+			t.Logf("变量 %d: name=%q, HasInitializer=%t", i, name, hasInit)
+
+			// 调试：打印所有子节点
+			children := varDecl.GetChildren()
+			t.Logf("  子节点数量: %d", len(children))
+			for j, child := range children {
+				t.Logf("    子节点 %d: kind=%s, text=%q", j, child.GetKindName(), child.GetText())
+			}
+
+			// 调试：检查初始值
+			initializer := varDecl.GetInitializer()
+			if initializer != nil {
+				t.Logf("  初始值: %q (kind=%s)", initializer.GetText(), initializer.GetKindName())
+			} else {
+				t.Logf("  初始值: nil")
+			}
+		}
 
 		// 测试有初始值的变量
 		for _, varDecl := range varDecls {

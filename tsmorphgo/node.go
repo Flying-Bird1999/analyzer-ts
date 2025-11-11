@@ -629,19 +629,14 @@ func (v *VariableDeclaration) GetInitializer() *Node {
 		return nil
 	}
 
-	// 对于变量声明 const x = 1，初始值通常在赋值操作符之后
+	// 对于变量声明 const x = 1，初始值通常是 VariableDeclaration 的第二个子节点
+	// 测试显示子节点是: [Identifier("x"), NumericLiteral("1")]
 	children := v.Node.GetChildren()
-	for i, child := range children {
-		// 查找等号后面的子节点
-		if strings.TrimSpace(child.GetText()) == "=" {
-			// 等号后面的下一个子节点就是初始值
-			if i+1 < len(children) {
-				return children[i+1]
-			}
-		}
+	if len(children) >= 2 {
+		return children[1] // 第二个子节点通常就是初始值
 	}
 
-	// 如果没找到等号，可能没有初始值
+	// 如果只有一个子节点，可能没有初始值
 	return nil
 }
 
