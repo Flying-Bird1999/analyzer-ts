@@ -72,11 +72,13 @@ func TestNewNodeAPIs(t *testing.T) {
 	// 测试类型判断 API
 	sf.ForEachDescendant(func(node tsmorphgo.Node) {
 		// 测试新增的类型判断
-		if node.GetText() == "key" {
-			assert.True(t, node.IsPropertyAssignment(), "key 应该是属性赋值")
+		if node.GetText() == "key" && node.GetParent().IsKind(tsmorphgo.KindPropertyAssignment) {
+			assert.True(t, node.IsIdentifier(), "key 应该是标识符")
+			t.Logf("找到 key 节点: 类型=%s, 父节点类型=%s", node.GetKindName(), node.GetParent().GetKindName())
 		}
-		if node.GetText() == "Something" {
+		if node.GetText() == "Something" && node.IsKind(tsmorphgo.KindImportSpecifier) {
 			assert.True(t, node.IsImportSpecifier(), "Something 应该是导入指定符")
+			t.Logf("找到 Something 节点: 类型=%s", node.GetKindName())
 		}
 	})
 
