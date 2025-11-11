@@ -64,7 +64,7 @@ func TestFindReferences(t *testing.T) {
 	var usageNode *Node
 	indexFile.ForEachDescendant(func(node Node) {
 		// 找到 console.log(myVar) 中的 myVar
-		if node.IsIdentifierNode() {
+		if IsIdentifier(node) {
 			if parent := node.GetParent(); parent != nil && parent.Kind == ast.KindCallExpression {
 				usageNode = &node
 			}
@@ -141,7 +141,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		defsFile := project.GetSourceFile("/defs.ts")
 		var targetNode *Node
 		defsFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "crossFileFunc" {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "crossFileFunc" {
 				if parent := node.GetParent(); parent != nil && parent.IsFunctionDeclaration() {
 					targetNode = &node
 				}
@@ -174,8 +174,8 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		userFile := project.GetSourceFile("/user.ts")
 		var targetNode *Node
 		userFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "aliasedName" {
-				if parent := node.GetParent(); parent != nil && parent.IsCallExpr() {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "aliasedName" {
+				if parent := node.GetParent(); parent != nil && parent.IsCallExpression() {
 					targetNode = &node
 				}
 			}
@@ -207,7 +207,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		userFile := project.GetSourceFile("/user.ts")
 		var targetNode *Node
 		userFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "MyDefaultClass" {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "MyDefaultClass" {
 				if parent := node.GetParent(); parent != nil && parent.IsKind(KindImportClause) {
 					targetNode = &node
 				}
@@ -242,7 +242,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		defsFile := project.GetSourceFile("/defs.ts")
 		var interfaceNode *Node
 		defsFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "MyInterface" {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "MyInterface" {
 				if parent := node.GetParent(); parent != nil && parent.IsInterfaceDeclaration() {
 					interfaceNode = &node
 				}
@@ -262,7 +262,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		// 从类型别名定义处开始查找
 		var typeNode *Node
 		defsFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "MyType" {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "MyType" {
 				if parent := node.GetParent(); parent != nil && parent.IsKind(KindTypeAliasDeclaration) {
 					typeNode = &node
 				}
@@ -292,7 +292,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		mainFile := project.GetSourceFile("/main.ts")
 		var targetNode *Node
 		mainFile.ForEachDescendant(func(node Node) {
-			if node.IsIdentifierNode() && strings.TrimSpace(node.GetText()) == "unreferencedVar" {
+			if IsIdentifier(node) && strings.TrimSpace(node.GetText()) == "unreferencedVar" {
 				if parent := node.GetParent(); parent != nil && parent.IsVariableDeclaration() {
 					targetNode = &node
 				}

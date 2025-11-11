@@ -453,15 +453,6 @@ func FindReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*No
 	// 4. 缓存未命中，执行带重试的 LSP 调用
 	refs, err := findReferencesWithRetry(node, retryConfig)
 	if err != nil {
-		// 5. 尝试降级策略
-		if refErr, ok := err.(*ReferenceError); ok && refErr.ShouldUseFallback() {
-			refs = FindReferencesFallback(node)
-			if len(refs) > 0 {
-				// 降级策略成功，缓存结果
-				cache.Set(cacheKey, refs)
-				return refs, false, nil
-			}
-		}
 		return nil, false, err
 	}
 
@@ -556,39 +547,6 @@ func classifyError(err error) ReferenceErrorType {
 	}
 
 	return ErrorTypeUnknown
-}
-
-// FindReferencesFallback 降级策略：当 LSP 服务不可用时使用的简单查找方法
-func FindReferencesFallback(node Node) []*Node {
-	var results []*Node
-
-	// 1. 获取节点的名称
-	nodeName, ok := node.GetNodeName()
-	if !ok || nodeName == "" {
-		return results
-	}
-
-	// 2. 在同一文件中查找同名的标识符
-	sourceFile := node.GetSourceFile()
-	if sourceFile == nil {
-		return results
-	}
-
-	sourceFile.ForEachDescendant(func(descendant Node) {
-		// 跳过自身
-		if descendant.GetStart() == node.GetStart() && descendant.GetEnd() == node.GetEnd() {
-			return
-		}
-
-		// 检查是否为标识符且名称匹配
-		if descendant.IsIdentifierNode() {
-			if descName, ok := descendant.GetNodeName(); ok && descName == nodeName {
-				results = append(results, &descendant)
-			}
-		}
-	})
-
-	return results
 }
 
 // =============================================================================
