@@ -390,3 +390,278 @@ func TestNode_EdgeCases(t *testing.T) {
 	// 即使是空文件，也应该有一些基本的 AST 节点
 	t.Logf("空文件中找到 %d 个节点", nodeCount)
 }
+
+// =============================================================================
+// ImportSpecifier API 测试
+// =============================================================================
+
+// TestNode_ImportSpecifier_GetAliasNode 测试 ImportSpecifier.GetAliasNode API
+// API: GetAliasNode() *Node
+// 对应ts-morph: ImportSpecifier.getAliasNode() method
+func TestNode_ImportSpecifier_GetAliasNode(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			// 测试无别名导入
+			import { noalias } from './module1';
+
+			// 测试有别名导入
+			import { original as alias } from './module2';
+
+			// 测试混合导入
+			import { keepOriginal, changeName as newName } from './module3';
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	// 测试用例：[导入文本, 是否有别名]
+	testCases := []struct {
+		text        string
+		hasAlias    bool
+		description string
+	}{
+		{"noalias", false, "无别名导入"},
+		{"alias", true, "有别名导入"},
+		{"keepOriginal", false, "保持原名导入"},
+		{"newName", true, "重命名导入"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description+"_"+tc.text, func(t *testing.T) {
+			var targetImport *ImportSpecifier
+
+			// 查找对应的ImportSpecifier
+			sf.ForEachDescendant(func(node Node) {
+				if node.IsImportSpecifier() {
+					if importSpec, ok := node.AsImportSpecifier(); ok {
+						if importSpec.GetLocalName() == tc.text {
+							targetImport = importSpec
+						}
+					}
+				}
+			})
+
+			require.NotNil(t, targetImport, "应该找到对应的ImportSpecifier: %s", tc.text)
+
+			// 测试GetAliasNode
+			aliasNode := targetImport.GetAliasNode()
+
+			if tc.hasAlias {
+				assert.NotNil(t, aliasNode, "有别名的导入应该返回别名节点")
+				assert.Equal(t, tc.text, aliasNode.GetText(), "别名节点文本应该匹配本地名称")
+				t.Logf("✅ 导入 '%s' 有别名节点: %s", tc.text, aliasNode.GetText())
+			} else {
+				assert.Nil(t, aliasNode, "无别名的导入应该返回nil")
+				t.Logf("✅ 导入 '%s' 无别名节点 (符合预期)", tc.text)
+			}
+		})
+	}
+}
+
+// TestNode_ImportSpecifier_GetOriginalName 测试 ImportSpecifier.GetOriginalName API
+// API: GetOriginalName() string
+func TestNode_ImportSpecifier_GetOriginalName(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			import { keepSame } from './module1';
+			import { original as changed } from './module2';
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	expectedMappings := map[string]string{
+		"keepSame": "keepSame",  // 无别名
+		"changed":  "original",   // 有别名
+	}
+
+	for localName, expectedOriginal := range expectedMappings {
+		t.Run("本地名称_"+localName, func(t *testing.T) {
+			var targetImport *ImportSpecifier
+
+			sf.ForEachDescendant(func(node Node) {
+				if node.IsImportSpecifier() {
+					if importSpec, ok := node.AsImportSpecifier(); ok {
+						if importSpec.GetLocalName() == localName {
+							targetImport = importSpec
+						}
+					}
+				}
+			})
+
+			require.NotNil(t, targetImport, "应该找到对应的ImportSpecifier")
+
+			originalName := targetImport.GetOriginalName()
+			assert.Equal(t, expectedOriginal, originalName,
+				"导入 '%s' 的原始名称应该为 '%s'", localName, expectedOriginal)
+
+			t.Logf("✅ 导入 '%s': 原始='%s', 本地='%s'",
+				localName, originalName, localName)
+		})
+	}
+}
+
+// TestNode_ImportSpecifier_GetLocalName 测试 ImportSpecifier.GetLocalName API
+// API: GetLocalName() string
+func TestNode_ImportSpecifier_GetLocalName(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			import { direct, renamed as alias } from './module';
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	expectedLocalNames := []string{"direct", "alias"}
+	foundNames := make(map[string]bool)
+
+	sf.ForEachDescendant(func(node Node) {
+		if node.IsImportSpecifier() {
+			if importSpec, ok := node.AsImportSpecifier(); ok {
+				localName := importSpec.GetLocalName()
+				t.Logf("找到导入: 本地名称='%s'", localName)
+				foundNames[localName] = true
+			}
+		}
+	})
+
+	// 验证找到了所有预期的本地名称
+	for _, expectedName := range expectedLocalNames {
+		assert.True(t, foundNames[expectedName], "应该找到本地名称: %s", expectedName)
+	}
+}
+
+// TestNode_ImportSpecifier_HasAlias 测试 ImportSpecifier.HasAlias API
+// API: HasAlias() bool
+func TestNode_ImportSpecifier_HasAlias(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			import { noalias1, noalias2, renamed as alias } from './module';
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	var noAliasCount, withAliasCount int
+
+	sf.ForEachDescendant(func(node Node) {
+		if node.IsImportSpecifier() {
+			if importSpec, ok := node.AsImportSpecifier(); ok {
+				localName := importSpec.GetLocalName()
+				hasAlias := importSpec.HasAlias()
+
+				t.Logf("导入 '%s': 有别名=%v", localName, hasAlias)
+
+				if hasAlias {
+					withAliasCount++
+					assert.Equal(t, "alias", localName, "有别名的导入应该是'alias'")
+				} else {
+					noAliasCount++
+					assert.Contains(t, []string{"noalias1", "noalias2"}, localName, "无别名的导入应该是'noalias1'或'noalias2'")
+				}
+			}
+		}
+	})
+
+	assert.Equal(t, 2, noAliasCount, "应该有2个无别名的导入")
+	assert.Equal(t, 1, withAliasCount, "应该有1个有别名的导入")
+}
+
+// TestNode_ImportSpecifier_AsImportSpecifier 测试 ImportSpecifier.AsImportSpecifier API
+// API: AsImportSpecifier() (*ImportSpecifier, bool)
+func TestNode_ImportSpecifier_AsImportSpecifier(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			import { testItem } from './module';
+			const localVar = 42;
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	var importNode, nonImportNode Node
+
+	// 找到ImportSpecifier和非ImportSpecifier节点
+	sf.ForEachDescendant(func(node Node) {
+		if node.IsImportSpecifier() && importNode.IsValid() == false {
+			importNode = node
+		} else if node.IsIdentifier() && node.GetText() == "localVar" && nonImportNode.IsValid() == false {
+			nonImportNode = node
+		}
+	})
+
+	// 测试成功转换
+	if importNode.IsValid() {
+		importSpec, ok := importNode.AsImportSpecifier()
+		assert.True(t, ok, "ImportSpecifier节点应该成功转换")
+		assert.NotNil(t, importSpec, "转换后的ImportSpecifier不应该为nil")
+		assert.Equal(t, importNode.GetText(), importSpec.GetText(), "转换后文本应该保持一致")
+		t.Logf("✅ 成功转换ImportSpecifier: %s", importSpec.GetText())
+	} else {
+		t.Fatal("没有找到ImportSpecifier节点进行测试")
+	}
+
+	// 测试失败转换
+	if nonImportNode.IsValid() {
+		importSpec, ok := nonImportNode.AsImportSpecifier()
+		assert.False(t, ok, "非ImportSpecifier节点转换应该失败")
+		assert.Nil(t, importSpec, "转换失败时应该返回nil")
+		t.Logf("✅ 正确拒绝非ImportSpecifier节点: %s", nonImportNode.GetText())
+	} else {
+		t.Fatal("没有找到非ImportSpecifier节点进行测试")
+	}
+}
+
+// TestNode_ImportSpecifier_GetParserData 测试 ImportSpecifier.GetParserData API
+// API: GetParserData() (parser.ImportModule, bool)
+func TestNode_ImportSpecifier_GetParserData(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/test.ts": `
+			import { renamed as alias, direct } from './module';
+		`,
+	})
+	defer project.Close()
+
+	sf := project.GetSourceFile("/test.ts")
+	require.NotNil(t, sf)
+
+	var testedCount int
+	sf.ForEachDescendant(func(node Node) {
+		if node.IsImportSpecifier() {
+			if importSpec, ok := node.AsImportSpecifier(); ok {
+				importModule, success := importSpec.GetParserData()
+
+				// 注意：从内存创建的项目可能没有完整的parser数据
+				// 所以我们主要测试API能够正常调用，而不是具体的值
+				if success {
+					t.Logf("✅ 成功获取Parser数据: ImportModule='%s', Identifier='%s', Type='%s'",
+						importModule.ImportModule, importModule.Identifier, importModule.Type)
+
+					// 如果有数据，验证字段非空
+					if importModule.ImportModule != "" || importModule.Identifier != "" {
+						// 验证数据一致性：如果没有ImportModule，那么Identifier就是ImportModule
+						if importModule.ImportModule == "" && importModule.Identifier != "" {
+							t.Logf("✅ 无ImportModule时，Identifier='%s' 作为默认值", importModule.Identifier)
+						}
+					}
+				} else {
+					t.Logf("✅ GetParserData返回false，这在内存项目中是正常的")
+				}
+
+				testedCount++
+			}
+		}
+	})
+
+	assert.GreaterOrEqual(t, testedCount, 1, "应该至少测试了1个ImportSpecifier")
+}

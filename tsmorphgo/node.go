@@ -992,3 +992,170 @@ func (n Node) getFirstChildByKind(kind SyntaxKind) *Node {
 	}
 	return nil
 }
+
+// =============================================================================
+// ImportSpecifier 特定API - ts-morph兼容性支持
+// =============================================================================
+
+// ImportSpecifier 提供导入说明符节点的专有API
+// 用于处理 import { foo as bar } from 'module' 中的具体导入项
+type ImportSpecifier struct {
+	*Node
+}
+
+// GetNode 返回基础Node节点
+func (i *ImportSpecifier) GetNode() *Node {
+	return i.Node
+}
+
+// GetKind 返回节点类型
+func (i *ImportSpecifier) GetKind() SyntaxKind {
+	return KindImportSpecifier
+}
+
+// GetParserData 获取透传API的解析数据
+// 返回底层的parser.ImportModule数据结构
+func (i *ImportSpecifier) GetParserData() (parser.ImportModule, bool) {
+	return GetParserData[parser.ImportModule](*i.Node)
+}
+
+// AsImportSpecifier 将Node转换为ImportSpecifier，提供类型安全的转换
+// API兼容性：对应ts-morph的import specifier节点操作
+func (n *Node) AsImportSpecifier() (*ImportSpecifier, bool) {
+	if !n.IsImportSpecifier() {
+		return nil, false
+	}
+	return &ImportSpecifier{Node: n}, true
+}
+
+// GetAliasNode 获取导入别名节点
+// API兼容性：对应ts-morph的ImportSpecifier.getAliasNode()方法
+//
+// 使用场景：
+//   - import { foo } from 'module'      -> GetAliasNode() 返回 nil (无别名)
+//   - import { foo as bar } from 'module' -> GetAliasNode() 返回 "bar" 标识符节点
+//
+// 返回值：
+//   - *Node: 别名标识符节点，如果存在别名的话
+//   - nil: 没有别名时返回 nil
+func (i *ImportSpecifier) GetAliasNode() *Node {
+	// 安全检查：防止空指针
+	if i == nil || i.Node == nil || !i.Node.IsValid() {
+		return nil
+	}
+
+	// 将Node转换为typescript-go的ImportSpecifier
+	importSpecAST, ok := i.Node.AsImportSpecifier()
+	if !ok {
+		return nil
+	}
+
+	// 检查是否有别名：如果PropertyName()返回的节点不为nil，说明有别名
+	// 语法：import { original as alias }
+	// PropertyName = "original", Name = "alias"
+	if propertyNameNode := importSpecAST.PropertyName(); propertyNameNode != nil {
+		// 有别名：返回代表别名的Name节点
+		nameNode := importSpecAST.Name()
+		if nameNode != nil {
+			return &Node{
+				Node:       nameNode.AsNode(),
+				sourceFile: i.Node.sourceFile,
+			}
+		}
+	}
+
+	// 没有别名
+	return nil
+}
+
+// GetOriginalName 获取原始导入名称（无别名时的名称）
+// API兼容性：辅助方法，用于获取原始导入的模块名
+//
+// 使用场景：
+//   - import { foo } from 'module'      -> GetOriginalName() 返回 "foo"
+//   - import { foo as bar } from 'module' -> GetOriginalName() 返回 "foo"
+func (i *ImportSpecifier) GetOriginalName() string {
+	if !i.Node.IsValid() {
+		return ""
+	}
+
+	// 将Node转换为typescript-go的ImportSpecifier
+	importSpecAST, ok := i.Node.AsImportSpecifier()
+	if !ok {
+		return i.Node.GetText() // 回退到节点文本
+	}
+
+	// 如果有别名，PropertyName是原始名称
+	if propertyNameNode := importSpecAST.PropertyName(); propertyNameNode != nil {
+		return propertyNameNode.Text()
+	}
+
+	// 没有别名，Name就是原始名称
+	if importSpecAST.Name() != nil {
+		return importSpecAST.Name().Text()
+	}
+
+	return i.Node.GetText() // 回退到节点文本
+}
+
+// GetLocalName 获取本地使用名称（可能和原始名称相同）
+// API兼容性：辅助方法，用于获取在当前文件中实际使用的名称
+//
+// 使用场景：
+//   - import { foo } from 'module'      -> GetLocalName() 返回 "foo"
+//   - import { foo as bar } from 'module' -> GetLocalName() 返回 "bar"
+func (i *ImportSpecifier) GetLocalName() string {
+	if !i.Node.IsValid() {
+		return ""
+	}
+
+	// 将Node转换为typescript-go的ImportSpecifier
+	importSpecAST, ok := i.Node.AsImportSpecifier()
+	if !ok {
+		return i.Node.GetText() // 回退到节点文本
+	}
+
+	// 无论是否有别名，Name都是本地使用的名称
+	if importSpecAST.Name() != nil {
+		return importSpecAST.Name().Text()
+	}
+
+	return i.Node.GetText() // 回退到节点文本
+}
+
+// HasAlias 判断是否有别名
+// API兼容性：便捷方法，用于判断导入项是否有别名
+func (i *ImportSpecifier) HasAlias() bool {
+	if !i.Node.IsValid() {
+		return false
+	}
+
+	// 将Node转换为typescript-go的ImportSpecifier
+	importSpecAST, ok := i.Node.AsImportSpecifier()
+	if !ok {
+		return false
+	}
+
+	// 直接检查PropertyName()返回的节点是否存在，这是最可靠的方式
+	propertyNameNode := importSpecAST.PropertyName()
+	return propertyNameNode != nil
+}
+
+// =============================================================================
+// ImportSpecifier 辅助方法
+// =============================================================================
+
+
+// getChildrenOfNode 获取AST节点的所有直接子节点
+func getChildrenOfNode(node *ast.Node) []*ast.Node {
+	if node == nil {
+		return nil
+	}
+
+	var children []*ast.Node
+	node.ForEachChild(func(child *ast.Node) bool {
+		children = append(children, child)
+		return false // 继续遍历所有子节点
+	})
+	return children
+}

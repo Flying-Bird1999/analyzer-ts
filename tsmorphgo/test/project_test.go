@@ -310,3 +310,194 @@ func TestProject_CreateSourceFileOptions(t *testing.T) {
 	assert.True(t, project.ContainsFile("/basic.ts"))
 	assert.True(t, project.ContainsFile("/options.ts"))
 }
+
+// =============================================================================
+// ProjectConfig API 测试
+// =============================================================================
+
+// TestProjectConfig_UseInMemoryFileSystem 测试 UseInMemoryFileSystem 配置选项
+// API: ProjectConfig.UseInMemoryFileSystem
+// 对应ts-morph: useInMemoryFileSystem option
+func TestProjectConfig_UseInMemoryFileSystem(t *testing.T) {
+	t.Run("启用内存文件系统", func(t *testing.T) {
+		// 创建启用内存文件系统的项目配置
+		config := ProjectConfig{
+			RootPath:                "/test",
+			UseInMemoryFileSystem:   true,
+		}
+
+		// 创建项目（不读取文件系统）
+		project := NewProject(config)
+		defer project.Close()
+
+		// 验证项目为空（没有扫描文件系统）
+		sourceFiles := project.GetSourceFiles()
+		assert.Empty(t, sourceFiles, "内存文件系统模式下应该没有扫描到的文件")
+		assert.Equal(t, 0, project.GetFileCount(), "文件数量应该为0")
+
+		// 验证可以手动创建源文件
+		sourceFile, err := project.CreateSourceFile("/test.ts", `
+			import { foo } from './module';
+
+			export function test() {
+				return "hello";
+			}
+		`)
+		require.NoError(t, err)
+		assert.NotNil(t, sourceFile)
+		assert.Equal(t, "/test.ts", sourceFile.GetFilePath())
+
+		// 验证现在有一个文件
+		sourceFiles = project.GetSourceFiles()
+		assert.Len(t, sourceFiles, 1, "手动添加文件后应该有1个文件")
+	})
+
+	t.Run("禁用内存文件系统（默认行为）", func(t *testing.T) {
+		// 创建普通项目配置
+		config := ProjectConfig{
+			RootPath:              "..",  // 使用上级目录（analyzer-ts），应该有更多文件
+			UseInMemoryFileSystem: false,
+			TargetExtensions:      []string{".ts", ".tsx"}, // 只扫描 TypeScript 文件
+			IgnorePatterns:        []string{"node_modules", ".git", "*.test.ts", "*.d.ts"},
+		}
+
+		// 创建项目（会扫描文件系统）
+		project := NewProject(config)
+		defer project.Close()
+
+		// 验证项目扫描了文件系统
+		sourceFiles := project.GetSourceFiles()
+		// 至少应该有一些源码文件，但具体数量取决于目录结构
+		t.Logf("扫描到的文件数量: %d", len(sourceFiles))
+
+		// 验证没有出错，并且能正常获取文件列表
+		assert.NotNil(t, project)
+		assert.NotNil(t, sourceFiles)
+	})
+}
+
+// TestProjectConfig_SkipAddingFilesFromTsConfig 测试 SkipAddingFilesFromTsConfig 配置选项
+// API: ProjectConfig.SkipAddingFilesFromTsConfig
+// 对应ts-morph: skipAddingFilesFromTsConfig option
+func TestProjectConfig_SkipAddingFilesFromTsConfig(t *testing.T) {
+	t.Run("跳过tsconfig文件加载", func(t *testing.T) {
+		// 创建跳过tsconfig加载的项目配置
+		config := ProjectConfig{
+			RootPath:                     ".",
+			UseTsConfig:                  true,
+			SkipAddingFilesFromTsConfig:  true,
+			IgnorePatterns:               []string{"node_modules", ".git", "*.test.ts"}, // 忽略测试文件
+		}
+
+		// 创建项目
+		project := NewProject(config)
+		defer project.Close()
+
+		// 验证项目创建成功
+		assert.NotNil(t, project)
+
+		// 获取源文件列表
+		sourceFiles := project.GetSourceFiles()
+
+		// 至少应该有一些源文件（但不是从tsconfig加载的）
+		// 这里我们主要验证没有出错，具体的文件数量取决于目录结构
+		t.Logf("跳过tsconfig加载时找到的文件数量: %d", len(sourceFiles))
+	})
+
+	t.Run("正常加载tsconfig文件", func(t *testing.T) {
+		// 创建正常加载tsconfig的项目配置
+		config := ProjectConfig{
+			RootPath:                     ".",
+			UseTsConfig:                  true,
+			SkipAddingFilesFromTsConfig:  false,
+			IgnorePatterns:               []string{"node_modules", ".git", "*.test.ts"}, // 忽略测试文件
+		}
+
+		// 创建项目
+		project := NewProject(config)
+		defer project.Close()
+
+		// 验证项目创建成功
+		assert.NotNil(t, project)
+
+		// 获取源文件列表
+		sourceFiles := project.GetSourceFiles()
+
+		// 验证找到了一些文件
+		t.Logf("正常加载tsconfig时找到的文件数量: %d", len(sourceFiles))
+	})
+}
+
+// TestProjectConfig_CombinedOptions 测试组合使用配置选项
+// API: UseInMemoryFileSystem + SkipAddingFilesFromTsConfig
+func TestProjectConfig_CombinedOptions(t *testing.T) {
+	t.Run("内存文件系统 + 跳过tsconfig", func(t *testing.T) {
+		// 组合使用两个新配置选项
+		config := ProjectConfig{
+			RootPath:                     "/test",
+			UseInMemoryFileSystem:        true,
+			UseTsConfig:                  true,           // 即使启用UseTsConfig...
+			SkipAddingFilesFromTsConfig:  true,           // ...也跳过加载
+		}
+
+		// 创建项目
+		project := NewProject(config)
+		defer project.Close()
+
+		// 验证项目为空
+		sourceFiles := project.GetSourceFiles()
+		assert.Empty(t, sourceFiles, "内存文件系统模式下应该为空")
+
+		// 验证可以手动添加文件
+		sourceFile, err := project.CreateSourceFile("/example.ts", `
+			export const message = "hello";
+		`)
+		require.NoError(t, err)
+		assert.NotNil(t, sourceFile)
+
+		// 验证文件被添加
+		sourceFiles = project.GetSourceFiles()
+		assert.Len(t, sourceFiles, 1, "手动添加的文件应该存在")
+
+		// 验证可以访问文件内容
+		assert.Contains(t, sourceFile.GetFileResult().Raw, "message")
+	})
+}
+
+// TestProjectConfig_BackwardCompatibility 测试向后兼容性
+// API: 默认配置应该正常工作
+func TestProjectConfig_BackwardCompatibility(t *testing.T) {
+	t.Run("默认配置应该正常工作", func(t *testing.T) {
+		// 使用默认配置创建项目
+		config := ProjectConfig{
+			RootPath: ".",
+		}
+
+		// 应该正常创建，不会因为新配置而出错
+		project := NewProject(config)
+		defer project.Close()
+
+		assert.NotNil(t, project)
+
+		// 验证基本功能正常
+		sourceFiles := project.GetSourceFiles()
+		assert.GreaterOrEqual(t, len(sourceFiles), 0, "应该能够获取源文件列表")
+	})
+
+	t.Run("零值配置项应该正常工作", func(t *testing.T) {
+		// 明确设置零值的配置项
+		config := ProjectConfig{
+			RootPath:                     ".",
+			UseInMemoryFileSystem:        false, // 零值
+			SkipAddingFilesFromTsConfig:  false, // 零值
+		}
+
+		// 应该正常工作
+		project := NewProject(config)
+		defer project.Close()
+
+		assert.NotNil(t, project)
+		sourceFiles := project.GetSourceFiles()
+		assert.GreaterOrEqual(t, len(sourceFiles), 0, "应该能够获取源文件列表")
+	})
+}

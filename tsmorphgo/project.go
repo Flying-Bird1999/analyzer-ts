@@ -26,6 +26,7 @@ type Project struct {
 }
 
 // ProjectConfig 定义了初始化一个新项目所需的配置。
+// API兼容性：对应ts-morph的项目配置选项
 type ProjectConfig struct {
 	RootPath         string
 	IgnorePatterns   []string
@@ -41,14 +42,39 @@ type ProjectConfig struct {
 	IncludePatterns []string
 	// 排除的文件模式（从 tsconfig.json 解析而来）
 	ExcludePatterns []string
+
+	// API兼容性新增配置项
+	// UseInMemoryFileSystem 是否使用内存文件系统（主要用于测试场景）
+	// API兼容性：对应ts-morph的useInMemoryFileSystem选项
+	UseInMemoryFileSystem bool
+
+	// SkipAddingFilesFromTsConfig 是否跳过从tsconfig.json自动加载文件
+	// API兼容性：对应ts-morph的skipAddingFilesFromTsConfig选项
+	SkipAddingFilesFromTsConfig bool
 }
 
 // NewProject 是创建和初始化一个新项目实例的入口点。
-// 如果配置中启用了 tsconfig.json 支持，会先解析配置文件。
+// API兼容性：支持ts-morph的项目配置选项
 func NewProject(config ProjectConfig) *Project {
+	// 处理内存文件系统模式
+	if config.UseInMemoryFileSystem {
+		// 内存文件系统模式：不读取文件系统，创建空项目
+		// 用户可以通过 CreateSourceFile 手动添加文件
+		ppConfig := projectParser.NewProjectParserConfig(config.RootPath, nil, false, nil)
+		ppResult := projectParser.NewProjectParserResult(ppConfig)
+		// 不调用 ProjectParser()，避免扫描文件系统
+
+		p := &Project{
+			parserResult: ppResult,
+			sourceFiles:  make(map[string]*SourceFile),
+		}
+
+		return p
+	}
+
 	// 处理 TypeScript 配置
 	enhancedConfig := config
-	if config.UseTsConfig {
+	if config.UseTsConfig && !config.SkipAddingFilesFromTsConfig {
 		tsConfig := parseTsConfig(config)
 		if tsConfig != nil {
 			enhancedConfig = mergeTsConfig(config, tsConfig)
