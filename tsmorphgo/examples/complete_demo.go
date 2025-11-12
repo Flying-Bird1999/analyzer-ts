@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	tmorphgo "github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
@@ -27,10 +28,18 @@ func main() {
 	// 创建TSMorphGo项目实例 - 基于真实前端项目
 	fmt.Println("\n📁 创建TSMorphGo项目实例...")
 	config := tmorphgo.ProjectConfig{
-		RootPath: demoAppPath,
+		RootPath:         demoAppPath,
+		UseTsConfig:      true,
+		TargetExtensions: []string{".ts", ".tsx"},
+		IgnorePatterns:   []string{"node_modules", "dist", ".git", "build"},
 	}
 
 	project := tmorphgo.NewProject(config)
+	defer project.Close()
+
+	// 等待项目初始化完成，确保LSP服务准备就绪
+	fmt.Println("⏳ 等待LSP服务初始化...")
+	time.Sleep(2 * time.Second)
 
 	// 获取所有源文件
 	fmt.Println("\n🔍 分析项目文件...")
@@ -60,9 +69,9 @@ func main() {
 
 	// 综合分析演示
 	fmt.Println("\n🎯 综合分析演示:")
-	demonstrateNodeAnalysis(project, sourceFiles)
-	demonstrateTypeChecking(project, sourceFiles)
-	demonstrateSymbolAnalysis(project, sourceFiles)
+	// demonstrateNodeAnalysis(project, sourceFiles)
+	// demonstrateTypeChecking(project, sourceFiles)
+	// demonstrateSymbolAnalysis(project, sourceFiles)
 	demonstrateReferenceAnalysis(project, sourceFiles)
 
 	fmt.Println("\n📋 完整演示总结:")
@@ -266,8 +275,7 @@ func demonstrateSymbolAnalysis(project *tmorphgo.Project, sourceFiles []*tmorphg
 						colNum := node.GetStartColumnNumber()
 						identifierName := node.GetText()
 
-						detail := fmt.Sprintf("      ├─ 符号: %s (标识符: %s, 位置: %d:%d)",
-							symbolName, identifierName, lineNum, colNum)
+						detail := fmt.Sprintf("      ├─ 符号: %s (标识符: %s, 位置: %d:%d)", symbolName, identifierName, lineNum, colNum)
 						symbolDetails = append(symbolDetails, detail)
 					}
 				}
@@ -295,107 +303,191 @@ func demonstrateSymbolAnalysis(project *tmorphgo.Project, sourceFiles []*tmorphg
 func demonstrateReferenceAnalysis(project *tmorphgo.Project, sourceFiles []*tmorphgo.SourceFile) {
 	fmt.Println("\n🔗 引用分析演示:")
 
-	fmt.Println("  🎯 详细引用路径分析:")
+	fmt.Println("  🎯 使用 FindReferences 查找节点引用:")
 
-	// 分析所有文件的引用信息
-	for _, file := range sourceFiles {
-		if file == nil {
+	// 查找特定标识符的引用
+	testCases := []struct {
+		identifier  string
+		fileName    string
+		description string
+	}{
+		{"formatDate", "App.tsx", "查找 formatDate 函数的所有引用"},
+	}
+
+	for _, testCase := range testCases {
+		fmt.Printf("\n    🔍 %s:\n", testCase.description)
+
+		var targetNode tmorphgo.Node
+
+		// 在指定文件中查找目标标识符 - 使用和测试相同的方法
+		for _, file := range sourceFiles {
+			fileName := file.GetFilePath()
+			if strings.Contains(fileName, testCase.fileName) {
+				file.ForEachDescendant(func(node tmorphgo.Node) {
+					if node.IsIdentifier() && strings.TrimSpace(node.GetText()) == testCase.identifier {
+						// 关键：检查父节点，确保找到的是真正的使用位置
+						parent := node.GetParent()
+						if parent != nil && parent.GetKindName() == "KindCallExpression" {
+							targetNode = node
+							return
+						}
+					}
+				})
+			}
+			if targetNode.GetKindName() != "" { // 检查是否找到了有效的节点
+				break
+			}
+		}
+
+		if targetNode.GetKindName() == "" {
+			fmt.Printf("      ❌ 未找到标识符 '%s' 在 %s 中\n", testCase.identifier, testCase.fileName)
 			continue
 		}
 
-		filePath := file.GetFilePath()
-		fileName := filePath[strings.LastIndex(filePath, "/")+1:]
+		// 获取目标节点的位置信息
+		lineNum := targetNode.GetStartLineNumber()
+		colNum := targetNode.GetStartColumnNumber()
+		fmt.Printf("      📍 目标节点: '%s' 位置: %d:%d (类型: %s)\n", testCase.identifier, lineNum, colNum, targetNode.GetKindName())
 
-		fmt.Printf("    📄 %s:\n", fileName)
-
-		// 收集重要的导入和标识符引用
-		imports := make(map[string][]string)
-		identifiers := make(map[string][]string)
-
-		file.ForEachDescendant(func(node tmorphgo.Node) {
-			// 收集导入信息
-			if node.IsImportDeclaration() {
-				importText := node.GetText()
-				if len(importText) > 80 {
-					importText = importText[:80] + "..."
-				}
-				lineNum := node.GetStartLineNumber()
-				imports["import"] = append(imports["import"], fmt.Sprintf("%s (行 %d)", importText, lineNum))
-			}
-
-			// 收集重要标识符（React、useState等）
-			if node.IsIdentifier() {
-				identifierName := node.GetText()
-				if identifierName == "React" || identifierName == "useState" ||
-				   identifierName == "useEffect" || identifierName == "interface" {
-					lineNum := node.GetStartLineNumber()
-					colNum := node.GetStartColumnNumber()
-					identifiers[identifierName] = append(identifiers[identifierName],
-						fmt.Sprintf("%d:%d", lineNum, colNum))
-				}
-			}
-		})
-
-		// 打印导入信息
-		for _, importInfo := range imports["import"] {
-			fmt.Printf("      📥 %s\n", importInfo)
+		// 使用 FindReferences 查找所有引用
+		fmt.Printf("      🔎 正在查找引用...\n")
+		references, err := tmorphgo.FindReferences(targetNode)
+		if err != nil {
+			fmt.Printf("      ❌ 查找引用失败: %v\n", err)
+			continue
 		}
 
-		// 打印重要标识符引用
-		for id, positions := range identifiers {
-			if len(positions) > 0 {
-				fmt.Printf("      🔗 标识符 '%s': %s\n", id, strings.Join(positions, ", "))
+		if len(references) == 0 {
+			fmt.Printf("      ⚠️ 未找到任何引用\n")
+			continue
+		}
+
+		fmt.Printf("      ✅ 找到 %d 个引用:\n", len(references))
+		for i, ref := range references {
+			refLine := ref.GetStartLineNumber()
+			refCol := ref.GetStartColumnNumber()
+			refFile := ref.GetSourceFile().GetFilePath()
+			refFileName := refFile[strings.LastIndex(refFile, "/")+1:]
+
+			// 获取引用节点的上下文
+			parent := ref.GetParent()
+			context := ""
+			if parent != nil {
+				parentText := parent.GetText()
+				if len(parentText) > 50 {
+					context = parentText[:50] + "..."
+				} else {
+					context = parentText
+				}
 			}
+
+			fmt.Printf("        %d. %s:%d:%d - 上下文: %s\n", i+1, refFileName, refLine, refCol, context)
 		}
 	}
 
-	// 演示特定标识符的详细分析
-	fmt.Println("  🔍 跨文件引用分析:")
+	fmt.Println("\n  🎯 使用 GotoDefinition 查找定义位置:")
 
-	// 查找React和useState的使用情况
-	reactRefs := []string{}
-	useStateRefs := []string{}
+	// 查找某个标识符的定义位置
+	definitionTestCases := []struct {
+		identifier  string
+		fileName    string
+		description string
+	}{
+		{"formatDate", "App.tsx", "查找 formatDate 函数的定义"},
+	}
 
-	for _, file := range sourceFiles {
-		filePath := file.GetFilePath()
-		fileName := filePath[strings.LastIndex(filePath, "/")+1:]
+	for _, testCase := range definitionTestCases {
+		fmt.Printf("\n    🔍 %s:\n", testCase.description)
 
-		file.ForEachDescendant(func(node tmorphgo.Node) {
-			if node.IsIdentifier() {
-				if node.GetText() == "React" {
-					lineNum := node.GetStartLineNumber()
-					colNum := node.GetStartColumnNumber()
-					reactRefs = append(reactRefs, fmt.Sprintf("%s:%d:%d", fileName, lineNum, colNum))
-				} else if node.GetText() == "useState" {
-					lineNum := node.GetStartLineNumber()
-					colNum := node.GetStartColumnNumber()
-					useStateRefs = append(useStateRefs, fmt.Sprintf("%s:%d:%d", fileName, lineNum, colNum))
-				}
+		var targetNode tmorphgo.Node
+
+		// 在指定文件中查找目标标识符 - 使用相同的方法
+		for _, file := range sourceFiles {
+			fileName := file.GetFilePath()
+			if strings.Contains(fileName, testCase.fileName) {
+				file.ForEachDescendant(func(node tmorphgo.Node) {
+					if node.IsIdentifier() && strings.TrimSpace(node.GetText()) == testCase.identifier {
+						// 检查父节点，确保找到的是使用位置
+						parent := node.GetParent()
+						if parent != nil && parent.GetKindName() == "KindCallExpression" {
+							targetNode = node
+							return
+						}
+					}
+				})
 			}
-		})
+			if targetNode.GetKindName() != "" {
+				break
+			}
+		}
+
+		if targetNode.GetKindName() == "" {
+			fmt.Printf("      ❌ 未找到标识符 '%s' 在 %s 中\n", testCase.identifier, testCase.fileName)
+			continue
+		}
+
+		// 使用 GotoDefinition 查找定义
+		definitions, err := tmorphgo.GotoDefinition(targetNode)
+		if err != nil {
+			fmt.Printf("      ❌ 查找定义失败: %v\n", err)
+			continue
+		}
+
+		if len(definitions) == 0 {
+			fmt.Printf("      ⚠️ 未找到定义位置\n")
+			continue
+		}
+
+		fmt.Printf("      ✅ 找到定义位置:\n")
+		for _, def := range definitions {
+			defLine := def.GetStartLineNumber()
+			defCol := def.GetStartColumnNumber()
+			defFile := def.GetSourceFile().GetFilePath()
+			defFileName := defFile[strings.LastIndex(defFile, "/")+1:]
+
+			defText := def.GetText()
+			if len(defText) > 60 {
+				defText = defText[:60] + "..."
+			}
+
+			fmt.Printf("        📍 %s:%d:%d - %s\n", defFileName, defLine, defCol, defText)
+		}
 	}
 
-	if len(reactRefs) > 0 {
-		fmt.Printf("    ⚛️ React 引用: %s\n", strings.Join(reactRefs, ", "))
-	}
-	if len(useStateRefs) > 0 {
-		fmt.Printf("    🎣 useState 引用: %s\n", strings.Join(useStateRefs, ", "))
-	}
+	fmt.Println("\n  🎯 引用计数演示:")
 
-	// 别名引用分析
-	fmt.Println("  🎯 别名映射引用分析:")
-	for _, file := range sourceFiles {
-		filePath := file.GetFilePath()
-		fileName := filePath[strings.LastIndex(filePath, "/")+1:]
+	// 统计一些常见标识符的引用数量
+	countTestCases := []string{"formatDate", "useState", "React"}
 
-		if strings.Contains(fileName, "test-aliases") {
-			fmt.Printf("    📍 %s - 检测到别名使用:\n", fileName)
+	for _, identifier := range countTestCases {
+		var foundNode tmorphgo.Node
+
+		// 查找标识符的第一个出现 - 使用更精确的方法
+		for _, file := range sourceFiles {
 			file.ForEachDescendant(func(node tmorphgo.Node) {
-				if node.GetKindName() == "KindStringLiteral" && strings.Contains(node.GetText(), "@/") {
-					lineNum := node.GetStartLineNumber()
-					fmt.Printf("      ├─ 别名路径: %s (行 %d)\n", node.GetText(), lineNum)
+				if node.IsIdentifier() && strings.TrimSpace(node.GetText()) == identifier && foundNode.GetKindName() == "" {
+					// 检查父节点，确保找到的是有意义的使用位置
+					parent := node.GetParent()
+					if parent != nil && (parent.GetKindName() == "KindCallExpression" ||
+						parent.GetKindName() == "KindImportDeclaration" ||
+						parent.GetKindName() == "KindImportClause") {
+						foundNode = node
+						return
+					}
 				}
 			})
+			if foundNode.GetKindName() != "" {
+				break
+			}
+		}
+
+		if foundNode.GetKindName() != "" {
+			count, err := tmorphgo.CountReferences(foundNode)
+			if err != nil {
+				fmt.Printf("    ❌ 统计 '%s' 引用失败: %v\n", identifier, err)
+			} else {
+				fmt.Printf("    📊 '%s' 共有 %d 个引用\n", identifier, count)
+			}
 		}
 	}
 }

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { UserProfile } from './components/UserProfile';
-import { ProductList } from './components/ProductList';
-import { useUserData } from './hooks/useUserData';
-import { useApiService } from './hooks/useApiService';
-import { formatDate } from './utils/dateUtils';
+import { Header } from './Header';
+import { UserProfile } from './UserProfile';
+import { useUserData } from '../hooks/useUserData';
+import { formatDate } from '../utils/dateUtils';
 
 // 导入样式
 import './App.css';
@@ -26,9 +24,6 @@ interface User {
 export const App: React.FC = () => {
   // 使用自定义Hook获取用户数据
   const { user, loading: userLoading, error: userError } = useUserData(1);
-
-  // 使用API服务Hook
-  const { fetchProducts, fetchUser } = useApiService();
 
   // 组件状态
   const [products, setProducts] = useState<Product[]>([]);
@@ -119,8 +114,6 @@ export const App: React.FC = () => {
               </button>
             </div>
           </div>
-
-          <ProductList products={filteredProducts} />
         </div>
       </main>
     </div>
