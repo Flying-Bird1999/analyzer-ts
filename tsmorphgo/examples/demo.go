@@ -145,7 +145,7 @@ func findInterface(project *tsmorphgo.Project, name string) *tsmorphgo.Node {
 			if node.Kind == tsmorphgo.KindInterfaceDeclaration {
 				nodeText := strings.TrimSpace(node.GetText())
 				if strings.Contains(nodeText, "export interface "+name+" ") ||
-				   strings.Contains(nodeText, "export interface "+name+" {") {
+					strings.Contains(nodeText, "export interface "+name+" {") {
 					fmt.Printf("✅ 找到接口 '%s': %s:%d\n", name,
 						filepath.Base(node.GetSourceFile().GetFilePath()),
 						node.GetStartLineNumber())
@@ -183,7 +183,7 @@ func findInterface(project *tsmorphgo.Project, name string) *tsmorphgo.Node {
 			if node.Kind == tsmorphgo.KindInterfaceDeclaration {
 				nodeText := strings.TrimSpace(node.GetText())
 				if strings.Contains(nodeText, "export interface "+name+" ") ||
-				   strings.Contains(nodeText, "export interface "+name+" {") {
+					strings.Contains(nodeText, "export interface "+name+" {") {
 					found = &node
 					return
 				}
@@ -212,8 +212,8 @@ func findFunction(project *tsmorphgo.Project, name string) *tsmorphgo.Node {
 			nodeText := strings.TrimSpace(node.GetText())
 			// 检查是否包含 useUserData
 			if strings.Contains(nodeText, name+" =") ||
-			   strings.Contains(nodeText, "export const "+name) ||
-			   strings.HasPrefix(nodeText, name+":") {
+				strings.Contains(nodeText, "export const "+name) ||
+				strings.HasPrefix(nodeText, name+":") {
 				found = &node
 				return
 			}
@@ -246,8 +246,8 @@ func findComponent(project *tsmorphgo.Project, name string) *tsmorphgo.Node {
 			nodeText := strings.TrimSpace(node.GetText())
 			// 检查是否包含 UserProfile
 			if strings.Contains(nodeText, name+": React.FC") ||
-			   strings.Contains(nodeText, "export const "+name) ||
-			   strings.HasPrefix(nodeText, name+":") {
+				strings.Contains(nodeText, "export const "+name) ||
+				strings.HasPrefix(nodeText, name+":") {
 				found = &node
 				return
 			}
@@ -277,7 +277,7 @@ func analyzeInterface(node *tsmorphgo.Node) {
 	fmt.Printf("   成员:\n")
 	node.ForEachDescendant(func(child tsmorphgo.Node) {
 		if child.Kind == tsmorphgo.KindPropertySignature ||
-		   child.Kind == tsmorphgo.KindMethodSignature {
+			child.Kind == tsmorphgo.KindMethodSignature {
 			memberText := strings.TrimSpace(child.GetText())
 			if len(memberText) > 0 && len(memberText) <= 50 {
 				fmt.Printf("      - %s\n", memberText)
@@ -351,7 +351,7 @@ func getNodeByLocation(project *tsmorphgo.Project, relativePath string, targetLi
 
 		// 检查目标位置是否在节点范围内
 		if (targetLine > startLine || (targetLine == startLine && targetColumn >= startCol)) &&
-		   (targetLine < endLine || (targetLine == endLine && targetColumn <= endCol)) {
+			(targetLine < endLine || (targetLine == endLine && targetColumn <= endCol)) {
 
 			// 计算到节点起始位置的距离
 			distance := (targetLine-startLine)*(targetLine-startLine) + (targetColumn-startCol)*(targetColumn-startCol)
@@ -533,7 +533,7 @@ func hasReactExport(node *tsmorphgo.Node) bool {
 	// 检查附近的导出语句
 	context := parent.GetText()
 	return strings.Contains(context, "export") &&
-		   strings.Contains(context, getNameFromNode(node))
+		strings.Contains(context, getNameFromNode(node))
 }
 
 func extractContext(node tsmorphgo.Node) string {
