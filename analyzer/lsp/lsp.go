@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
@@ -42,120 +43,64 @@ func (n *dummyNpmExecutor) NpmInstall(cwd string, args []string) ([]byte, error)
 type Service struct {
 	session      *project.Session
 	rootPath     string
-	sourcesCache map[string]any
-	project      *project.Project // 添加项目引用，以便访问完整的项目配置
+	sourcesCache map[string]string // 使用明确类型，增强类型安全
+	mutex        sync.RWMutex      // 并发安全保护
+	project      *project.Project  // 添加项目引用，以便访问完整的项目配置
 }
 
 // NewService 从物理磁盘创建服务。
 func NewService(rootPath string) (*Service, error) {
-	files := make(map[string]any)
-	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			content, readErr := os.ReadFile(path)
-			if readErr != nil {
-				return nil
-			}
-			virtualPath, err := filepath.Rel(rootPath, path)
-			if err != nil {
-				return err
-			}
-			files["/"+filepath.ToSlash(virtualPath)] = string(content)
-		}
-		return nil
-	})
-
+	files, err := walkFileSystem(rootPath)
 	if err != nil {
 		return nil, fmt.Errorf("遍历项目文件失败: %w", err)
 	}
 
-	return NewServiceForTest(files)
+	// 转换为 map[string]any 格式以兼容 NewServiceForTest
+	filesAny := make(map[string]any)
+	for path, content := range files {
+		filesAny[path] = content
+	}
+
+	return NewServiceForTest(filesAny)
 }
 
 // NewServiceForTest 是一个专为测试设计的构造函数，从内存 map 创建服务。
 func NewServiceForTest(files map[string]any) (*Service, error) {
-	// 查找tsconfig.json的位置
-	tsconfigPath := ""
-	for path := range files {
-		if filepath.Base(path) == "tsconfig.json" {
-			tsconfigPath = path
-			break
-		}
-	}
-
-	// 如果没有tsconfig.json，创建一个默认的，包含paths配置
-	if tsconfigPath == "" {
-		files["/tsconfig.json"] = `{
-			"compilerOptions": {
-				"target": "es2020",
-				"module": "esnext",
-				"jsx": "react-jsx",
-				"allowSyntheticDefaultImports": true,
-				"esModuleInterop": true,
-				"skipLibCheck": true,
-				"baseUrl": ".",
-				"paths": {
-					"@/*": ["src/*"],
-					"@/hooks/*": ["src/hooks/*"],
-					"@/utils/*": ["src/utils/*"],
-					"@/components/*": ["src/components/*"]
-				}
-			}
-		}`
-		tsconfigPath = "/tsconfig.json"
-	} else {
-		// 关键修复：如果已有tsconfig.json，需要调整baseUrl配置以适应绝对路径环境
-		if configStr, ok := files[tsconfigPath].(string); ok {
-			// 将baseUrl从相对路径改为绝对路径或适合当前环境的配置
-			// 原配置: "baseUrl": "src" -> 修改为: "baseUrl": "/src" 或 "."
-			fixedConfig := strings.ReplaceAll(configStr, `"baseUrl": "src"`, `"baseUrl": "/src"`)
-			// 如果有问题，也可以尝试使用 "."
-			// fixedConfig := strings.ReplaceAll(configStr, `"baseUrl": "src"`, `"baseUrl": "."`)
-			files[tsconfigPath] = fixedConfig
-		}
-	}
-
 	// 规范化文件路径，确保符合typescript-go的期望
-	correctedFiles := make(map[string]any)
-	for path, content := range files {
-		cleanPath := path
-		if !strings.HasPrefix(cleanPath, "/") {
-			cleanPath = "/" + cleanPath
-		}
-		for strings.HasPrefix(cleanPath, "//") {
-			cleanPath = strings.TrimPrefix(cleanPath, "/")
-		}
-		if cleanPath == "" {
-			cleanPath = "/"
-		}
-		correctedFiles[cleanPath] = content
-	}
+	correctedFiles := normalizeFilePaths(files)
+
+	// 查找现有的tsconfig.json
+	tsconfigPath := findExistingTsConfig(correctedFiles)
+
+	// 保守处理 tsconfig.json 配置
+	// 完全使用现有的 tsconfig.json 配置，不做任何修改
+	// typescript-go 有合理的默认值，可以处理没有tsconfig.json的情况
 
 	// 初始化文件系统
-	fs := bundled.WrapFS(vfstest.FromMap(correctedFiles, false))
+	correctedFilesAny := make(map[string]any)
+	for path, content := range correctedFiles {
+		correctedFilesAny[path] = content
+	}
+	fs := bundled.WrapFS(vfstest.FromMap(correctedFilesAny, false))
 
-	// 关键修复：根据tsconfig.json的位置和baseUrl配置确定CurrentDirectory
-	// 如果tsconfig.json在根目录且baseUrl为"src"，则CurrentDirectory应为"/"
-	// 这样baseUrl "src" 就能正确解析为 "/src"
+	// 确定当前目录
 	var currentDir string
-	if strings.Contains(tsconfigPath, "/tsconfig.json") {
-		currentDir = "/" // 使用根目录
-	} else {
-		// 否则使用tsconfig所在的目录
+	if tsconfigPath != "" {
 		currentDir = filepath.Dir(tsconfigPath)
 		if currentDir == "." || currentDir == "" {
 			currentDir = "/"
 		}
+	} else {
+		currentDir = "/" // 默认根目录
 	}
 
+	// 创建会话
 	session := project.NewSession(&project.SessionInit{
 		Options: &project.SessionOptions{
-			CurrentDirectory:   currentDir, // 动态确定CurrentDirectory
+			CurrentDirectory:   currentDir,
 			DefaultLibraryPath: bundled.LibPath(),
 			WatchEnabled:       false,
-			LoggingEnabled:     true, // 启用日志以便调试路径解析问题
+			LoggingEnabled:     false, // 生产环境关闭日志
 		},
 		FS:          fs,
 		Client:      &dummyClient{},
@@ -163,14 +108,20 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 		Logger:      logging.NewLogger(os.Stderr),
 	})
 
-	// 打开项目，让typescript-go自己解析tsconfig.json
+	// 打开项目
 	ctx := context.Background()
-	project, err := session.OpenProject(ctx, tsconfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("打开项目失败: %w", err)
+	var projectInstance *project.Project
+	var err error
+
+	// 如果有tsconfig.json，使用它打开项目
+	if tsconfigPath != "" {
+		projectInstance, err = session.OpenProject(ctx, tsconfigPath)
+		if err != nil {
+			return nil, fmt.Errorf("打开项目失败: %w", err)
+		}
 	}
 
-	// 获取第一个TypeScript文件用于初始化语言服务
+	// 初始化语言服务
 	var firstFile lsproto.DocumentUri
 	for path := range correctedFiles {
 		if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") {
@@ -185,7 +136,7 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 			if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") ||
 				strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".jsx") {
 				uri := lsconv.FileNameToDocumentURI(path)
-				session.DidOpenFile(ctx, uri, 0, content.(string), "typescript")
+				session.DidOpenFile(ctx, uri, 0, content, "typescript")
 			}
 		}
 
@@ -198,9 +149,9 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 
 	service := &Service{
 		session:      session,
-		rootPath:     currentDir, // 使用动态确定的CurrentDirectory
+		rootPath:     currentDir,
 		sourcesCache: correctedFiles,
-		project:      project,
+		project:      projectInstance,
 	}
 
 	return service, nil
@@ -214,16 +165,18 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 		}
 	}()
 
-	virtualPath, err := filepath.Rel(s.rootPath, filePath)
+	// 使用公共路径处理方法
+	virtualPath, err := s.normalizePath(filePath)
 	if err != nil {
 		return lsproto.ReferencesResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
 	}
-	virtualPath = "/" + filepath.ToSlash(virtualPath)
 
-	content, ok := s.sourcesCache[virtualPath].(string)
+	// 使用类型安全的文件内容获取
+	content, ok := s.getFileContent(virtualPath)
 	if !ok {
 		return lsproto.ReferencesResponse{}, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}
+
 	uri := lsconv.FileNameToDocumentURI(virtualPath)
 	s.session.DidOpenFile(ctx, uri, 0, content, "typescript")
 
@@ -254,16 +207,18 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 		}
 	}()
 
-	virtualPath, err := filepath.Rel(s.rootPath, filePath)
+	// 使用公共路径处理方法
+	virtualPath, err := s.normalizePath(filePath)
 	if err != nil {
 		return lsproto.DefinitionResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
 	}
-	virtualPath = "/" + filepath.ToSlash(virtualPath)
 
-	content, ok := s.sourcesCache[virtualPath].(string)
+	// 使用类型安全的文件内容获取
+	content, ok := s.getFileContent(virtualPath)
 	if !ok {
 		return lsproto.DefinitionResponse{}, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}
+
 	uri := lsconv.FileNameToDocumentURI(virtualPath)
 	s.session.DidOpenFile(ctx, uri, 0, content, "typescript")
 
@@ -285,11 +240,12 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 
 // GetSymbolAt 获取给定文件位置的符号信息 (LSP 实现)。
 func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char int) (*ast.Symbol, error) {
-	virtualPath, err := filepath.Rel(s.rootPath, filePath)
+	// 使用公共路径处理方法
+	virtualPath, err := s.normalizePath(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("计算相对路径失败: %w", err)
 	}
-	virtualPath = "/" + filepath.ToSlash(virtualPath)
+
 	uri := lsconv.FileNameToDocumentURI(virtualPath)
 
 	langService, err := s.session.GetLanguageService(ctx, uri)
@@ -308,7 +264,8 @@ func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char i
 	checker, done := program.GetTypeCheckerForFile(ctx, file)
 	defer done()
 
-	content, ok := s.sourcesCache[virtualPath].(string)
+	// 使用类型安全的文件内容获取
+	content, ok := s.getFileContent(virtualPath)
 	if !ok {
 		return nil, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}
@@ -327,9 +284,132 @@ func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char i
 	return checker.GetSymbolAtLocation(node), nil
 }
 
-// Close 关闭 LSP 会话以释放资源。
+// // Close 关闭 LSP 会话以释放资源。
 func (s *Service) Close() {
 	s.session.Close()
+}
+
+// =============================================================================
+// 辅助方法 - 提取公共逻辑
+// =============================================================================
+
+// normalizePath 规范化文件路径，转换为相对于项目根目录的虚拟路径
+func (s *Service) normalizePath(filePath string) (string, error) {
+	virtualPath, err := filepath.Rel(s.rootPath, filePath)
+	if err != nil {
+		return "", fmt.Errorf("计算相对路径失败: %w", err)
+	}
+	return "/" + filepath.ToSlash(virtualPath), nil
+}
+
+// getFileContent 从缓存中获取文件内容，类型安全
+func (s *Service) getFileContent(virtualPath string) (string, bool) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	content, exists := s.sourcesCache[virtualPath]
+	return content, exists
+}
+
+// hasTypeScriptFiles 检查文件集合中是否包含TypeScript文件
+func hasTypeScriptFiles(files map[string]string) bool {
+	for path := range files {
+		if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") ||
+			strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".jsx") {
+			return true
+		}
+	}
+	return false
+}
+
+// findExistingTsConfig 查找现有的tsconfig.json文件
+func findExistingTsConfig(files map[string]string) string {
+	for path := range files {
+		if filepath.Base(path) == "tsconfig.json" {
+			return path
+		}
+	}
+	return ""
+}
+
+
+
+
+// normalizeFilePaths 规范化文件路径格式
+func normalizeFilePaths(files map[string]any) map[string]string {
+	correctedFiles := make(map[string]string)
+	for path, content := range files {
+		// 转换内容为字符串
+		var contentStr string
+		if str, ok := content.(string); ok {
+			contentStr = str
+		} else {
+			continue // 跳过非字符串内容
+		}
+
+		// 规范化路径
+		cleanPath := path
+		if !strings.HasPrefix(cleanPath, "/") {
+			cleanPath = "/" + cleanPath
+		}
+		for strings.HasPrefix(cleanPath, "//") {
+			cleanPath = strings.TrimPrefix(cleanPath, "/")
+		}
+		if cleanPath == "" {
+			cleanPath = "/"
+		}
+		correctedFiles[cleanPath] = contentStr
+	}
+	return correctedFiles
+}
+
+// walkFileSystem 遍历文件系统并收集文件内容
+func walkFileSystem(rootPath string) (map[string]string, error) {
+	files := make(map[string]string)
+
+	// 首先检查根目录是否有 tsconfig.json
+	tsconfigPath := filepath.Join(rootPath, "tsconfig.json")
+	if _, err := os.Stat(tsconfigPath); err == nil {
+		content, readErr := os.ReadFile(tsconfigPath)
+		if readErr == nil {
+			files["/tsconfig.json"] = string(content)
+		}
+	}
+
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// 记录错误但继续处理其他文件
+			fmt.Fprintf(os.Stderr, "警告：访问文件 %s 失败: %v\n", path, err)
+			return nil
+		}
+
+		// 跳过 node_modules 目录
+		if info.IsDir() && info.Name() == "node_modules" {
+			return filepath.SkipDir
+		}
+
+		// 只处理 TypeScript/JavaScript 文件
+		if !info.IsDir() {
+			ext := filepath.Ext(path)
+			if ext == ".ts" || ext == ".tsx" || ext == ".js" || ext == ".jsx" {
+				content, readErr := os.ReadFile(path)
+				if readErr != nil {
+					fmt.Fprintf(os.Stderr, "警告：读取文件 %s 失败: %v\n", path, readErr)
+					return nil // 继续处理其他文件
+				}
+				virtualPath, err := filepath.Rel(rootPath, path)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "警告：计算相对路径失败 %s: %v\n", path, err)
+					return nil
+				}
+				virtualPath = "/" + filepath.ToSlash(virtualPath)
+				files[virtualPath] = string(content)
+			}
+		}
+		return nil
+	})
+
+	return files, err
 }
 
 // GetNativeQuickInfoAtPosition 获取原生 TypeScript 的 QuickInfo 信息。
@@ -440,8 +520,8 @@ func (s *Service) GetQuickInfoAtPosition(ctx context.Context, filePath string, l
 	checker, done := program.GetTypeCheckerForFile(ctx, file)
 	defer done()
 
-	// 计算目标位置的字符偏移量
-	content, ok := s.sourcesCache[virtualPath].(string)
+	// 使用类型安全的文件内容获取
+	content, ok := s.getFileContent(virtualPath)
 	if !ok {
 		return nil, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}

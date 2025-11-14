@@ -1,7 +1,9 @@
 package tsmorphgo
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -149,6 +151,7 @@ func (p *Project) getLspService() (*lsp.Service, error) {
 	var err error
 	p.lspOnce.Do(func() {
 		sources := make(map[string]any, len(p.parserResult.Js_Data))
+
 		for k, v := range p.parserResult.Js_Data {
 			// 关键修复：将绝对路径转换为LSP服务期望的相对路径格式
 			// 从: /Users/xxx/demo-react-app/src/hooks/useUserData.ts
@@ -156,9 +159,71 @@ func (p *Project) getLspService() (*lsp.Service, error) {
 			lspPath := p.convertToLspPath(k)
 			sources[lspPath] = v.Raw
 		}
+
+		// 显式传递 tsconfig.json 到 LSP 服务
+		tsconfigPath := p.findProjectTsConfig()
+		if tsconfigPath != "" && !p.hasTsConfigInSources(sources) {
+			// 如果项目有 tsconfig.json 但 sources 中没有，显式添加
+			if tsconfigContent, err := p.readTsConfigFile(tsconfigPath); err == nil {
+				sources["/tsconfig.json"] = tsconfigContent
+			}
+		}
+
 		p.lspService, err = lsp.NewServiceForTest(sources)
 	})
 	return p.lspService, err
+}
+
+// hasTsConfigInSources 检查 sources 中是否已包含 tsconfig.json
+func (p *Project) hasTsConfigInSources(sources map[string]any) bool {
+	for path := range sources {
+		if strings.Contains(path, "tsconfig.json") {
+			return true
+		}
+	}
+	return false
+}
+
+// findProjectTsConfig 查找项目的 tsconfig.json 文件
+func (p *Project) findProjectTsConfig() string {
+	if p.parserResult == nil || p.parserResult.Config.RootPath == "" {
+		return ""
+	}
+
+	rootPath := p.parserResult.Config.RootPath
+
+	// 优先级列表：按常见程度排序
+	tsconfigFiles := []string{
+		"tsconfig.json",
+		"tsconfig.base.json",
+		"tsconfig.common.json",
+	}
+
+	// 首先检查项目根目录
+	for _, configFile := range tsconfigFiles {
+		configPath := filepath.Join(rootPath, configFile)
+		if _, err := os.Stat(configPath); err == nil {
+			return configPath
+		}
+	}
+
+	return ""
+}
+
+// readTsConfigFile 读取 tsconfig.json 文件内容
+func (p *Project) readTsConfigFile(configPath string) (string, error) {
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return "", fmt.Errorf("读取文件失败: %w", err)
+	}
+
+	// 验证是否是有效的 JSON
+	var config interface{}
+	if err := json.Unmarshal(content, &config); err != nil {
+		return "", fmt.Errorf("JSON 格式无效: %w", err)
+	}
+
+	return string(content), nil
 }
 
 // convertToLspPath 将项目解析器的绝对路径转换为LSP服务期望的相对路径格式

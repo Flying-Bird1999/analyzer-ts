@@ -2,7 +2,6 @@ package tsmorphgo
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,14 +40,12 @@ func parseTsConfig(config ProjectConfig) *TsConfig {
 	content, err := os.ReadFile(configPath)
 	if err != nil {
 		// 读取失败，不是致命错误，返回 nil 使用默认配置
-		fmt.Printf("Warning: failed to read tsconfig.json from %s: %v\n", configPath, err)
 		return nil
 	}
 
 	// 解析 JSON
 	var tsConfig TsConfig
 	if err := json.Unmarshal(content, &tsConfig); err != nil {
-		fmt.Printf("Warning: failed to parse tsconfig.json from %s: %v\n", configPath, err)
 		return nil
 	}
 
