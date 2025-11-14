@@ -10,7 +10,7 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/astnav"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/bundled"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ls"
+	lsconv "github.com/Zzzen/typescript-go/use-at-your-own-risk/ls/lsconv"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project/logging"
@@ -96,10 +96,10 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 		sourcesCache: files,
 	}
 
-	// 显式地“打开”所有文件，特别是 tsconfig.json，以提示语言服务创建配置项目
+	// 显式地"打开"所有文件，特别是 tsconfig.json，以提示语言服务创建配置项目
 	var firstURI lsproto.DocumentUri
 	for path, content := range files {
-		uri := ls.FileNameToDocumentURI(path)
+		uri := lsconv.FileNameToDocumentURI(path)
 		if firstURI == "" && strings.HasSuffix(path, ".ts") {
 			firstURI = uri
 		}
@@ -132,7 +132,7 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 	if !ok {
 		return lsproto.ReferencesResponse{}, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}
-	uri := ls.FileNameToDocumentURI(virtualPath)
+	uri := lsconv.FileNameToDocumentURI(virtualPath)
 	s.session.DidOpenFile(ctx, uri, 0, content, "typescript")
 
 	langService, err := s.session.GetLanguageService(ctx, uri)
@@ -172,7 +172,7 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 	if !ok {
 		return lsproto.DefinitionResponse{}, fmt.Errorf("无法从缓存中找到文件内容: %s", virtualPath)
 	}
-	uri := ls.FileNameToDocumentURI(virtualPath)
+	uri := lsconv.FileNameToDocumentURI(virtualPath)
 	s.session.DidOpenFile(ctx, uri, 0, content, "typescript")
 
 	langService, err := s.session.GetLanguageService(ctx, uri)
@@ -183,7 +183,7 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 	response, err = langService.ProvideDefinition(ctx, uri, lsproto.Position{
 		Line:      uint32(line - 1),
 		Character: uint32(char - 1),
-	})
+	}, false)
 	if err != nil {
 		return lsproto.DefinitionResponse{}, fmt.Errorf("查找定义失败: %w", err)
 	}
@@ -198,7 +198,7 @@ func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char i
 		return nil, fmt.Errorf("计算相对路径失败: %w", err)
 	}
 	virtualPath = "/" + filepath.ToSlash(virtualPath)
-	uri := ls.FileNameToDocumentURI(virtualPath)
+	uri := lsconv.FileNameToDocumentURI(virtualPath)
 
 	langService, err := s.session.GetLanguageService(ctx, uri)
 	if err != nil {
@@ -249,7 +249,7 @@ func (s *Service) GetNativeQuickInfoAtPosition(ctx context.Context, filePath str
 		return nil, fmt.Errorf("计算相对路径失败: %w", err)
 	}
 	virtualPath = "/" + filepath.ToSlash(virtualPath)
-	uri := ls.FileNameToDocumentURI(virtualPath)
+	uri := lsconv.FileNameToDocumentURI(virtualPath)
 
 	// 获取语言服务实例
 	langService, err := s.session.GetLanguageService(ctx, uri)
@@ -261,7 +261,7 @@ func (s *Service) GetNativeQuickInfoAtPosition(ctx context.Context, filePath str
 	hoverResponse, err := langService.ProvideHover(ctx, uri, lsproto.Position{
 		Line:      uint32(line - 1),
 		Character: uint32(char - 1),
-	})
+	}, lsproto.MarkupKindMarkdown)
 	if err != nil {
 		return nil, fmt.Errorf("获取原生 QuickInfo 失败: %w", err)
 	}
@@ -325,7 +325,7 @@ func (s *Service) GetQuickInfoAtPosition(ctx context.Context, filePath string, l
 		return nil, fmt.Errorf("计算相对路径失败: %w", err)
 	}
 	virtualPath = "/" + filepath.ToSlash(virtualPath)
-	uri := ls.FileNameToDocumentURI(virtualPath)
+	uri := lsconv.FileNameToDocumentURI(virtualPath)
 
 	// 获取语言服务实例
 	langService, err := s.session.GetLanguageService(ctx, uri)
