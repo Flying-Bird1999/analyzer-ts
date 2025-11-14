@@ -156,8 +156,16 @@ func MatchImportSource(
 	// 1. 尝试解析为路径别名
 	resolvedPath, isAliasMatch := resolveAlias(importPath, alias)
 	if isAliasMatch {
-		// 如果是别名匹配，则基于 basePath (tsconfig.json 所在目录) 来构建绝对路径。
-		if finalPath, ok := resolveAsFile(filepath.Join(basePath, resolvedPath), extensions); ok {
+		var searchPath string
+		if baseUrl != "" {
+			// 如果有 baseUrl，基于 basePath + baseUrl 构建路径
+			searchPath = filepath.Join(basePath, baseUrl, resolvedPath)
+		} else {
+			// 如果没有 baseUrl，直接基于 basePath 构建路径
+			searchPath = filepath.Join(basePath, resolvedPath)
+		}
+		// 如果是别名匹配，则构建正确的绝对路径。
+		if finalPath, ok := resolveAsFile(searchPath, extensions); ok {
 			return SourceData{FilePath: finalPath, Type: "file"}
 		}
 	}

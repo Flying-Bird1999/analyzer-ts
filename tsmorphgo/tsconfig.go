@@ -191,22 +191,6 @@ func mergeTsConfig(config ProjectConfig, tsConfig *TsConfig) ProjectConfig {
 			// 这里可以根据模块解析策略调整项目配置
 			_ = module // 占位符，后续可以添加具体逻辑
 		}
-
-		// 处理基础 URL
-		if baseUrl, ok := opts["baseUrl"]; ok {
-			if baseUrlStr, ok := baseUrl.(string); ok {
-				// 可以使用 baseUrl 来调整路径解析
-				_ = baseUrlStr // 占位符，后续可以添加具体逻辑
-			}
-		}
-
-		// 处理路径映射
-		if paths, ok := opts["paths"]; ok {
-			if pathsMap, ok := paths.(map[string]interface{}); ok {
-				// 可以使用路径映射来支持别名解析
-				_ = pathsMap // 占位符，后续可以添加具体逻辑
-			}
-		}
 	}
 
 	return result

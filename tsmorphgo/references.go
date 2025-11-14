@@ -3,6 +3,7 @@ package tsmorphgo
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -343,7 +344,11 @@ func FindReferences(node Node) ([]*Node, error) {
 		return nil, err
 	}
 
-	resp, err := lspService.FindReferences(context.Background(), filePath, startLine, startChar)
+	// 关键修复：将绝对路径转换为LSP服务期望的相对路径格式
+	// 从: /Users/xxx/demo-react-app/src/hooks/useUserData.ts
+	// 转换为: /src/hooks/useUserData.ts
+	lspPath := convertToLspPath(filePath)
+	resp, err := lspService.FindReferences(context.Background(), lspPath, startLine, startChar)
 	if err != nil {
 		return nil, err
 	}
@@ -355,12 +360,17 @@ func FindReferences(node Node) ([]*Node, error) {
 			// 清理和转换 file URI 到项目内的虚拟路径
 			refPath := strings.TrimPrefix(string(loc.Uri), "file://")
 
-			// 使用 project 上的辅助方法来根据位置查找节点
-			foundNode := node.GetSourceFile().project.findNodeAt(refPath, int(loc.Range.Start.Line)+1, int(loc.Range.Start.Character)+1)
+			// 关键修复：将LSP返回的相对路径转换回TSMorphGo项目的绝对路径格式
+			// 从: /src/components/App.tsx
+			// 转换为: /Users/xxx/demo-react-app/src/components/App.tsx
+			projectPath := convertFromLspPath(refPath, node.GetSourceFile().project.parserResult.Config.RootPath)
+
+			// 使用项目绝对路径查找节点
+			foundNode := node.GetSourceFile().project.findNodeAt(projectPath, int(loc.Range.Start.Line)+1, int(loc.Range.Start.Character)+1)
 			if foundNode != nil {
 				results = append(results, &Node{
 					Node:       foundNode,
-					sourceFile: node.GetSourceFile().project.sourceFiles[refPath],
+					sourceFile: node.GetSourceFile().project.sourceFiles[projectPath],
 				})
 			}
 		}
@@ -582,4 +592,68 @@ func CountReferences(node Node) (int, error) {
 		return 0, err
 	}
 	return len(refs), nil
+}
+
+// convertToLspPath 将TSMorphGo的绝对路径转换为LSP服务期望的相对路径格式
+// 这是解决路径别名问题的关键转换层
+func convertToLspPath(filePath string) string {
+	// 如果路径已经是相对路径格式，直接返回
+	if !strings.HasPrefix(filePath, "/") {
+		return "/" + filePath
+	}
+
+	// 检查是否为绝对路径（包含系统路径特征）
+	isAbsolutePath := strings.Contains(filePath, ":") ||
+		len(strings.Split(filePath, "/")) > 5 // 如/Users/zxc/xxx/demo-react-app/src/file.ts
+
+	if !isAbsolutePath {
+		// 已经是期望的格式，直接返回
+		return filePath
+	}
+
+	// 简化的路径转换：查找src目录并返回从src开始的路径
+	pathParts := strings.Split(filePath, "/")
+	for i, part := range pathParts {
+		if part == "src" && i < len(pathParts)-1 {
+			// 找到src目录，返回从src开始的路径
+			result := "/" + strings.Join(pathParts[i:], "/")
+			return result
+		}
+	}
+
+	// 如果找不到src，返回最后几个部分（处理其他情况）
+	if len(pathParts) >= 3 {
+		// 检查是否有其他常见的源码目录
+		commonDirs := []string{"lib", "app", "components", "utils", "hooks"}
+		for i, part := range pathParts {
+			for _, dir := range commonDirs {
+				if part == dir && i < len(pathParts)-1 {
+					result := "/" + strings.Join(pathParts[i:], "/")
+					return result
+				}
+			}
+		}
+	}
+
+	// 如果所有方法都失败，返回原始路径
+	return filePath
+}
+
+// convertFromLspPath 将LSP服务返回的相对路径转换回TSMorphGo项目的绝对路径格式
+// 这是convertToLspPath的逆向操作，确保结果能正确映射到项目文件
+func convertFromLspPath(lspPath, projectRootPath string) string {
+	// 确保LSP路径以/开头
+	if !strings.HasPrefix(lspPath, "/") {
+		lspPath = "/" + lspPath
+	}
+
+	// 如果已经是绝对路径，直接返回
+	if strings.HasPrefix(lspPath, "/Users/") || strings.Contains(lspPath, ":") {
+		return lspPath
+	}
+
+	// 将相对路径转换为绝对路径
+	// 从: /src/hooks/useUserData.ts
+	// 转换为: /Users/xxx/demo-react-app/src/hooks/useUserData.ts
+	return filepath.Join(projectRootPath, lspPath)
 }

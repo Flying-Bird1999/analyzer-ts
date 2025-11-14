@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/astnav"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/bundled"
@@ -15,7 +16,6 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project/logging"
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/vfs/vfstest"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 )
 
 // dummyClient 是 project.Client 接口的一个空实现。
@@ -43,6 +43,7 @@ type Service struct {
 	session      *project.Session
 	rootPath     string
 	sourcesCache map[string]any
+	project      *project.Project // 添加项目引用，以便访问完整的项目配置
 }
 
 // NewService 从物理磁盘创建服务。
@@ -75,14 +76,86 @@ func NewService(rootPath string) (*Service, error) {
 
 // NewServiceForTest 是一个专为测试设计的构造函数，从内存 map 创建服务。
 func NewServiceForTest(files map[string]any) (*Service, error) {
-	fs := bundled.WrapFS(vfstest.FromMap(files, false))
+	// 查找tsconfig.json的位置
+	tsconfigPath := ""
+	for path := range files {
+		if filepath.Base(path) == "tsconfig.json" {
+			tsconfigPath = path
+			break
+		}
+	}
+
+	// 如果没有tsconfig.json，创建一个默认的，包含paths配置
+	if tsconfigPath == "" {
+		files["/tsconfig.json"] = `{
+			"compilerOptions": {
+				"target": "es2020",
+				"module": "esnext",
+				"jsx": "react-jsx",
+				"allowSyntheticDefaultImports": true,
+				"esModuleInterop": true,
+				"skipLibCheck": true,
+				"baseUrl": ".",
+				"paths": {
+					"@/*": ["src/*"],
+					"@/hooks/*": ["src/hooks/*"],
+					"@/utils/*": ["src/utils/*"],
+					"@/components/*": ["src/components/*"]
+				}
+			}
+		}`
+		tsconfigPath = "/tsconfig.json"
+	} else {
+		// 关键修复：如果已有tsconfig.json，需要调整baseUrl配置以适应绝对路径环境
+		if configStr, ok := files[tsconfigPath].(string); ok {
+			// 将baseUrl从相对路径改为绝对路径或适合当前环境的配置
+			// 原配置: "baseUrl": "src" -> 修改为: "baseUrl": "/src" 或 "."
+			fixedConfig := strings.ReplaceAll(configStr, `"baseUrl": "src"`, `"baseUrl": "/src"`)
+			// 如果有问题，也可以尝试使用 "."
+			// fixedConfig := strings.ReplaceAll(configStr, `"baseUrl": "src"`, `"baseUrl": "."`)
+			files[tsconfigPath] = fixedConfig
+		}
+	}
+
+	// 规范化文件路径，确保符合typescript-go的期望
+	correctedFiles := make(map[string]any)
+	for path, content := range files {
+		cleanPath := path
+		if !strings.HasPrefix(cleanPath, "/") {
+			cleanPath = "/" + cleanPath
+		}
+		for strings.HasPrefix(cleanPath, "//") {
+			cleanPath = strings.TrimPrefix(cleanPath, "/")
+		}
+		if cleanPath == "" {
+			cleanPath = "/"
+		}
+		correctedFiles[cleanPath] = content
+	}
+
+	// 初始化文件系统
+	fs := bundled.WrapFS(vfstest.FromMap(correctedFiles, false))
+
+	// 关键修复：根据tsconfig.json的位置和baseUrl配置确定CurrentDirectory
+	// 如果tsconfig.json在根目录且baseUrl为"src"，则CurrentDirectory应为"/"
+	// 这样baseUrl "src" 就能正确解析为 "/src"
+	var currentDir string
+	if strings.Contains(tsconfigPath, "/tsconfig.json") {
+		currentDir = "/" // 使用根目录
+	} else {
+		// 否则使用tsconfig所在的目录
+		currentDir = filepath.Dir(tsconfigPath)
+		if currentDir == "." || currentDir == "" {
+			currentDir = "/"
+		}
+	}
 
 	session := project.NewSession(&project.SessionInit{
 		Options: &project.SessionOptions{
-			CurrentDirectory:   "/",
+			CurrentDirectory:   currentDir, // 动态确定CurrentDirectory
 			DefaultLibraryPath: bundled.LibPath(),
 			WatchEnabled:       false,
-			LoggingEnabled:     false,
+			LoggingEnabled:     true, // 启用日志以便调试路径解析问题
 		},
 		FS:          fs,
 		Client:      &dummyClient{},
@@ -90,25 +163,44 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 		Logger:      logging.NewLogger(os.Stderr),
 	})
 
+	// 打开项目，让typescript-go自己解析tsconfig.json
+	ctx := context.Background()
+	project, err := session.OpenProject(ctx, tsconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("打开项目失败: %w", err)
+	}
+
+	// 获取第一个TypeScript文件用于初始化语言服务
+	var firstFile lsproto.DocumentUri
+	for path := range correctedFiles {
+		if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") {
+			firstFile = lsconv.FileNameToDocumentURI(path)
+			break
+		}
+	}
+
+	if firstFile != "" {
+		// 打开所有源代码文件
+		for path, content := range correctedFiles {
+			if strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") ||
+				strings.HasSuffix(path, ".js") || strings.HasSuffix(path, ".jsx") {
+				uri := lsconv.FileNameToDocumentURI(path)
+				session.DidOpenFile(ctx, uri, 0, content.(string), "typescript")
+			}
+		}
+
+		// 确保语言服务完全初始化
+		_, err = session.GetLanguageService(ctx, firstFile)
+		if err != nil {
+			return nil, fmt.Errorf("获取语言服务失败: %w", err)
+		}
+	}
+
 	service := &Service{
 		session:      session,
-		rootPath:     "/",
-		sourcesCache: files,
-	}
-
-	// 显式地"打开"所有文件，特别是 tsconfig.json，以提示语言服务创建配置项目
-	var firstURI lsproto.DocumentUri
-	for path, content := range files {
-		uri := lsconv.FileNameToDocumentURI(path)
-		if firstURI == "" && strings.HasSuffix(path, ".ts") {
-			firstURI = uri
-		}
-		session.DidOpenFile(context.Background(), uri, 0, content.(string), "typescript") // ScriptKind 可能需要更精确
-	}
-
-	// 尝试获取一次语言服务，这可能会触发项目的完整构建
-	if firstURI != "" {
-		_, _ = session.GetLanguageService(context.Background(), firstURI)
+		rootPath:     currentDir, // 使用动态确定的CurrentDirectory
+		sourcesCache: correctedFiles,
+		project:      project,
 	}
 
 	return service, nil
@@ -310,14 +402,15 @@ type SymbolDisplayPart struct {
 //   - error: 错误信息
 //
 // 示例：
-//   quickInfo, err := service.GetQuickInfoAtPosition(ctx, "/path/to/file.ts", 10, 5)
-//   if err != nil {
-//       return err
-//   }
-//   if quickInfo != nil {
-//       fmt.Printf("类型: %s\n", quickInfo.TypeText)
-//       fmt.Printf("文档: %s\n", quickInfo.Documentation)
-//   }
+//
+//	quickInfo, err := service.GetQuickInfoAtPosition(ctx, "/path/to/file.ts", 10, 5)
+//	if err != nil {
+//	    return err
+//	}
+//	if quickInfo != nil {
+//	    fmt.Printf("类型: %s\n", quickInfo.TypeText)
+//	    fmt.Printf("文档: %s\n", quickInfo.Documentation)
+//	}
 func (s *Service) GetQuickInfoAtPosition(ctx context.Context, filePath string, line, char int) (*QuickInfo, error) {
 	// 计算虚拟路径（相对于项目根目录的路径）
 	virtualPath, err := filepath.Rel(s.rootPath, filePath)
@@ -476,9 +569,9 @@ func (s *Service) parseLineToDisplayParts(line string) []SymbolDisplayPart {
 
 	// 使用正则表达式匹配常见的 TypeScript QuickInfo 模式
 	patterns := []struct {
-		regex   string
-		kind    string
-		prefix  string
+		regex  string
+		kind   string
+		prefix string
 	}{
 		{`^\(function\) `, "functionDeclaration", "(function) "},
 		{`^\(method\) `, "methodDeclaration", "(method) "},
