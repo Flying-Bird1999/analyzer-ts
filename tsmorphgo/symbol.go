@@ -64,11 +64,14 @@ func getSymbolViaTypeChecker(node Node) *ast.Symbol {
 	// 使用 LSP 服务的符号获取方法，这内部使用了 TypeChecker.GetSymbolAtLocation
 	filePath := sourceFile.GetFilePath()
 
+	// 将绝对路径转换为 LSP 服务期望的相对路径
+	lspPath := project.convertToLspPath(filePath)
+
 	// LSP 服务需要行号和列号，而不是绝对位置
 	line := node.GetStartLineNumber()
 	column := node.GetStartColumnNumber()
 
-	symbol, err := lspService.GetSymbolAt(context.Background(), filePath, line, column)
+	symbol, err := lspService.GetSymbolAt(context.Background(), lspPath, line, column)
 	if err != nil || symbol == nil {
 		return nil
 	}
@@ -94,8 +97,8 @@ func (s *Symbol) String() string {
 	if s == nil || s.nativeSymbol == nil {
 		return "Symbol{nil}"
 	}
-	return fmt.Sprintf("Symbol{name: %s, flags: %d}",
-		s.nativeSymbol.Name, int(s.nativeSymbol.Flags))
+	return fmt.Sprintf("Symbol{id: %d, name: %s, flags: %d}",
+		s.GetId(), s.nativeSymbol.Name, int(s.nativeSymbol.Flags))
 }
 
 // GetFlags 获取符号的标志值（用于高级分析）
@@ -104,4 +107,33 @@ func (s *Symbol) GetFlags() uint32 {
 		return 0
 	}
 	return uint32(s.nativeSymbol.Flags)
+}
+
+// GetId 获取符号的唯一标识符
+// 这是比较Symbol是否相同的最佳方式，因为每个Symbol实例都有唯一的ID
+func (s *Symbol) GetId() uint64 {
+	if s == nil || s.nativeSymbol == nil {
+		return 0
+	}
+	// 使用typescript-go提供的GetSymbolId函数获取唯一标识符
+	return uint64(ast.GetSymbolId(s.nativeSymbol))
+}
+
+// Equals 判断两个Symbol是否指向同一个符号
+// 使用Symbol ID进行比较，这是最准确的方式
+func (s *Symbol) Equals(other *Symbol) bool {
+	if s == nil && other == nil {
+		return true
+	}
+	if s == nil || other == nil {
+		return false
+	}
+
+	// 优先使用Symbol ID比较，这是最准确的方式
+	if s.nativeSymbol != nil && other.nativeSymbol != nil {
+		return s.GetId() == other.GetId()
+	}
+
+	// 回退到指针地址比较
+	return s.nativeSymbol == other.nativeSymbol
 }

@@ -165,11 +165,14 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 		}
 	}()
 
-	// 使用公共路径处理方法
-	virtualPath, err := s.normalizePath(filePath)
-	if err != nil {
-		return lsproto.ReferencesResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
-	}
+	//  注释掉：使用公共路径处理方法
+	// virtualPath, err := s.normalizePath(filePath)
+	// if err != nil {
+	// 	return lsproto.ReferencesResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
+	// }
+
+	// 文件路径已经由调用者（tsmorphgo）处理为正确的虚拟路径，直接使用
+	virtualPath := filePath
 
 	// 使用类型安全的文件内容获取
 	content, ok := s.getFileContent(virtualPath)
@@ -207,11 +210,8 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 		}
 	}()
 
-	// 使用公共路径处理方法
-	virtualPath, err := s.normalizePath(filePath)
-	if err != nil {
-		return lsproto.DefinitionResponse{}, fmt.Errorf("计算相对路径失败: %w", err)
-	}
+	// 文件路径已经由调用者（tsmorphgo）处理为正确的虚拟路径，直接使用
+	virtualPath := filePath
 
 	// 使用类型安全的文件内容获取
 	content, ok := s.getFileContent(virtualPath)
@@ -240,12 +240,8 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 
 // GetSymbolAt 获取给定文件位置的符号信息 (LSP 实现)。
 func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char int) (*ast.Symbol, error) {
-	// 使用公共路径处理方法
-	virtualPath, err := s.normalizePath(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("计算相对路径失败: %w", err)
-	}
-
+	// 文件路径已经由调用者（tsmorphgo）处理为正确的虚拟路径，直接使用
+	virtualPath := filePath
 	uri := lsconv.FileNameToDocumentURI(virtualPath)
 
 	langService, err := s.session.GetLanguageService(ctx, uri)
@@ -273,13 +269,22 @@ func (s *Service) GetSymbolAt(ctx context.Context, filePath string, line, char i
 	if line-1 >= len(lines) {
 		return nil, fmt.Errorf("行号 %d 超出文件范围", line)
 	}
+
+	// 关键修复：TSMorphGo 传递的列号是 1-based，直接使用即可
+	// 位置计算：将行列号转换为绝对位置
 	pos := 0
 	for i := 0; i < line-1; i++ {
-		pos += len(lines[i]) + 1
+		pos += len(lines[i]) + 1 // +1 for newline
 	}
-	pos += char - 1
 
-	node := astnav.GetTouchingPropertyName(file, pos)
+	// 关键修复：根据调试，应该使用 pos + char（不减1）
+	// 这样能正确定位到标识符而不是关键字
+	finalPos := pos + char
+
+	node := astnav.GetTouchingPropertyName(file, finalPos)
+	if node == nil {
+		return nil, nil
+	}
 
 	return checker.GetSymbolAtLocation(node), nil
 }
@@ -331,9 +336,6 @@ func findExistingTsConfig(files map[string]string) string {
 	}
 	return ""
 }
-
-
-
 
 // normalizeFilePaths 规范化文件路径格式
 func normalizeFilePaths(files map[string]any) map[string]string {

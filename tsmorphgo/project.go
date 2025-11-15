@@ -117,6 +117,9 @@ func NewProject(config ProjectConfig) *Project {
 		sf.buildNodeResultMap()
 	}
 
+	// 强制初始化 LSP 服务以确保类型检查器和符号绑定已准备就绪
+	// p.getLspService()
+
 	return p
 }
 
@@ -537,11 +540,12 @@ type CreateSourceFileOptions struct {
 // 返回值:
 //   - string: 规范化后的文件路径
 func (p *Project) normalizeFilePath(filePath string) string {
-	// 如果是相对路径，转换为基于项目根目录的绝对路径
-	if !strings.HasPrefix(filePath, "/") {
-		return fmt.Sprintf("%s/%s", p.parserResult.Config.RootPath, filePath)
+	// 如果 filePath 已经是绝对路径，直接返回
+	if filepath.IsAbs(filePath) {
+		return filepath.ToSlash(filePath)
 	}
-	return filePath
+	// 如果是相对路径，和 RootPath 拼接
+	return filepath.ToSlash(filepath.Join(p.parserResult.Config.RootPath, filePath))
 }
 
 // GetFileCount 返回项目中当前包含的源文件数量。
