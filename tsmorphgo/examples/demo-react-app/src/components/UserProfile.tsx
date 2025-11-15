@@ -1,4 +1,5 @@
 import React from 'react';
+import { generateId } from '@/utils/helpers';
 
 interface User {
   id: number;
@@ -12,8 +13,11 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
+  // 使用 generateId 生成唯一的组件ID，这里使用路径别名导入
+  const profileId = generateId(16);
+
   return (
-    <div className="user-profile">
+    <div className="user-profile" id={profileId}>
       <div className="profile-header">
         <img
           src={user.avatar}

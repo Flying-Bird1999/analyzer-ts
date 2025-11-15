@@ -1,5 +1,6 @@
 import React from 'react';
 import { Product } from '@/types/types';
+import { generateId } from '../utils/helpers';
 
 interface ProductCardProps {
   product: Product;
@@ -7,6 +8,9 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  // 使用 generateId 生成唯一的组件ID
+  const cardId = generateId(12);
+
   const discountedPrice = product.discount
     ? product.price * (1 - product.discount / 100)
     : product.price;
@@ -14,6 +18,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
   return (
     <div
       className="product-card"
+      id={cardId}
       onClick={() => onClick?.(product)}
     >
       <div className="product-image">
