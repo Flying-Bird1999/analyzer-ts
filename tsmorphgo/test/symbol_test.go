@@ -42,33 +42,38 @@ func TestSymbol_BasicAPIs(t *testing.T) {
 }
 
 // TestSymbol_TypeChecking 测试 Symbol 基础 API
-// func TestSymbol_TypeChecking(t *testing.T) {
-// 	project := NewProjectFromSources(map[string]string{
-// 		"/types.ts": `
-// 			const variableSymbol = "test";
-// 			function functionSymbol(): void {}
-// 			class ClassSymbol {}
-// 			interface InterfaceSymbol {}
-// 		`,
-// 	})
-// 	defer project.Close()
+func TestSymbol_TypeChecking(t *testing.T) {
+	project := NewProjectFromSources(map[string]string{
+		"/types.ts": `
+			const variableSymbol = "test";
+			function functionSymbol(): void {}
+			class ClassSymbol {}
+			interface InterfaceSymbol {}
+		`,
+	})
+	defer project.Close()
 
-// 	sourceFile := project.GetSourceFile("/types.ts")
-// 	require.NotNil(t, sourceFile)
+	sourceFile := project.GetSourceFile("/types.ts")
+	require.NotNil(t, sourceFile)
 
-// 	// 测试基础符号功能
-// 	sourceFile.ForEachDescendant(func(node Node) {
-// 		text := node.GetText()
-// 		symbol, err := GetSymbol(node)
-// 		if err != nil || symbol == nil {
-// 			return
-// 		}
+	// 测试基础符号功能
+	sourceFile.ForEachDescendant(func(node Node) {
+		// 只测试标识符节点，避免变量声明等复杂节点
+		if !node.IsIdentifier() {
+			return
+		}
 
-// 		// 验证符号名称正确性
-// 		assert.Equal(t, text, symbol.GetName())
-// 		t.Logf("Symbol found: %s", symbol.String())
-// 	})
-// }
+		text := node.GetText()
+		symbol, err := GetSymbol(node)
+		if err != nil || symbol == nil {
+			return
+		}
+
+		// 验证符号名称正确性
+		assert.Equal(t, text, symbol.GetName(), "Identifier text should match symbol name")
+		t.Logf("Symbol found: %s", symbol.String())
+	})
+}
 
 // TestSymbol_ComprehensiveTypes 全面测试各种 TypeScript 节点类型的 symbol
 func TestSymbol_ComprehensiveTypes(t *testing.T) {
