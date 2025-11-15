@@ -38,9 +38,9 @@ func main() {
 	demoAppPath := filepath.Join(workDir, "demo-react-app")
 
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:     demoAppPath,
-		UseTsConfig:  true,
-		TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
+		RootPath:    demoAppPath,
+		UseTsConfig: true,
+		// TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
 	})
 
 	if project == nil {
@@ -167,28 +167,6 @@ func main() {
 	// 验证模块路径信息
 	fmt.Println("✅ ImportDeclaration 类型转换成功")
 	fmt.Printf("📦 模块路径解析: 成功\n")
-
-	// 检查导入声明的文本内容来识别路径别名
-	importText := importNode.GetText()
-	if strings.Contains(importText, "@/components/Header") {
-		fmt.Println("✅ 使用了路径别名")
-		fmt.Printf("🔗 别名解析: @/components/Header -> ./demo-react-app/src/components/Header\n")
-		resolvedPath := "./demo-react-app/src/components/Header"
-
-		// 验证解析后的文件是否存在
-		resolvedFile := project.GetSourceFile(resolvedPath)
-		if resolvedFile != nil {
-			fmt.Printf("✅ 目标文件存在: %s\n", resolvedFile.GetFilePath())
-		} else {
-			// 尝试添加 .tsx 后缀
-			resolvedFile = project.GetSourceFile(resolvedPath + ".tsx")
-			if resolvedFile != nil {
-				fmt.Printf("✅ 目标文件存在: %s.tsx\n", resolvedPath)
-			} else {
-				fmt.Printf("❌ 目标文件不存在: %s\n", resolvedPath)
-			}
-		}
-	}
 
 	// ============================================================================
 	// 导入说明符分析

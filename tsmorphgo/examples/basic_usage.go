@@ -40,9 +40,9 @@ func main() {
 	fmt.Println("-----------------------------------")
 
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:     demoAppPath,
-		UseTsConfig:  true,
-		TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
+		RootPath:    demoAppPath,
+		UseTsConfig: true,
+		// TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
 	})
 
 	if project == nil {
@@ -217,16 +217,6 @@ func main() {
 
 		if tsConfig.CompilerOptions != nil {
 			fmt.Printf("📋 编译选项数量: %d\n", len(tsConfig.CompilerOptions))
-
-			// 检查路径别名配置
-			if paths, ok := tsConfig.CompilerOptions["paths"]; ok {
-				if pathsMap, ok := paths.(map[string]interface{}); ok {
-					fmt.Println("🔗 路径别名配置:")
-					for alias, mapping := range pathsMap {
-						fmt.Printf("   %s -> %v\n", alias, mapping)
-					}
-				}
-			}
 		}
 	} else {
 		fmt.Println("⚠️  没有找到 tsconfig.json 配置")

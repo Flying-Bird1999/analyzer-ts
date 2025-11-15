@@ -1,4 +1,5 @@
 import React from 'react';
+import { Product } from '@/components/App';
 
 interface User {
   id: number;
@@ -10,6 +11,7 @@ interface User {
 interface HeaderProps {
   user: User | null;
   currentDate: string;
+  products?: Product[];
 }
 
 export const Header: React.FC<HeaderProps> = ({ user, currentDate }) => {

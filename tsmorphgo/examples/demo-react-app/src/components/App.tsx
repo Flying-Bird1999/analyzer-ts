@@ -11,7 +11,7 @@ import { formatDate } from '@/utils/dateUtils';
 // 导入样式
 import './App.css';
 
-interface Product {
+export interface Product {
   id: number;
   name: string;
   price: number;

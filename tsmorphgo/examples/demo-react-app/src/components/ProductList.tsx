@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Product, SearchFilters, ButtonProps } from '../types/types';
 import { api } from '../services/api';
+import { Product as AppProduct } from './App';
 
 interface ProductListProps {
   category?: string;
   onProductSelect?: (product: Product) => void;
+  appProduct?: AppProduct;
 }
 
 export const ProductList: React.FC<ProductListProps> = ({
   category,
-  onProductSelect
+  onProductSelect,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<SearchFilters>({
     sortBy: 'name',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
   });
 
   // 获取产品列表
@@ -29,7 +31,9 @@ export const ProductList: React.FC<ProductListProps> = ({
         const response = await api.getProducts({ ...filters, category });
         setProducts(response.data.items);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch products');
+        setError(
+          err instanceof Error ? err.message : 'Failed to fetch products'
+        );
         setProducts([]);
       } finally {
         setLoading(false);
@@ -45,23 +49,24 @@ export const ProductList: React.FC<ProductListProps> = ({
 
     // 应用搜索过滤
     if (filters.query) {
-      result = result.filter(product =>
-        product.name.toLowerCase().includes(filters.query!.toLowerCase()) ||
-        product.category.toLowerCase().includes(filters.query!.toLowerCase())
+      result = result.filter(
+        (product) =>
+          product.name.toLowerCase().includes(filters.query!.toLowerCase()) ||
+          product.category.toLowerCase().includes(filters.query!.toLowerCase())
       );
     }
 
     // 应用价格过滤
     if (filters.minPrice !== undefined) {
-      result = result.filter(product => product.price >= filters.minPrice!);
+      result = result.filter((product) => product.price >= filters.minPrice!);
     }
     if (filters.maxPrice !== undefined) {
-      result = result.filter(product => product.price <= filters.maxPrice!);
+      result = result.filter((product) => product.price <= filters.maxPrice!);
     }
 
     // 应用库存过滤
     if (filters.inStock !== undefined) {
-      result = result.filter(product => product.inStock === filters.inStock);
+      result = result.filter((product) => product.inStock === filters.inStock);
     }
 
     // 应用排序
@@ -86,7 +91,7 @@ export const ProductList: React.FC<ProductListProps> = ({
   }, [products, filters]);
 
   const handleFilterChange = (newFilters: Partial<SearchFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   };
 
   if (loading) {
@@ -110,7 +115,9 @@ export const ProductList: React.FC<ProductListProps> = ({
 
         <select
           value={filters.sortBy || 'name'}
-          onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
+          onChange={(e) =>
+            handleFilterChange({ sortBy: e.target.value as any })
+          }
           className="sort-select"
         >
           <option value="name">Sort by Name</option>
@@ -120,7 +127,9 @@ export const ProductList: React.FC<ProductListProps> = ({
 
         <select
           value={filters.sortOrder || 'asc'}
-          onChange={(e) => handleFilterChange({ sortOrder: e.target.value as any })}
+          onChange={(e) =>
+            handleFilterChange({ sortOrder: e.target.value as any })
+          }
           className="order-select"
         >
           <option value="asc">Ascending</option>
@@ -161,7 +170,9 @@ export const ProductList: React.FC<ProductListProps> = ({
               <h3 className="product-card__title">{product.name}</h3>
               <p className="product-card__category">{product.category}</p>
               {product.description && (
-                <p className="product-card__description">{product.description}</p>
+                <p className="product-card__description">
+                  {product.description}
+                </p>
               )}
 
               <div className="product-card__price">
@@ -169,7 +180,10 @@ export const ProductList: React.FC<ProductListProps> = ({
                   <>
                     <span className="original-price">${product.price}</span>
                     <span className="discounted-price">
-                      ${(product.price * (1 - product.discount / 100)).toFixed(2)}
+                      $
+                      {(product.price * (1 - product.discount / 100)).toFixed(
+                        2
+                      )}
                     </span>
                   </>
                 ) : (
@@ -178,7 +192,11 @@ export const ProductList: React.FC<ProductListProps> = ({
               </div>
 
               <div className="product-card__stock">
-                <span className={`stock-status ${product.inStock ? 'in-stock' : 'out-of-stock'}`}>
+                <span
+                  className={`stock-status ${
+                    product.inStock ? 'in-stock' : 'out-of-stock'
+                  }`}
+                >
                   {product.inStock ? 'In Stock' : 'Out of Stock'}
                 </span>
               </div>

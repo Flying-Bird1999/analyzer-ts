@@ -446,9 +446,7 @@ tsmorphgo/examples/
 ├── node_navigation.go         # 节点导航和类型收窄
 ├── parser_data.go             # 透传API验证
 ├── path_aliases.go            # 路径别名解析
-├── references_function.go     # 引用查找 - 函数
-├── references_type.go         # 引用查找 - 类型
-├── references_variable.go     # 引用查找 - 工具函数(相对路径和路径别名)
+├── references.go              # 综合引用查找(包含Hook函数、类型、工具函数)
 ├── comprehensive_verification.go # 综合API验证
 └── run-all-examples.sh        # 批量运行脚本
 ```
@@ -487,20 +485,18 @@ tsmorphgo/examples/
 
 ## 实现状态
 
-### ✅ 已完成验证的示例 (8/8)
+### ✅ 已完成验证的示例 (6/6)
 
 1. **Phase 1**: ✅ `basic_usage.go` - 项目创建和基础查找 (已完成)
 2. **Phase 2**: ✅ `node_navigation.go` - 节点导航和类型收窄 (已完成)
 3. **Phase 3**: ✅ `path_aliases.go` - 路径别名解析 (已完成)
-4. **Phase 4**: ✅ `references_function.go` - 函数引用查找 (已完成)
-5. **Phase 5**: ✅ `references_type.go` - 类型引用查找 (已完成)
-6. **Phase 6**: ✅ `parser_data.go` - 透传API验证 (已完成)
-7. **Phase 7**: ✅ `comprehensive_verification.go` - 综合验证 (已完成)
-8. **Phase 8**: ✅ `references_variable.go` - 工具函数引用查找 (已完成)
+4. **Phase 4**: ✅ `references.go` - 综合引用查找 (已完成，包含Hook函数、类型、工具函数)
+5. **Phase 5**: ✅ `parser_data.go` - 透传API验证 (已完成)
+6. **Phase 6**: ✅ `comprehensive_verification.go` - 综合验证 (已完成)
 
 ### 📊 验证结果总结
 
-所有8个示例均已通过完整验证：
+所有6个示例均已通过完整验证：
 
 | 示例文件                          | 验证状态 | 核心功能             | 验证结果                                    |
 | --------------------------------- | -------- | -------------------- | ------------------------------------------- |
@@ -509,9 +505,7 @@ tsmorphgo/examples/
 | `parser_data.go`                | ✅ 完成  | 透传API验证          | 成功获取debounce函数的解析数据              |
 | `comprehensive_verification.go` | ✅ 完成  | 综合API验证          | 成功验证Header导入声明的多种API             |
 | `path_aliases.go`               | ✅ 完成  | 路径别名解析         | 成功读取tsconfig.json配置，找到9个别名导入  |
-| `references_function.go`        | ✅ 完成  | Hook函数引用查找     | 成功找到useUserData的3个引用(1定义+2使用)   |
-| `references_type.go`            | ✅ 完成  | 类型引用查找         | 成功找到Product接口的3个引用(1定义+2使用)   |
-| `references_variable.go`        | ✅ 完成  | 工具函数引用查找     | 成功找到generateId的5个引用(1定义+4使用)    |
+| `references.go`                 | ✅ 完成  | 综合引用查找         | 成功找到三种引用类型的11个引用              |
 
 ### 🔧 主要技术修复
 
@@ -528,9 +522,10 @@ tsmorphgo/examples/
 - **parser_data.go**: 成功获取FunctionDeclarationResult透传数据
 - **comprehensive_verification.go**: 验证了导入声明的完整API链
 - **path_aliases.go**: 发现了7个路径别名配置和9个别名导入使用
-- **references_function.go**: 从声明处和调用处都成功找到相同的引用集合
-- **references_type.go**: 发现Product接口在App.tsx和types.ts中都有定义
-- **references_variable.go**: 识别了相对路径导入和路径别名导入两种方式
+- **references.go**: 综合引用查找成功识别三种引用类型：
+  - Hook函数引用: useUserData的3个引用(1定义+2使用)
+  - 类型引用: Product接口的3个引用(1定义+2使用)
+  - 工具函数引用: generateId的5个引用(1定义+4使用)
 
 ## 验证标准
 
@@ -550,11 +545,12 @@ tsmorphgo/examples/
 
 优化后的技术方案成功实现了所有预定目标：
 
-- **✅ 8个精准示例**: 每个示例都有明确的验证目标，且全部通过验证
+- **✅ 6个精准示例**: 每个示例都有明确的验证目标，且全部通过验证
 - **✅ 具体节点验证**: 不再是模糊的功能演示，而是具体的节点操作
-- **✅ 完整引用查找**: 三个不同类型的引用查找示例，涵盖函数、类型、工具函数
+- **✅ 完整引用查找**: 综合引用查找示例包含三种引用类型，涵盖Hook函数、类型、工具函数
 - **✅ 实际项目驱动**: 基于真实的React项目代码结构
 - **✅ 预期输出明确**: 便于验证和测试实现效果
+- **✅ 代码组织优化**: 将三个引用查找示例合并为一个综合示例，提高代码复用性
 
 ### 🚀 技术成果
 

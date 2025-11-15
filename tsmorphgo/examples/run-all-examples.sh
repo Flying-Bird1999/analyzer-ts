@@ -16,9 +16,7 @@ examples=(
     "parser_data.go"
     "comprehensive_verification.go"
     "path_aliases.go"
-    "references_function.go"
-    "references_type.go"
-    "references_variable.go"
+    "references.go"
 )
 
 # 定义示例名称
@@ -28,15 +26,14 @@ names=(
     "透传API验证示例"
     "综合API验证示例"
     "路径别名解析示例"
-    "Hook函数引用查找示例"
-    "类型引用查找示例"
-    "工具函数引用查找示例"
+    "综合引用查找示例"
 )
 
 success_count=0
 total_count=${#examples[@]}
 
 echo "📊 开始运行 ${total_count} 个示例..."
+echo "📝 注: references.go 包含了三个引用查找示例 (Hook函数、类型、工具函数)"
 echo
 
 # 运行每个示例

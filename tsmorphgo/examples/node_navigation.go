@@ -37,9 +37,9 @@ func main() {
 	fmt.Println("---------------")
 
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:     demoAppPath,
-		UseTsConfig:  true,
-		TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
+		RootPath:    demoAppPath,
+		UseTsConfig: true,
+		// TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
 	})
 
 	if project == nil {

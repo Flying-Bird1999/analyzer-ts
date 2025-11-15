@@ -37,9 +37,9 @@ func main() {
 	fmt.Println("---------------")
 
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:     demoAppPath,
-		UseTsConfig:  true,
-		TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
+		RootPath:    demoAppPath,
+		UseTsConfig: true,
+		// TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
 	})
 
 	if project == nil {
@@ -77,7 +77,8 @@ func main() {
 			node.ForEachChild(func(child tsmorphgo.Node) bool {
 				// 验证API: IsIdentifier() - 判断是否为标识符
 				if child.IsIdentifier() && child.GetText() == "debounce" {
-					debounceNode = node; functionFound = true
+					debounceNode = node
+					functionFound = true
 					fmt.Printf("✅ 找到 debounce 函数\n")
 					fmt.Printf("📍 位置: 第%d行，第%d列\n", node.GetStartLineNumber(), node.GetStartColumnNumber())
 					fmt.Printf("🔧 节点类型: %s\n", node.GetKind().String())

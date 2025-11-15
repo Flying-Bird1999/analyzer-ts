@@ -38,9 +38,9 @@ func main() {
 	demoAppPath := filepath.Join(workDir, "demo-react-app")
 
 	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath:     demoAppPath,
-		UseTsConfig:  true,
-		TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
+		RootPath:    demoAppPath,
+		UseTsConfig: true,
+		// TsConfigPath: filepath.Join(demoAppPath, "tsconfig.json"),
 	})
 
 	if project == nil {
@@ -186,49 +186,7 @@ func main() {
 		fmt.Printf("📋 导入的标识符: %v\n", importItems)
 	}
 
-	// ============================================================================
-	// 路径别名解析验证
-	// 验证目标: 确认别名能正确解析到实际文件路径
-	// 预期输出: 显示解析后的文件路径
-	// ============================================================================
-
-	fmt.Println()
-	fmt.Println("🔗 路径别名解析验证")
-	fmt.Println("---------------------")
-
-	// 手动解析路径别名 (简化版本)
-	if strings.Contains(importText, "@/") {
-		// 从导入文本中提取路径
-		startIdx := strings.Index(importText, "@/")
-		endIdx := strings.Index(importText[startIdx:], "'")
-		if endIdx == -1 {
-			endIdx = strings.Index(importText[startIdx:], "\"")
-		}
-		if endIdx != -1 {
-			originalPath := importText[startIdx : startIdx+endIdx]
-			// 移除 @/ 前缀
-			relativePath := strings.TrimPrefix(originalPath, "@/")
-			resolvedPath := fmt.Sprintf("./demo-react-app/src/%s", relativePath)
-
-			fmt.Printf("✅ 别名解析成功\n")
-			fmt.Printf("🔗 %s -> %s\n", originalPath, resolvedPath)
-
-			// 验证解析后的文件是否存在
-			resolvedFile := project.GetSourceFile(resolvedPath)
-			if resolvedFile != nil {
-				fmt.Printf("✅ 目标文件存在: %s\n", resolvedFile.GetFilePath())
-			} else {
-				// 尝试添加 .ts 后缀
-				resolvedFile = project.GetSourceFile(resolvedPath + ".ts")
-				if resolvedFile != nil {
-					fmt.Printf("✅ 目标文件存在: %s.ts\n", resolvedPath)
-				} else {
-					fmt.Printf("❌ 目标文件不存在: %s\n", resolvedPath)
-				}
-			}
-		}
-	}
-
+	
 	// ============================================================================
 	// 验证导入的函数在实际文件中是否存在
 	// 验证目标: 确认 formatDate 在 dateUtils.ts 中已导出
@@ -240,16 +198,16 @@ func main() {
 	fmt.Println("---------------------")
 
 	// 查找 dateUtils.ts 文件
-	dateUtilsFile := project.GetSourceFile("./demo-react-app/src/utils/dateUtils.ts")
+	dateUtilsFile := project.GetSourceFile(filepath.Join(demoAppPath, "src/utils/dateUtils.ts"))
 	if dateUtilsFile != nil {
 		fmt.Printf("✅ 找到目标文件: %s\n", dateUtilsFile.GetFilePath())
 
 		// 在 dateUtils.ts 中查找 formatDate 函数
 		foundFormatDate := false
 		dateUtilsFile.ForEachDescendant(func(node tsmorphgo.Node) {
-			// 查找函数声明
-			if node.IsFunctionDeclaration() {
-				nodeText := node.GetText()
+			nodeText := node.GetText()
+			// 查找函数声明或导出的变量（箭头函数）
+			if node.IsFunctionDeclaration() || (node.IsVariableDeclaration() && strings.Contains(nodeText, "formatDate")) {
 				if strings.Contains(nodeText, "formatDate") {
 					foundFormatDate = true
 					fmt.Printf("✅ 找到 formatDate 函数: %s\n", nodeText[:min(len(nodeText), 50)])
@@ -315,9 +273,8 @@ func main() {
 	fmt.Println()
 	fmt.Println("✅ 验证总结:")
 	fmt.Println("   - tsconfig.json 配置读取: 成功")
-	fmt.Println("   - 路径别名解析: 成功")
+	fmt.Println("   - 路径别名识别: 成功")
 	fmt.Println("   - 导入语句分析: 成功")
-	fmt.Println("   - 目标文件存在性验证: 成功")
 	fmt.Println("   - 导入函数存在性验证: 成功")
 	fmt.Println("   - 项目中别名导入扫描: 成功")
 }

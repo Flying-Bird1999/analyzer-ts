@@ -11,9 +11,7 @@
 | [`parser_data.go`](./parser_data.go) | 透传API验证 | 解析数据获取和使用 | `go run -tags=examples parser_data.go` |
 | [`comprehensive_verification.go`](./comprehensive_verification.go) | 综合API验证 | 导入声明的完整API链 | `go run -tags=examples comprehensive_verification.go` |
 | [`path_aliases.go`](./path_aliases.go) | 路径别名解析 | tsconfig.json路径别名配置 | `go run -tags=examples path_aliases.go` |
-| [`references_function.go`](./references_function.go) | Hook函数引用查找 | useUserData Hook的引用分析 | `go run -tags=examples references_function.go` |
-| [`references_type.go`](./references_type.go) | 类型引用查找 | Product接口的引用分析 | `go run -tags=examples references_type.go` |
-| [`references_variable.go`](./references_variable.go) | 工具函数引用查找 | generateId函数的跨文件引用 | `go run -tags=examples references_variable.go` |
+| [`references.go`](./references.go) | 综合引用查找 | Hook函数、类型、工具函数的引用分析 | `go run -tags=examples references.go` |
 
 ## 🚀 快速开始
 
@@ -27,7 +25,7 @@ go run -tags=examples basic_usage.go
 go run -tags=examples node_navigation.go
 
 # 运行引用查找示例
-go run -tags=examples references_function.go
+go run -tags=examples references.go
 ```
 
 ### 运行所有示例
@@ -58,11 +56,12 @@ go run -tags=examples references_function.go
 - **Hook分析**: React Hook 函数的定义和使用查找
 - **类型分析**: 接口定义和类型引用的完整追踪
 - **工具函数**: 跨文件的工具函数调用分析
+- **综合引用**: 三种引用类型的统一演示 (Hook函数、类型、工具函数)
 
 ## 🎯 核心验证结果
 
-- **8个示例全部通过验证** ✅
-- **总计发现引用**: 16个（包含函数、类型、变量引用）
+- **6个示例全部通过验证** ✅
+- **总计发现引用**: 11个（包含Hook函数、类型、工具函数引用）
 - **路径别名配置**: 7个
 - **路径别名使用**: 9处
 - **跨文件引用**: 全部成功识别
@@ -76,10 +75,7 @@ go run -tags=examples references_function.go
 3. **数据获取**: `parser_data.go` → 理解透传API的使用
 4. **综合应用**: `comprehensive_verification.go` → 掌握完整API链
 5. **路径解析**: `path_aliases.go` → 学习路径别名处理
-6. **引用分析**:
-   - `references_function.go` → Hook函数引用
-   - `references_type.go` → 类型引用
-   - `references_variable.go` → 工具函数引用
+6. **引用分析**: `references.go` → 综合引用查找 (Hook函数、类型、工具函数)
 
 ## 🔧 技术特点
 
