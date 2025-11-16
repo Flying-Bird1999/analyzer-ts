@@ -46,17 +46,25 @@ func main() {
 	typeReferences(project, demoAppPath)         // 类型引用查找
 	toolFunctionReferences(project, demoAppPath) // 工具函数引用查找
 
+	// 新增：验证 GotoDefinition 功能
+	verifyGotoDefinitionSameFile(project, demoAppPath)
+	verifyGotoDefinitionCrossFile(project, demoAppPath)
+
 	// 清理资源
 	defer project.Close()
 
 	fmt.Println()
-	fmt.Println("🎉 所有引用查找示例完成！")
+	fmt.Println("🎉 所有引用查找和定义跳转示例完成！")
 	fmt.Println()
 	fmt.Println("✅ 纯引用查找验证总结:")
 	fmt.Println("   - Hook函数引用查找: 成功 (专注引用发现)")
 	fmt.Println("   - 类型引用查找: 成功 (专注引用发现)")
 	fmt.Println("   - 工具函数引用查找: 成功 (专注引用发现)")
 	fmt.Println("   - 完整路径输出: 所有引用都显示绝对路径")
+	fmt.Println()
+	fmt.Println("✅ 定义跳转 (GotoDefinition) 验证总结:")
+	fmt.Println("   - 同文件跳转 (Product 类型): 成功")
+	fmt.Println("   - 跨文件跳转 (formatDate 函数): 成功")
 }
 
 // ============================================================================
@@ -556,6 +564,164 @@ func toolFunctionReferences(project *tsmorphgo.Project, demoAppPath string) {
 					fmt.Printf("📋 使用场景: %s\n", fullCallText)
 				}
 			}
+		}
+	}
+}
+
+// ============================================================================
+// GotoDefinition - 同文件跳转
+// 功能：演示如何在同一文件中查找类型的定义
+// 验证文件: ./demo-react-app/src/components/App.tsx
+// 目标节点: `useState<Product[]>` 中的 `Product` 类型引用
+// 预期输出: 找到 `Product` 接口的定义位置
+// ============================================================================
+func verifyGotoDefinitionSameFile(project *tsmorphgo.Project, demoAppPath string) {
+	fmt.Println()
+	fmt.Println("🔍 场景4: GotoDefinition - 同文件跳转")
+	fmt.Println("===================================")
+	fmt.Println("验证目标: 从 `Product` 类型使用处跳转到其在同一文件中的定义")
+
+	// 1. 获取 App.tsx 文件
+	appFile := project.GetSourceFile(filepath.Join(demoAppPath, "src/components/App.tsx"))
+	if appFile == nil {
+		log.Fatal("❌ 未找到 App.tsx 文件")
+	}
+	fmt.Printf("✅ 找到目标文件: %s\n", appFile.GetFilePath())
+
+	// 2. 查找 `useState<Product[]>` 中的 `Product` 节点
+	var productUsageNode tsmorphgo.Node
+	var usageFound bool
+
+	appFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		// 目标行号是 33
+		if node.GetStartLineNumber() == 33 && node.IsIdentifier() && node.GetText() == "Product" {
+			// 确保其父节点是 TypeReference
+			if parent := node.GetParent(); parent != nil && parent.IsKind(tsmorphgo.KindTypeReference) {
+				productUsageNode = node
+				usageFound = true
+				fmt.Printf("✅ 找到 `Product` 类型使用处节点\n")
+				fmt.Printf("📍 位置: 第%d行，第%d列\n", node.GetStartLineNumber(), node.GetStartColumnNumber())
+				fmt.Printf("📝 文本: `%s`\n", node.GetText())
+			}
+		}
+	})
+
+	if !usageFound {
+		log.Fatal("❌ 未在第 33 行找到 `Product` 类型使用处")
+	}
+
+	// 3. 执行 GotoDefinition
+	fmt.Println()
+	fmt.Println("🚀 执行 GotoDefinition...")
+	definitions, err := productUsageNode.GotoDefinition()
+	if err != nil {
+		log.Fatalf("❌ GotoDefinition 失败: %v", err)
+	}
+
+	// 4. 验证结果
+	fmt.Printf("✅ GotoDefinition 调用成功，找到 %d 个定义\n", len(definitions))
+	if len(definitions) == 0 {
+		log.Fatal("❌ 验证失败: 未找到任何定义")
+	}
+
+	for i, def := range definitions {
+		fmt.Printf("\n定义 %d:\n", i+1)
+		fmt.Printf("📝 文本: `%s`\n", def.GetText())
+		fmt.Printf("📍 文件: %s\n", def.GetSourceFile().GetFilePath())
+		fmt.Printf("📍 位置: 第%d行，第%d列\n", def.GetStartLineNumber(), def.GetStartColumnNumber())
+
+		// 验证定义是否正确
+		expectedLine := 14
+		if def.GetStartLineNumber() == expectedLine && strings.Contains(def.GetSourceFile().GetFilePath(), "App.tsx") {
+			fmt.Printf("✅ 验证成功: 定义位置正确 (预计在第 %d 行左右)\n", expectedLine)
+		} else {
+			log.Fatalf("❌ 验证失败: 定义位置不正确 (预计在 App.tsx 的第 %d 行左右)", expectedLine)
+		}
+
+		// 验证父节点是否为 InterfaceDeclaration
+		if parent := def.GetParent(); parent != nil && parent.IsInterfaceDeclaration() {
+			fmt.Printf("✅ 验证成功: 定义节点的父节点是接口声明\n")
+		} else {
+			log.Fatalf("❌ 验证失败: 定义节点的父节点不是接口声明")
+		}
+	}
+}
+
+// ============================================================================
+// GotoDefinition - 跨文件跳转
+// 功能：演示如何从函数调用跳转到其在另一个文件中的定义
+// 验证文件: ./demo-react-app/src/components/App.tsx
+// 目标节点: `formatDate(product.date)` 中的 `formatDate` 函数调用
+// 预期输出: 找到 `formatDate` 函数在 `src/utils/dateUtils.ts` 中的定义
+// ============================================================================
+func verifyGotoDefinitionCrossFile(project *tsmorphgo.Project, demoAppPath string) {
+	fmt.Println()
+	fmt.Println("🔍 场景5: GotoDefinition - 跨文件跳转")
+	fmt.Println("===================================")
+	fmt.Println("验证目标: 从 `formatDate` 函数调用处跳转到其在 `dateUtils.ts` 中的定义")
+
+	// 1. 获取 App.tsx 文件
+	appFile := project.GetSourceFile(filepath.Join(demoAppPath, "src/components/App.tsx"))
+	if appFile == nil {
+		log.Fatal("❌ 未找到 App.tsx 文件")
+	}
+	fmt.Printf("✅ 找到目标文件: %s\n", appFile.GetFilePath())
+
+	// 2. 查找 `formatDate` 调用节点
+	var formatDateCallNode tsmorphgo.Node
+	var callFound bool
+
+	appFile.ForEachDescendant(func(node tsmorphgo.Node) {
+		// 目标行号是 74
+		if node.GetStartLineNumber() == 74 && node.IsIdentifier() && node.GetText() == "formatDate" {
+			// 确保其父节点是 CallExpression
+			if parent := node.GetParent(); parent != nil && parent.IsCallExpression() {
+				formatDateCallNode = node
+				callFound = true
+				fmt.Printf("✅ 找到 `formatDate` 函数调用节点\n")
+				fmt.Printf("📍 位置: 第%d行，第%d列\n", node.GetStartLineNumber(), node.GetStartColumnNumber())
+				fmt.Printf("📝 文本: `%s`\n", node.GetText())
+			}
+		}
+	})
+
+	if !callFound {
+		log.Fatal("❌ 未在第 74 行找到 `formatDate` 函数调用")
+	}
+
+	// 3. 执行 GotoDefinition
+	fmt.Println()
+	fmt.Println("🚀 执行 GotoDefinition...")
+	definitions, err := formatDateCallNode.GotoDefinition()
+	if err != nil {
+		log.Fatalf("❌ GotoDefinition 失败: %v", err)
+	}
+
+	// 4. 验证结果
+	fmt.Printf("✅ GotoDefinition 调用成功，找到 %d 个定义\n", len(definitions))
+	if len(definitions) == 0 {
+		log.Fatal("❌ 验证失败: 未找到任何定义")
+	}
+
+	for i, def := range definitions {
+		fmt.Printf("\n定义 %d:\n", i+1)
+		fmt.Printf("📝 文本: `%s`\n", def.GetText())
+		fmt.Printf("📍 文件: %s\n", def.GetSourceFile().GetFilePath())
+		fmt.Printf("📍 位置: 第%d行，第%d列\n", def.GetStartLineNumber(), def.GetStartColumnNumber())
+
+		// 验证定义是否在正确的文件中
+		expectedFile := "dateUtils.ts"
+		if strings.Contains(def.GetSourceFile().GetFilePath(), expectedFile) {
+			fmt.Printf("✅ 验证成功: 定义在正确的文件中 (`%s`)\n", expectedFile)
+		} else {
+			log.Fatalf("❌ 验证失败: 定义文件不正确 (预计在 `%s` 中)", expectedFile)
+		}
+
+		// 验证父节点是否为 FunctionDeclaration
+		if parent := def.GetParent(); parent != nil && parent.IsVariableDeclaration() {
+			fmt.Printf("✅ 验证成功: 定义节点的父节点是变量声明\n")
+		} else {
+			log.Fatalf("❌ 验证失败: 定义节点的父节点不是变量声明, 而是 %s", def.GetParent().GetKind().String())
 		}
 	}
 }
