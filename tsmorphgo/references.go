@@ -490,7 +490,6 @@ func convertFromLspPath(lspPath, projectRootPath string) string {
 	return filepath.Clean(result)
 }
 
-
 // classifyError 对错误进行分类
 func classifyError(err error) ReferenceErrorType {
 	errStr := strings.ToLower(err.Error())
