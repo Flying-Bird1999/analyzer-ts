@@ -325,52 +325,56 @@ type CacheStats struct {
 	LastCleanup    time.Time     `json:"lastCleanup"`
 }
 
-// =============================================================================
-// 基础引用查找 - 来自 references.go
+// 核心引用查找实现
 // =============================================================================
 
-// FindReferences 查找给定节点所代表的符号的所有引用。
-// 注意：此功能依赖的底层 `typescript-go` 库可能存在 bug，导致结果不完全准确。
-func FindReferences(node Node) ([]*Node, error) {
-	// 1. 获取节点的位置信息
+// findReferencesCore 查找给定节点所代表的符号的所有引用（核心实现）
+func findReferencesCore(node Node) ([]*Node, error) {
+	if !node.IsValid() {
+		return nil, fmt.Errorf("invalid node")
+	}
+
+	// 获取节点的位置信息
 	startLine := node.GetStartLineNumber()
-	_, startChar := utils.GetLineAndCharacterOfPosition(node.GetSourceFile().fileResult.Raw, node.Pos())
-	startChar += 1 // a a new field to store the ast of the file
-	filePath := node.GetSourceFile().filePath
+	_, startChar := utils.GetLineAndCharacterOfPosition(node.sourceFile.fileResult.Raw, node.Pos())
+	startChar += 1
+	filePath := node.sourceFile.filePath
 
-	// 2. 从项目获取共享的 lsp.Service
-	lspService, err := node.GetSourceFile().project.getLspService()
+	// 从项目获取共享的 lsp.Service
+	lspService, err := node.sourceFile.project.getLspService()
 	if err != nil {
 		return nil, err
 	}
 
-	// 关键修复：将绝对路径转换为LSP服务期望的相对路径格式
-	// 从: /Users/xxx/demo-react-app/src/hooks/useUserData.ts
-	// 转换为: /src/hooks/useUserData.ts
-	lspPath := convertToLspPath(filePath)
+	// 获取项目根路径用于路径转换
+	projectRootPath := node.sourceFile.project.parserResult.Config.RootPath
+
+	// 将绝对路径转换为LSP服务期望的相对路径格式
+	lspPath := convertToLspPath(filePath, projectRootPath)
+
+	// 智能路径转换：基于项目根路径进行精确转换
+
 	resp, err := lspService.FindReferences(context.Background(), lspPath, startLine, startChar)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 将返回的 LSP 位置转换为 sdk.Node 列表
+	// 将返回的 LSP 位置转换为 Node 列表
 	var results []*Node
 	if resp.Locations != nil {
 		for _, loc := range *resp.Locations {
 			// 清理和转换 file URI 到项目内的虚拟路径
 			refPath := strings.TrimPrefix(string(loc.Uri), "file://")
 
-			// 关键修复：将LSP返回的相对路径转换回TSMorphGo项目的绝对路径格式
-			// 从: /src/components/App.tsx
-			// 转换为: /Users/xxx/demo-react-app/src/components/App.tsx
-			projectPath := convertFromLspPath(refPath, node.GetSourceFile().project.parserResult.Config.RootPath)
+			// 将LSP返回的相对路径转换回TSMorphGo项目的绝对路径格式
+			projectPath := convertFromLspPath(refPath, projectRootPath)
 
 			// 使用项目绝对路径查找节点
-			foundNode := node.GetSourceFile().project.findNodeAt(projectPath, int(loc.Range.Start.Line)+1, int(loc.Range.Start.Character)+1)
+			foundNode := node.sourceFile.project.findNodeAt(projectPath, int(loc.Range.Start.Line)+1, int(loc.Range.Start.Character)+1)
 			if foundNode != nil {
 				results = append(results, &Node{
 					Node:       foundNode,
-					sourceFile: node.GetSourceFile().project.sourceFiles[projectPath],
+					sourceFile: node.sourceFile.project.sourceFiles[projectPath],
 				})
 			}
 		}
@@ -379,36 +383,56 @@ func FindReferences(node Node) ([]*Node, error) {
 	return results, nil
 }
 
-// GotoDefinition 查找给定节点所代表的符号的定义位置。
-// 此功能通过 LSP 服务提供精确的跳转到定义能力。
-func GotoDefinition(node Node) ([]*Node, error) {
-	// 1. 获取节点的位置信息
+// gotoDefinitionCore 查找给定节点所代表的符号的定义位置（核心实现）
+func gotoDefinitionCore(node Node) ([]*Node, error) {
+	if !node.IsValid() {
+		return nil, fmt.Errorf("invalid node")
+	}
+
+	// 获取节点的位置信息
 	startLine := node.GetStartLineNumber()
-	_, startChar := utils.GetLineAndCharacterOfPosition(node.GetSourceFile().fileResult.Raw, node.Pos())
+	_, startChar := utils.GetLineAndCharacterOfPosition(node.sourceFile.fileResult.Raw, node.Pos())
 	startChar += 1
-	filePath := node.GetSourceFile().filePath
+	filePath := node.sourceFile.filePath
 
-	// 2. 从项目获取共享的 lsp.Service
-	lspService, err := node.GetSourceFile().project.getLspService()
+	// 从项目获取共享的 lsp.Service
+	lspService, err := node.sourceFile.project.getLspService()
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. 使用 LSP 服务查找定义
-	resp, err := lspService.GotoDefinition(context.Background(), filePath, startLine, startChar)
+	// 获取项目根路径用于路径转换
+	projectRootPath := node.sourceFile.project.parserResult.Config.RootPath
+
+	// 将绝对路径转换为LSP服务期望的相对路径格式
+	lspPath := convertToLspPath(filePath, projectRootPath)
+
+	// 使用 LSP 服务查找定义
+	resp, err := lspService.GotoDefinition(context.Background(), lspPath, startLine, startChar)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. 将返回的 LSP 位置转换为 Node 列表
+	// 将返回的 LSP 位置转换为 Node 列表
 	var results []*Node
 
 	// 处理定义响应
 	if resp.Locations != nil {
 		// 处理 Location 数组
 		for _, loc := range *resp.Locations {
-			if converted := convertLspLocationToNode(loc, node.GetSourceFile().project); converted != nil {
-				results = append(results, converted)
+			// 清理和转换 file URI 到项目内的虚拟路径
+			refPath := strings.TrimPrefix(string(loc.Uri), "file://")
+
+			// 将LSP返回的相对路径转换回TSMorphGo项目的绝对路径格式
+			projectPath := convertFromLspPath(refPath, projectRootPath)
+
+			// 使用项目绝对路径查找节点
+			foundNode := node.sourceFile.project.findNodeAt(projectPath, int(loc.Range.Start.Line)+1, int(loc.Range.Start.Character)+1)
+			if foundNode != nil {
+				results = append(results, &Node{
+					Node:       foundNode,
+					sourceFile: node.sourceFile.project.sourceFiles[projectPath],
+				})
 			}
 		}
 	}
@@ -433,99 +457,39 @@ func convertLspLocationToNode(loc lsproto.Location, project *Project) *Node {
 	return nil
 }
 
-// =============================================================================
-// 增强功能 - 来自 references_enhanced.go
-// =============================================================================
-
-// FindReferencesWithCache 带缓存的引用查找，支持错误处理和重试机制
-// 首先检查缓存，如果缓存命中则直接返回；否则调用 LSP 服务并缓存结果
-// 返回：节点列表、是否来自缓存、错误
-func FindReferencesWithCache(node Node) ([]*Node, bool, error) {
-	return FindReferencesWithCacheAndRetry(node, DefaultRetryConfig())
-}
-
-// FindReferencesWithCacheAndRetry 带缓存和重试机制的引用查找
-// 允许自定义重试配置，提供更细粒度的错误控制
-// 使用简化的缓存实现
-func FindReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*Node, bool, error) {
-	// 1. 获取项目和缓存
-	project := node.GetSourceFile().GetProject()
-	cache := project.getReferenceCache()
-
-	// 2. 生成简化的缓存键
-	cacheKey := cache.GenerateSimpleCacheKey(node)
-
-	// 3. 尝试从缓存获取
-	if cached, hit := cache.Get(cacheKey); hit {
-		return cached, true, nil
+// convertToLspPath 将TSMorphGo的绝对路径转换为LSP服务期望的相对路径格式
+func convertToLspPath(filePath, projectRootPath string) string {
+	// 规范化项目根路径
+	projectRootPath = filepath.Clean(projectRootPath)
+	if !strings.HasSuffix(projectRootPath, string(filepath.Separator)) {
+		projectRootPath += string(filepath.Separator)
 	}
 
-	// 4. 缓存未命中，执行带重试的 LSP 调用
-	refs, err := findReferencesWithRetry(node, retryConfig)
-	if err != nil {
-		return nil, false, err
+	// 确保文件路径也是规范化的
+	filePath = filepath.Clean(filePath)
+
+	// 基于项目根路径进行精确匹配，转换为相对路径
+	if strings.HasPrefix(filePath, projectRootPath) {
+		relativePath := strings.TrimPrefix(filePath, projectRootPath)
+		return "/" + filepath.ToSlash(relativePath)
 	}
 
-	// 6. 将结果存入缓存
-	cache.Set(cacheKey, refs)
-
-	return refs, false, nil
+	// 如果无法精确匹配，返回原始路径（让调用方处理具体问题）
+	return filePath
 }
 
-// findReferencesWithRetry 带重试机制的引用查找
-func findReferencesWithRetry(node Node, retryConfig *RetryConfig) ([]*Node, error) {
-	var lastErr error
+// convertFromLspPath 将LSP服务返回的相对路径转换回TSMorphGo项目的绝对路径格式
+func convertFromLspPath(lspPath, projectRootPath string) string {
+	// 直接处理LSP返回的相对路径格式：/src/components/App.tsx
+	cleanPath := strings.TrimPrefix(lspPath, "/")
 
-	for attempt := 0; attempt <= retryConfig.MaxRetries; attempt++ {
-		if attempt > 0 {
-			// 计算延迟时间 (指数退避)
-			delay := time.Duration(attempt) * retryConfig.BaseDelay
-			if delay > retryConfig.MaxDelay {
-				delay = retryConfig.MaxDelay
-			}
-			time.Sleep(delay)
-		}
+	// 将相对路径转换为绝对路径
+	result := filepath.Join(projectRootPath, cleanPath)
 
-		refs, err := FindReferences(node)
-		if err == nil {
-			return refs, nil
-		}
-
-		// 包装错误
-		refErr := &ReferenceError{
-			Type:       classifyError(err),
-			Message:    err.Error(),
-			Cause:      err,
-			NodeInfo:   node.GetText(),
-			FilePath:   node.GetSourceFile().GetFilePath(),
-			LineNumber: node.GetStartLineNumber(),
-			RetryCount: attempt,
-			Timestamp:  time.Now(),
-		}
-
-		// 判断是否应该重试
-		if !refErr.ShouldRetry() {
-			return nil, refErr
-		}
-
-		// 检查是否在可重试的错误类型列表中
-		retryable := false
-		for _, retryableType := range retryConfig.RetryableErrors {
-			if refErr.Type == retryableType {
-				retryable = true
-				break
-			}
-		}
-
-		if !retryable {
-			return nil, refErr
-		}
-
-		lastErr = refErr
-	}
-
-	return nil, lastErr
+	// 规范化路径
+	return filepath.Clean(result)
 }
+
 
 // classifyError 对错误进行分类
 func classifyError(err error) ReferenceErrorType {
@@ -559,101 +523,83 @@ func classifyError(err error) ReferenceErrorType {
 	return ErrorTypeUnknown
 }
 
-// =============================================================================
-// 便捷方法
-// =============================================================================
+// findReferencesWithRetry 带重试机制的引用查找
+func findReferencesWithRetry(node Node, retryConfig *RetryConfig) ([]*Node, error) {
+	var lastErr error
 
-// FindAllReferences 查找所有引用，包括定义位置
-func FindAllReferences(node Node) ([]*Node, error) {
-	var allReferences []*Node
-
-	// 1. 查找引用
-	refs, err := FindReferences(node)
-	if err != nil {
-		return nil, err
-	}
-	allReferences = append(allReferences, refs...)
-
-	// 2. 查找定义
-	defs, err := GotoDefinition(node)
-	if err != nil {
-		// 定义查找失败不影响引用查找结果
-		return allReferences, nil
-	}
-	allReferences = append(allReferences, defs...)
-
-	return allReferences, nil
-}
-
-// CountReferences 统计引用数量
-func CountReferences(node Node) (int, error) {
-	refs, err := FindReferences(node)
-	if err != nil {
-		return 0, err
-	}
-	return len(refs), nil
-}
-
-// convertToLspPath 将TSMorphGo的绝对路径转换为LSP服务期望的相对路径格式
-// 这是解决路径别名问题的关键转换层
-func convertToLspPath(filePath string) string {
-	// 如果路径已经是相对路径格式，直接返回
-	if !strings.HasPrefix(filePath, "/") {
-		return "/" + filePath
-	}
-
-	// 检查是否为绝对路径（包含系统路径特征）
-	isAbsolutePath := strings.Contains(filePath, ":") ||
-		len(strings.Split(filePath, "/")) > 5 // 如/Users/zxc/xxx/demo-react-app/src/file.ts
-
-	if !isAbsolutePath {
-		// 已经是期望的格式，直接返回
-		return filePath
-	}
-
-	// 简化的路径转换：查找src目录并返回从src开始的路径
-	pathParts := strings.Split(filePath, "/")
-	for i, part := range pathParts {
-		if part == "src" && i < len(pathParts)-1 {
-			// 找到src目录，返回从src开始的路径
-			result := "/" + strings.Join(pathParts[i:], "/")
-			return result
+	for attempt := 0; attempt <= retryConfig.MaxRetries; attempt++ {
+		if attempt > 0 {
+			// 计算延迟时间 (指数退避)
+			delay := time.Duration(attempt) * retryConfig.BaseDelay
+			if delay > retryConfig.MaxDelay {
+				delay = retryConfig.MaxDelay
+			}
+			time.Sleep(delay)
 		}
-	}
 
-	// 如果找不到src，返回最后几个部分（处理其他情况）
-	if len(pathParts) >= 3 {
-		// 检查是否有其他常见的源码目录
-		commonDirs := []string{"lib", "app", "components", "utils", "hooks"}
-		for i, part := range pathParts {
-			for _, dir := range commonDirs {
-				if part == dir && i < len(pathParts)-1 {
-					result := "/" + strings.Join(pathParts[i:], "/")
-					return result
-				}
+		refs, err := findReferencesCore(node)
+		if err == nil {
+			return refs, nil
+		}
+
+		// 包装错误
+		refErr := &ReferenceError{
+			Type:       classifyError(err),
+			Message:    err.Error(),
+			Cause:      err,
+			NodeInfo:   node.GetText(),
+			FilePath:   node.sourceFile.GetFilePath(),
+			LineNumber: node.GetStartLineNumber(),
+			RetryCount: attempt,
+			Timestamp:  time.Now(),
+		}
+
+		// 判断是否应该重试
+		if !refErr.ShouldRetry() {
+			return nil, refErr
+		}
+
+		// 检查是否在可重试的错误类型列表中
+		retryable := false
+		for _, retryableType := range retryConfig.RetryableErrors {
+			if refErr.Type == retryableType {
+				retryable = true
+				break
 			}
 		}
+
+		if !retryable {
+			return nil, refErr
+		}
+
+		lastErr = refErr
 	}
 
-	// 如果所有方法都失败，返回原始路径
-	return filePath
+	return nil, lastErr
 }
 
-// convertFromLspPath 将LSP服务返回的相对路径转换回TSMorphGo项目的绝对路径格式
-// 这是convertToLspPath的逆向操作，确保结果能正确映射到项目文件
-func convertFromLspPath(lspPath, projectRootPath string) string {
-	// 确保LSP路径以/开头
-	if !strings.HasPrefix(lspPath, "/") {
-		lspPath = "/" + lspPath
+// findReferencesWithCacheAndRetry 带缓存和重试机制的引用查找
+func findReferencesWithCacheAndRetry(node Node, retryConfig *RetryConfig) ([]*Node, bool, error) {
+	// 获取项目和缓存
+	project := node.sourceFile.GetProject()
+	cache := project.getReferenceCache()
+
+	// 生成简化的缓存键
+	cacheKey := cache.GenerateSimpleCacheKey(node)
+
+	// 尝试从缓存获取
+	if cached, hit := cache.Get(cacheKey); hit {
+		return cached, true, nil
 	}
 
-	// 如果已经是绝对路径，直接返回
-	if strings.HasPrefix(lspPath, "/Users/") || strings.Contains(lspPath, ":") {
-		return lspPath
+	// 缓存未命中，执行带重试的 LSP 调用
+	refs, err := findReferencesWithRetry(node, retryConfig)
+	if err != nil {
+		return nil, false, err
 	}
 
-	// 将相对路径转换为绝对路径
-	// 从: /src/hooks/useUserData.ts
-	// 转换为: /Users/xxx/demo-react-app/src/hooks/useUserData.ts
-	return filepath.Join(projectRootPath, lspPath)
+	// 将结果存入缓存
+	cache.Set(cacheKey, refs)
+
+	return refs, false, nil
 }

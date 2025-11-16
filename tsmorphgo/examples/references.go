@@ -111,7 +111,7 @@ func hookFunctionReferences(project *tsmorphgo.Project, demoAppPath string) {
 	fmt.Println("-------------------")
 
 	var references []*tsmorphgo.Node
-	if refs, err := tsmorphgo.FindReferences(declarationIdentifier); err != nil {
+	if refs, err := declarationIdentifier.FindReferences(); err != nil {
 		fmt.Printf("❌ 引用查找失败: %v\n", err)
 	} else {
 		references = refs
@@ -234,7 +234,7 @@ func typeReferences(project *tsmorphgo.Project, demoAppPath string) {
 	fmt.Println("---------------------")
 
 	var references []*tsmorphgo.Node
-	if refs, err := tsmorphgo.FindReferences(interfaceIdentifier); err != nil {
+	if refs, err := interfaceIdentifier.FindReferences(); err != nil {
 		fmt.Printf("❌ 引用查找失败: %v\n", err)
 	} else {
 		references = refs
@@ -448,7 +448,7 @@ func toolFunctionReferences(project *tsmorphgo.Project, demoAppPath string) {
 	fmt.Println("-------------------------")
 
 	var references []*tsmorphgo.Node
-	if refs, err := tsmorphgo.FindReferences(functionIdentifier); err != nil {
+	if refs, err := functionIdentifier.FindReferences(); err != nil {
 		fmt.Printf("❌ 引用查找失败: %v\n", err)
 	} else {
 		references = refs

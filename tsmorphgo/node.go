@@ -1159,3 +1159,58 @@ func getChildrenOfNode(node *ast.Node) []*ast.Node {
 	})
 	return children
 }
+
+// =============================================================================
+// 引用查找 API - 调用层 (委托给 references.go 中的核心实现)
+// =============================================================================
+
+// FindReferences 查找给定节点所代表的符号的所有引用
+func (n *Node) FindReferences() ([]*Node, error) {
+	return findReferencesCore(*n)
+}
+
+// FindReferencesWithCache 带缓存的引用查找，支持错误处理和重试机制
+func (n *Node) FindReferencesWithCache() ([]*Node, bool, error) {
+	return n.FindReferencesWithCacheAndRetry(DefaultRetryConfig())
+}
+
+// FindReferencesWithCacheAndRetry 带缓存和重试机制的引用查找
+func (n *Node) FindReferencesWithCacheAndRetry(retryConfig *RetryConfig) ([]*Node, bool, error) {
+	return findReferencesWithCacheAndRetry(*n, retryConfig)
+}
+
+// GotoDefinition 查找给定节点所代表的符号的定义位置
+func (n *Node) GotoDefinition() ([]*Node, error) {
+	return gotoDefinitionCore(*n)
+}
+
+// FindAllReferences 查找所有引用，包括定义位置
+func (n *Node) FindAllReferences() ([]*Node, error) {
+	var allReferences []*Node
+
+	// 1. 查找引用
+	refs, err := n.FindReferences()
+	if err != nil {
+		return nil, err
+	}
+	allReferences = append(allReferences, refs...)
+
+	// 2. 查找定义
+	defs, err := n.GotoDefinition()
+	if err != nil {
+		// 定义查找失败不影响引用查找结果
+		return allReferences, nil
+	}
+	allReferences = append(allReferences, defs...)
+
+	return allReferences, nil
+}
+
+// CountReferences 统计引用数量
+func (n *Node) CountReferences() (int, error) {
+	refs, err := n.FindReferences()
+	if err != nil {
+		return 0, err
+	}
+	return len(refs), nil
+}

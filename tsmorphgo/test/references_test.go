@@ -73,7 +73,7 @@ func TestFindReferences(t *testing.T) {
 	assert.NotNil(t, usageNode, "未能找到 myVar 的使用节点")
 
 	// 3. 执行 FindReferences
-	refs, err := FindReferences(*usageNode)
+	refs, err := usageNode.FindReferences()
 	assert.NoError(t, err)
 
 	// 4. 验证结果
@@ -150,7 +150,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, targetNode)
 
 		// 执行引用查找
-		refs, err := FindReferences(*targetNode)
+		refs, err := targetNode.FindReferences()
 		assert.NoError(t, err)
 
 		// 验证结果：定义文件1处，user1文件2处（导入、使用），user2文件2处（导入、使用）
@@ -183,7 +183,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, targetNode)
 
 		// 执行引用查找
-		refs, err := FindReferences(*targetNode)
+		refs, err := targetNode.FindReferences()
 		assert.NoError(t, err)
 
 		// TODO: 底层 LSP 服务似乎无法正确解析别名导入的原始定义，因此暂时只验证当前文件内的引用
@@ -216,7 +216,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, targetNode)
 
 		// 执行引用查找
-		refs, err := FindReferences(*targetNode)
+		refs, err := targetNode.FindReferences()
 		assert.NoError(t, err)
 
 		// TODO: 底层 LSP 服务似乎无法正确解析默认导入的原始定义，因此暂时只验证当前文件内的引用
@@ -251,7 +251,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, interfaceNode)
 
 		// 查找接口引用
-		interfaceRefs, err := FindReferences(*interfaceNode)
+		interfaceRefs, err := interfaceNode.FindReferences()
 		assert.NoError(t, err)
 		// 验证结果：定义文件1处，user.ts文件2处 (导入和使用)
 		assertReferences(t, interfaceRefs, map[string]int{
@@ -271,7 +271,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, typeNode)
 
 		// 查找类型别名引用
-		typeRefs, err := FindReferences(*typeNode)
+		typeRefs, err := typeNode.FindReferences()
 		assert.NoError(t, err)
 		// 验证结果：定义文件1处，user.ts文件2处，user2.ts文件2处
 		assertReferences(t, typeRefs, map[string]int{
@@ -301,7 +301,7 @@ func TestFindReferencesComprehensive(t *testing.T) {
 		assert.NotNil(t, targetNode)
 
 		// 执行引用查找
-		refs, err := FindReferences(*targetNode)
+		refs, err := targetNode.FindReferences()
 		assert.NoError(t, err)
 
 		// 验证结果：只应找到其自身的定义
@@ -340,7 +340,7 @@ func TestGotoDefinitionBasic(t *testing.T) {
 	assert.NotNil(t, usageNode, "应该找到 message 的使用位置")
 
 	// 测试跳转到定义
-	definitions, err := GotoDefinition(*usageNode)
+	definitions, err := usageNode.GotoDefinition()
 	assert.NoError(t, err, "跳转到定义应该成功")
 	assert.Len(t, definitions, 1, "应该找到一个定义位置")
 
