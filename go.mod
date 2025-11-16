@@ -3,7 +3,7 @@ module github.com/Flying-Bird1999/analyzer-ts
 go 1.25
 
 require (
-	github.com/Zzzen/typescript-go v0.0.2-0.20251109002915-a978ead6084a
+	github.com/Zzzen/typescript-go v0.0.2-0.20251116002939-712898d9674b
 	github.com/gobwas/glob v0.2.3
 	github.com/jmespath/go-jmespath v0.4.0
 	github.com/mattn/go-sqlite3 v1.14.32

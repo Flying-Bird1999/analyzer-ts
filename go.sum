@@ -1,5 +1,7 @@
 github.com/Zzzen/typescript-go v0.0.2-0.20251109002915-a978ead6084a h1:3ZZiGTzJeumgqMNCTzYBR8wnvEy1sieOgxQFsOURVZQ=
 github.com/Zzzen/typescript-go v0.0.2-0.20251109002915-a978ead6084a/go.mod h1:8qHKCTy2AE9nvqJlG859g/C1RQYCdZpXoAls7GtTVFE=
+github.com/Zzzen/typescript-go v0.0.2-0.20251116002939-712898d9674b h1:NOJZwYY90G5AgYvJj5ilSHvcYlcSUfVoUNxccrgPw4o=
+github.com/Zzzen/typescript-go v0.0.2-0.20251116002939-712898d9674b/go.mod h1:A20JsDi/3aJlerbTtxdVpxId/+94fS0xCcL9Vg6kdn8=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=

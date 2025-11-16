@@ -230,7 +230,7 @@ func (s *Service) GotoDefinition(ctx context.Context, filePath string, line, cha
 	response, err = langService.ProvideDefinition(ctx, uri, lsproto.Position{
 		Line:      uint32(line - 1),
 		Character: uint32(char - 1),
-	}, false)
+	})
 	if err != nil {
 		return lsproto.DefinitionResponse{}, fmt.Errorf("查找定义失败: %w", err)
 	}
@@ -435,7 +435,7 @@ func (s *Service) GetNativeQuickInfoAtPosition(ctx context.Context, filePath str
 	hoverResponse, err := langService.ProvideHover(ctx, uri, lsproto.Position{
 		Line:      uint32(line - 1),
 		Character: uint32(char - 1),
-	}, lsproto.MarkupKindMarkdown)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("获取原生 QuickInfo 失败: %w", err)
 	}
