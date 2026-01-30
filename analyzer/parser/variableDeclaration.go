@@ -7,7 +7,7 @@ import (
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // DeclarationKind 用于表示变量声明的类型 (const, let, var)。

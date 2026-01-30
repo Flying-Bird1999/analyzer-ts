@@ -5,7 +5,7 @@ package parser
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // TypeDeclarationResult 存储一个解析后的 `type` 别名声明信息。
@@ -14,8 +14,8 @@ type TypeDeclarationResult struct {
 	Exported       bool                     `json:"exported"`                 // 新增：标记此类型别名是否被导出。
 	Raw            string                   `json:"raw,omitempty"`            // 节点在源码中的原始文本。
 	Reference      map[string]TypeReference `json:"reference,omitempty"`      // 该类型别名所依赖的其他类型的映射。
-	SourceLocation *SourceLocation           `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
-	Node           *ast.Node                `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	SourceLocation *SourceLocation          `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
+	Node           *ast.Node                `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewTypeDeclarationResult 基于 AST 节点创建一个新的 TypeDeclarationResult 实例。

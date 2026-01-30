@@ -4,7 +4,7 @@ package parser
 
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // ImportModule 代表一个被导入的独立实体。
@@ -18,11 +18,11 @@ type ImportModule struct {
 // ImportDeclarationResult 存储一个完整的导入声明的解析结果。
 // 一个导入声明（例如 `import a, { b } from './mod'`) 可能包含多个导入的模块。
 type ImportDeclarationResult struct {
-	ImportModules  []ImportModule `json:"importModules"`            // 该导入声明中包含的所有导入模块的列表。
-	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
-	Source         string         `json:"source"`                   // 导入来源的模块路径，例如 `'./school'`。
+	ImportModules  []ImportModule  `json:"importModules"`            // 该导入声明中包含的所有导入模块的列表。
+	Raw            string          `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	Source         string          `json:"source"`                   // 导入来源的模块路径，例如 `'./school'`。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
-	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	Node           *ast.Node       `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewImportDeclarationResult 创建并初始化一个 ImportDeclarationResult 实例。

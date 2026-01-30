@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
+	"github.com/microsoft/typescript-go/shim/lsp/lsproto"
 )
 
 // =============================================================================

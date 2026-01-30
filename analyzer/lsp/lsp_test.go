@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
+	"github.com/microsoft/typescript-go/shim/lsp/lsproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

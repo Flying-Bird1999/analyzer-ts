@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/core"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/parser"
+	"github.com/microsoft/typescript-go/shim/ast"
+	"github.com/microsoft/typescript-go/shim/core"
+	"github.com/microsoft/typescript-go/shim/parser"
 )
 
 // FormatSize 将字节大小格式化为更易读的 KB, MB, GB 字符串。

@@ -8,7 +8,7 @@ import (
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // TypeAnalysisResult 封装了从单个类型节点中分析出的一个类型引用的结果。

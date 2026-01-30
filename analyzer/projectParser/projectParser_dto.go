@@ -2,7 +2,7 @@ package projectParser
 
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // JsFileParserResult 结构体用于存储对单个JS或TS文件进行解析后得到的核心数据。

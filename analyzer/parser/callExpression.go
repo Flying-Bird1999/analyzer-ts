@@ -6,20 +6,20 @@ import (
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/samber/lo"
 )
 
 // CallExpression 代表一个函数或方法调用表达式的解析结果。
 // 它现在可以包含在参数中发现的内联函数声明。
 type CallExpression struct {
-	Expression      *VariableValue              `json:"expression"`      // [权威] 被调用的表达式的完整结构化信息
-	CallChain       []string                    `json:"callChain"`       // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
-	Arguments       []*VariableValue            `json:"arguments"`       // 调用时传递的参数列表。
-	InlineFunctions []FunctionDeclarationResult `json:"inlineFunctions"` // [新增] 在参数中发现的内联函数（例如 useEffect 的回调）
-	Raw             string                      `json:"raw,omitempty"`   // 节点在源码中的原始文本。
-	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 表达式在源码中的位置
-	Node            *ast.Node                   `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	Expression      *VariableValue              `json:"expression"`               // [权威] 被调用的表达式的完整结构化信息
+	CallChain       []string                    `json:"callChain"`                // [便利] 表达式的调用链视图，例如 ["myObj", "method", "call"]
+	Arguments       []*VariableValue            `json:"arguments"`                // 调用时传递的参数列表。
+	InlineFunctions []FunctionDeclarationResult `json:"inlineFunctions"`          // [新增] 在参数中发现的内联函数（例如 useEffect 的回调）
+	Raw             string                      `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	SourceLocation  *SourceLocation             `json:"sourceLocation,omitempty"` // 表达式在源码中的位置
+	Node            *ast.Node                   `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // ReconstructCallChain 是一个辅助函数，用于从表达式节点递归地构建一个简单的字符串调用链。
@@ -93,9 +93,9 @@ func AnalyzeCallExpression(node *ast.CallExpression, sourceCode string, processe
 	}
 
 	ce := &CallExpression{
-		Expression:      AnalyzeVariableValueNode(node.Expression, sourceCode),
-		CallChain:       ReconstructCallChain(node.Expression, sourceCode),
-		Arguments:       lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
+		Expression: AnalyzeVariableValueNode(node.Expression, sourceCode),
+		CallChain:  ReconstructCallChain(node.Expression, sourceCode),
+		Arguments: lo.Map(node.Arguments.Nodes, func(arg *ast.Node, _ int) *VariableValue {
 			return AnalyzeVariableValueNode(arg, sourceCode)
 		}),
 		InlineFunctions: inlineFunctions, // 存储找到的内联函数

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // ExtractedNodes 用于存储从文件中提取出的各种节点信息。

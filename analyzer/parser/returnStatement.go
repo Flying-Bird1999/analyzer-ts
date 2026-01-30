@@ -3,13 +3,13 @@
 package parser
 
 import (
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // ReturnStatementResult 存储一个解析后的 return 语句信息。
 type ReturnStatementResult struct {
 	Expression *VariableValue `json:"expression"` // return 后面跟随的表达式
-	Node       *ast.Node      `json:"-"`           // 对应的 AST 节点，不在 JSON 中序列化。
+	Node       *ast.Node      `json:"-"`          // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AnalyzeReturnStatement 是一个公共的、可复用的函数，用于从 AST 节点中解析 return 语句。

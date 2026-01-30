@@ -8,7 +8,7 @@ import (
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // Parser 定义了解析器的主要结构，包含了源码、AST 和最终的解析结果。

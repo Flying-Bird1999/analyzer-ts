@@ -6,15 +6,15 @@ import (
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // ExportAssignmentResult 存储一个 `export default` 声明的解析结果。
 type ExportAssignmentResult struct {
-	Expression     string         `json:"expression,omitempty"`     // 导出的表达式的文本。
-	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本。
+	Expression     string          `json:"expression,omitempty"`     // 导出的表达式的文本。
+	Raw            string          `json:"raw,omitempty"`            // 节点在源码中的原始文本。
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息。
-	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	Node           *ast.Node       `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AnalyzeExportAssignment 是一个公共的、可复用的函数，用于从 AST 节点中解析 `export default` 声明。

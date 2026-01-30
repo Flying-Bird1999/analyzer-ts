@@ -2,7 +2,7 @@ package tsmorphgo
 
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // SourceFile 代表一个源文件及其所有分析结果。

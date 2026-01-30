@@ -12,7 +12,7 @@ import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/lsp"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // Project 代表一个完整的 TypeScript 项目的视图，提供了与 ts-morph 类似的 API。

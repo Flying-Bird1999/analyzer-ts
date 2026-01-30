@@ -6,7 +6,7 @@ import (
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // =============================================================================

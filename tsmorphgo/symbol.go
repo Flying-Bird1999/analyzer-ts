@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // GetSymbol 从 AST 节点获取符号信息

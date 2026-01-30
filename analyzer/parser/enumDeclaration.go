@@ -5,16 +5,16 @@ package parser
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // EnumDeclarationResult 存储一个解析后的枚举声明信息。
 type EnumDeclarationResult struct {
-	Identifier     string         `json:"identifier"`     // 枚举的名称。
-	Exported       bool           `json:"exported"`       // 新增：标记此枚举是否被导出。
-	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
+	Identifier     string          `json:"identifier"`               // 枚举的名称。
+	Exported       bool            `json:"exported"`                 // 新增：标记此枚举是否被导出。
+	Raw            string          `json:"raw,omitempty"`            // 节点在源码中的原始文本
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
-	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	Node           *ast.Node       `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // AnalyzeEnumDeclaration 是一个公共的、可复用的函数，用于从 AST 节点中解析枚举声明。

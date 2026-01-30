@@ -9,14 +9,13 @@ import (
 	"sync"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/astnav"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/bundled"
-	lsconv "github.com/Zzzen/typescript-go/use-at-your-own-risk/ls/lsconv"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/lsp/lsproto"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/project/logging"
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/vfs/vfstest"
+	"github.com/microsoft/typescript-go/shim/ast"
+	"github.com/microsoft/typescript-go/shim/astnav"
+	"github.com/microsoft/typescript-go/shim/bundled"
+	lsconv "github.com/microsoft/typescript-go/shim/ls/lsconv"
+	"github.com/microsoft/typescript-go/shim/lsp/lsproto"
+	"github.com/microsoft/typescript-go/shim/project"
+	"github.com/microsoft/typescript-go/shim/vfs/vfstest"
 )
 
 // dummyClient 是 project.Client 接口的一个空实现。
@@ -29,6 +28,15 @@ func (c *dummyClient) UnwatchFiles(ctx context.Context, id project.WatcherID) er
 	return nil
 }
 func (c *dummyClient) RefreshDiagnostics(ctx context.Context) error {
+	return nil
+}
+func (c *dummyClient) PublishDiagnostics(ctx context.Context, params *lsproto.PublishDiagnosticsParams) error {
+	return nil
+}
+func (c *dummyClient) RefreshInlayHints(ctx context.Context) error {
+	return nil
+}
+func (c *dummyClient) RefreshCodeLens(ctx context.Context) error {
 	return nil
 }
 
@@ -81,7 +89,7 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 	for path, content := range correctedFiles {
 		correctedFilesAny[path] = content
 	}
-	fs := bundled.WrapFS(vfstest.FromMap(correctedFilesAny, false))
+	fs := bundled.WrapFS(vfstest.FromMapAny(correctedFilesAny, false))
 
 	// 确定当前目录
 	var currentDir string
@@ -95,7 +103,9 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 	}
 
 	// 创建会话
+	ctx := context.Background()
 	session := project.NewSession(&project.SessionInit{
+		BackgroundCtx: ctx,
 		Options: &project.SessionOptions{
 			CurrentDirectory:   currentDir,
 			DefaultLibraryPath: bundled.LibPath(),
@@ -105,11 +115,9 @@ func NewServiceForTest(files map[string]any) (*Service, error) {
 		FS:          fs,
 		Client:      &dummyClient{},
 		NpmExecutor: &dummyNpmExecutor{},
-		Logger:      logging.NewLogger(os.Stderr),
+		// Logger:      logging.NewLogger(os.Stderr),
 	})
 
-	// 打开项目
-	ctx := context.Background()
 	var projectInstance *project.Project
 	var err error
 
@@ -194,7 +202,8 @@ func (s *Service) FindReferences(ctx context.Context, filePath string, line, cha
 		Context:      &lsproto.ReferenceContext{IncludeDeclaration: true},
 	}
 
-	response, err = langService.ProvideReferences(ctx, params)
+	// Pass nil as orchestrator since we only have a single project
+	response, err = langService.ProvideReferences(ctx, params, nil)
 	if err != nil {
 		return lsproto.ReferencesResponse{}, fmt.Errorf("查找引用失败: %w", err)
 	}

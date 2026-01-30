@@ -6,7 +6,7 @@ package parser
 import (
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/utils"
 
-	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
+	"github.com/microsoft/typescript-go/shim/ast"
 )
 
 // JSXAttributeValue 用于结构化地表示 JSX 属性的值。
@@ -46,11 +46,11 @@ type JSXElement struct {
 	// ComponentChain 表示组件的完整路径。
 	// 例如 <myComponent.Name.SingleSelect /> 会被解析为 ["myComponent", "Name", "SingleSelect"]。
 	// 对于简单标签如 <div />，则为 ["div"]。
-	ComponentChain []string       `json:"componentChain"`
-	Attrs          []JSXAttribute `json:"attrs"`
-	Raw            string         `json:"raw,omitempty"`            // 节点在源码中的原始文本
+	ComponentChain []string        `json:"componentChain"`
+	Attrs          []JSXAttribute  `json:"attrs"`
+	Raw            string          `json:"raw,omitempty"`            // 节点在源码中的原始文本
 	SourceLocation *SourceLocation `json:"sourceLocation,omitempty"` // 节点在源码中的位置信息
-	Node           *ast.Node      `json:"-"`                     // 对应的 AST 节点，不在 JSON 中序列化。
+	Node           *ast.Node       `json:"-"`                        // 对应的 AST 节点，不在 JSON 中序列化。
 }
 
 // NewJSXNode 是创建和解析 JSXElement 实例的工厂函数。
