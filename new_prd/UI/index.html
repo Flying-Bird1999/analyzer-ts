@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>组件库资产管理系统 - UI原型</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">组件库资产管理系统</div>
+      </div>
+      <div class="header-right">
+        <div class="version-selector" onclick="toggleVersionDropdown(event)">
+          <span>v1.2.3</span>
+          <span class="version-badge">Latest</span>
+          <span class="version-dropdown-icon">▼</span>
+
+          <!-- 版本下拉菜单 -->
+          <div class="version-dropdown-menu" id="versionDropdown" onclick="event.stopPropagation()">
+            <div class="version-dropdown-header">选择版本</div>
+
+            <div class="version-dropdown-item active" onclick="selectVersion('v1.2.3', event)">
+              <span class="version">v1.2.3</span>
+              <span class="check-icon">✓</span>
+              <span class="version-badge" style="font-size: 11px;">Latest</span>
+            </div>
+
+            <div class="version-dropdown-item" onclick="selectVersion('v1.2.2', event)">
+              <span class="version">v1.2.2</span>
+              <span class="check-icon" style="opacity: 0;">✓</span>
+            </div>
+
+            <div class="version-dropdown-item" onclick="selectVersion('v1.2.1', event)">
+              <span class="version">v1.2.1</span>
+              <span class="check-icon" style="opacity: 0;">✓</span>
+            </div>
+
+            <div class="version-dropdown-item" onclick="selectVersion('v1.2.0', event)">
+              <span class="version">v1.2.0</span>
+              <span class="check-icon" style="opacity: 0;">✓</span>
+            </div>
+
+            <div class="version-dropdown-item" onclick="selectVersion('v1.1.0', event)">
+              <span class="version">v1.1.0</span>
+              <span class="check-icon" style="opacity: 0;">✓</span>
+            </div>
+
+            <div class="version-dropdown-footer">
+              <a href="#" onclick="showVersionCompare(event); return false;">
+                <span>⚖️</span>
+                <span>版本对比</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <div class="nav-item active" onclick="showPage('dashboard', event)">
+          <span>📊</span>
+          <span>概览 Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="showPage('components', event)">
+          <span>🧩</span>
+          <span>组件列表 Components</span>
+        </div>
+        <div class="nav-item" onclick="showPage('dependencies', event)">
+          <span>🔗</span>
+          <span>依赖 Dependencies</span>
+        </div>
+        <div class="nav-item" onclick="showPage('standards', event)">
+          <span>📐</span>
+          <span>规范与工具 Standards</span>
+        </div>
+        <div class="nav-item" onclick="showPage('changelog', event)">
+          <span>🔄</span>
+          <span>变更历史 Changelog</span>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content" style="width: 100%">
+        <!-- Dashboard Page -->
+        <div id="page-dashboard-container"></div>
+
+        <!-- Components Page -->
+        <div id="page-components-container"></div>
+
+        <!-- Component Detail Page -->
+        <div id="page-component-detail-container"></div>
+
+        <!-- Dependencies Page -->
+        <div id="page-dependencies-container"></div>
+
+        <!-- Standards Page -->
+        <div id="page-standards-container"></div>
+
+        <!-- Changelog Page -->
+        <div id="page-changelog-container"></div>
+      </div>
+    </div>
+
+    <script>
+      // 版本选择器
+      let currentVersion = 'v1.2.3';
+
+      function toggleVersionDropdown(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('versionDropdown');
+        const selector = event.currentTarget;
+
+        if (dropdown.classList.contains('show')) {
+          dropdown.classList.remove('show');
+          selector.classList.remove('open');
+        } else {
+          dropdown.classList.add('show');
+          selector.classList.add('open');
+        }
+      }
+
+      function selectVersion(version, event) {
+        event.stopPropagation();
+        currentVersion = version;
+        const dropdown = document.getElementById('versionDropdown');
+        const selector = document.querySelector('.version-selector');
+
+        // 更新下拉菜单选中状态
+        dropdown.querySelectorAll('.version-dropdown-item').forEach(item => {
+          item.classList.remove('active');
+          const checkIcon = item.querySelector('.check-icon');
+          if (checkIcon) {
+            checkIcon.style.opacity = '0';
+          }
+        });
+
+        // 设置当前选中项
+        event.currentTarget.classList.add('active');
+        event.currentTarget.querySelector('.check-icon').style.opacity = '1';
+
+        // 更新选择器显示
+        const versionSpan = selector.querySelector('.version-selector > span:first-child');
+        versionSpan.textContent = version;
+
+        // 关闭下拉菜单
+        dropdown.classList.remove('show');
+        selector.classList.remove('open');
+
+        console.log('切换到版本:', version);
+        // TODO: 这里可以添加切换版本后的逻辑，比如重新加载数据
+      }
+
+      function showVersionCompare(event) {
+        event.preventDefault();
+        console.log('显示版本对比');
+        // TODO: 实现版本对比功能
+        alert('版本对比功能开发中...\n\n对比当前选中版本与其他版本的差异');
+      }
+
+      // 点击外部关闭下拉菜单
+      document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('versionDropdown');
+        const selector = document.querySelector('.version-selector');
+        if (dropdown && selector) {
+          dropdown.classList.remove('show');
+          selector.classList.remove('open');
+        }
+      });
+
+      // Tab Switching
+      function switchTab(element, tabId, groupName) {
+        console.log('switchTab called:', { tabId, groupName });
+        // Hide all tab contents with the same group
+        document
+          .querySelectorAll('.tab-content[data-group="' + groupName + '"]')
+          .forEach((content) => {
+            content.style.display = 'none';
+            content.classList.remove('active');
+          });
+        // Show selected tab content
+        const targetContent = document.getElementById(tabId);
+        if (targetContent) {
+          targetContent.style.display = 'block';
+          targetContent.classList.add('active');
+          console.log('Tab content shown:', tabId);
+        } else {
+          console.error('Tab content not found:', tabId);
+        }
+        // Update tab styles
+        element
+          .closest('.tabs')
+          .querySelectorAll('.tab')
+          .forEach((tab) => {
+            tab.classList.remove('active');
+          });
+        element.classList.add('active');
+      }
+
+      // 页面加载完成后，动态加载各个页面模块
+      document.addEventListener('DOMContentLoaded', async function () {
+        const pages = [
+          'dashboard',
+          'components',
+          'component-detail',
+          'dependencies',
+          'standards',
+          'changelog',
+        ];
+
+        // 并行加载所有页面
+        const loadPromises = pages.map(async (page) => {
+          try {
+            const response = await fetch(`./pages/${page}.html`);
+            const content = await response.text();
+            const container = document.getElementById(`page-${page}-container`);
+            if (container) {
+              // 直接插入内容，保持原有的 page div 和 active 类
+              container.innerHTML = content;
+            }
+          } catch (error) {
+            console.error(`Failed to load ${page}:`, error);
+            // 显示错误提示
+            const container = document.getElementById(`page-${page}-container`);
+            if (container) {
+              container.innerHTML = `
+                <div class="page" id="page-${page}" style="padding: 40px; text-align: center;">
+                  <h3 style="color: #f5222d;">⚠️ 页面加载失败</h3>
+                  <p style="color: #666; margin-top: 16px;">
+                    请确保在 HTTP 服务器环境下运行此页面
+                  </p>
+                  <p style="color: #999; font-size: 13px; margin-top: 8px;">
+                    错误信息: ${error.message}
+                  </p>
+                  <div style="margin-top: 24px; padding: 16px; background: #f5f5f5; border-radius: 8px; text-align: left; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    <strong style="color: #333;">💡 解决方法:</strong>
+                    <ol style="margin: 12px 0 0 20px; color: #666; font-size: 13px; line-height: 1.8;">
+                      <li>Python: <code>python3 -m http.server 8000</code></li>
+                      <li>Node.js: <code>npx http-server</code></li>
+                      <li>VSCode: 安装 Live Server 扩展</li>
+                    </ol>
+                  </div>
+                </div>
+              `;
+            }
+          }
+        });
+
+        await Promise.all(loadPromises);
+
+        // 页面加载完成后，默认显示第一个页面
+        initializePages();
+      });
+
+      function initializePages() {
+        // 移除所有页面的 active 类
+        document.querySelectorAll('.page').forEach((page) => {
+          page.classList.remove('active');
+        });
+
+        // 默认激活 Dashboard 页面
+        const dashboard = document.getElementById('page-dashboard');
+        if (dashboard) {
+          dashboard.classList.add('active');
+        }
+      }
+
+      // Page Navigation
+      function showPage(pageId, event) {
+        console.log('showPage called:', pageId);
+
+        // 特殊处理：如果是 component-detail，需要从 components 页面跳转
+        if (pageId === 'component-detail') {
+          // 隐藏所有页面
+          document.querySelectorAll('.page').forEach((page) => {
+            page.classList.remove('active');
+          });
+
+          // 显示 component-detail 页面
+          const detailPage = document.getElementById('page-component-detail');
+          if (detailPage) {
+            detailPage.classList.add('active');
+          }
+        } else {
+          // 隐藏所有页面
+          document.querySelectorAll('.page').forEach((page) => {
+            page.classList.remove('active');
+          });
+
+          // 显示选中的页面
+          const targetPage = document.getElementById('page-' + pageId);
+          if (targetPage) {
+            targetPage.classList.add('active');
+            console.log('Added active class to:', pageId);
+          } else {
+            console.error('Page not found:', pageId);
+          }
+        }
+
+        // 更新导航项状态
+        document.querySelectorAll('.nav-item').forEach((item) => {
+          item.classList.remove('active');
+        });
+        if (event && event.target) {
+          event.target.closest('.nav-item').classList.add('active');
+        }
+      }
+    </script>
+  </body>
+</html>

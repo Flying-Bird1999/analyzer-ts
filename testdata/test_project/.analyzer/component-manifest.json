@@ -1,0 +1,20 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "libraryName": "@test/ui-components"
+  },
+  "components": [
+    {
+      "name": "Button",
+      "entry": "src/components/Button/index.tsx"
+    },
+    {
+      "name": "Input",
+      "entry": "src/components/Input/index.tsx"
+    },
+    {
+      "name": "Select",
+      "entry": "src/components/Select/index.tsx"
+    }
+  ]
+}

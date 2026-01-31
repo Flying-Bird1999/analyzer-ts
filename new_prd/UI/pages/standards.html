@@ -1,0 +1,443 @@
+<div class="page" id="page-standards">
+<div class="page-header">
+<h1 class="page-title">📐 规范与工具</h1>
+<p class="page-subtitle">组件库开发规范、配置文件和辅助工具</p>
+</div>
+<div class="tabs">
+<div class="tab active" onclick="switchTab(this, 'std-coding', 'standards')">
+💻 代码规范
+</div>
+<div class="tab" onclick="switchTab(this, 'std-style', 'standards')">🎨 样式规范</div>
+<div class="tab" onclick="switchTab(this, 'std-design', 'standards')">📐 设计规范</div>
+<div class="tab" onclick="switchTab(this, 'std-date', 'standards')">📅 日期规范</div>
+<div class="tab" onclick="switchTab(this, 'std-tools', 'standards')">🔧 辅助工具</div>
+</div>
+<div class="tab-content active" id="std-coding" data-group="standards">
+<div class="asset-section">
+<h3 class="asset-section-title">📋 ESLint 规则配置</h3>
+<div class="code-config-block">
+<div class="code-config-title">.eslintrc.js</div>
+<div class="code-config-content">
+<pre>module.exports = {
+  extends: ['@yy/eslint-config'],
+  rules: {
+    // 组件库特定规则
+    'react/sort-comp': 'error',
+    'react/jsx-no-bind': 'warn',
+    'no-any': 'error',
+    'prefer-const': 'error',
+  }
+}</pre>
+</div>
+</div>
+<div class="stats-row mt-16">
+<div class="stats-row-item">
+<div class="stats-row-label">总规则数</div>
+<div class="stats-row-value text-primary">156</div>
+</div>
+<div class="stats-row-item">
+<div class="stats-row-label">自定义规则</div>
+<div class="stats-row-value text-success">23</div>
+</div>
+<div class="stats-row-item">
+<div class="stats-row-label">覆盖率</div>
+<div class="stats-row-value text-warning">98.5%</div>
+</div>
+</div>
+</div>
+<div class="asset-section">
+<h3 class="asset-section-title">📝 命名规范</h3>
+<div class="p-20 bg-gray border-radius">
+<div class="naming-rule-item">
+<div class="naming-rule-title">组件命名</div>
+<div class="text-gray">PascalCase (如: Button, FormItem)</div>
+</div>
+<div class="naming-rule-item">
+<div class="naming-rule-title">文件命名</div>
+<div class="text-gray">kebab-case (如: button-style.tsx)</div>
+</div>
+<div>
+<div class="naming-rule-title">变量命名</div>
+<div class="text-gray">camelCase (如: isLoading, userName)</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-content" id="std-style" style="display: none" data-group="standards">
+<div class="asset-section">
+<h3 class="asset-section-title">🎨 Stylelint 规则配置</h3>
+<div class="p-20 bg-gray border-radius">
+<div class="mb-16">
+<div class="naming-rule-title">.stylelintrc.js</div>
+<div class="code-block mt-8">
+<pre>module.exports = {
+  extends: ['@yy/stylelint-config'],
+  rules: {
+    // 组件库特定规则
+    'selector-class-pattern': '^(?:[a-z][a-z0-9]*)+-__[a-z0-9]+)+',
+    'selector-no-vendor-prefix': true,
+  }
+}</pre>
+</div>
+</div>
+<div class="stats-row">
+<div class="flex-1">
+<div class="text-xs text-gray">总规则数</div>
+<div class="text-primary font-weight-semibold" style="font-size: 24px">82</div>
+</div>
+<div class="flex-1">
+<div class="text-xs text-gray">自定义规则</div>
+<div class="text-success font-weight-semibold" style="font-size: 24px">12</div>
+</div>
+</div>
+</div>
+</div>
+<div class="asset-section">
+<h3 class="asset-section-title">🎨 CSS类命名规范</h3>
+<div class="p-20 bg-gray border-radius">
+<div class="mb-12">
+<div class="font-weight-semibold mb-4">BEM命名规范</div>
+<code class="code-inline">.Block__Element--Modifier</code>
+</div>
+<div class="mb-12">
+<div class="font-weight-semibold mb-4">示例：</div>
+<code class="code-inline">.button__icon--large</code>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-content" id="std-design" style="display: none" data-group="standards">
+<div class="asset-section">
+<h3 class="asset-section-title">📐 设计规范</h3>
+<div class="grid-2 gap-16">
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">🎨 颜色系统</div>
+<div class="mb-8">
+<div class="text-xs text-gray">主色</div>
+<div class="color-swatch-row">
+<div class="color-swatch" style="background: #1890ff"></div>
+<code class="text-xs">#1890ff</code>
+</div>
+</div>
+<div class="mb-8">
+<div class="text-xs text-gray">功能色</div>
+<div class="flex gap-8">
+<div class="color-swatch" style="background: #52c41a"></div>
+<div class="color-swatch" style="background: #fa8c16"></div>
+<div class="color-swatch" style="background: #eb2f96"></div>
+</div>
+</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">📏 间距系统</div>
+<div class="text-xs text-gray mb-8">基础单位: 8px</div>
+<div class="text-xs text-gray mb-8">
+间距系列: 4, 8, 12, 16, 20, 24
+</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">📐 圆角规范</div>
+<div class="text-xs text-gray mb-8">基础圆角: 4px</div>
+<div class="text-xs text-gray">大圆角: 8px</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">📅 日期格式</div>
+<div class="text-xs text-gray mb-8">
+显示格式: YYYY-MM-DD
+</div>
+<div class="text-xs text-gray">格式化库: dayjs</div>
+</div>
+</div>
+</div>
+<div class="asset-section">
+<h3 class="asset-section-title">🎨 图标系统</h3>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">尺寸规格</div>
+<div class="icon-size-demo">
+<div class="icon-size-item">
+<div class="icon-size-box w-20 h-20 bg-gray" style="border-radius: 2px"></div>
+<div class="icon-size-label">16px</div>
+</div>
+<div class="icon-size-item">
+<div class="w-20 h-20 bg-gray" style="border-radius: 4px; margin: 0 auto"></div>
+<div class="icon-size-label">20px</div>
+</div>
+<div class="icon-size-item">
+<div class="w-24 h-24 bg-gray" style="border-radius: 4px; margin: 0 auto"></div>
+<div class="icon-size-label">24px</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-content" id="std-date" style="display: none" data-group="standards">
+<div class="asset-section">
+<h3 class="asset-section-title">📅 日期格式规范</h3>
+<p class="text-gray text-sm mb-20">
+组件库中日期处理和显示的统一规范，基于dayjs进行日期处理
+</p>
+
+
+<div class="grid-4 gap-16 mb-24">
+<div class="bg-gray border-radius p-16 text-center">
+<div class="text-xs text-gray mb-8">日期库</div>
+<div class="font-weight-semibold text-primary" style="font-size: 32px">dayjs</div>
+<div class="text-gray-light text-xs mt-4">^1.11.10</div>
+</div>
+<div class="bg-gray border-radius p-16 text-center">
+<div class="text-xs text-gray mb-8">格式化数量</div>
+<div class="font-weight-semibold text-success" style="font-size: 32px">8</div>
+<div class="text-gray-light text-xs mt-4">种常用格式</div>
+</div>
+<div class="bg-gray border-radius p-16 text-center">
+<div class="text-xs text-gray mb-8">支持语言</div>
+<div class="font-weight-semibold" style="font-size: 32px; color: #722ed1">多语言</div>
+<div class="text-gray-light text-xs mt-4">i18n支持</div>
+</div>
+</div>
+</div>
+
+
+<div class="asset-section">
+<h3 class="asset-section-title">📋 标准日期格式</h3>
+<table class="table-wrapper">
+<thead>
+<tr>
+<th>格式名称</th>
+<th>格式化字符串</th>
+<th>示例输出</th>
+<th>使用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="font-weight-semibold">DATE_FORMAT</td>
+<td class="font-mono text-sm">YYYY-MM-DD</td>
+<td class="font-mono">2024-01-15</td>
+<td class="text-gray text-sm">日期选择器、表单输入</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">DATETIME_FORMAT</td>
+<td class="font-mono text-sm">YYYY-MM-DD HH:mm:ss</td>
+<td class="font-mono">2024-01-15 14:30:00</td>
+<td class="text-gray text-sm">日期时间显示、日志时间戳</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">TIME_FORMAT</td>
+<td class="font-mono text-sm">HH:mm:ss</td>
+<td class="font-mono">14:30:00</td>
+<td class="text-gray text-sm">时间选择器、时间显示</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">MONTH_FORMAT</td>
+<td class="font-mono text-sm">YYYY-MM</td>
+<td class="font-mono">2024-01</td>
+<td class="text-gray text-sm">月度选择、报表筛选</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">YEAR_FORMAT</td>
+<td class="font-mono text-sm">YYYY</td>
+<td class="font-mono">2024</td>
+<td class="text-gray text-sm">年度选择、年度报表</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">DISPLAY_FORMAT</td>
+<td class="font-mono text-sm">YYYY年MM月DD日</td>
+<td class="font-mono">2024年01月15日</td>
+<td class="text-gray text-sm">用户界面显示（中文）</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">DISPLAY_DATETIME_FORMAT</td>
+<td class="font-mono text-sm">YYYY年MM月DD日 HH:mm</td>
+<td class="font-mono">2024年01月15日 14:30</td>
+<td class="text-gray text-sm">用户界面显示（中文）</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">TIMESTAMP_FORMAT</td>
+<td class="font-mono text-sm">X</td>
+<td class="font-mono">1705300200</td>
+<td class="text-gray text-sm">Unix时间戳（秒）</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+<div class="asset-section">
+<h3 class="asset-section-title">💻 使用示例</h3>
+<div class="code-config-block">
+<div class="code-config-title">JavaScript / TypeScript</div>
+<div class="code-config-content">
+<pre><span style="color: #d73a49">import</span> dayjs <span style="color: #d73a49">from</span> <span style="color: #032f62">'dayjs'</span>;
+
+
+<span style="color: #6a737d">// 日期格式化常量</span>
+<span style="color: #d73a49">export const</span> DATE_FORMAT = <span style="color: #032f62">'YYYY-MM-DD'</span>;
+<span style="color: #d73a49">export const</span> DATETIME_FORMAT = <span style="color: #032f62">'YYYY-MM-DD HH:mm:ss'</span>;
+
+
+<span style="color: #6a737d">// 使用示例</span>
+<span style="color: #d73a49">const</span> formatDate = <span style="color: #6f42c1">(date)</span> <span style="color: #d73a49">=></span> {
+  <span style="color: #d73a49">return</span> dayjs(date).format(DATE_FORMAT);
+};
+
+
+<span style="color: #6a737d">// 输出: "2024-01-15"</span>
+console.log(formatDate(<span style="color: #d73a49">new</span> Date()));
+</pre>
+</div>
+</div>
+</div>
+
+
+<div class="asset-section">
+<h3 class="asset-section-title">🌍 国际化 (i18n) 支持</h3>
+<p class="text-gray text-sm mb-16">
+组件库支持多语言日期格式，通过dayjs的locale插件实现
+</p>
+
+
+<table class="table-wrapper">
+<thead>
+<tr>
+<th>语言</th>
+<th>Locale</th>
+<th>日期示例</th>
+<th>时间示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="font-weight-semibold">中文</td>
+<td class="font-mono text-sm">zh-cn</td>
+<td class="font-mono">2024年01月15日</td>
+<td class="font-mono">2024年01月15日 14:30:00</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">英文</td>
+<td class="font-mono text-sm">en</td>
+<td class="font-mono">Jan 15, 2024</td>
+<td class="font-mono">Jan 15, 2024 2:30:00 PM</td>
+</tr>
+<tr>
+<td class="font-weight-semibold">日文</td>
+<td class="font-mono text-sm">ja</td>
+<td class="font-mono">2024年01月15日</td>
+<td class="font-mono">2024年01月15日 14:30:00</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+<div class="asset-section">
+<h3 class="asset-section-title">⚙️ 配置文件示例</h3>
+<div class="code-config-block">
+<div class="code-config-title">src/constants/date.ts</div>
+<div class="code-config-content">
+<pre><span style="color: #d73a49">import</span> dayjs <span style="color: #d73a49">from</span> <span style="color: #032f62">'dayjs'</span>;
+<span style="color: #d73a49">import</span> customParseFormat <span style="color: #d73a49">from</span> <span style="color: #032f62">'dayjs/plugin/customParseFormat'</span>;
+<span style="color: #d73a49">import</span> utc <span style="color: #d73a49">from</span> <span style="color: #032f62">'dayjs/plugin/utc'</span>;
+
+
+dayjs.extend(customParseFormat);
+dayjs.extend(utc);
+
+
+<span style="color: #6a737d">// 日期格式化常量</span>
+<span style="color: #d73a49">export const</span> DATE_FORMATS = {
+  DATE: <span style="color: #032f62">'YYYY-MM-DD'</span>,
+  DATETIME: <span style="color: #032f62">'YYYY-MM-DD HH:mm:ss'</span>,
+  TIME: <span style="color: #032f62">'HH:mm:ss'</span>,
+  MONTH: <span style="color: #032f62">'YYYY-MM'</span>,
+  YEAR: <span style="color: #032f62">'YYYY'</span>,
+  DISPLAY: <span style="color: #032f62">'YYYY年MM月DD日'</span>,
+  DISPLAY_DATETIME: <span style="color: #032f62">'YYYY年MM月DD日 HH:mm'</span>,
+  TIMESTAMP: <span style="color: #032f62">'X'</span>,
+} <span style="color: #d73a49">as const</span>;
+
+
+<span style="color: #6a737d">// 默认时区</span>
+<span style="color: #d73a49">export const</span> DEFAULT_TIMEZONE = <span style="color: #032f62">'Asia/Shanghai'</span>;
+</pre>
+</div>
+</div>
+</div>
+
+
+<div class="asset-section">
+<h3 class="asset-section-title">📚 相关组件</h3>
+<p class="text-gray text-sm mb-16">
+使用日期规范的组件列表
+</p>
+
+
+<div class="grid-2 gap-12">
+<div class="p-16 bg-gray border border-radius">
+<div class="font-weight-semibold mb-4">DatePicker</div>
+<div class="text-sm text-gray">日期选择器</div>
+</div>
+<div class="p-16 bg-gray border border-radius">
+<div class="font-weight-semibold mb-4">DatePicker.RangePicker</div>
+<div class="text-sm text-gray">日期范围选择器</div>
+</div>
+<div class="p-16 bg-gray border border-radius">
+<div class="font-weight-semibold mb-4">TimePicker</div>
+<div class="text-sm text-gray">时间选择器</div>
+</div>
+<div class="p-16 bg-gray border border-radius">
+<div class="font-weight-semibold mb-4">DateTimePicker</div>
+<div class="text-sm text-gray">日期时间选择器</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-content" id="std-tools" style="display: none" data-group="standards">
+<div class="asset-section">
+<h3 class="asset-section-title">🔧 辅助工具资产</h3>
+<div class="grid-2 gap-16">
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">📦 NPM包</div>
+<div class="mb-8">
+<a href="#" class="text-primary">@yy/sl-admin-components</a>
+</div>
+<div class="text-xs text-gray">最新版本: v1.2.3</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">🛠️ 脚手架</div>
+<div class="mb-8">
+<a href="#" class="text-primary">@yy/component-scaffold</a>
+</div>
+<div class="text-xs text-gray">组件创建模板</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">🧪 测试工具</div>
+<div class="mb-8">
+<a href="#" class="text-primary">@yy/component-testkit</a>
+</div>
+<div class="text-xs text-gray">组件测试辅助库</div>
+</div>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">📖 Storybook</div>
+<div class="mb-8">
+<a href="#" class="text-primary">@yy/admin-components-storybook</a>
+</div>
+<div class="text-xs text-gray">组件交互文档</div>
+</div>
+</div>
+</div>
+<div class="asset-section">
+<h3 class="asset-section-title">⚙️ CI/CD 配置</h3>
+<div class="p-20 bg-gray border-radius">
+<div class="font-weight-semibold mb-12">GitLab CI 配置</div>
+<div class="code-block mb-8">
+<pre>stages:
+  - test
+  - build
+  - deploy</pre>
+</div>
+<div class="text-sm text-gray">.gitlab-ci.yml 配置模板</div>
+</div>
+</div>
+</div>
+</div>
