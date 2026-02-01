@@ -5,7 +5,7 @@ package gitlab
 import (
 	"context"
 
-	impactAnalysis "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/impact_analysis"
+	impactAnalysis "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis"
 )
 
 // =============================================================================
@@ -120,21 +120,24 @@ const (
 // Impact Analysis 结果类型 (复用)
 // =============================================================================
 
-// 使用 impact-analysis 插件的结果类型
+// 使用新的 pkg/impact_analysis 的结果类型
 type (
-	// ImpactAnalysisResult 影响分析结果
-	ImpactAnalysisResult = impactAnalysis.ImpactAnalysisResult
+	// AnalysisResult 影响分析结果（新名称）
+	AnalysisResult = impactAnalysis.AnalysisResult
 	// ImpactMeta 分析元数据
 	ImpactMeta = impactAnalysis.ImpactMeta
 	// ComponentChange 组件变更
 	ComponentChange = impactAnalysis.ComponentChange
 	// ImpactComponent 受影响组件
 	ImpactComponent = impactAnalysis.ImpactComponent
-	// ChangePath 变更路径
-	ChangePath = impactAnalysis.ChangePath
 	// Recommendation 建议
 	Recommendation = impactAnalysis.Recommendation
+	// RiskAssessment 风险评估
+	RiskAssessment = impactAnalysis.RiskAssessment
 )
+
+// ImpactAnalysisResult 保持向后兼容的别名
+type ImpactAnalysisResult = AnalysisResult
 
 // =============================================================================
 // Context 用于传递分析上下文
