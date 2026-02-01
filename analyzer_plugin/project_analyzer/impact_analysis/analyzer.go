@@ -1,3 +1,5 @@
+// ⚠️废弃
+
 package impact_analysis
 
 import (
@@ -124,9 +126,9 @@ type DependencyData struct {
 	DepGraph    map[string][]string `json:"depGraph"`
 	RevDepGraph map[string][]string `json:"revDepGraph"`
 	Meta        struct {
-		Version       string `json:"version"`
-		LibraryName   string `json:"libraryName"`
-		ComponentCount int   `json:"componentCount"`
+		Version        string `json:"version"`
+		LibraryName    string `json:"libraryName"`
+		ComponentCount int    `json:"componentCount"`
 	} `json:"meta"`
 }
 
@@ -183,8 +185,8 @@ func (a *Analyzer) identifyChangedComponents(
 		// 检查组件是否受变更影响
 		if a.isComponentAffected(ctx, componentName, depData) {
 			changes = append(changes, ComponentChange{
-				Name:   componentName,
-				Action: a.getChangeAction(componentName),
+				Name:         componentName,
+				Action:       a.getChangeAction(componentName),
 				ChangedFiles: a.getComponentChangedFiles(componentName),
 			})
 		}
@@ -255,10 +257,10 @@ func (a *Analyzer) buildResult(
 ) *ImpactAnalysisResult {
 	result := &ImpactAnalysisResult{
 		Meta: ImpactMeta{
-			AnalyzedAt:     time.Now().Format(time.RFC3339),
-			ComponentCount: depData.Meta.ComponentCount,
+			AnalyzedAt:       time.Now().Format(time.RFC3339),
+			ComponentCount:   depData.Meta.ComponentCount,
 			ChangedFileCount: a.changeInput.GetFileCount(),
-			ChangeSource:   "manual",
+			ChangeSource:     "manual",
 		},
 		Changes:     changedComponents,
 		Impact:      make([]ImpactComponent, 0),
@@ -278,10 +280,10 @@ func (a *Analyzer) buildResult(
 		}
 
 		result.Impact = append(result.Impact, ImpactComponent{
-			Name:         info.ComponentName,
-			ImpactLevel:  info.ImpactLevel,
-			RiskLevel:    riskLevel,
-			ChangePaths:  pathStrings,
+			Name:        info.ComponentName,
+			ImpactLevel: info.ImpactLevel,
+			RiskLevel:   riskLevel,
+			ChangePaths: pathStrings,
 		})
 
 		// 添加到 ChangePaths

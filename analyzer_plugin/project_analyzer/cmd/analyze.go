@@ -21,7 +21,6 @@ import (
 	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
-	impact_analysis "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/impact_analysis"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
@@ -43,7 +42,6 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"api-tracer":              &apit.Tracer{},
 	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
 	"component-deps-v2":       &component_deps_v2.ComponentDepsV2Analyzer{},
-	"impact-analysis":         impact_analysis.NewAnalyzer(),
 }
 
 // GetAnalyzeCmd 构建并返回 `analyze` 命令。
@@ -102,8 +100,6 @@ func GetAnalyzeCmd() *cobra.Command {
 			`  - component-deps: 分析组件之间的依赖关系. (必须使用 -p 'component-deps.entryPoint=path/to/entry.ts' 指定入口文件，支持 glob 模式)
 ` +
 			`  - component-deps-v2: 基于配置文件分析组件依赖关系. (必须使用 -p 'component-deps-v2.manifest=path/to/component-manifest.json')
-` +
-			`  - impact-analysis: 基于代码变更评估影响范围. (需要依赖数据和变更文件输入)
 ` +
 			`如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的（但可能被剔除过的）原始AST结构.
 
