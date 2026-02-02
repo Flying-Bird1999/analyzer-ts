@@ -154,10 +154,10 @@ func (f *Formatter) formatRecommendation(rec Recommendation) string {
 	}[rec.Priority]
 
 	typeIcon := map[string]string{
-		"review":    "👁",
-		"test":      "🧪",
-		"document":  "📄",
-		"refactor":  "♻️",
+		"review":   "👁",
+		"test":     "🧪",
+		"document": "📄",
+		"refactor": "♻️",
 	}[rec.Type]
 
 	return fmt.Sprintf("- [%s%s] **%s %s**: %s\n",

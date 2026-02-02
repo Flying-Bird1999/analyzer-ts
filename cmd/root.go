@@ -6,7 +6,6 @@ import (
 
 	projectAnalyzerCmd "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/cmd"
 	tsBundleCmd "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/ts_bundle/cmd"
-	"github.com/Flying-Bird1999/analyzer-ts/pkg/gitlab"
 
 	"github.com/spf13/cobra"
 )
@@ -27,9 +26,6 @@ func init() {
 	// 添加 ts_bundle 的子命令
 	RootCmd.AddCommand(tsBundleCmd.NewBundleCmd())
 	RootCmd.AddCommand(tsBundleCmd.NewBatchBundleCmd())
-
-	// 添加 gitlab 子命令
-	RootCmd.AddCommand(gitlab.GetCommand())
 
 	// 添加 find 命令
 	RootCmd.AddCommand(findCmd)
