@@ -14,6 +14,8 @@ import (
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/component_analyzer"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/file_analyzer"
+	"github.com/Flying-Bird1999/analyzer-ts/pkg/symbol_analysis"
+	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
 
 // Output 最终输出结构
@@ -25,6 +27,11 @@ type Output struct {
 		Components     []string           `json:"components"`
 		ChangedFiles   []FileChangeSimple `json:"changedFiles"`
 	} `json:"input"`
+
+	SymbolAnalysis struct {
+		Meta     SymbolAnalysisMetaSimple  `json:"meta"`
+		Analysis []SymbolFileResultSimple  `json:"analysis"`
+	} `json:"symbolAnalysis"`
 
 	FileAnalysis struct {
 		Meta    FileAnalysisMetaSimple `json:"meta"`
@@ -52,10 +59,9 @@ type FileAnalysisMetaSimple struct {
 }
 
 type FileChangeInfoSimple struct {
-	Path         string `json:"path"`
-	Type         string `json:"type"`
-	ChangedLines []int  `json:"changedLines"`
-	SymbolCount  int    `json:"symbolCount"`
+	Path        string `json:"path"`
+	Type        string `json:"type"`
+	SymbolCount int    `json:"symbolCount"`
 }
 
 type FileImpactInfoSimple struct {
@@ -83,6 +89,32 @@ type ComponentImpactSimple struct {
 	ImpactLevel int      `json:"impactLevel"`
 	ImpactType  string   `json:"impactType"`
 	ChangePaths []string `json:"changePaths"`
+}
+
+type SymbolAnalysisMetaSimple struct {
+	AnalyzedFileCount int `json:"analyzedFileCount"`
+	AffectedFileCount int `json:"affectedFileCount"`
+	TotalSymbolCount  int `json:"totalSymbolCount"`
+}
+
+type SymbolFileResultSimple struct {
+	FilePath         string                  `json:"filePath"`
+	FileType         string                  `json:"fileType"`
+	IsSymbolFile     bool                    `json:"isSymbolFile"`
+	AffectedSymbols  []SymbolChangeSimple    `json:"affectedSymbols"`
+	TotalSymbolCount int                     `json:"totalSymbolCount"`
+	ChangedLines     []int                   `json:"changedLines"`
+}
+
+type SymbolChangeSimple struct {
+	Name         string   `json:"name"`
+	Kind         string   `json:"kind"`
+	StartLine    int      `json:"startLine"`
+	EndLine      int      `json:"endLine"`
+	ChangedLines []int    `json:"changedLines"`
+	ChangeType   string   `json:"changeType"`
+	IsExported   bool     `json:"isExported"`
+	ExportType   string   `json:"exportType"`
 }
 
 // testGitDiff 测试用的 git diff 内容
@@ -334,7 +366,17 @@ func main() {
 	parsingResult.ProjectParser()
 
 	// ============================================================
-	// 3. 解析 Git Diff
+	// 3. 创建符号分析项目
+	// ============================================================
+	tsProject := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
+		RootPath:   absPath,
+		UseTsConfig: true,
+	})
+
+	symbolAnalyzer := symbol_analysis.NewAnalyzerWithDefaults(tsProject)
+
+	// ============================================================
+	// 4. 解析 Git Diff
 	// ============================================================
 	diffParser := gitlab.NewDiffParser(absGitRoot)
 	changedLineSet, err := diffParser.ParseDiffOutput(testGitDiff)
@@ -343,43 +385,76 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 转换为 FileChange 格式
-	fileChanges := make([]impact_analysis.FileChange, 0, len(changedLineSet))
-	for filePath, lineSet := range changedLineSet {
-		// filePath 是相对于 git 仓库根的路径，需要转换为绝对路径
+	// ============================================================
+	// 5. 执行符号分析
+	// ============================================================
+	// changedLineSet 的键是相对于 git 仓库根的路径（如 "testdata/test_project/src/components/Button/Button.tsx"）
+	// 但 symbol_analysis 期望绝对路径，需要转换
+	absChangedLineSet := make(symbol_analysis.ChangedLineSetOfFiles)
+	for filePath, lines := range changedLineSet {
 		absFilePath := filepath.Join(absGitRoot, filePath)
+		absChangedLineSet[absFilePath] = lines
+	}
 
-		// 提取行号
-		lines := make([]int, 0, len(lineSet))
-		for line := range lineSet {
-			lines = append(lines, line)
+	symbolResults := symbolAnalyzer.AnalyzeChangedLines(absChangedLineSet)
+
+	// 从符号分析结果构建 ChangedSymbol（用于文件级影响分析）
+	// 同时保留每个文件的 changedLines 信息
+	type FileInfo struct {
+		AbsPath      string
+		ChangedLines []int
+	}
+	fileInfoMap := make(map[string]FileInfo)
+
+	changedSymbols := make([]file_analyzer.ChangedSymbol, 0)
+	changedNonSymbolFiles := make([]string, 0) // 非符号文件列表
+
+	for filePath, result := range symbolResults {
+		// filePath 已经是绝对路径了
+		absFilePath := filePath
+
+		// 保存文件的变更行信息（直接使用 symbol_analysis 的结果）
+		fileInfoMap[absFilePath] = FileInfo{
+			AbsPath:      absFilePath,
+			ChangedLines: result.ChangedLines,
 		}
-		sort.Ints(lines)
 
-		// 判断变更类型
-		changeType := impact_analysis.ChangeTypeModified
-		if len(lineSet) == 1 {
-			for line := range lineSet {
-				if line == gitlab.BinaryFileMarker {
-					changeType = impact_analysis.ChangeTypeModified
-					break
+		// 根据文件类型分别处理
+		if result.IsSymbolFile {
+			// 为每个受影响的符号创建 ChangedSymbol 条目
+			for _, sym := range result.AffectedSymbols {
+				// 只处理导出的符号（因为只有导出的符号才能被其他文件导入）
+				if sym.IsExported {
+					changedSymbols = append(changedSymbols, file_analyzer.ChangedSymbol{
+						Name:       sym.Name,
+						FilePath:   absFilePath,
+						ExportType: sym.ExportType,
+					})
 				}
 			}
-		}
 
-		fileChanges = append(fileChanges, impact_analysis.FileChange{
-			Path:         absFilePath,
-			Type:         changeType,
-			ChangedLines: lines,
-		})
+			// 如果没有导出符号，为文件本身创建一个条目
+			if len(result.AffectedSymbols) > 0 && len(changedSymbols) == 0 {
+				symName := extractSymbolNameFromPath(absFilePath)
+				changedSymbols = append(changedSymbols, file_analyzer.ChangedSymbol{
+					Name:       symName,
+					FilePath:   absFilePath,
+					ExportType: symbol_analysis.ExportTypeDefault,
+				})
+			}
+		} else {
+			// 非符号文件：添加到非符号文件列表
+			changedNonSymbolFiles = append(changedNonSymbolFiles, absFilePath)
+		}
 	}
 
 	// ============================================================
-	// 4. 执行文件级影响分析
+	// 6. 执行文件级影响分析
 	// ============================================================
-	fileAnalyzer := file_analyzer.NewAnalyzer(parsingResult, 20)
+	fileAnalyzer := file_analyzer.NewAnalyzer(parsingResult)
 	fileInput := &file_analyzer.Input{
-		ChangedFiles: fileChanges,
+		ChangedSymbols:        changedSymbols,
+		ChangedNonSymbolFiles: changedNonSymbolFiles,
 	}
 
 	fileResult, err := fileAnalyzer.Analyze(fileInput)
@@ -417,18 +492,70 @@ func main() {
 	output.Input.ComponentCount = len(manifest.Components)
 	output.Input.Components = componentNames
 
-	for _, change := range fileChanges {
-		relPath, _ := filepath.Rel(absPath, change.Path)
+	// 构建输入文件列表（使用 fileInfoMap 获取 changedLines）
+	for absFilePath, info := range fileInfoMap {
+		relPath, _ := filepath.Rel(absPath, absFilePath)
 		output.Input.ChangedFiles = append(output.Input.ChangedFiles, FileChangeSimple{
 			Path:         relPath,
-			Type:         string(change.Type),
-			ChangedLines: change.ChangedLines,
+			Type:         "modified",
+			ChangedLines: info.ChangedLines,
 		})
 	}
 	sort.Slice(output.Input.ChangedFiles, func(i, j int) bool {
 		return output.Input.ChangedFiles[i].Path < output.Input.ChangedFiles[j].Path
 	})
 
+	// ============================================================
+	// 符号分析结果
+	// ============================================================
+	totalSymbolCount := 0
+	symbolFileCount := 0
+	nonSymbolFileCount := 0
+	for filePath, result := range symbolResults {
+		relPath, _ := filepath.Rel(absGitRoot, filePath)
+		symbols := make([]SymbolChangeSimple, 0)
+		for _, sym := range result.AffectedSymbols {
+			symbols = append(symbols, SymbolChangeSimple{
+				Name:         sym.Name,
+				Kind:         string(sym.Kind),
+				StartLine:    sym.StartLine,
+				EndLine:      sym.EndLine,
+				ChangedLines: sym.ChangedLines,
+				ChangeType:   string(sym.ChangeType),
+				IsExported:   sym.IsExported,
+				ExportType:   string(sym.ExportType),
+			})
+		}
+		totalSymbolCount += len(result.AffectedSymbols)
+
+		if result.IsSymbolFile {
+			symbolFileCount++
+		} else {
+			nonSymbolFileCount++
+		}
+
+		output.SymbolAnalysis.Analysis = append(output.SymbolAnalysis.Analysis, SymbolFileResultSimple{
+			FilePath:         relPath,
+			FileType:         string(result.FileType),
+			IsSymbolFile:     result.IsSymbolFile,
+			AffectedSymbols:  symbols,
+			TotalSymbolCount: len(result.AffectedSymbols),
+			ChangedLines:     result.ChangedLines,
+		})
+	}
+	sort.Slice(output.SymbolAnalysis.Analysis, func(i, j int) bool {
+		return output.SymbolAnalysis.Analysis[i].FilePath < output.SymbolAnalysis.Analysis[j].FilePath
+	})
+
+	output.SymbolAnalysis.Meta = SymbolAnalysisMetaSimple{
+		AnalyzedFileCount: len(symbolResults),
+		AffectedFileCount: len(symbolResults),
+		TotalSymbolCount:  totalSymbolCount,
+	}
+
+	// ============================================================
+	// 文件级分析结果
+	// ============================================================
 	output.FileAnalysis.Meta = FileAnalysisMetaSimple{
 		TotalFileCount:   fileResult.Meta.TotalFileCount,
 		ChangedFileCount: fileResult.Meta.ChangedFileCount,
@@ -438,10 +565,9 @@ func main() {
 	for _, change := range fileResult.Changes {
 		relPath, _ := filepath.Rel(absPath, change.Path)
 		output.FileAnalysis.Changes = append(output.FileAnalysis.Changes, FileChangeInfoSimple{
-			Path:         relPath,
-			Type:         string(change.ChangeType),
-			ChangedLines: change.ChangedLines,
-			SymbolCount:  change.SymbolCount,
+			Path:        relPath,
+			Type:        change.ChangeType,
+			SymbolCount: change.SymbolCount,
 		})
 	}
 	sort.Slice(output.FileAnalysis.Changes, func(i, j int) bool {
@@ -456,8 +582,8 @@ func main() {
 		}
 		output.FileAnalysis.Impact = append(output.FileAnalysis.Impact, FileImpactInfoSimple{
 			Path:        relPath,
-			ImpactLevel: int(impact.ImpactLevel),
-			ImpactType:  string(impact.ImpactType),
+			ImpactLevel: impact.ImpactLevel,
+			ImpactType:  impact.ImpactType,
 			ChangePaths: changePaths,
 		})
 	}
@@ -544,10 +670,9 @@ func convertFileChangeInfos(changes []file_analyzer.FileChangeInfo) []component_
 	result := make([]component_analyzer.FileChangeInfoProxy, len(changes))
 	for i, c := range changes {
 		result[i] = component_analyzer.FileChangeInfoProxy{
-			Path:         c.Path,
-			ChangeType:   c.ChangeType,
-			ChangedLines: c.ChangedLines,
-			SymbolCount:  c.SymbolCount,
+			Path:        c.Path,
+			ChangeType:  impact_analysis.ChangeType(c.ChangeType),
+			SymbolCount: c.SymbolCount,
 		}
 	}
 	return result
@@ -558,12 +683,24 @@ func convertFileImpactInfos(impacts []file_analyzer.FileImpactInfo) []component_
 	for i, imp := range impacts {
 		result[i] = component_analyzer.FileImpactInfoProxy{
 			Path:        imp.Path,
-			ImpactLevel: imp.ImpactLevel,
-			ImpactType:  imp.ImpactType,
+			ImpactLevel: impact_analysis.ImpactLevel(imp.ImpactLevel),
+			ImpactType:  impact_analysis.ImpactType(imp.ImpactType),
 			ChangePaths: imp.ChangePaths,
 		}
 	}
 	return result
+}
+
+// extractSymbolNameFromPath 从文件路径提取符号名称
+// 例如: src/components/Button/Button.tsx -> Button
+func extractSymbolNameFromPath(filePath string) string {
+	// 获取文件名（不含扩展名）
+	base := filepath.Base(filePath)
+	parts := strings.Split(base, ".")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return "Unknown"
 }
 
 func buildFileDepGraph(result *projectParser.ProjectParserResult) map[string][]string {
