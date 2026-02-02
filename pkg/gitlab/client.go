@@ -124,66 +124,6 @@ func (c *Client) CreateMRComment(ctx context.Context, projectID int, mrIID int, 
 	return nil
 }
 
-// UpdateMRComment 更新 MR 评论
-func (c *Client) UpdateMRComment(ctx context.Context, projectID int, mrIID int, noteID int, body string) error {
-	url := fmt.Sprintf("%s/api/v4/projects/%d/merge_requests/%d/notes/%d", c.baseURL, projectID, mrIID, noteID)
-
-	payload := map[string]interface{}{
-		"body": body,
-	}
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("marshal payload failed: %w", err)
-	}
-
-	req, err := c.createRequestWithBody(ctx, "PUT", url, payloadBytes)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	return nil
-}
-
-// ListMRComments 列出 MR 的所有评论
-func (c *Client) ListMRComments(ctx context.Context, projectID int, mrIID int) ([]Comment, error) {
-	url := fmt.Sprintf("%s/api/v4/projects/%d/merge_requests/%d/notes", c.baseURL, projectID, mrIID)
-	url += "?per_page=100" // 获取更多评论
-
-	req, err := c.createRequest(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	var comments []Comment
-	if err := json.NewDecoder(resp.Body).Decode(&comments); err != nil {
-		return nil, fmt.Errorf("decode response failed: %w", err)
-	}
-
-	return comments, nil
-}
-
 // =============================================================================
 // 内部方法
 // =============================================================================

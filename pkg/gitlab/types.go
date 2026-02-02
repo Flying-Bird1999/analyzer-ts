@@ -1,18 +1,20 @@
 // Package gitlab provides GitLab integration capabilities for analyzer-ts.
-// It includes GitLab API client, diff parser, MR service, and command interface.
+// It includes GitLab API client, diff parser, and comment service.
 package gitlab
 
 import (
-	"context"
-
 	impactAnalysis "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis"
 )
 
 // =============================================================================
-// Types - GitLab API 数据结构
+// Core Types - GitLab API 数据结构
 // =============================================================================
 
-// MergeRequest represents a GitLab merge request
+// ChangedLineSetOfFiles 每个文件的变更行集合
+// Key: 文件路径, Value: 变更行号集合
+type ChangedLineSetOfFiles map[string]map[int]bool
+
+// MergeRequest GitLab MR 信息
 type MergeRequest struct {
 	IID          int    `json:"iid"`
 	ID           int    `json:"id"`
@@ -24,7 +26,7 @@ type MergeRequest struct {
 	WebURL       string `json:"web_url"`
 }
 
-// DiffFile represents a file diff from GitLab API
+// DiffFile GitLab diff 文件
 type DiffFile struct {
 	OldPath     string `json:"old_path"`
 	NewPath     string `json:"new_path"`
@@ -34,119 +36,51 @@ type DiffFile struct {
 	DeletedFile bool   `json:"deleted_file"`
 }
 
-// Comment represents a merge request comment
+// Comment GitLab 评论
 type Comment struct {
-	ID           string `json:"id"`
-	NoteID       int    `json:"note_id"`
-	DiscussionID string `json:"discussion_id"`
-	Body         string `json:"body"`
-	Author       Author `json:"author"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	ID        string `json:"id"`
+	NoteID    int    `json:"note_id"`
+	Body      string `json:"body"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
-// Author represents a GitLab user
+// Author GitLab 用户信息
 type Author struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 	Name     string `json:"name"`
 }
 
-// =============================================================================
-// Diff 数据结构
-// =============================================================================
-
-// ChangedLineSetOfFiles 跟踪每个文件变更的行号
-// 与 merge-request-impact-reviewer/git-diff-plugin.ts 保持一致
-type ChangedLineSetOfFiles map[string]map[int]bool
-
-// ChangeInput 兼容现有 impact-analysis 的文件级别输入
-type ChangeInput struct {
-	ModifiedFiles []string `json:"modifiedFiles"`
-	AddedFiles    []string `json:"addedFiles"`
-	DeletedFiles  []string `json:"deletedFiles"`
-}
-
-// GetFileCount 返回变更文件总数
-func (c *ChangeInput) GetFileCount() int {
-	return len(c.ModifiedFiles) + len(c.AddedFiles) + len(c.DeletedFiles)
-}
-
-// GetAllFiles 返回所有变更文件的列表
-func (c *ChangeInput) GetAllFiles() []string {
-	files := make([]string, 0, c.GetFileCount())
-	files = append(files, c.ModifiedFiles...)
-	files = append(files, c.AddedFiles...)
-	files = append(files, c.DeletedFiles...)
-	return files
-}
-
-// =============================================================================
-// GitLab 配置
-// =============================================================================
-
-// GitLabConfig GitLab 连接配置
-type GitLabConfig struct {
-	// GitLab 实例配置
-	URL    string
-	Token  string
-
-	// MR 信息
+// Config GitLab 配置
+type Config struct {
+	URL       string
+	Token     string
 	ProjectID int
 	MRIID     int
-
-	// Diff 来源
-	DiffSource string // "diff", "api", "file", "auto"
-	DiffFile   string // 当 DiffSource="file" 时的文件路径
-	DiffSHA    string // 可选：指定 diff 的 SHA 范围
-
-	// 分析参数
-	ManifestPath string
-	DepsFile     string
-	MaxDepth     int
 }
 
-// DiffSourceMode diff 来源模式
-type DiffSourceMode string
-
-const (
-	DiffSourceAuto  DiffSourceMode = "auto"  // 自动检测
-	DiffSourceFile  DiffSourceMode = "file"  // 从文件读取
-	DiffSourceAPI   DiffSourceMode = "api"   // 从 GitLab API 获取
-	DiffSourceDiff  DiffSourceMode = "diff"  // 执行 git diff 命令
-)
-
 // =============================================================================
-// Impact Analysis 结果类型 (复用)
+// Impact Analysis 类型别名 (复用 pkg/impact_analysis)
 // =============================================================================
 
-// 使用新的 pkg/impact_analysis 的结果类型
-type (
-	// AnalysisResult 影响分析结果（新名称）
-	AnalysisResult = impactAnalysis.AnalysisResult
-	// ImpactMeta 分析元数据
-	ImpactMeta = impactAnalysis.ImpactMeta
-	// ComponentChange 组件变更
-	ComponentChange = impactAnalysis.ComponentChange
-	// ImpactComponent 受影响组件
-	ImpactComponent = impactAnalysis.ImpactComponent
-	// Recommendation 建议
-	Recommendation = impactAnalysis.Recommendation
-	// RiskAssessment 风险评估
-	RiskAssessment = impactAnalysis.RiskAssessment
-)
+// AnalysisResult 影响分析结果（别名）
+type AnalysisResult = impactAnalysis.AnalysisResult
+
+// ImpactMeta 分析元数据（别名）
+type ImpactMeta = impactAnalysis.ImpactMeta
+
+// ComponentChange 组件变更（别名）
+type ComponentChange = impactAnalysis.ComponentChange
+
+// ImpactComponent 受影响组件（别名）
+type ImpactComponent = impactAnalysis.ImpactComponent
+
+// Recommendation 建议（别名）
+type Recommendation = impactAnalysis.Recommendation
+
+// RiskAssessment 风险评估（别名）
+type RiskAssessment = impactAnalysis.RiskAssessment
 
 // ImpactAnalysisResult 保持向后兼容的别名
 type ImpactAnalysisResult = AnalysisResult
-
-// =============================================================================
-// Context 用于传递分析上下文
-// =============================================================================
-
-// AnalysisContext 分析上下文
-type AnalysisContext struct {
-	Context context.Context
-	Config   *GitLabConfig
-	// 可选：取消信号
-	CancelChan <-chan struct{}
-}

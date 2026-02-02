@@ -221,16 +221,16 @@ func TestDiffParser_GetChangedFiles(t *testing.T) {
 
 	// 执行转换：行级 → 文件级
 	parser := NewDiffParser("")
-	changeInput := parser.GetChangedFiles(lineSet)
+	changedFiles := parser.GetChangedFiles(lineSet)
 
 	// 验证转换结果
-	assert.NotNil(t, changeInput)
-	assert.Equal(t, 3, len(changeInput.ModifiedFiles))
+	assert.NotNil(t, changedFiles)
+	assert.Equal(t, 3, len(changedFiles))
 	assert.ElementsMatch(t, []string{
 		"src/Button.tsx",
 		"src/Input.tsx",
 		"src/Select.tsx",
-	}, changeInput.ModifiedFiles)
+	}, changedFiles)
 }
 
 // TestDiffParser_BinaryFileMarker 测试二进制文件标记处理
@@ -636,42 +636,4 @@ func TestDiffParser_ParseFromGit(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	})
-}
-
-// =============================================================================
-// ChangeInput 测试
-// =============================================================================
-
-// TestChangeInput_GetFileCount 测试获取变更文件总数
-//
-// 功能：验证能正确统计所有类型的变更文件数量
-//
-// 变更类型：
-// - ModifiedFiles: 修改的文件
-// - AddedFiles: 新增的文件
-// - DeletedFiles: 删除的文件
-func TestChangeInput_GetFileCount(t *testing.T) {
-	changeInput := &ChangeInput{
-		ModifiedFiles: []string{"a.ts", "b.ts"},
-		AddedFiles:    []string{"c.ts"},
-		DeletedFiles:  []string{"d.ts"},
-	}
-
-	assert.Equal(t, 4, changeInput.GetFileCount())
-}
-
-// TestChangeInput_GetAllFiles 测试获取所有变更文件列表
-//
-// 功能：验证能正确汇总所有类型的变更文件
-//
-// 返回：包含 ModifiedFiles + AddedFiles + DeletedFiles 的所有文件
-func TestChangeInput_GetAllFiles(t *testing.T) {
-	changeInput := &ChangeInput{
-		ModifiedFiles: []string{"a.ts", "b.ts"},
-		AddedFiles:    []string{"c.ts"},
-		DeletedFiles:  []string{"d.ts"},
-	}
-
-	allFiles := changeInput.GetAllFiles()
-	assert.ElementsMatch(t, []string{"a.ts", "b.ts", "c.ts", "d.ts"}, allFiles)
 }

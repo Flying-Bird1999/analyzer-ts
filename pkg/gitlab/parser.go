@@ -4,6 +4,7 @@ package gitlab
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -24,18 +25,22 @@ const (
 )
 
 // =============================================================================
-// DiffParser - Git Diff 解析器
+// Parser - Git Diff 解析器
 // =============================================================================
 
-// DiffParser Git diff 解析器
+// Parser Git diff 解析器
 // 参考 merge-request-impact-reviewer/git-diff-plugin.ts 实现
-type DiffParser struct {
+type Parser struct {
 	baseDir string
 }
 
-// NewDiffParser 创建 DiffParser
-func NewDiffParser(baseDir string) *DiffParser {
-	return &DiffParser{
+// NewParser 创建 Parser
+func NewParser(baseDir string) *Parser {
+	if baseDir == "" {
+		// 如果未指定 baseDir，使用当前目录
+		baseDir = "."
+	}
+	return &Parser{
 		baseDir: baseDir,
 	}
 }
@@ -44,9 +49,9 @@ func NewDiffParser(baseDir string) *DiffParser {
 // 公共解析方法
 // =============================================================================
 
-// ParseDiffOutput 解析 git diff 输出（字符串格式）
+// ParseDiffString 解析 diff 字符串
 // 返回 ChangedLineSetOfFiles: map[filePath]map[lineNumber]bool
-func (p *DiffParser) ParseDiffOutput(diffOutput string) (ChangedLineSetOfFiles, error) {
+func (p *Parser) ParseDiffString(diffOutput string) (ChangedLineSetOfFiles, error) {
 	result := make(ChangedLineSetOfFiles)
 
 	// 1. 按文件块分割: split(/^diff --git\s+/m)
@@ -69,8 +74,18 @@ func (p *DiffParser) ParseDiffOutput(diffOutput string) (ChangedLineSetOfFiles, 
 	return result, nil
 }
 
+// ParseProvider 从 Provider 解析 diff
+func (p *Parser) ParseProvider(ctx context.Context, provider Provider) (ChangedLineSetOfFiles, error) {
+	diffString, err := provider.GetDiffString(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get diff string failed: %w", err)
+	}
+
+	return p.ParseDiffString(diffString)
+}
+
 // ParseFromGit 执行 git diff 命令并解析输出
-func (p *DiffParser) ParseFromGit(baseSHA, headSHA string) (ChangedLineSetOfFiles, error) {
+func (p *Parser) ParseFromGit(baseSHA, headSHA string) (ChangedLineSetOfFiles, error) {
 	// 执行 git diff 命令
 	cmd := exec.Command("git", "diff", baseSHA, headSHA)
 	cmd.Dir = p.baseDir
@@ -80,21 +95,21 @@ func (p *DiffParser) ParseFromGit(baseSHA, headSHA string) (ChangedLineSetOfFile
 		return nil, fmt.Errorf("git diff failed: %w", err)
 	}
 
-	return p.ParseDiffOutput(string(output))
+	return p.ParseDiffString(string(output))
 }
 
 // ParseDiffFile 从文件读取并解析 diff
-func (p *DiffParser) ParseDiffFile(diffFilePath string) (ChangedLineSetOfFiles, error) {
+func (p *Parser) ParseDiffFile(diffFilePath string) (ChangedLineSetOfFiles, error) {
 	content, err := os.ReadFile(diffFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("read diff file failed: %w", err)
 	}
 
-	return p.ParseDiffOutput(string(content))
+	return p.ParseDiffString(string(content))
 }
 
 // ParseDiffFiles 解析 GitLab API diff 格式
-func (p *DiffParser) ParseDiffFiles(diffFiles []DiffFile) (ChangedLineSetOfFiles, error) {
+func (p *Parser) ParseDiffFiles(diffFiles []DiffFile) (ChangedLineSetOfFiles, error) {
 	result := make(ChangedLineSetOfFiles)
 
 	for _, diffFile := range diffFiles {
@@ -116,30 +131,13 @@ func (p *DiffParser) ParseDiffFiles(diffFiles []DiffFile) (ChangedLineSetOfFiles
 	return result, nil
 }
 
-// GetChangedFiles 将行级别转换为文件列表（兼容现有 impact-analysis）
-func (p *DiffParser) GetChangedFiles(lineSet ChangedLineSetOfFiles) *ChangeInput {
-	files := &ChangeInput{
-		ModifiedFiles: []string{},
-		AddedFiles:    []string{},
-		DeletedFiles:  []string{},
-	}
-
-	for filePath, lines := range lineSet {
-		if len(lines) > 0 {
-			files.ModifiedFiles = append(files.ModifiedFiles, filePath)
-		}
-	}
-
-	return files
-}
-
 // =============================================================================
 // 内部解析方法
 // =============================================================================
 
 // splitDiffBlocks 分割 diff 为文件块
 // 按/^diff --git\s+/m 分割
-func (p *DiffParser) splitDiffBlocks(diffOutput string) []string {
+func (p *Parser) splitDiffBlocks(diffOutput string) []string {
 	// 使用正则分割 diff --git 行
 	pattern := regexp.MustCompile(`(?m)^diff --git\s+`)
 	matches := pattern.FindAllStringIndex(diffOutput, -1)
@@ -167,7 +165,7 @@ func (p *DiffParser) splitDiffBlocks(diffOutput string) []string {
 
 // parseFileBlock 解析单个文件的 diff 块
 // 返回: 文件路径, 新增行集合, 错误
-func (p *DiffParser) parseFileBlock(block string) (string, map[int]bool, error) {
+func (p *Parser) parseFileBlock(block string) (string, map[int]bool, error) {
 	// 1. 检测二进制文件变更
 	// 格式: "Binary files a/path/to/file and b/path/to/file differ"
 	binaryPattern := regexp.MustCompile(`(?m)^Binary files\s+(\S+)\s+and\s+(\S+)\s+differ`)
@@ -183,7 +181,7 @@ func (p *DiffParser) parseFileBlock(block string) (string, map[int]bool, error) 
 
 	// 2. 解析文本文件路径
 	// 格式: diff --git a/path/to/file b/path/to/file
-	// 使用 (?m) 多行模式，使 ^ 匯配每行开头
+	// 使用 (?m) 多行模式，使 ^ 匹配每行开头
 	pathPattern := regexp.MustCompile(`(?m)^diff --git\s+a/(\S+)\s+b/(\S+)`)
 	pathMatch := pathPattern.FindStringSubmatch(block)
 
@@ -201,7 +199,7 @@ func (p *DiffParser) parseFileBlock(block string) (string, map[int]bool, error) 
 }
 
 // parseDiffText 解析 diff 文本，提取新增行
-func (p *DiffParser) parseDiffText(diffText, oldPath, newPath string) (map[int]bool, error) {
+func (p *Parser) parseDiffText(diffText, oldPath, newPath string) (map[int]bool, error) {
 	scanner := bufio.NewScanner(bytes.NewBufferString(diffText))
 	addedLines := make(map[int]bool)
 
@@ -234,7 +232,7 @@ func (p *DiffParser) parseDiffText(diffText, oldPath, newPath string) (map[int]b
 
 // extractAddedLines 从文件块中提取新增的行
 // 参考 merge-request-impact-reviewer 的逻辑
-func (p *DiffParser) extractAddedLines(block string) map[int]bool {
+func (p *Parser) extractAddedLines(block string) map[int]bool {
 	addedLines := make(map[int]bool)
 
 	scanner := bufio.NewScanner(bytes.NewBufferString(block))
@@ -287,7 +285,7 @@ func (p *DiffParser) extractAddedLines(block string) map[int]bool {
 // =============================================================================
 
 // resolveToProjectRoot 将文件路径解析为相对于项目根的路径
-func (p *DiffParser) resolveToProjectRoot(filePath string) string {
+func (p *Parser) resolveToProjectRoot(filePath string) string {
 	// 如果是绝对路径，转换为相对路径
 	if filepath.IsAbs(filePath) {
 		// 尝试转换为相对路径
@@ -302,7 +300,7 @@ func (p *DiffParser) resolveToProjectRoot(filePath string) string {
 }
 
 // isModified 判断文件是否被修改（既有删除又有新增）
-func (p *DiffParser) isModified(diffText string) bool {
+func (p *Parser) isModified(diffText string) bool {
 	// 检查是否同时包含删除和新增行
 	hasDeletion := regexp.MustCompile(`^-\s*[^\s]`).MatchString(diffText)
 	hasAddition := regexp.MustCompile(`^\+\s*[^\s]`).MatchString(diffText)
@@ -310,11 +308,38 @@ func (p *DiffParser) isModified(diffText string) bool {
 }
 
 // isAdded 判断文件是否是新增文件
-func (p *DiffParser) isAdded(diffText string) bool {
+func (p *Parser) isAdded(diffText string) bool {
 	return regexp.MustCompile(`^diff --git\s+a/`).MatchString(diffText)
 }
 
 // isDeleted 判断文件是否被删除
-func (p *DiffParser) isDeleted(diffText string) bool {
+func (p *Parser) isDeleted(diffText string) bool {
 	return regexp.MustCompile(`^diff --git\s+d/`).MatchString(diffText)
+}
+
+// =============================================================================
+// 向后兼容的别名
+// =============================================================================
+
+// DiffParser 向后兼容的别名
+type DiffParser = Parser
+
+// NewDiffParser 向后兼容的别名
+func NewDiffParser(baseDir string) *DiffParser {
+	return NewParser(baseDir)
+}
+
+// ParseDiffOutput 向后兼容的别名
+func (p *Parser) ParseDiffOutput(diffOutput string) (ChangedLineSetOfFiles, error) {
+	return p.ParseDiffString(diffOutput)
+}
+
+// GetChangedFiles 向后兼容的别名（返回文件列表）
+// 注意：这个方法现在只返回修改的文件路径列表，不再使用 ChangeInput
+func (p *Parser) GetChangedFiles(lineSet ChangedLineSetOfFiles) []string {
+	files := make([]string, 0, len(lineSet))
+	for filePath := range lineSet {
+		files = append(files, filePath)
+	}
+	return files
 }

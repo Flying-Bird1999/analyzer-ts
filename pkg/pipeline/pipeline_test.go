@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/Flying-Bird1999/analyzer-ts/pkg/gitlab"
 	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
 
@@ -223,11 +224,11 @@ func TestAnalysisContext_Cancellation(t *testing.T) {
 
 // mockGitLabClient 模拟 GitLab 客户端
 type mockGitLabClient struct {
-	diffFiles []DiffFile
+	diffFiles []gitlab.DiffFile
 	err       error
 }
 
-func (m *mockGitLabClient) GetMergeRequestDiff(ctx context.Context, projectID, mrIID int) ([]DiffFile, error) {
+func (m *mockGitLabClient) GetMergeRequestDiff(ctx context.Context, projectID, mrIID int) ([]gitlab.DiffFile, error) {
 	return m.diffFiles, m.err
 }
 
@@ -268,7 +269,7 @@ index 1234567..abcdef 100644
 	result, err := stage.Execute(analysisCtx)
 
 	require.NoError(t, err)
-	lineSet, ok := result.(map[string]map[int]bool)
+	lineSet, ok := result.(gitlab.ChangedLineSetOfFiles)
 	require.True(t, ok)
 
 	// 验证解析结果
@@ -294,7 +295,7 @@ func TestDiffParserStage_ParseFromGit(t *testing.T) {
 // TestDiffParserStage_API 测试从 API 获取
 func TestDiffParserStage_API(t *testing.T) {
 	mockClient := &mockGitLabClient{
-		diffFiles: []DiffFile{
+		diffFiles: []gitlab.DiffFile{
 			{
 				Diff:    "@@ -1,3 +1,4 @@\n export function test() {\n+  console.log(\"added\");\n   return true;\n }\n",
 				OldPath: "src/test.ts",
@@ -322,7 +323,7 @@ func TestDiffParserStage_API(t *testing.T) {
 	result, err := stage.Execute(analysisCtx)
 
 	require.NoError(t, err)
-	lineSet, ok := result.(map[string]map[int]bool)
+	lineSet, ok := result.(gitlab.ChangedLineSetOfFiles)
 	require.True(t, ok)
 
 	assert.Contains(t, lineSet, "src/test.ts")
