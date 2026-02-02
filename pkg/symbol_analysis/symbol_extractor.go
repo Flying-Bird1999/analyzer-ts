@@ -189,7 +189,7 @@ func (a *Analyzer) isDeclarationNode(node tsmorphgo.Node) bool {
 }
 
 // isTopLevelVariable 检查变量声明是否在顶层
-//（不在函数、类、接口等内部）
+// （不在函数、类、接口等内部）
 func (a *Analyzer) isTopLevelVariable(node tsmorphgo.Node) bool {
 	parent := node.GetParent()
 

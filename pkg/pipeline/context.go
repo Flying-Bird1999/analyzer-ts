@@ -17,9 +17,9 @@ import (
 // 它在整个分析过程中传递，包含项目信息、配置和中间结果。
 type AnalysisContext struct {
 	// 项目信息
-	ProjectRoot    string                // 项目根目录
-	Project        *tsmorphgo.Project     // tsmorphgo 项目实例
-	ExcludePaths   []string              // 排除的路径模式
+	ProjectRoot  string             // 项目根目录
+	Project      *tsmorphgo.Project // tsmorphgo 项目实例
+	ExcludePaths []string           // 排除的路径模式
 
 	// 配置选项
 	Options map[string]interface{} // 分析器配置选项
@@ -34,12 +34,12 @@ type AnalysisContext struct {
 // NewAnalysisContext 创建一个新的分析上下文。
 func NewAnalysisContext(ctx context.Context, projectRoot string, project *tsmorphgo.Project) *AnalysisContext {
 	return &AnalysisContext{
-		ProjectRoot:        projectRoot,
-		Project:            project,
-		ExcludePaths:       []string{},
-		Options:            make(map[string]interface{}),
+		ProjectRoot:         projectRoot,
+		Project:             project,
+		ExcludePaths:        []string{},
+		Options:             make(map[string]interface{}),
 		intermediateResults: make(map[string]interface{}),
-		Cancel:             ctx,
+		Cancel:              ctx,
 	}
 }
 
@@ -110,8 +110,8 @@ type Stage interface {
 type StageResult struct {
 	StageName string      // 阶段名称
 	Result    interface{} // 阶段结果
-	Error     error      // 执行错误（如果有）
-	Skipped   bool       // 是否跳过
+	Error     error       // 执行错误（如果有）
+	Skipped   bool        // 是否跳过
 }
 
 // NewSuccessResult 创建一个成功的结果。

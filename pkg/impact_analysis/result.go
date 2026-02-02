@@ -14,13 +14,13 @@ import (
 
 // AnalysisResult 影响分析结果
 type AnalysisResult struct {
-	Meta              ImpactMeta              `json:"meta"`
-	Changes           []ComponentChange        `json:"changes"`           // 变更的组件列表
-	Impact            []ImpactComponent        `json:"impact"`            // 受影响的组件列表
-	SymbolChanges     []SymbolImpactChange     `json:"symbolChanges"`     // 符号级变更详情
-	SymbolImpactPaths []SymbolImpactPath       `json:"symbolImpactPaths"` // 符号级影响路径
-	RiskAssessment    RiskAssessment           `json:"riskAssessment"`    // 风险评估
-	Recommendations   []Recommendation         `json:"recommendations"`   // 建议列表
+	Meta              ImpactMeta           `json:"meta"`
+	Changes           []ComponentChange    `json:"changes"`           // 变更的组件列表
+	Impact            []ImpactComponent    `json:"impact"`            // 受影响的组件列表
+	SymbolChanges     []SymbolImpactChange `json:"symbolChanges"`     // 符号级变更详情
+	SymbolImpactPaths []SymbolImpactPath   `json:"symbolImpactPaths"` // 符号级影响路径
+	RiskAssessment    RiskAssessment       `json:"riskAssessment"`    // 风险评估
+	Recommendations   []Recommendation     `json:"recommendations"`   // 建议列表
 }
 
 // =============================================================================
@@ -29,7 +29,7 @@ type AnalysisResult struct {
 
 // ImpactMeta 影响分析元数据
 type ImpactMeta struct {
-	AnalyzedAt      string `json:"analyzedAt"`      // 分析时间
+	AnalyzedAt       string `json:"analyzedAt"`       // 分析时间
 	ComponentCount   int    `json:"componentCount"`   // 组件总数
 	ChangedFileCount int    `json:"changedFileCount"` // 变更文件数
 	ChangeSource     string `json:"changeSource"`     // 变更来源
@@ -54,11 +54,11 @@ type ComponentChange struct {
 
 // ImpactComponent 受影响的组件
 type ImpactComponent struct {
-	Name         string   `json:"name"`         // 组件名称
-	ImpactLevel  int      `json:"impactLevel"`  // 影响层级（0=直接，1=间接，2=二级间接...）
-	RiskLevel    string   `json:"riskLevel"`    // 风险等级: low/medium/high/critical
-	ChangePaths  []string `json:"changePaths"`  // 从变更组件到该组件的路径
-	SymbolCount  int      `json:"symbolCount"`  // 影响的符号数量（新增）
+	Name        string   `json:"name"`        // 组件名称
+	ImpactLevel int      `json:"impactLevel"` // 影响层级（0=直接，1=间接，2=二级间接...）
+	RiskLevel   string   `json:"riskLevel"`   // 风险等级: low/medium/high/critical
+	ChangePaths []string `json:"changePaths"` // 从变更组件到该组件的路径
+	SymbolCount int      `json:"symbolCount"` // 影响的符号数量（新增）
 }
 
 // =============================================================================
@@ -101,23 +101,14 @@ type SymbolImpactPath struct {
 
 // ImpactStep 影响传播步骤
 type ImpactStep struct {
-	Component string     `json:"component"` // 当前组件
-	Symbol    SymbolRef  `json:"symbol"`    // 涉及的符号
-	Relation  string     `json:"relation"`  // "exports"/"imports"/"re-exports"
+	Component string    `json:"component"` // 当前组件
+	Symbol    SymbolRef `json:"symbol"`    // 涉及的符号
+	Relation  string    `json:"relation"`  // "exports"/"imports"/"re-exports"
 }
 
 // =============================================================================
-// 影响类型
+// 影响类型（定义在 types.go 中）
 // =============================================================================
-
-// ImpactType 影响类型
-type ImpactType string
-
-const (
-	ImpactTypeBreaking ImpactType = "breaking" // 破坏性变更
-	ImpactTypeInternal ImpactType = "internal" // 内部变更
-	ImpactTypeAdditive ImpactType = "additive" // 增强性变更
-)
 
 // =============================================================================
 // 风险评估

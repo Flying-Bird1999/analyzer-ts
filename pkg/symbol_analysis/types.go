@@ -38,11 +38,27 @@ func DefaultAnalysisOptions() AnalysisOptions {
 // 分析结果
 // =============================================================================
 
+// FileType 表示文件的类型。
+type FileType string
+
+const (
+	FileTypeTypeScript FileType = "typescript" // TypeScript 文件
+	FileTypeJavaScript FileType = "javascript" // JavaScript 文件
+	FileTypeBinary     FileType = "binary"     // 二进制文件（图片、字体等）
+	FileTypeStyle      FileType = "style"      // 样式文件（CSS、SCSS、LESS等）
+	FileTypeMarkup     FileType = "markup"     // 标记文件（HTML、XML等）
+	FileTypeData       FileType = "data"       // 数据文件（JSON、YAML等）
+	FileTypeUnknown    FileType = "unknown"    // 未知类型
+)
+
 // FileAnalysisResult 包含单个文件的分析结果。
 type FileAnalysisResult struct {
 	FilePath        string         // 文件路径
-	AffectedSymbols []SymbolChange // 该文件中受影响的符号
-	FileExports     []ExportInfo   // 该文件的所有导出
+	FileType        FileType       // 文件类型
+	AffectedSymbols []SymbolChange // 该文件中受影响的符号（仅符号文件）
+	FileExports     []ExportInfo   // 该文件的所有导出（仅符号文件）
+	ChangedLines    []int          // 变更行号（所有文件）
+	IsSymbolFile    bool           // 是否为符号文件（可以进行符号分析）
 }
 
 // =============================================================================
@@ -66,7 +82,7 @@ type SymbolChange struct {
 
 	// 导出信息（在导出分析后填充）
 	ExportType ExportType // 导出类型（命名、默认、命名空间）
-	IsExported  bool      // 是否导出
+	IsExported bool       // 是否导出
 }
 
 // =============================================================================
@@ -77,15 +93,15 @@ type SymbolChange struct {
 type SymbolKind string
 
 const (
-	SymbolKindFunction  SymbolKind = "function"  // 函数声明
-	SymbolKindVariable  SymbolKind = "variable"  // 变量声明
-	SymbolKindClass     SymbolKind = "class"     // 类声明
-	SymbolKindInterface SymbolKind = "interface" // 接口声明
+	SymbolKindFunction  SymbolKind = "function"   // 函数声明
+	SymbolKindVariable  SymbolKind = "variable"   // 变量声明
+	SymbolKindClass     SymbolKind = "class"      // 类声明
+	SymbolKindInterface SymbolKind = "interface"  // 接口声明
 	SymbolKindTypeAlias SymbolKind = "type-alias" // 类型别名
-	SymbolKindEnum      SymbolKind = "enum"      // 枚举声明
-	SymbolKindMethod    SymbolKind = "method"    // 类方法
-	SymbolKindProperty  SymbolKind = "property"  // 类属性
-	SymbolKindParameter SymbolKind = "parameter" // 参数
+	SymbolKindEnum      SymbolKind = "enum"       // 枚举声明
+	SymbolKindMethod    SymbolKind = "method"     // 类方法
+	SymbolKindProperty  SymbolKind = "property"   // 类属性
+	SymbolKindParameter SymbolKind = "parameter"  // 参数
 )
 
 // String 返回 SymbolKind 的字符串表示。

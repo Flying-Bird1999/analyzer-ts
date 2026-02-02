@@ -33,7 +33,9 @@ graph TB
     end
 
     subgraph "分析层 Analysis Layer"
-        IMPACT[pkg/impact_analysis<br/>符号级影响分析]
+        IMPACT[pkg/impact_analysis<br/>影响分析]
+        SUB_IMPACT_FILE[file_analyzer<br/>文件级分析]
+        SUB_IMPACT_COMP[component_analyzer<br/>组件级分析]
         SYMBOL[pkg/symbol_analysis<br/>符号提取与分析]
         PARSER[analyzer/projectParser<br/>AST 解析]
     end
@@ -50,6 +52,9 @@ graph TB
     PIPELINE --> SYMBOL
     PIPELINE --> PARSER
 
+    IMPACT --> SUB_IMPACT_FILE
+    IMPACT --> SUB_IMPACT_COMP
+    SUB_IMPACT_COMP --> SUB_IMPACT_FILE
     IMPACT --> SYMBOL
     IMPACT --> PARSER
     SYMBOL --> PARSER
@@ -59,6 +64,8 @@ graph TB
     style PIPELINE fill:#fff4e6
     style GITLAB fill:#f0f0f0
     style IMPACT fill:#f9f9f9
+    style SUB_IMPACT_FILE fill:#e8f5e9
+    style SUB_IMPACT_COMP fill:#c8e6c9
     style SYMBOL fill:#f9f9f9
     style PARSER fill:#f9f9f9
     style TSMORPHGO fill:#f0f0f0
@@ -104,8 +111,8 @@ type Stage interface {
 **提供的 Stage**:
 - `DiffParserStage` - 解析 git diff
 - `SymbolAnalysisStage` - 符号分析
-- `ComponentDepsStage` - 组件依赖分析
-- `ImpactAnalysisStage` - 影响分析
+- `ProjectParserStage` - 项目解析
+- `ImpactAnalysisStage` - 影响分析（自动检测组件库）
 
 ### 3. 平台能力层 (Platform Capabilities)
 
@@ -169,14 +176,23 @@ classDiagram
         +Execute(ctx) SymbolChanges
     }
 
+    class ProjectParserStage {
+        +Name() string
+        +Execute(ctx) ParsingResult
+    }
+
     class ImpactAnalysisStage {
+        +manifestPath string
         +maxDepth int
+        +isComponentLibrary bool
         +Name() string
         +Execute(ctx) ImpactResult
+        +detectComponentLibrary()
     }
 
     Stage <|.. DiffParserStage
     Stage <|.. SymbolAnalysisStage
+    Stage <|.. ProjectParserStage
     Stage <|.. ImpactAnalysisStage
 ```
 
@@ -186,9 +202,10 @@ classDiagram
 sequenceDiagram
     participant App as 应用层
     participant Pipe as AnalysisPipeline
-    participant S1 as Stage 1
-    participant S2 as Stage 2
-    participant S3 as Stage 3
+    participant S1 as Stage 1: DiffParser
+    participant S2 as Stage 2: SymbolAnalysis
+    participant S3 as Stage 3: ProjectParser
+    participant S4 as Stage 4: ImpactAnalysis
 
     App->>Pipe: Execute(ctx)
     Pipe->>S1: Execute(ctx)
@@ -202,6 +219,15 @@ sequenceDiagram
     Pipe->>S3: Execute(ctx)
     S3-->>Pipe: Result3
     Pipe->>Pipe: Store Result3
+
+    Pipe->>S4: Execute(ctx)
+    S4->>S4: detectComponentLibrary()
+    S4->>S4: runFileLevelAnalysis()
+    alt 组件库项目
+        S4->>S4: runComponentLevelAnalysis()
+    end
+    S4-->>Pipe: Result4
+    Pipe->>Pipe: Store Result4
 
     Pipe-->>App: PipelineResult
 ```
@@ -254,39 +280,171 @@ classDiagram
 
 ### pkg/impact_analysis
 
-**组件结构**:
+**架构设计**:
+
+impact_analysis 采用两层架构设计，将影响分析分为文件级和组件级：
+
+```mermaid
+graph TB
+    subgraph "impact_analysis"
+        TYPES[types.go<br/>共享类型定义]
+
+        subgraph "file_analyzer"
+            FA_ANALYZER[analyzer.go<br/>文件级分析器]
+            FA_GRAPH[graph_builder.go<br/>文件依赖图构建]
+            FA_PROP[propagator.go<br/>影响传播]
+            FA_RESULT[result.go<br/>结果类型]
+        end
+
+        subgraph "component_analyzer"
+            CA_ANALYZER[analyzer.go<br/>组件级分析器]
+            CA_MAPPER[mapper.go<br/>文件到组件映射]
+            CA_PROP[propagator.go<br/>组件影响传播]
+            CA_RESULT[result.go<br/>结果类型]
+        end
+    end
+
+    TYPES --> FA_ANALYZER
+    TYPES --> CA_ANALYZER
+
+    FA_ANALYZER --> FA_GRAPH
+    FA_ANALYZER --> FA_PROP
+    FA_GRAPH --> FA_PROP
+    FA_PROP --> FA_RESULT
+
+    CA_ANALYZER --> CA_MAPPER
+    CA_ANALYZER --> CA_PROP
+    CA_MAPPER --> CA_PROP
+    CA_PROP --> CA_RESULT
+    CA_MAPPER -.->|依赖| FA_ANALYZER
+
+    style TYPES fill:#fff9c4
+    style FA_ANALYZER fill:#e8f5e9
+    style CA_ANALYZER fill:#c8e6c9
+```
+
+**file_analyzer (文件级分析 - 通用能力)**:
 
 ```mermaid
 classDiagram
     class Analyzer {
-        +project Project
-        +parsingResult ProjectParserResult
-        +Analyze() AnalysisResult
+        +graphBuilder GraphBuilder
+        +propagator Propagator
+        +NewAnalyzer()
+        +Analyze(input) Result
     }
 
-    class Matcher {
-        +MatchSymbolsToComponents()
-        +BuildSymbolDependencyMap()
+    class GraphBuilder {
+        +parsingResult ProjectParserResult
+        +BuildFileDependencyGraph() FileDependencyGraph
+    }
+
+    class FileDependencyGraph {
+        +DepGraph map[string][]string
+        +RevDepGraph map[string][]string
+        +ExternalDeps map[string][]string
+        +GetDependencies(path)
+        +GetDependants(path)
     }
 
     class Propagator {
-        +Propagate() ComponentImpacts
+        +depGraph FileDependencyGraph
+        +maxDepth int
+        +Propagate(changedFiles) ImpactedFiles
     }
 
-    class Assessor {
-        +Assess() RiskAssessment
+    class Result {
+        +Meta FileAnalysisMeta
+        +Changes []FileChangeInfo
+        +Impact []FileImpactInfo
+        +Paths []FileImpactPath
     }
 
-    class SymbolDependencyMap {
-        +ComponentExports
-        +SymbolImports
-    }
-
-    Analyzer --> Matcher
+    Analyzer --> GraphBuilder
     Analyzer --> Propagator
-    Analyzer --> Assessor
-    Matcher --> SymbolDependencyMap
-    Propagator --> SymbolDependencyMap
+    GraphBuilder --> FileDependencyGraph
+    Propagator --> FileDependencyGraph
+    Propagator --> Result
+```
+
+**component_analyzer (组件级分析 - 组件库专用)**:
+
+```mermaid
+classDiagram
+    class ComponentAnalyzer {
+        +mapper ComponentMapper
+        +propagator Propagator
+        +NewAnalyzer(manifest, parsingResult)
+        +Analyze(input) Result
+    }
+
+    class ComponentMapper {
+        +componentManifest ComponentManifest
+        +MapFileToComponent(path) string
+        +BuildComponentDependencyGraph() ComponentDependencyGraph
+    }
+
+    class ComponentDependencyGraph {
+        +DepGraph map[string][]string
+        +RevDepGraph map[string][]string
+        +SymbolImports map[string][]ComponentSymbolImport
+        +GetDependencies(comp)
+        +GetDependants(comp)
+    }
+
+    class ComponentPropagator {
+        +depGraph ComponentDependencyGraph
+        +maxDepth int
+        +Propagate(changedComponents) ImpactedComponents
+    }
+
+    class ComponentResult {
+        +Meta ComponentAnalysisMeta
+        +Changes []ComponentChange
+        +Impact []ComponentImpactInfo
+        +Paths []ComponentImpactPathInfo
+    }
+
+    ComponentAnalyzer --> ComponentMapper
+    ComponentAnalyzer --> ComponentPropagator
+    ComponentMapper --> ComponentDependencyGraph
+    ComponentPropagator --> ComponentDependencyGraph
+    ComponentPropagator --> ComponentResult
+    ComponentMapper ..> FileAnalyzer : uses
+```
+
+**组件依赖查找机制**:
+
+```mermaid
+flowchart TD
+    A[开始: BuildComponentDependencyGraph] --> B[加载 ComponentManifest]
+    B --> C[初始化 ComponentMapper<br/>构建 file → component 映射]
+
+    C --> D[遍历所有文件级依赖]
+    D --> E[获取源文件所属组件]
+    E --> F{是否属于组件?}
+
+    F -->|否| G[跳过]
+    F -->|是| H[获取目标文件所属组件]
+
+    H --> I{目标是否属于组件?}
+    I -->|否| G
+    I -->|是| J{源组件 ≠ 目标组件?}
+
+    J -->|否| G
+    J -->|是| K[记录跨组件依赖]
+
+    K --> L[添加到 DepGraph<br/>sourceComp → targetComp]
+    L --> M[添加到 RevDepGraph<br/>targetComp → sourceComp]
+    M --> N[记录符号导入关系<br/>SymbolImports]
+
+    G --> O[还有更多依赖?]
+    N --> O
+    O -->|是| D
+    O -->|否| P[构建完成]
+
+    style K fill:#FFD700
+    style P fill:#87CEEB
 ```
 
 ---
@@ -304,7 +462,10 @@ graph TD
     B --> D[分析层 pkg/impact_analysis]
     B --> E[分析层 pkg/symbol_analysis]
 
-    D --> E
+    D --> D1[file_analyzer]
+    D --> D2[component_analyzer]
+    D2 --> D1
+
     E --> F[analyzer/projectParser]
     F --> G[tsmorphgo]
 
@@ -314,6 +475,8 @@ graph TD
     style B fill:#fff4e6
     style C fill:#f0f0f0
     style D fill:#f9f9f9
+    style D1 fill:#e8f5e9
+    style D2 fill:#c8e6c9
     style E fill:#f9f9f9
     style F fill:#f9f9f9
     style G fill:#f0f0f0
@@ -323,6 +486,7 @@ graph TD
 - ✅ 高层可以依赖低层
 - ✅ 编排层可以平台能力层
 - ❌ 平台能力层不依赖编排层
+- ✅ component_analyzer 可以依赖 file_analyzer
 
 ### 模块依赖图
 
@@ -338,11 +502,12 @@ graph LR
 
     subgraph "第二层"
         symbol[pkg/symbol_analysis]
+        file_analyzer[file_analyzer]
         gitlab[pkg/gitlab]
     end
 
     subgraph "第三层"
-        impact[pkg/impact_analysis]
+        component_analyzer[component_analyzer]
     end
 
     subgraph "第四层"
@@ -352,17 +517,20 @@ graph LR
     parser --> tsmorphgo
     symbol --> parser
     symbol --> tsmorphgo
-    impact --> symbol
-    impact --> parser
+    file_analyzer --> parser
+    component_analyzer --> file_analyzer
+    component_analyzer --> parser
     pipeline --> symbol
-    pipeline --> impact
+    pipeline --> file_analyzer
+    pipeline --> component_analyzer
     pipeline --> gitlab
 
     style tsmorphgo fill:#e8f5e9
     style parser fill:#c8e6c9
     style symbol fill:#a5d6a7
+    style file_analyzer fill:#81c784
+    style component_analyzer fill:#66bb6a
     style gitlab fill:#fff59d
-    style impact fill:#81c784
     style pipeline fill:#4fc3f7
 ```
 
@@ -383,14 +551,20 @@ flowchart TD
     DIFF --> PIPELINE[创建 AnalysisPipeline]
     PIPELINE --> S1[Stage 1: DiffParser]
     PIPELINE --> S2[Stage 2: SymbolAnalysis]
-    PIPELINE --> S3[Stage 3: ComponentDeps]
+    PIPELINE --> S3[Stage 3: ProjectParser]
     PIPELINE --> S4[Stage 4: ImpactAnalysis]
 
     S1 --> |diff 数据| S2
     S2 --> |符号变更| S3
-    S3 --> |依赖图| S4
+    S3 --> |AST 数据| S4
 
-    S4 --> RESULT[获取 AnalysisResult]
+    S4 --> DETECT{检测组件库?}
+    DETECT -->|是| BOTH[文件级 + 组件级分析]
+    DETECT -->|否| FILE_ONLY[仅文件级分析]
+
+    BOTH --> RESULT[获取 ImpactAnalysisResult]
+    FILE_ONLY --> RESULT
+
     RESULT --> POSTER[创建 MRPoster]
     POSTER --> POST[发布 MR 评论]
 
@@ -401,6 +575,8 @@ flowchart TD
     style PIPELINE fill:#fff4e6
     style RESULT fill:#f9f9f9
     style POST fill:#ffe0b2
+    style BOTH fill:#c8e6c9
+    style FILE_ONLY fill:#e8f5e9
 ```
 
 ### 数据在各层之间的流转
@@ -411,10 +587,44 @@ stateDiagram-v2
     GitLabAPI --> DiffFiles: DiffFile[] 格式
     DiffFiles --> LineSet: DiffParser 解析
     LineSet --> SymbolChanges: SymbolAnalysis 提取符号
-    SymbolChanges --> ComponentImpacts: ImpactAnalysis 传播影响
-    ComponentImpacts --> Markdown: Formatter 格式化
+    SymbolChanges --> ProjectParser: 项目解析
+    ProjectParser --> FileImpact: file_analyzer 文件级分析
+
+    FileImpact --> CheckManifest: 检查 component-manifest.json
+    CheckManifest --> ComponentImpact: 存在: component_analyzer
+    CheckManifest --> Markdown: 不存在: 直接格式化
+
+    ComponentImpact --> Markdown: 格式化结果
     Markdown --> MREndpoint: 发布到 GitLab MR
     MREndpoint --> [*]
+```
+
+### 影响分析数据流
+
+```mermaid
+flowchart LR
+    INPUT[文件变更列表] --> PARSE[ProjectParser<br/>解析 Import 声明]
+
+    PARSE --> FILE_GRAPH[GraphBuilder<br/>构建文件依赖图]
+    FILE_GRAPH --> FILE_PROP[Propagator<br/>BFS 传播影响]
+    FILE_PROP --> FILE_RESULT[FileAnalysisResult]
+
+    FILE_RESULT --> CHECK{component-manifest.json<br/>存在?}
+
+    CHECK -->|是| MAP[ComponentMapper<br/>文件 → 组件映射]
+    CHECK -->|否| OUTPUT[输出文件级结果]
+
+    MAP --> COMP_GRAPH[构建组件依赖图]
+    COMP_GRAPH --> COMP_PROP[ComponentPropagator<br/>BFS 传播影响]
+    COMP_PROP --> COMP_RESULT[ComponentAnalysisResult]
+
+    COMP_RESULT --> OUTPUT
+    FILE_RESULT --> OUTPUT
+
+    style INPUT fill:#e1f5ff
+    style FILE_RESULT fill:#e8f5e9
+    style COMP_RESULT fill:#c8e6c9
+    style OUTPUT fill:#fff9c4
 ```
 
 ---
@@ -455,11 +665,15 @@ func main() {
     // 4. 创建分析上下文
     analysisCtx := pipeline.NewAnalysisContext(ctx, projectRoot, project)
 
-    // 5. 创建并配置 pipeline
-    pipe := pipeline.NewPipeline("GitLab Analysis")
-    pipe.AddStage(pipeline.NewDiffParserStageWithSource(diffSource))
-    pipe.AddStage(pipeline.NewSymbolAnalysisStage())
-    pipe.AddStage(pipeline.NewImpactAnalysisStage(config.MaxDepth))
+    // 5. 创建并配置 pipeline（自动检测组件库）
+    pipe := pipeline.NewGitLabPipeline(&pipeline.GitLabPipelineConfig{
+        Client:      client,
+        DiffSource:  pipeline.DiffSourceGitLab,
+        ProjectRoot: projectRoot,
+        ProjectID:   config.ProjectID,
+        MRIID:       config.MRIID,
+        MaxDepth:    10,
+    })
 
     // 6. 执行 pipeline
     result, _ := pipe.Execute(analysisCtx)
@@ -485,36 +699,99 @@ func main() {
 
     // 2. 创建 pipeline
     project := tsmorphgo.NewProject(...)
+    defer project.Close()
+
     analysisCtx := pipeline.NewAnalysisContext(ctx, projectRoot, project)
 
     pipe := pipeline.NewPipeline("Local Analysis")
-    pipe.AddStage(pipeline.NewDiffParserStageWithSource(diffSource))
+    pipe.AddStage(pipeline.NewDiffParserStage(diffSource, ...))
     pipe.AddStage(pipeline.NewSymbolAnalysisStage())
+    pipe.AddStage(pipeline.NewProjectParserStage())
+    pipe.AddStage(pipeline.NewImpactAnalysisStage("", 10))
 
     // 3. 执行并输出到控制台
     result, _ := pipe.Execute(analysisCtx)
+    impactResult, _ := result.GetResult("影响分析")
+    fmt.Println(impactResult.ToConsole())
+}
+```
+
+### 示例 3: 直接使用 file_analyzer
+
+```go
+// 适用于任何前端项目（不需要 component-manifest.json）
+
+import (
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+    "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis"
+    "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/file_analyzer"
+)
+
+func main() {
+    projectRoot := "/path/to/project"
+
+    // 1. 解析项目
+    config := projectParser.NewProjectParserConfig(projectRoot, nil, false, nil)
+    parsingResult := projectParser.NewProjectParserResult(config)
+    parsingResult.ProjectParser()
+
+    // 2. 创建文件级分析器
+    analyzer := file_analyzer.NewAnalyzer(parsingResult, 20)
+
+    // 3. 定义变更文件
+    input := &file_analyzer.Input{
+        ChangedFiles: []impact_analysis.FileChange{
+            {Path: "/path/to/changed/file.ts", Type: impact_analysis.ChangeTypeModified},
+        },
+    }
+
+    // 4. 执行分析
+    result, _ := analyzer.Analyze(input)
+
+    // 5. 输出结果
     fmt.Println(result.ToConsole())
 }
 ```
 
-### 示例 3: 自定义分析流程
+### 示例 4: 直接使用 component_analyzer
 
 ```go
-// 只做符号分析，不做影响分析
+// 适用于组件库项目（需要 component-manifest.json）
+
+import (
+    "encoding/json"
+    "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis"
+    "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/component_analyzer"
+    "github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/file_analyzer"
+)
 
 func main() {
-    pipe := pipeline.NewPipeline("Symbol Only Analysis")
-    pipe.AddStage(pipeline.NewDiffParserStage(...))
-    pipe.AddStage(pipeline.NewSymbolAnalysisStage())
-    // 不添加 ImpactAnalysisStage
+    projectRoot := "/path/to/project"
 
-    result, _ := pipe.Execute(analysisCtx)
-    symbolResult, _ := result.GetResult("符号分析")
+    // 1. 解析项目
+    config := projectParser.NewProjectParserConfig(projectRoot, nil, false, nil)
+    parsingResult := projectParser.NewProjectParserResult(config)
+    parsingResult.ProjectParser()
 
-    // 自定义处理符号结果
-    for _, symbol := range symbolResult {
-        fmt.Println(symbol.Name, symbol.Kind)
+    // 2. 加载组件清单
+    manifestData, _ := os.ReadFile(".analyzer/component-manifest.json")
+    var manifest impact_analysis.ComponentManifest
+    json.Unmarshal(manifestData, &manifest)
+
+    // 3. 先执行文件级分析
+    fileAnalyzer := file_analyzer.NewAnalyzer(parsingResult, 20)
+    fileInput := &file_analyzer.Input{...}
+    fileResult, _ := fileAnalyzer.Analyze(fileInput)
+
+    // 4. 再执行组件级分析
+    compAnalyzer := component_analyzer.NewAnalyzer(&manifest, parsingResult, 10)
+    compInput := &component_analyzer.Input{
+        FileResult: convertToFileResultProxy(fileResult),
     }
+    compResult, _ := compAnalyzer.Analyze(compInput)
+
+    // 5. 输出结果
+    fmt.Println(compResult.ToConsole())
 }
 ```
 
@@ -532,12 +809,14 @@ func main() {
 
 - `pkg/gitlab` 只提供 GitLab 相关能力
 - `pkg/pipeline` 只负责编排
-- `pkg/impact_analysis` 只负责影响分析
+- `file_analyzer` 只负责文件级影响分析
+- `component_analyzer` 只负责组件级影响分析
 
 ### 3. 开闭原则 (OCP)
 
 - 通过 `Stage` 接口，可以扩展新的分析阶段
 - 通过 `DiffInputSource` 接口，可以扩展新的 diff 来源
+- 通过两层影响分析架构，可以支持不同类型的项目
 
 ### 4. 接口隔离原则 (ISP)
 
@@ -563,6 +842,19 @@ func main() {
 - `PRPoster` - 发布 PR 评论
 
 然后在应用层使用时，只需替换导入即可。
+
+### Q: file_analyzer 和 component_analyzer 的区别是什么？
+
+**A**:
+- **file_analyzer**: 通用能力，适用于所有前端项目
+  - 输入：文件变更列表 + 项目解析结果
+  - 输出：受影响的文件列表
+  - 不依赖 component-manifest.json
+
+- **component_analyzer**: 组件库专用能力
+  - 输入：file_analyzer 结果 + component-manifest.json
+  - 输出：受影响的组件列表
+  - 依赖 file_analyzer 的结果
 
 ### Q: 如何添加新的分析阶段？
 
@@ -592,7 +884,21 @@ pipe.AddStage(&MyCustomStage{})
 
 ## 版本历史
 
-### v2.0 (当前架构)
+### v3.0 (当前架构 - 2026)
+
+**重大重构：影响分析分层架构**
+
+- `pkg/impact_analysis` 分为两层：
+  - `file_analyzer` - 文件级影响分析（通用能力）
+  - `component_analyzer` - 组件级影响分析（组件库专用）
+- 移除 `analyzer.go`, `matcher.go`, `propagator.go`, `assessor.go` 等旧文件
+- 使用 `entry` 字段替代 `scopes`（协议统一）
+- `pkg/pipeline/gitlab_pipeline.go` 重构：
+  - 新增 `ProjectParserStage` 统一项目解析
+  - `ImpactAnalysisStage` 自动检测组件库项目
+  - 支持非组件库项目的影响分析
+
+### v2.0 (2025)
 
 - 重构为分层架构
 - `pkg/impact_analysis` 从 `analyzer_plugin` 迁移到 `pkg/`
@@ -609,6 +915,6 @@ pipe.AddStage(&MyCustomStage{})
 
 ## 相关文档
 
-- [IMPACT_ANALYSIS_REFACTOR_PLAN.md](../IMPACT_ANALYSIS_REFACTOR_PLAN.md) - 影响分析重构计划
-- [SYMBOL_LEVEL_IMPACT_ANALYSIS_PLAN.md](../SYMBOL_LEVEL_IMPACT_ANALYSIS_PLAN.md) - 符号级影响分析计划
+- [impact_analysis_refactor_plan.md](../impact_analysis_refactor_plan.md) - 影响分析重构计划
+- [pkg/impact_analysis/README.md](./impact_analysis/README.md) - 影响分析模块文档
 - [README.md](../README.md) - 项目总览

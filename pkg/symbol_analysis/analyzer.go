@@ -2,6 +2,7 @@ package symbol_analysis
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
@@ -72,6 +73,7 @@ func isAlphaNum(c rune) bool {
 
 // AnalyzeChangedLines 分析变更行并返回每个文件的受影响符号。
 // 这是符号分析的主要入口点。
+// 对于无法进行符号分析的文件（如二进制文件、CSS等），也会返回基本信息。
 func (a *Analyzer) AnalyzeChangedLines(
 	lineSets ChangedLineSetOfFiles,
 ) map[string]*FileAnalysisResult {
@@ -80,14 +82,65 @@ func (a *Analyzer) AnalyzeChangedLines(
 	for filePath, changedLines := range lineSets {
 		result, err := a.AnalyzeFile(filePath, changedLines)
 		if err != nil {
-			// 跳过无法分析的文件
-			// 在生产环境中，你可能希望记录此错误
-			continue
+			// 无法进行符号分析，返回非符号文件的基本信息
+			results[filePath] = a.createNonSymbolFileResult(filePath, changedLines)
+		} else {
+			results[filePath] = result
 		}
-		results[filePath] = result
 	}
 
 	return results
+}
+
+// createNonSymbolFileResult 为非符号文件创建基本的分析结果。
+func (a *Analyzer) createNonSymbolFileResult(filePath string, changedLines map[int]bool) *FileAnalysisResult {
+	// 转换变更行为切片
+	changedLineList := make([]int, 0, len(changedLines))
+	for line := range changedLines {
+		changedLineList = append(changedLineList, line)
+	}
+
+	return &FileAnalysisResult{
+		FilePath:        filePath,
+		FileType:        determineFileType(filePath),
+		AffectedSymbols: []SymbolChange{},
+		FileExports:     []ExportInfo{},
+		ChangedLines:    changedLineList,
+		IsSymbolFile:    false,
+	}
+}
+
+// determineFileType 根据文件扩展名确定文件类型。
+func determineFileType(filePath string) FileType {
+	// 获取文件扩展名
+	ext := filepath.Ext(filePath)
+	if ext == "" {
+		return FileTypeUnknown
+	}
+
+	// 转换为小写
+	ext = strings.ToLower(ext)
+
+	// 根据扩展名判断文件类型
+	switch ext {
+	case ".ts", ".tsx", ".mts":
+		return FileTypeTypeScript
+	case ".js", ".jsx", ".mjs":
+		return FileTypeJavaScript
+	case ".css", ".scss", ".sass", ".less":
+		return FileTypeStyle
+	case ".html", ".htm", ".xml", "svg":
+		return FileTypeMarkup
+	case ".json", ".yaml", ".yml", "toml":
+		return FileTypeData
+	case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp",
+		".woff", ".woff2", ".ttf", ".eot", ".otf",
+		".mp3", ".mp4", ".wav", ".ogg", ".webm",
+		".zip", ".tar", ".gz", ".rar":
+		return FileTypeBinary
+	default:
+		return FileTypeUnknown
+	}
 }
 
 // AnalyzeFile 分析单个文件并返回受影响的符号。
@@ -100,10 +153,19 @@ func (a *Analyzer) AnalyzeFile(
 		return nil, fmt.Errorf("文件未找到: %s", filePath)
 	}
 
+	// 转换变更行为切片
+	changedLineList := make([]int, 0, len(changedLines))
+	for line := range changedLines {
+		changedLineList = append(changedLineList, line)
+	}
+
 	result := &FileAnalysisResult{
 		FilePath:        filePath,
+		FileType:        determineFileType(filePath),
 		AffectedSymbols: make([]SymbolChange, 0),
 		FileExports:     make([]ExportInfo, 0),
+		ChangedLines:    changedLineList,
+		IsSymbolFile:    true,
 	}
 
 	// 步骤 1: 从文件结果中提取导出信息

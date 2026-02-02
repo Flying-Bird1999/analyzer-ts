@@ -1,0 +1,561 @@
+{
+  "input": {
+    "projectPath": "/Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project",
+    "diffFile": "内置测试用例 (Button + Input + useDebounce + 二进制文件 + 新增CSS + 枚举类型)",
+    "componentCount": 11,
+    "components": [
+      "Badge",
+      "Button",
+      "Card",
+      "Dropdown",
+      "Form",
+      "Input",
+      "Modal",
+      "Select",
+      "Table",
+      "Tabs",
+      "Tooltip"
+    ],
+    "changedFiles": [
+      {
+        "path": "src/assets/logo.png",
+        "type": "modified",
+        "changedLines": [
+          0
+        ]
+      },
+      {
+        "path": "src/assets/modal.css",
+        "type": "modified",
+        "changedLines": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ]
+      },
+      {
+        "path": "src/components/Button/Button.tsx",
+        "type": "modified",
+        "changedLines": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28
+        ]
+      },
+      {
+        "path": "src/components/Input/Input.tsx",
+        "type": "modified",
+        "changedLines": [
+          3,
+          6,
+          7,
+          8,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36
+        ]
+      },
+      {
+        "path": "src/hooks/useDebounce.ts",
+        "type": "modified",
+        "changedLines": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ]
+      },
+      {
+        "path": "src/types/enums.ts",
+        "type": "modified",
+        "changedLines": [
+          6,
+          14,
+          15,
+          16,
+          21
+        ]
+      }
+    ]
+  },
+  "fileAnalysis": {
+    "meta": {
+      "totalFileCount": 21,
+      "changedFileCount": 6,
+      "impactFileCount": 7
+    },
+    "changes": [
+      {
+        "path": "src/assets/logo.png",
+        "type": "modified",
+        "changedLines": [
+          0
+        ],
+        "symbolCount": 0
+      },
+      {
+        "path": "src/assets/modal.css",
+        "type": "modified",
+        "changedLines": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19
+        ],
+        "symbolCount": 0
+      },
+      {
+        "path": "src/components/Button/Button.tsx",
+        "type": "modified",
+        "changedLines": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28
+        ],
+        "symbolCount": 0
+      },
+      {
+        "path": "src/components/Input/Input.tsx",
+        "type": "modified",
+        "changedLines": [
+          3,
+          6,
+          7,
+          8,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36
+        ],
+        "symbolCount": 0
+      },
+      {
+        "path": "src/hooks/useDebounce.ts",
+        "type": "modified",
+        "changedLines": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ],
+        "symbolCount": 0
+      },
+      {
+        "path": "src/types/enums.ts",
+        "type": "modified",
+        "changedLines": [
+          6,
+          14,
+          15,
+          16,
+          21
+        ],
+        "symbolCount": 0
+      }
+    ],
+    "impact": [
+      {
+        "path": "src/assets/logo.png",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/assets/logo.png"
+        ]
+      },
+      {
+        "path": "src/assets/modal.css",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/assets/modal.css"
+        ]
+      },
+      {
+        "path": "src/components/Badge/Badge.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Input/Input.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Badge/Badge.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Button/Button.tsx",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Button/Button.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Card/Card.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/types/enums.ts → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Card/Card.tsx",
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Card/Card.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Form/Form.tsx",
+        "impactLevel": 2,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Form/Form.tsx",
+          "src/components/Input/Input.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Form/Form.tsx",
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Select/Select.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Form/Form.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Input/Input.tsx",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Input/Input.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Input/Input.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Input/Input.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Modal/Modal.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/assets/modal.css → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Modal/Modal.tsx",
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Modal/Modal.tsx",
+          "src/assets/logo.png → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Modal/Modal.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Select/Select.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Select/Select.tsx",
+          "src/hooks/useDebounce.ts → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Select/Select.tsx",
+          "src/components/Input/Input.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Select/Select.tsx"
+        ]
+      },
+      {
+        "path": "src/components/Table/Table.tsx",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "src/components/Button/Button.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Table/Table.tsx",
+          "src/hooks/useDebounce.ts → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Table/Table.tsx",
+          "src/components/Input/Input.tsx → /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/src/components/Table/Table.tsx"
+        ]
+      },
+      {
+        "path": "src/hooks/useDebounce.ts",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/hooks/useDebounce.ts"
+        ]
+      },
+      {
+        "path": "src/types/enums.ts",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          "src/types/enums.ts"
+        ]
+      }
+    ]
+  },
+  "componentAnalysis": {
+    "meta": {
+      "totalComponentCount": 11,
+      "changedComponentCount": 2,
+      "impactComponentCount": 7
+    },
+    "changes": [
+      {
+        "name": "Button",
+        "entry": "src/components/Button/index.tsx",
+        "changedFiles": [
+          "src/components/Button/Button.tsx"
+        ],
+        "symbolCount": 0
+      },
+      {
+        "name": "Input",
+        "entry": "src/components/Input/index.tsx",
+        "changedFiles": [
+          "src/components/Input/Input.tsx"
+        ],
+        "symbolCount": 0
+      }
+    ],
+    "impact": [
+      {
+        "name": "Button",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Input",
+        "impactLevel": 0,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Badge",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Card",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Input",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Modal",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          ""
+        ]
+      },
+      {
+        "name": "Select",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "",
+          ""
+        ]
+      },
+      {
+        "name": "Table",
+        "impactLevel": 1,
+        "impactType": "internal",
+        "changePaths": [
+          "",
+          ""
+        ]
+      },
+      {
+        "name": "Form",
+        "impactLevel": 2,
+        "impactType": "internal",
+        "changePaths": [
+          "",
+          "",
+          ""
+        ]
+      }
+    ]
+  }
+}

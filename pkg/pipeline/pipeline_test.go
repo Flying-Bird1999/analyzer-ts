@@ -17,8 +17,8 @@ import (
 
 // mockStage 模拟阶段
 type mockStage struct {
-	name         string
-	shouldSkip   bool
+	name          string
+	shouldSkip    bool
 	executeResult interface{}
 	executeError  error
 	executed      bool

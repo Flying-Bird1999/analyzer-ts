@@ -54,7 +54,7 @@ func getImpactCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "impact",
 		Short: "分析代码影响并发布 MR 评论",
-		Long:  `分析代码变更的影响范围并在 GitLab MR 中发布评论
+		Long: `分析代码变更的影响范围并在 GitLab MR 中发布评论
 
 工作流程：
 1. 解析 git diff（文件/API/自动检测）

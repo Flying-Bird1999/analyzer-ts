@@ -1,66 +1,58 @@
 // Package impact_analysis 提供符号级影响分析功能。
-// 它基于 symbol_analysis 的输出（导出符号变更）和组件依赖图，分析代码变更的影响范围。
+// 将影响分析拆分为两个独立能力：
+// - file_analyzer: 文件级影响分析（通用能力，适用于所有前端项目）
+// - component_analyzer: 组件级影响分析（组件库专用）
 package impact_analysis
 
 import (
 	"encoding/json"
 	"os"
+	"time"
 )
 
 // =============================================================================
-// 输入类型定义（与 symbol_analysis 对齐）
+// 文件变更类型
 // =============================================================================
 
-// SymbolChangeInput 符号级变更输入
-type SymbolChangeInput struct {
-	// 变更的符号列表（只包含导出符号）
-	ChangedSymbols []SymbolChange `json:"changedSymbols"`
-
-	// 组件依赖图（从 component-deps-v2 获取）
-	DepGraph    map[string][]string `json:"depGraph"`    // [组件][依赖组件列表]
-	RevDepGraph map[string][]string `json:"revDepGraph"` // [组件][被依赖组件列表]
-
-	// 组件清单（用于符号到组件的映射）
-	ComponentManifest *ComponentManifest `json:"componentManifest,omitempty"`
+// FileChange 文件变更信息
+type FileChange struct {
+	Path string     `json:"path"` // 文件绝对路径
+	Type ChangeType `json:"type"` // 变更类型
 }
 
-// SymbolChange 符号变更（从 symbol_analysis.SymbolChange 转换而来）
-type SymbolChange struct {
-	// 符号标识
-	Name string     `json:"name"` // 符号名称，如 "handleClick"
-	Kind SymbolKind `json:"kind"` // function/class/variable/etc.
+// =============================================================================
+// 符号信息（轻量级）
+// =============================================================================
 
-	// 位置信息
-	FilePath  string `json:"filePath"`  // 源文件路径
-	StartLine int    `json:"startLine"` // 起始行号
-	EndLine   int    `json:"endLine"`   // 结束行号
-
-	// 变更信息
-	ChangedLines []int      `json:"changedLines"` // 符号内部的实际变更行号
-	ChangeType   ChangeType `json:"changeType"`  // modified/added/deleted
-
-	// 导出信息（关键字段）
+// SymbolReference 符号引用
+type SymbolReference struct {
+	Name       string     `json:"name"`       // 符号名称
+	Kind       string     `json:"kind"`       // function/class/variable
+	FilePath   string     `json:"filePath"`   // 文件绝对路径
+	IsExported bool       `json:"isExported"` // 是否导出
 	ExportType ExportType `json:"exportType"` // named/default/namespace
-	IsExported  bool       `json:"isExported"`  // 是否导出
-
-	// 所属组件（在匹配后填充）
-	ComponentName string `json:"componentName,omitempty"` // 所属组件名称
 }
 
 // =============================================================================
-// 符号类型
+// 影响级别和类型
 // =============================================================================
 
-// SymbolKind 符号类型
-type SymbolKind string
+// ImpactLevel 影响级别（0=直接变更，1=间接影响，2+=传递影响）
+type ImpactLevel int
 
 const (
-	SymbolKindFunction  SymbolKind = "function"  // 函数声明
-	SymbolKindVariable  SymbolKind = "variable"  // 变量声明
-	SymbolKindClass     SymbolKind = "class"     // 类声明
-	SymbolKindInterface SymbolKind = "interface" // 接口声明
-	SymbolKindTypeAlias SymbolKind = "type-alias" // 类型别名
-	SymbolKindEnum      SymbolKind = "enum"      // 枚举声明
+	ImpactLevelDirect     ImpactLevel = 0 // 直接变更
+	ImpactLevelIndirect   ImpactLevel = 1 // 间接受影响
+	ImpactLevelTransitive ImpactLevel = 2 // 传递影响
+)
+
+// ImpactType 影响类型
+type ImpactType string
+
+const (
+	ImpactTypeBreaking ImpactType = "breaking" // 破坏性变更
+	ImpactTypeInternal ImpactType = "internal" // 内部变更
+	ImpactTypeAdditive ImpactType = "additive" // 增强性变更
 )
 
 // =============================================================================
@@ -84,20 +76,63 @@ const (
 type ExportType string
 
 const (
-	ExportTypeNone      ExportType = ""        // 非导出
-	ExportTypeNamed     ExportType = "named"   // 命名导出：export const A = 1
-	ExportTypeDefault   ExportType = "default" // 默认导出：export default A
+	ExportTypeNone      ExportType = ""          // 非导出
+	ExportTypeNamed     ExportType = "named"     // 命名导出：export const A = 1
+	ExportTypeDefault   ExportType = "default"   // 默认导出：export default A
 	ExportTypeNamespace ExportType = "namespace" // 命名空间导出：export * as A
 )
 
 // =============================================================================
-// 组件清单
+// 符号类型
+// =============================================================================
+
+// SymbolKind 符号类型
+type SymbolKind string
+
+const (
+	SymbolKindFunction  SymbolKind = "function"   // 函数声明
+	SymbolKindVariable  SymbolKind = "variable"   // 变量声明
+	SymbolKindClass     SymbolKind = "class"      // 类声明
+	SymbolKindInterface SymbolKind = "interface"  // 接口声明
+	SymbolKindTypeAlias SymbolKind = "type-alias" // 类型别名
+	SymbolKindEnum      SymbolKind = "enum"       // 枚举声明
+)
+
+// =============================================================================
+// 符号变更（与 symbol_analysis 对齐）
+// =============================================================================
+
+// SymbolChange 符号变更
+type SymbolChange struct {
+	// 符号标识
+	Name string     `json:"name"` // 符号名称，如 "handleClick"
+	Kind SymbolKind `json:"kind"` // function/class/variable/etc.
+
+	// 位置信息
+	FilePath  string `json:"filePath"`  // 文件绝对路径
+	StartLine int    `json:"startLine"` // 起始行号
+	EndLine   int    `json:"endLine"`   // 结束行号
+
+	// 变更信息
+	ChangedLines []int      `json:"changedLines"` // 符号内部的实际变更行号
+	ChangeType   ChangeType `json:"changeType"`   // modified/added/deleted
+
+	// 导出信息
+	ExportType ExportType `json:"exportType"` // named/default/namespace
+	IsExported bool       `json:"isExported"` // 是否导出
+
+	// 所属组件（在匹配后填充）
+	ComponentName string `json:"componentName,omitempty"` // 所属组件名称
+}
+
+// =============================================================================
+// 组件清单（与 component_deps_v2 兼容）
 // =============================================================================
 
 // ComponentManifest 组件清单
 type ComponentManifest struct {
-	Meta       ManifestMeta            `json:"meta"`
-	Components []Component             `json:"components"`
+	Meta       ManifestMeta `json:"meta"`
+	Components []Component  `json:"components"`
 }
 
 // ManifestMeta 清单元数据
@@ -107,9 +142,10 @@ type ManifestMeta struct {
 }
 
 // Component 组件定义
+// 使用 entry 字段，作用域自动推断为 entry 所在目录
 type Component struct {
-	Name   string   `json:"name"`   // 组件名称
-	Scopes []string `json:"scopes"` // 组件文件路径范围
+	Name  string `json:"name"`  // 组件名称
+	Entry string `json:"entry"` // 组件入口文件（绝对路径）
 }
 
 // =============================================================================
@@ -135,10 +171,22 @@ func LoadSymbolChangeInput(filePath string) (*SymbolChangeInput, error) {
 }
 
 // =============================================================================
-// 兼容性：保留旧的文件级输入
+// 兼容性：保留旧的输入格式
 // =============================================================================
 
-// FileChangeInput 文件级变更输入（旧格式，向后兼容）
+// SymbolChangeInput 符号级变更输入（旧格式）
+type SymbolChangeInput struct {
+	ChangedSymbols []SymbolChange `json:"changedSymbols"`
+
+	// 组件依赖图（从 component-deps-v2 获取）
+	DepGraph    map[string][]string `json:"depGraph"`    // [组件][依赖组件列表]
+	RevDepGraph map[string][]string `json:"revDepGraph"` // [组件][被依赖组件列表]
+
+	// 组件清单
+	ComponentManifest *ComponentManifest `json:"componentManifest,omitempty"`
+}
+
+// FileChangeInput 文件级变更输入（旧格式）
 type FileChangeInput struct {
 	ModifiedFiles []string `json:"modifiedFiles"` // 修改的文件列表
 	AddedFiles    []string `json:"addedFiles"`    // 新增的文件列表
@@ -173,4 +221,17 @@ func (c *FileChangeInput) IsEmpty() bool {
 	return len(c.ModifiedFiles) == 0 &&
 		len(c.AddedFiles) == 0 &&
 		len(c.DeletedFiles) == 0
+}
+
+// =============================================================================
+// 分析结果元数据
+// =============================================================================
+
+// AnalysisMeta 分析元数据
+type AnalysisMeta struct {
+	AnalyzedAt       time.Time `json:"analyzedAt"`
+	TotalFileCount   int       `json:"totalFileCount"`
+	ChangedFileCount int       `json:"changedFileCount"`
+	ImpactFileCount  int       `json:"impactFileCount"`
+	ComponentCount   int       `json:"componentCount,omitempty"`
 }

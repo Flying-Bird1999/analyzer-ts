@@ -15,6 +15,38 @@
     {
       "name": "Select",
       "entry": "src/components/Select/index.tsx"
+    },
+    {
+      "name": "Form",
+      "entry": "src/components/Form/index.tsx"
+    },
+    {
+      "name": "Modal",
+      "entry": "src/components/Modal/index.tsx"
+    },
+    {
+      "name": "Table",
+      "entry": "src/components/Table/index.tsx"
+    },
+    {
+      "name": "Badge",
+      "entry": "src/components/Badge/index.tsx"
+    },
+    {
+      "name": "Card",
+      "entry": "src/components/Card/index.tsx"
+    },
+    {
+      "name": "Dropdown",
+      "entry": "src/components/Dropdown/index.tsx"
+    },
+    {
+      "name": "Tabs",
+      "entry": "src/components/Tabs/index.tsx"
+    },
+    {
+      "name": "Tooltip",
+      "entry": "src/components/Tooltip/index.tsx"
     }
   ]
 }
