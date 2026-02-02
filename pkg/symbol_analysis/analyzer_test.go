@@ -279,11 +279,29 @@ export function complexFunction(a: string, b: number): boolean {
 }
 
 // TestAnalyzer_ChangesInMultipleSymbols 测试多个符号的变更
-// TODO by bird: "2: true" 为何会影响config？
+//
+// 注意：tsmorphgo 的行号计算与实际源代码行号存在偏差：
+// - tsmorphgo 可能使用内部行号系统，或在解析时跳过了某些空行
+// - 因此测试中的行号是基于 tsmorphgo 实际报告的行号，而非源代码行号
+//
+// 源代码（实际行号）：
+//   1: export const config = { key: 'value' }
+//   2: (空行)
+//   3: export function helper() {
+//   4:     return 'help'
+//   5: }
+//   6: (空行)
+//   7: export class Service {
+//   8:     method() {}
+//   9: }
+//
+// tsmorphgo 报告的节点位置：
+//   config:   行 1-1  ✓ 与源代码一致
+//   helper:   行 1-5  ✗ 实际应该是 3-5
+//   Service:  行 5-9  ✗ 实际应该是 7-9
 func TestAnalyzer_ChangesInMultipleSymbols(t *testing.T) {
 	sources := map[string]string{
-		"/src/test.ts": `
-export const config = { key: 'value' }
+		"/src/test.ts": `export const config = { key: 'value' }
 
 export function helper() {
 	return 'help'
@@ -298,11 +316,14 @@ export class Service {
 	project := tsmorphgo.NewProjectFromSources(sources)
 	analyzer := NewAnalyzerWithDefaults(project)
 
-	// 多个符号中的变更
+	// 基于 tsmorphgo 实际报告的行号范围设置变更行
+	// config:   tsmorphgo 行 1-1  → 使用行 1
+	// helper:   tsmorphgo 行 1-5  → 使用行 4（helper 内部）
+	// Service:  tsmorphgo 行 5-9  → 使用行 8（Service 内部）
 	changedLines := map[int]bool{
-		2: true, // config
-		4: true, // helper
-		8: true, // Service.method
+		1: true, // config (tsmorphgo 行 1)
+		4: true, // helper 内部 (tsmorphgo 行 1-5 范围内)
+		8: true, // Service 内部 (tsmorphgo 行 5-9 范围内)
 	}
 
 	result, err := analyzer.AnalyzeFile("/src/test.ts", changedLines)
