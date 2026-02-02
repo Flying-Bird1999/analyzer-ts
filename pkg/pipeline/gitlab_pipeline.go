@@ -13,6 +13,7 @@ import (
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/component_analyzer"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/impact_analysis/file_analyzer"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/symbol_analysis"
+	"github.com/Flying-Bird1999/analyzer-ts/tsmorphgo"
 )
 
 // =============================================================================
@@ -42,10 +43,17 @@ type GitLabPipelineConfig struct {
 
 // NewGitLabPipeline 创建完整的 GitLab 分析管道
 // 自动检测是否为组件库项目，并执行相应的影响分析
+//
+// 正确的阶段执行顺序：
+// 1. Diff 解析 → 2. 项目解析 → 3. 符号分析 → 4. 影响分析
+//
+// 为什么项目解析必须在符号分析之前？
+// - SymbolAnalysisStage 需要 ctx.Project 来访问 AST 和符号信息
+// - tsmorphgo.Project 封装了项目解析结果并提供符号查询能力
 func NewGitLabPipeline(config *GitLabPipelineConfig) *AnalysisPipeline {
 	pipe := NewPipeline("GitLab Analysis Pipeline")
 
-	// 阶段 1: Diff 解析
+	// 阶段 1: Diff 解析（获取变更行集）
 	pipe.AddStage(NewDiffParserStage(
 		config.Client,
 		config.DiffSource,
@@ -56,11 +64,13 @@ func NewGitLabPipeline(config *GitLabPipelineConfig) *AnalysisPipeline {
 		config.MRIID,
 	))
 
-	// 阶段 2: 符号分析
-	pipe.AddStage(NewSymbolAnalysisStage())
-
-	// 阶段 3: 项目解析
+	// 阶段 2: 项目解析（初始化 tsmorphgo.Project）
+	// 必须在符号分析之前执行，因为符号分析依赖 Project
 	pipe.AddStage(NewProjectParserStage())
+
+	// 阶段 3: 符号分析（将行级变更转换为符号级变更）
+	// 依赖 ctx.Project 提供的 AST 和符号查询能力
+	pipe.AddStage(NewSymbolAnalysisStage())
 
 	// 阶段 4: 影响分析（自动检测组件库）
 	pipe.AddStage(NewImpactAnalysisStage(
@@ -93,17 +103,16 @@ func (s *ProjectParserStage) Name() string {
 func (s *ProjectParserStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 	fmt.Println("  - 解析项目 AST...")
 
-	// 创建项目解析器配置
-	parserConfig := projectParser.NewProjectParserConfig(
-		ctx.ProjectRoot,
-		[]string{}, // exclude patterns
-		false,      // isMonorepo
-		nil,        // target extensions (use default)
-	)
+	// 创建 tsmorphgo.Project（内部会自动解析项目）
+	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
+		RootPath: ctx.ProjectRoot,
+	})
 
-	// 解析项目
-	parsingResult := projectParser.NewProjectParserResult(parserConfig)
-	parsingResult.ProjectParser()
+	// 获取解析结果
+	parsingResult := project.GetParserResult()
+	if parsingResult == nil {
+		return nil, fmt.Errorf("failed to get project parser result")
+	}
 
 	fileCount := len(parsingResult.Js_Data)
 	fmt.Printf("  - 发现 %d 个 JS/TS 文件\n", fileCount)
@@ -112,8 +121,13 @@ func (s *ProjectParserStage) Execute(ctx *AnalysisContext) (interface{}, error) 
 		return nil, fmt.Errorf("no JS/TS files found in project")
 	}
 
-	// 存储解析结果到上下文（供后续阶段使用）
+	// 将 tsmorphgo.Project 存储到上下文（供符号分析阶段使用）
+	ctx.Project = project
+
+	// 存储解析结果到上下文（供影响分析阶段使用）
 	ctx.SetResult("projectParser", parsingResult)
+
+	fmt.Printf("  - 项目初始化完成\n")
 
 	return parsingResult, nil
 }
@@ -321,53 +335,63 @@ func (s *ImpactAnalysisStage) runComponentLevelAnalysis(
 }
 
 // convertToChangedSymbols 转换符号分析结果为变更符号列表
-// 注意：这里从 diff 结果中提取文件变更，并创建 ChangedSymbol 条目
-// 实际的符号级分析应该由 symbol_analysis stage 提供
+// 从 symbol_analysis stage 的结果中提取精确的符号变更信息
 func (s *ImpactAnalysisStage) convertToChangedSymbols(symbolResults interface{}) []file_analyzer.ChangedSymbol {
 	symbols := make([]file_analyzer.ChangedSymbol, 0)
 
-	resultMap, ok := symbolResults.(map[string]interface{})
+	// 处理符号分析结果（map[string]*symbol_analysis.FileAnalysisResult）
+	resultsMap, ok := symbolResults.(map[string]*symbol_analysis.FileAnalysisResult)
 	if !ok {
+		// 尝试从 interface{} 包装中提取
+		if wrapped, ok := symbolResults.(interface {
+			Get(key string) interface{}
+		}); ok {
+			val := wrapped.Get("符号分析")
+			if val != nil {
+				resultsMap, ok = val.(map[string]*symbol_analysis.FileAnalysisResult)
+			}
+		}
+	}
+
+	if !ok || len(resultsMap) == 0 {
+		fmt.Println("  ⚠️  符号分析结果为空或格式错误，无法提取符号变更")
 		return symbols
 	}
 
-	diffResults, ok := resultMap["diff_results"].([]interface{})
-	if !ok {
-		return symbols
-	}
-
-	for _, item := range diffResults {
-		diffResult, ok := item.(map[string]interface{})
-		if !ok {
+	// 遍历每个文件的分析结果
+	for filePath, fileResult := range resultsMap {
+		// 检查文件是否有受影响的符号
+		if len(fileResult.AffectedSymbols) == 0 {
 			continue
 		}
 
-		// 提取文件路径
-		newPath, _ := diffResult["new_path"].(string)
-		oldPath, _ := diffResult["old_path"].(string)
+		// 遍历文件中的每个受影响符号
+		for _, symbolChange := range fileResult.AffectedSymbols {
+			// 确定导出类型
+			var exportType symbol_analysis.ExportType
+			if symbolChange.IsExported {
+				exportType = symbolChange.ExportType
+			} else {
+				// 非导出符号，可以根据需要设置特殊类型或跳过
+				// 这里设置为空字符串，表示内部符号
+				exportType = ""
+			}
 
-		// 确定文件路径
-		filePath := newPath
-		if filePath == "" || filePath == "/dev/null" {
-			filePath = oldPath
+			// 如果是内部符号且用户没有要求分析内部符号，则跳过
+			if exportType == "" {
+				continue
+			}
+
+			// 创建 ChangedSymbol 条目
+			symbols = append(symbols, file_analyzer.ChangedSymbol{
+				Name:       symbolChange.Name,
+				FilePath:   filePath,
+				ExportType: exportType,
+			})
+
+			fmt.Printf("  - 符号变更: %s (%s) 在 %s\n",
+				symbolChange.Name, exportType, filePath)
 		}
-
-		if filePath == "" || filePath == "/dev/null" {
-			continue
-		}
-
-		// 从文件路径提取符号名称（简化处理：使用文件名作为符号名）
-		// 例如: src/components/Button/Button.tsx -> Button
-		// 实际应该从 symbol_analysis 结果获取准确的符号列表
-		symbolName := extractSymbolNameFromPath(filePath)
-
-		// 创建 ChangedSymbol 条目
-		// 注意：这里使用默认的导出类型，实际应该从 symbol_analysis 获取
-		symbols = append(symbols, file_analyzer.ChangedSymbol{
-			Name:       symbolName,
-			FilePath:   filePath,
-			ExportType: symbol_analysis.ExportTypeDefault, // 默认使用 default 导出
-		})
 	}
 
 	return symbols
@@ -443,17 +467,24 @@ func convertFileImpactInfos(impacts []file_analyzer.FileImpactInfo) []component_
 
 // extractDepGraphFromContext 从上下文提取依赖图
 func extractDepGraphFromContext(result *file_analyzer.Result) map[string][]string {
-	// TODO: 从结果中提取依赖图
-	// 目前需要重新构建，或者修改 file_analyzer.Result 以包含依赖图
+	if result.DependencyGraph != nil {
+		return result.DependencyGraph.DepGraph
+	}
 	return make(map[string][]string)
 }
 
 // extractRevDepGraphFromContext 从上下文提取反向依赖图
 func extractRevDepGraphFromContext(result *file_analyzer.Result) map[string][]string {
+	if result.DependencyGraph != nil {
+		return result.DependencyGraph.RevDepGraph
+	}
 	return make(map[string][]string)
 }
 
 // extractExternalDepsFromContext 从上下文提取外部依赖
 func extractExternalDepsFromContext(result *file_analyzer.Result) map[string][]string {
+	if result.DependencyGraph != nil {
+		return result.DependencyGraph.ExternalDeps
+	}
 	return make(map[string][]string)
 }

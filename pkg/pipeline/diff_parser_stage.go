@@ -1,8 +1,11 @@
 package pipeline
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/gitlab"
 )
@@ -15,10 +18,13 @@ import (
 type DiffSourceType string
 
 const (
-	DiffSourceAuto DiffSourceType = "auto" // 自动检测
-	DiffSourceFile DiffSourceType = "file" // 从文件读取
-	DiffSourceAPI  DiffSourceType = "api"  // 从 API 获取
-	DiffSourceSHA  DiffSourceType = "diff" // 使用 git diff 命令
+	DiffSourceAuto    DiffSourceType = "auto"    // 自动检测
+	DiffSourceFile    DiffSourceType = "file"    // 从文件读取
+	DiffSourceAPI     DiffSourceType = "api"     // 从 API 获取
+	DiffSourceSHA     DiffSourceType = "sha"     // 使用 git diff 命令（SHA 或分支名）
+	DiffSourceBranch  DiffSourceType = "branch"  // 使用分支名对比
+	DiffSourceString  DiffSourceType = "string"  // 直接传入 diff 字符串
+	DiffSourceStdin   DiffSourceType = "stdin"   // 从标准输入读取 diff
 )
 
 // GitLabClient GitLab API 客户端接口
@@ -28,7 +34,7 @@ type GitLabClient interface {
 }
 
 // DiffParserStage diff 解析阶段
-// 该阶段从 API 或文件获取 git diff，解析出行级变更
+// 该阶段从多种来源获取 git diff，解析出行级变更
 type DiffParserStage struct {
 	// API 客户端（用于 API 模式）
 	client GitLabClient
@@ -37,9 +43,14 @@ type DiffParserStage struct {
 	source    DiffSourceType
 	diffFile  string
 	diffSHA   string
+	diffString string // 直接传入的 diff 字符串
 	baseDir   string
 	projectID int
 	mrIID     int
+
+	// 分支名配置（用于 DiffSourceBranch）
+	baseBranch   string // 基础分支（如 "main", "develop"）
+	targetBranch string // 目标分支（默认为 "HEAD"）
 }
 
 // NewDiffParserStage 创建 diff 解析阶段
@@ -110,7 +121,7 @@ func (s *DiffParserStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 				fmt.Printf("  - 执行 git diff %s...%s\n", shas[0][:8], shas[1][:8])
 				lineSet, err = parser.ParseFromGit(shas[0], shas[1])
 			} else {
-				return nil, fmt.Errorf("invalid SHA format")
+				return nil, fmt.Errorf("invalid SHA format, expected 'base...head'")
 			}
 		} else {
 			baseSHA := ctx.GetOption("baseSHA", "").(string)
@@ -121,6 +132,33 @@ func (s *DiffParserStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 				return nil, fmt.Errorf("no diff source available")
 			}
 		}
+	case DiffSourceBranch:
+		// 使用分支名对比（如 "main...HEAD" 或 "develop...feature-branch"）
+		base := s.baseBranch
+		target := s.targetBranch
+		if base == "" {
+			base = ctx.GetOption("baseBranch", "main").(string)
+		}
+		if target == "" {
+			target = ctx.GetOption("targetBranch", "HEAD").(string)
+		}
+		fmt.Printf("  - 执行 git diff %s...%s (分支对比)\n", base, target)
+		lineSet, err = parser.ParseFromGit(base, target)
+	case DiffSourceString:
+		// 直接传入 diff 字符串
+		diffString := s.diffString
+		if diffString == "" {
+			diffString = ctx.GetOption("diffString", "").(string)
+		}
+		if diffString == "" {
+			return nil, fmt.Errorf("diff string not specified")
+		}
+		fmt.Println("  - 从字符串解析 diff")
+		lineSet, err = parser.ParseDiffString(diffString)
+	case DiffSourceStdin:
+		// 从标准输入读取 diff
+		fmt.Println("  - 从标准输入读取 diff...")
+		lineSet, err = s.parseDiffFromStdin(parser)
 	case DiffSourceAuto:
 		// 自动检测
 		return s.autoDetect(ctx)
@@ -205,4 +243,26 @@ func (s *DiffParserStage) autoDetect(ctx *AnalysisContext) (gitlab.ChangedLineSe
 	}
 
 	return nil, fmt.Errorf("no diff source available")
+}
+
+// parseDiffFromStdin 从标准输入读取 diff 内容
+func (s *DiffParserStage) parseDiffFromStdin(parser *gitlab.Parser) (gitlab.ChangedLineSetOfFiles, error) {
+	// 读取所有输入直到 EOF
+	var buf bytes.Buffer
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		buf.WriteString(scanner.Text())
+		buf.WriteString("\n")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("read from stdin failed: %w", err)
+	}
+
+	diffContent := buf.String()
+	if diffContent == "" {
+		return nil, fmt.Errorf("no diff content from stdin")
+	}
+
+	return parser.ParseDiffString(diffContent)
 }

@@ -314,6 +314,13 @@ func (p *Project) GetSourceFiles() []*SourceFile {
 	return files
 }
 
+// GetParserResult 返回项目的解析结果
+// 这个方法允许访问底层的 ProjectParserResult，用于需要直接访问解析数据的场景
+// 例如：file_analyzer 需要访问 Js_Data 来构建依赖图
+func (p *Project) GetParserResult() *projectParser.ProjectParserResult {
+	return p.parserResult
+}
+
 // FindNodeAt 在指定的源文件中，根据行列号查找最精确匹配的 AST 节点。
 // 返回包装后的Node类型，便于API使用。
 func (p *Project) FindNodeAt(filePath string, line, char int) *Node {

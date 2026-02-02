@@ -3,6 +3,7 @@ package pipeline
 import (
 	"fmt"
 
+	"github.com/Flying-Bird1999/analyzer-ts/pkg/gitlab"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/symbol_analysis"
 )
 
@@ -34,13 +35,14 @@ func (s *SymbolAnalysisStage) Name() string {
 // Execute 执行符号分析。
 func (s *SymbolAnalysisStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 	// 从上下文中获取 ChangedLineSetOfFiles
-	changedLines, exists := ctx.GetResult("diff_parser")
+	// 注意：使用 DiffParserStage 的 Name() 作为 key
+	changedLines, exists := ctx.GetResult("Diff解析")
 	if !exists {
 		return nil, fmt.Errorf("diff parser result not found in context")
 	}
 
-	// 类型断言：检查是否为 ChangedLineSetOfFiles 类型
-	lineSet, ok := changedLines.(map[string]map[int]bool)
+	// 类型断言：检查是否为 gitlab.ChangedLineSetOfFiles 类型
+	lineSet, ok := changedLines.(gitlab.ChangedLineSetOfFiles)
 	if !ok {
 		return nil, fmt.Errorf("invalid diff parser result type")
 	}
@@ -81,12 +83,13 @@ func (s *SymbolAnalysisStage) Execute(ctx *AnalysisContext) (interface{}, error)
 // Skip 判断是否跳过此阶段。
 func (s *SymbolAnalysisStage) Skip(ctx *AnalysisContext) bool {
 	// 如果没有变更文件，跳过此阶段
-	changedLines, exists := ctx.GetResult("diff_parser")
+	// 注意：使用 DiffParserStage 的 Name() 作为 key
+	changedLines, exists := ctx.GetResult("Diff解析")
 	if !exists {
 		return true
 	}
 
-	lineSet, ok := changedLines.(map[string]map[int]bool)
+	lineSet, ok := changedLines.(gitlab.ChangedLineSetOfFiles)
 	if !ok || len(lineSet) == 0 {
 		return true
 	}

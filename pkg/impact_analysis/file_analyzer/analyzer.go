@@ -50,9 +50,10 @@ type ChangedSymbol struct {
 
 // Result 文件级分析结果
 type Result struct {
-	Meta    FileAnalysisMeta  `json:"meta"`
-	Changes []FileChangeInfo `json:"changes"` // 直接变更的文件
-	Impact  []FileImpactInfo `json:"impact"`  // 受影响的文件
+	Meta             FileAnalysisMeta   `json:"meta"`
+	Changes          []FileChangeInfo    `json:"changes"`          // 直接变更的文件
+	Impact           []FileImpactInfo     `json:"impact"`           // 受影响的文件
+	DependencyGraph *FileDependencyGraph `json:"dependencyGraph"` // 文件依赖图（供组件级分析使用）
 }
 
 // Analyze 执行文件级影响分析
@@ -70,14 +71,19 @@ func (a *Analyzer) Analyze(input *Input) (*Result, error) {
 	// 执行符号级传播
 	impactedFiles := propagator.Propagate(input.ChangedSymbols, input.ChangedNonSymbolFiles)
 
+	// 构建文件依赖图（供组件级分析使用）
+	graphBuilder := NewGraphBuilder(a.parsingResult)
+	depGraph := graphBuilder.BuildFileDependencyGraph()
+
 	// 构建结果
-	return a.buildResult(input, impactedFiles), nil
+	return a.buildResult(input, impactedFiles, depGraph), nil
 }
 
 // buildResult 构建分析结果
 func (a *Analyzer) buildResult(
 	input *Input,
 	impactedFiles *ImpactedFiles,
+	depGraph *FileDependencyGraph,
 ) *Result {
 	result := &Result{
 		Meta: FileAnalysisMeta{
@@ -86,8 +92,9 @@ func (a *Analyzer) buildResult(
 			ChangedFileCount: countUniqueFiles(input.ChangedSymbols),
 			ImpactFileCount:  len(impactedFiles.Indirect),
 		},
-		Changes:  buildFileChangeInfos(input.ChangedSymbols),
-		Impact:   buildFileImpactInfos(impactedFiles),
+		Changes:          buildFileChangeInfos(input.ChangedSymbols),
+		Impact:           buildFileImpactInfos(impactedFiles),
+		DependencyGraph: depGraph,
 	}
 
 	return result
