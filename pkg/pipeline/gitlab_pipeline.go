@@ -26,7 +26,8 @@ type GitLabPipelineConfig struct {
 	DiffSource  DiffSourceType
 	DiffFile    string
 	DiffSHA     string
-	ProjectRoot string
+	ProjectRoot string // 项目根目录
+	GitRoot     string // Git 仓库根目录（可选，默认等于 ProjectRoot）
 	ProjectID   int
 	MRIID       int
 
@@ -53,13 +54,21 @@ type GitLabPipelineConfig struct {
 func NewGitLabPipeline(config *GitLabPipelineConfig) *AnalysisPipeline {
 	pipe := NewPipeline("GitLab Analysis Pipeline")
 
+	// 确定 GitRoot：默认等于 ProjectRoot
+	// 如果 Git 仓库根目录不等于项目根目录（如 monorepo），需要显式传入
+	gitRoot := config.GitRoot
+	if gitRoot == "" {
+		gitRoot = config.ProjectRoot
+	}
+
 	// 阶段 1: Diff 解析（获取变更行集）
+	// 使用 GitRoot 作为 baseDir，因为 diff 路径是相对于 Git 仓库根的
 	pipe.AddStage(NewDiffParserStage(
 		config.Client,
 		config.DiffSource,
 		config.DiffFile,
 		config.DiffSHA,
-		config.ProjectRoot,
+		gitRoot,
 		config.ProjectID,
 		config.MRIID,
 	))
@@ -69,8 +78,8 @@ func NewGitLabPipeline(config *GitLabPipelineConfig) *AnalysisPipeline {
 	pipe.AddStage(NewProjectParserStage())
 
 	// 阶段 3: 符号分析（将行级变更转换为符号级变更）
-	// 依赖 ctx.Project 提供的 AST 和符号查询能力
-	pipe.AddStage(NewSymbolAnalysisStage())
+	// 传递 GitRoot 用于路径转换（如果 GitRoot != ProjectRoot）
+	pipe.AddStage(NewSymbolAnalysisStage(gitRoot))
 
 	// 阶段 4: 影响分析（自动检测组件库）
 	pipe.AddStage(NewImpactAnalysisStage(

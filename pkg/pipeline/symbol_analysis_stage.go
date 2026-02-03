@@ -14,14 +14,19 @@ import (
 // SymbolAnalysisStage 符号分析阶段。
 // 该阶段将行级变更转换为符号级变更。
 type SymbolAnalysisStage struct {
+	// Git 仓库根目录（用于路径转换，当 GitRoot != ProjectRoot 时）
+	gitRoot string
+
 	// 分析选项
 	IncludeTypes    bool // 是否包含类型声明（接口、类型别名）
 	IncludeInternal bool // 是否包含非导出符号
 }
 
 // NewSymbolAnalysisStage 创建符号分析阶段。
-func NewSymbolAnalysisStage() *SymbolAnalysisStage {
+// gitRoot: Git 仓库根目录，当 GitRoot != ProjectRoot 时用于路径转换
+func NewSymbolAnalysisStage(gitRoot string) *SymbolAnalysisStage {
 	return &SymbolAnalysisStage{
+		gitRoot:         gitRoot,
 		IncludeTypes:    true,
 		IncludeInternal: false, // 默认只分析导出符号
 	}
@@ -47,6 +52,10 @@ func (s *SymbolAnalysisStage) Execute(ctx *AnalysisContext) (interface{}, error)
 		return nil, fmt.Errorf("invalid diff parser result type")
 	}
 
+	// 路径转换：当 GitRoot != ProjectRoot 时，需要将相对路径转换为绝对路径
+	// 如果 GitRoot == ProjectRoot（默认情况），路径已经是正确的
+	lineSet = s.normalizePaths(lineSet)
+
 	// 从上下文中获取 tsmorphgo 项目
 	if ctx.Project == nil {
 		return nil, fmt.Errorf("project not initialized in context")
@@ -60,13 +69,16 @@ func (s *SymbolAnalysisStage) Execute(ctx *AnalysisContext) (interface{}, error)
 	analyzer := symbol_analysis.NewAnalyzer(ctx.Project, opts)
 
 	// 执行分析
-	fmt.Printf("  - 分析 %d 个文件的变更\n", len(lineSet))
 	results := analyzer.AnalyzeChangedLines(lineSet)
 
 	// 统计结果
 	totalSymbols := 0
 	exportedSymbols := 0
-	for _, result := range results {
+	for filePath, result := range results {
+		fmt.Printf("    - %s: IsSymbolFile=%v, 符号数=%d\n", filePath, result.IsSymbolFile, len(result.AffectedSymbols))
+		for _, symbol := range result.AffectedSymbols {
+			fmt.Printf("      * %s (%s) 导出=%v\n", symbol.Name, symbol.Kind, symbol.IsExported)
+		}
 		totalSymbols += len(result.AffectedSymbols)
 		for _, symbol := range result.AffectedSymbols {
 			if symbol.IsExported {
@@ -107,11 +119,50 @@ func (s *SymbolAnalysisStage) PrintResult(result interface{}) {
 
 	for filePath, fileResult := range results {
 		exportedCount := 0
-		for _, s := range fileResult.AffectedSymbols {
-			if s.IsExported {
+		for _, sym := range fileResult.AffectedSymbols {
+			if sym.IsExported {
 				exportedCount++
 			}
 		}
 		fmt.Printf("%s: %d 个符号 (%d 已导出)", filePath, len(fileResult.AffectedSymbols), exportedCount)
 	}
+}
+
+// normalizePaths 标准化路径。
+// 当 GitRoot != ProjectRoot 时，将相对路径转换为绝对路径。
+// 默认情况下（GitRoot == ProjectRoot），路径不需要转换。
+func (s *SymbolAnalysisStage) normalizePaths(lineSet gitlab.ChangedLineSetOfFiles) gitlab.ChangedLineSetOfFiles {
+	// 检查是否需要转换：如果路径已经是绝对路径，则不需要转换
+	needsConversion := false
+	for filePath := range lineSet {
+		// 如果第一个文件路径不是绝对路径，则认为需要转换
+		// 在 Unix 系统上，绝对路径以 / 开头
+		if len(filePath) > 0 && filePath[0] != '/' {
+			needsConversion = true
+		}
+		break // 只检查第一个文件即可
+	}
+
+	if !needsConversion {
+		return lineSet // 路径已经是正确的格式
+	}
+
+	// 需要转换：将相对路径转换为绝对路径
+	// 相对路径是相对于 GitRoot 的
+	normalized := make(gitlab.ChangedLineSetOfFiles)
+	for filePath, lines := range lineSet {
+		// 如果是相对路径，拼接 GitRoot
+		if len(filePath) > 0 && filePath[0] != '/' {
+			// 检查路径是否已经包含 gitRoot 前缀（避免重复拼接）
+			if s.gitRoot != "" && len(filePath) > len(s.gitRoot) && filePath[:len(s.gitRoot)] == s.gitRoot {
+				// 路径已经包含 gitRoot 前缀，直接使用
+				normalized[filePath] = lines
+			} else {
+				normalized[s.gitRoot+"/"+filePath] = lines
+			}
+		} else {
+			normalized[filePath] = lines
+		}
+	}
+	return normalized
 }

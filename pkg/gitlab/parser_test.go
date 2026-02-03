@@ -637,3 +637,248 @@ func TestDiffParser_ParseFromGit(t *testing.T) {
 		}
 	})
 }
+
+// TestDiffParser_NewFileMode 测试新增文件（new file mode）的解析
+//
+// 功能：验证能正确解析新增文件的 diff
+//
+// 场景：
+// - 新增的 TypeScript/JavaScript 文件（如 useDebounce.ts）
+// - 新增的 CSS 样式文件（如 modal.css）
+// - 新增文件的 diff 格式特殊（--- /dev/null，内容行以 ++ 开头）
+//
+// 注意：这是一个回归测试，确保修复了解析器无法处理新增文件内容的 bug
+// 原问题：新增文件的内容行以 ++ 开头（而不是单个 +），原条件 !strings.HasPrefix(line, "++")
+//      会跳过这些行，导致新增文件无法被正确解析
+func TestDiffParser_NewFileMode(t *testing.T) {
+	// 与 pkg/verify/verify_flow.go 和 pkg/pipeline/scenario_test.go 使用相同的测试数据
+	testGitDiff := `diff --git a/testdata/test_project/src/components/Button/Button.tsx b/testdata/test_project/src/components/Button/Button.tsx
+index 340a1b6..d192cfd 100644
+--- a/testdata/test_project/src/components/Button/Button.tsx
++++ b/testdata/test_project/src/components/Button/Button.tsx
+@@ -1,9 +1,30 @@
+ // Button 组件实现
+-export interface ButtonProps {
+-  label: string;
+-  onClick?: () => void;
+-// }
++export interface ButtonProps {
++  label: string;
++  onClick?: () => void;
++  variant?: 'primary' | 'secondary' | 'danger';
++  loading?: boolean;
++}
+
+-export const Button: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => {
+-  return <button onClick={onClick}>{label}</button>;
++export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
++  return (
++    <button
++      className="btn btn-" + variant + (loading ? " btn-loading" : "")
++      onClick={onClick}
++      disabled={loading}
++    >
++      {loading ? 'Loading...' : label}
++    </button>
++  );
++};
++
++export const IconButton: React.FC<{ icon: string; onClick?: () => void; title?: string }> = ({ icon, onClick, title }) => {
++  return <button className="btn-icon" onClick={onClick} title={title}>{icon}</button>;
++};
++
++export const LinkButton: React.FC<{ label: string; href?: string; onClick?: () => void }> = ({ label, href, onClick }) => {
++  if (href) {
++    return <a href={href} className="btn-link">{label}</a>;
++  }
++  return <button className="btn-link" onClick={onClick}>{label}</button>;
+ };
+diff --git a/testdata/test_project/src/hooks/useDebounce.ts b/testdata/test_project/src/hooks/useDebounce.ts
+new file mode 100644
+index 0000000..1e738aa
+--- /dev/null
++++ b/testdata/test_project/src/hooks/useDebounce.ts
+@@ -0,0 +1,34 @@
+++// useDebounce hook
+++import { useEffect, useState, useRef } from 'react';
+++
+++export interface UseDebounceOptions {
+++  immediate?: boolean;
+++}
+++
+++export const useDebounce = <T,>(
+++  value: T,
+++  delay: number,
+++  options?: UseDebounceOptions
+++): T => {
+++  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+++  const firstUpdate = useRef(true);
+++
+++  useEffect(() => {
+++    if (options?.immediate && firstUpdate.current) {
+++      setDebouncedValue(value);
+++      firstUpdate.current = false;
+++      return;
+++    }
+++
+++    const handler = setTimeout(() => {
+++      setDebouncedValue(value);
+++    }, delay);
+++
+++    return () => {
+++      clearTimeout(handler);
+++    };
+++  }, [value, delay, options?.immediate]);
+++
+++  return debouncedValue;
+++};
+diff --git a/testdata/test_project/src/components/Input/Input.tsx b/testdata/test_project/src/components/Input/Input.tsx
+index 1234567..abcdefg 100644
+--- a/testdata/test_project/src/components/Input/Input.tsx
++++ b/testdata/test_project/src/components/Input/Input.tsx
+@@ -1,9 +1,30 @@
+ // Input 组件实现
+ import { Button } from '../Button/Button';
+
+-export interface InputProps {
++export interface InputProps {
+   value: string;
+   onChange?: (value: string) => void;
++  disabled?: boolean;
++  error?: string;
++  placeholder?: string;
+ }
+
+-export const Input: React.FC<InputProps> = ({ value, onChange }) => {
+-  return <input value={value} onChange={(e) => onChange?.(e.target.value)} />;
++export const Input: React.FC<InputProps> = ({
++  value,
++  onChange,
++  disabled = false,
++  error,
++  placeholder = ""
++}) => {
++  return (
++    <input
++      value={value}
++      onChange={(e) => onChange?.(e.target.value)}
++      disabled={disabled}
++      placeholder={placeholder}
++      className={error ? "input-error" : ""}
++    />
++  );
++};
+
+++// 新增：带标签的输入框
+++export const LabeledInput: React.FC<InputProps & { label: string }> = ({ label, ...inputProps }) => {
+++  return (
+++    <div className="labeled-input">
+++      <label>{label}</label>
+++      <Input {...inputProps} />
+++      {inputProps.error && <span className="error-message">{inputProps.error}</span>}
+++    </div>
+++  );
+++};
+diff --git a/testdata/test_project/src/assets/logo.png b/testdata/test_project/src/assets/logo.png
+index 1234567..abcdefg 100644
+Binary files a/testdata/test_project/src/assets/logo.png and b/testdata/test_project/src/assets/logo.png differ
+diff --git a/testdata/test_project/src/assets/modal.css b/testdata/test_project/src/assets/modal.css
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/testdata/test_project/src/assets/modal.css
+@@ -0,0 +1,13 @@
+++/* Modal 组件样式 */
+++.modal-overlay {
+++  position: fixed;
+++  top: 0;
+++  left: 0;
+++  right: 0;
+++  bottom: 0;
+++  background: rgba(0, 0, 0, 0.5);
+++}
+++
+++.modal-content {
+++  position: fixed;
+++  top: 50%;
+++  left: 50%;
+++  transform: translate(-50%, -50%);
+++  background: white;
+++  padding: 20px;
+++  border-radius: 8px;
+++}
+diff --git a/testdata/test_project/src/types/enums.ts b/testdata/test_project/src/types/enums.ts
+index 1234567..abcdefg 100644
+--- a/testdata/test_project/src/types/enums.ts
++++ b/testdata/test_project/src/types/enums.ts
+@@ -1,11 +1,18 @@
+ // 枚举类型定义
+
+ export enum ButtonSize {
+   Small = 'small',
+   Medium = 'medium',
+   Large = 'large'
++  ExtraLarge = 'xlarge'
+ }
+
+ export enum ThemeColor {
+   Primary = 'primary',
+   Secondary = 'secondary',
+   Success = 'success',
+   Warning = 'warning',
+   Danger = 'danger',
+-  Info = 'info'
++  Info = 'info',
++  Light = 'light',
++  Dark = 'dark'
+ }
+
+ export enum Direction {
+   Horizontal = 'horizontal',
+   Vertical = 'vertical'
++  Diagonal = 'diagonal'
+ }
+
+ export enum Align {
+   Left = 'left',
+   Center = 'center',
+   Right = 'right',
+   Justify = 'justify'
+ }
+`
+
+	parser := NewDiffParser("")
+	result, err := parser.ParseDiffOutput(testGitDiff)
+
+	require.NoError(t, err)
+
+	// 验证解析结果
+	expectedFiles := []string{
+		"testdata/test_project/src/components/Button/Button.tsx",
+		"testdata/test_project/src/hooks/useDebounce.ts",
+		"testdata/test_project/src/components/Input/Input.tsx",
+		"testdata/test_project/src/assets/logo.png",
+		"testdata/test_project/src/assets/modal.css",
+		"testdata/test_project/src/types/enums.ts",
+	}
+
+	assert.Equal(t, len(expectedFiles), len(result), "应该解析出 6 个文件")
+
+	for _, expectedFile := range expectedFiles {
+		assert.Contains(t, result, expectedFile, "应该包含文件: "+expectedFile)
+	}
+
+	// 验证新增文件（new file mode）能被正确解析
+	// useDebounce.ts 是新增文件，应该有约 34 行变更（排除空行后可能略少）
+	useDebounceLines := result["testdata/test_project/src/hooks/useDebounce.ts"]
+	assert.Greater(t, len(useDebounceLines), 30, "useDebounce.ts 应该有约 34 行变更")
+
+	// modal.css 也是新增文件，应该有约 13 行变更（排除空行后可能略少）
+	modalCssLines := result["testdata/test_project/src/assets/modal.css"]
+	assert.Greater(t, len(modalCssLines), 10, "modal.css 应该有约 13 行变更")
+
+	// 输出所有文件的变更行数（便于调试）
+	for filePath, lines := range result {
+		t.Logf("  - %s: %d 行变更", filePath, len(lines))
+	}
+}

@@ -554,8 +554,8 @@ func (a *Analyzer) extractAffectedSymbols(
 			return
 		}
 
-		// 检查我们是否应该包含此符号
-		if !a.shouldIncludeSymbol(node) {
+		// 检查我们是否应该包含此符号（传递 sourceFile 用于导出检查）
+		if !a.shouldIncludeSymbol(sourceFile, node) {
 			return
 		}
 

@@ -219,9 +219,9 @@ func (a *Analyzer) isTopLevelVariable(node tsmorphgo.Node) bool {
 }
 
 // shouldIncludeSymbol 检查符号是否应该包含在分析中。
-func (a *Analyzer) shouldIncludeSymbol(node tsmorphgo.Node) bool {
+func (a *Analyzer) shouldIncludeSymbol(sourceFile *tsmorphgo.SourceFile, node tsmorphgo.Node) bool {
 	// 始终包含导出符号
-	if a.isExportedNode(node) {
+	if a.isExportedNode(sourceFile, node) {
 		return true
 	}
 
@@ -230,20 +230,63 @@ func (a *Analyzer) shouldIncludeSymbol(node tsmorphgo.Node) bool {
 }
 
 // isExportedNode 检查节点是否已导出。
-func (a *Analyzer) isExportedNode(node tsmorphgo.Node) bool {
-	// 检查任何父节点是否是导出声明
-	parent := node.GetParent()
-	for parent != nil {
-		if parent.IsExportDeclaration() {
+func (a *Analyzer) isExportedNode(sourceFile *tsmorphgo.SourceFile, node tsmorphgo.Node) bool {
+	// 方法1：检查节点本身的修饰符（检查子节点中的 export 关键字）
+	// 这对 InterfaceDeclaration、ClassDeclaration 等有效
+	found := false
+	node.ForEachChild(func(child tsmorphgo.Node) bool {
+		if child.GetKindName() == "ExportKeyword" {
+			found = true
 			return true
 		}
-		// 同时检查 export 关键字修饰符
-		text := parent.GetText()
-		if len(text) > 6 && text[:6] == "export" {
+		return false
+	})
+	if found {
+		return true
+	}
+
+	// 方法2：对于 VariableDeclaration 和 FunctionDeclaration，
+	// 使用 FileResult 中的 Exported 标志
+	if node.IsVariableDeclaration() {
+		fileResult := sourceFile.GetFileResult()
+		if fileResult != nil {
+			nodeLine := node.GetStartLineNumber()
+			for _, varDecl := range fileResult.VariableDeclarations {
+				if varDecl.Node != nil {
+					// 使用节点的起始行号进行比较
+					varDeclLine := node.GetStartLineNumber()
+					if varDeclLine == nodeLine {
+						return varDecl.Exported
+					}
+				}
+			}
+		}
+	}
+
+	if node.IsFunctionDeclaration() {
+		fileResult := sourceFile.GetFileResult()
+		if fileResult != nil {
+			nodeLine := node.GetStartLineNumber()
+			for _, fnDecl := range fileResult.FunctionDeclarations {
+				if fnDecl.Node != nil {
+					fnDeclLine := node.GetStartLineNumber()
+					if fnDeclLine == nodeLine {
+						return fnDecl.Exported
+					}
+				}
+			}
+		}
+	}
+
+	// 方法3：检查任何父节点是否是导出声明
+	parent := node.GetParent()
+	for parent.IsValid() {
+		if parent.IsExportDeclaration() {
 			return true
 		}
 		parent = parent.GetParent()
 	}
+
 	return false
 }
 

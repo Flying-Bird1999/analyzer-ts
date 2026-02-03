@@ -255,14 +255,16 @@ func (p *Parser) extractAddedLines(block string) map[int]bool {
 
 		// 在 hunk 块中处理行
 		if currentHunk {
-			// 新增行（以 + 开头，但不是 +++）
-			if strings.HasPrefix(line, "+") && !strings.HasPrefix(line, "++") {
+			// 新增行（以 + 开头，但不是 +++ 表示文件路径的行）
+			// 注意：新增文件（--- /dev/null）的内容行以 ++ 开头，也需要处理
+			isFileHeader := strings.HasPrefix(line, "+++") || strings.HasPrefix(line, "---")
+			if strings.HasPrefix(line, "+") && !isFileHeader {
 				// 只记录非空的新增行
 				if len(strings.TrimSpace(line)) > 0 {
 					addedLines[lineNumber] = true
 				}
 				lineNumber++
-			} else if strings.HasPrefix(line, "-") && !strings.HasPrefix(line, "---") {
+			} else if strings.HasPrefix(line, "-") && !isFileHeader {
 				// 删除行：不影响新文件的行号
 				continue
 			} else if strings.HasPrefix(line, " ") || strings.HasPrefix(line, "\t") {
