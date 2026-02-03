@@ -54,9 +54,13 @@
 
 ### 🏗️ 架构分析
 
+- **[component-deps-v2](#component-deps-v2---组件依赖分析-v2)**: 基于配置文件的组件依赖关系分析
 - **[component-deps](#component-deps---组件依赖分析)**: 分析组件之间的依赖关系
 - **[api-tracer](#api-tracer---api-调用链追踪)**: 追踪 API 的完整调用链路
-- **[structure-simple](#structure-simple---项目结构分析)**: 输出项目的整体结构报告
+
+### 🔥 代码影响分析 (Pipeline)
+
+- **[impact](#impact---代码变更影响分析)**: 完整的代码变更影响分析管道，支持多种输入源
 
 ### 🛠️ 开发工具
 
@@ -459,6 +463,173 @@ analyzer-ts scan \
   -x "node_modules/**" \
   -x "**/*.test.ts"
 ```
+
+---
+
+### impact - 代码变更影响分析
+
+完整的代码变更影响分析管道，支持多种输入源和输出格式。
+
+**功能特性**:
+- 支持多种 diff 输入源（文件、字符串、git diff、GitLab API）
+- 自动解析项目 AST 并分析符号级变更
+- 计算文件级和组件级影响范围
+- 支持 Monorepo 项目（显式指定 git-root）
+- 支持组件库项目（通过 component-manifest.json）
+
+**使用示例**:
+
+```bash
+# 使用 diff 文件
+analyzer-ts impact \
+  --project-root /path/to/project \
+  --diff-file ./changes.patch \
+  --output impact-result.json
+
+# 使用 git diff
+analyzer-ts impact \
+  --project-root /path/to/project \
+  --git-diff "HEAD~1 HEAD"
+
+# 使用 diff 字符串（适合 CI/CD）
+analyzer-ts impact \
+  --project-root /path/to/project \
+  --diff-string "$(git diff HEAD~1 HEAD)" \
+  --format summary
+
+# Monorepo 项目
+analyzer-ts impact \
+  --project-root /path/to/project \
+  --git-root /path/to/git/root \
+  --manifest .analyzer/component-manifest.json \
+  --diff-file ./changes.patch
+```
+
+**输出示例**:
+
+```json
+{
+  "meta": {
+    "projectRoot": "/path/to/project",
+    "analyzedAt": "2024-01-01T00:00:00Z"
+  },
+  "fileAnalysis": {
+    "meta": {
+      "changedFileCount": 1,
+      "impactFileCount": 7
+    },
+    "changes": [
+      {
+        "path": "src/components/Button/Button.tsx",
+        "type": "modified",
+        "symbolCount": 3
+      }
+    ],
+    "impact": [
+      {
+        "path": "src/components/Form/Form.tsx",
+        "impactLevel": 1,
+        "impactType": "internal"
+      }
+    ]
+  },
+  "componentAnalysis": {
+    "meta": {
+      "changedComponentCount": 1,
+      "impactComponentCount": 8
+    },
+    "changes": [{"name": "Button"}],
+    "impact": [{"name": "Form", "impactLevel": 2}]
+  }
+}
+```
+
+**使用场景**:
+- Code Review 前了解变更影响范围
+- CI/CD 质量门禁（影响范围过大则阻止合并）
+- 重构前风险评估
+- 发布前回归测试范围评估
+
+---
+
+### component-deps-v2 - 组件依赖分析 (v2)
+
+基于 `component-manifest.json` 配置文件的组件依赖关系分析。
+
+**功能特性**:
+- 配置驱动：通过 manifest.json 显式声明组件
+- 作用域自动推断：基于 entry 文件自动推断组件作用域
+- 相对路径解析：正确处理跨组件的相对路径导入
+- 循环依赖检测：自动检测并报告循环依赖
+- 双向依赖图：生成正向和反向依赖关系图
+
+**配置文件**:
+
+```json
+// .analyzer/component-manifest.json
+{
+  "meta": {
+    "version": "1.0.0",
+    "libraryName": "@your-org/ui-components"
+  },
+  "components": [
+    {
+      "name": "Button",
+      "entry": "src/components/Button/index.tsx"
+    },
+    {
+      "name": "Input",
+      "entry": "src/components/Input/index.tsx"
+    }
+  ]
+}
+```
+
+**使用示例**:
+
+```bash
+analyzer-ts analyze component-deps-v2 \
+  -i /path/to/project \
+  -p component-deps-v2.manifest=.analyzer/component-manifest.json \
+  -o ./output
+```
+
+**输出示例**:
+
+```json
+{
+  "component-deps-v2": {
+    "meta": {
+      "libraryName": "@your-org/ui-components",
+      "componentCount": 2
+    },
+    "components": {
+      "Button": {
+        "entry": "src/components/Button/index.tsx",
+        "dependencies": []
+      },
+      "Input": {
+        "entry": "src/components/Input/index.tsx",
+        "dependencies": ["Button"]
+      }
+    },
+    "depGraph": {
+      "Button": [],
+      "Input": ["Button"]
+    },
+    "revDepGraph": {
+      "Button": ["Input"],
+      "Input": []
+    }
+  }
+}
+```
+
+**使用场景**:
+- 组件库架构优化
+- 循环依赖检测和解决
+- 组件拆分/合并前的依赖分析
+- 生成组件依赖可视化
 
 ---
 
@@ -1126,8 +1297,19 @@ analyzer-ts/
 │
 ├── cmd/                             # 命令行接口层
 │   ├── root.go                      # 根命令定义
+│   ├── impact.go                    # impact 子命令（代码影响分析）
 │   ├── scan.go                      # scan 子命令
 │   └── version.go                   # 版本信息
+│
+├── pkg/                             # 核心能力包
+│   └── pipeline/                    # 代码影响分析管道
+│       ├── README.md                # 架构设计文档
+│       ├── INTEGRATION.md           # 接入文档
+│       ├── pipeline.go              # 管道核心
+│       ├── gitlab_pipeline.go       # GitLab MR 管道
+│       ├── diff_parser_stage.go     # Diff 解析阶段
+│       ├── symbol_analysis_stage.go # 符号分析阶段
+│       └── stage.go                 # 阶段接口
 │
 ├── analyzer/                        # 核心解析引擎
 │   ├── scanProject/                 # 第1层: 文件扫描
@@ -1156,7 +1338,8 @@ analyzer-ts/
 │   │   ├── dependency/              # NPM 依赖检查
 │   │   ├── trace/                   # NPM 包使用追踪
 │   │   ├── api_tracer/              # API 调用链追踪
-│   │   └── component_deps/          # 组件依赖分析
+│   │   ├── component_deps/          # 组件依赖分析
+│   │   └── component_deps_v2/       # 组件依赖分析 v2（基于 manifest）
 │   │
 │   └── ts_bundle/                   # TypeScript 类型打包工具
 │       ├── README.md                # 详细文档
@@ -1204,6 +1387,15 @@ analyzer-ts/
 - **质量门禁**: 设置代码质量标准，阻止低质量代码合并
 - **自动化报告**: 在每次构建后生成分析报告
 - **持续监控**: 跟踪代码质量趋势
+- **影响范围检查**: 使用 `impact` 命令在 MR/PR 时自动评估变更影响
+
+### 代码变更影响分析
+
+- **Code Review 辅助**: 在 Review 前了解变更的完整影响范围
+- **回归测试范围**: 基于影响分析确定需要回归测试的模块
+- **风险评估**: 根据影响层级和风险等级决定是否需要额外测试
+- **发布决策**: 评估组件库变更对下游项目的影响
+- **重构规划**: 使用 `component-deps-v2` 和 `impact` 命令规划重构策略
 
 ### 大型项目迁移
 
@@ -1214,8 +1406,16 @@ analyzer-ts/
 
 ## 📚 更多资源
 
+### 核心文档
 - **[架构详解](./analyzer/README.md)**: 深入了解核心解析引擎
+- **[代码影响分析管道](./pkg/pipeline/README.md)**: Pipeline 架构设计与数据流向
+- **[Pipeline 接入文档](./pkg/pipeline/INTEGRATION.md)**: 业务方接入指南
+
+### 插件开发
 - **[插件开发指南](./analyzer_plugin/project_analyzer/README.md)**: 开发自定义分析器
+- **[component_deps_v2 文档](./analyzer_plugin/project_analyzer/component_deps_v2/README.md)**: 组件依赖分析 v2
+
+### API 文档
 - **[ts_bundle 文档](./analyzer_plugin/ts_bundle/README.md)**: 类型打包工具详解
 - **[TSMorphGo API](./tsmorphgo/README.md)**: ts-morph 风格的 Go API
 

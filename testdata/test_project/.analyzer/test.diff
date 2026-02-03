@@ -1,0 +1,42 @@
+diff --git a/testdata/test_project/src/components/Button/Button.tsx b/testdata/test_project/src/components/Button/Button.tsx
+index 340a1b6..d192cfd 100644
+--- a/testdata/test_project/src/components/Button/Button.tsx
++++ b/testdata/test_project/src/components/Button/Button.tsx
+@@ -1,9 +1,30 @@
+ // Button 组件实现
+-export interface ButtonProps {
+-  label: string;
+-  onClick?: () => void;
+-}
+-
+-export const Button: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => {
+-  return <button onClick={onClick}>{label}</button>;
++export interface ButtonProps {
++  label: string;
++  onClick?: () => void;
++  variant?: 'primary' | 'secondary' | 'danger';
++  loading?: boolean;  // 新增：加载状态
++}
++
++export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
++  return (
++    <button
++      className="btn btn-" + variant + (loading ? " btn-loading" : "")
++      onClick={onClick}
++      disabled={loading}
++    >
++      {loading ? 'Loading...' : label}
++    </button>
++  );
++};
++
++export const IconButton: React.FC<{ icon: string; onClick?: () => void; title?: string }> = ({ icon, onClick, title }) => {
++  return <button className="btn-icon" onClick={onClick} title={title}>{icon}</button>;
++};
++
++export const LinkButton: React.FC<{ label: string; href?: string; onClick?: () => void }> = ({ label, href, onClick }) => {
++  if (href) {
++    return <a href={href} className="btn-link">{label}</a>;
++  }
++  return <button className="btn-link" onClick={onClick}>{label}</button>;
+ };

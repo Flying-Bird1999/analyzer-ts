@@ -32,6 +32,7 @@ func init() {
 
 	// 添加其他顶级命令
 	RootCmd.AddCommand(ScanCmd)
+	RootCmd.AddCommand(ImpactCmd)
 }
 
 // Execute 将所有子命令添加到根命令并适当设置标志。
