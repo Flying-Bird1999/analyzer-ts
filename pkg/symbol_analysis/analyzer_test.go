@@ -450,3 +450,95 @@ export { privateConfig }
 		})
 	}
 }
+
+// TestAnalyzer_DefaultExport 测试 export default 语法的正确识别
+// 验证：export default const/function 能正确标记为导出状态
+func TestAnalyzer_DefaultExport(t *testing.T) {
+	sources := map[string]string{
+		"/src/test.ts": `
+// export default 变量
+const Button = () => { return <button>Click</button> }
+export default Button
+
+// export default 函数
+function helper() {
+	return 'help'
+}
+export default helper
+
+// 普通导出变量（对比）
+export const IconButton = () => { return <button>Icon</button> }
+
+// 私有变量（对比）
+const PrivateVar = { key: 'value' }
+`,
+	}
+
+	project := tsmorphgo.NewProjectFromSources(sources)
+	analyzer := NewAnalyzerWithDefaults(project)
+
+	tests := []struct {
+		name             string
+		changedLine      int
+		expectedSymbol   string
+		expectedExported bool
+		expectedType     ExportType
+	}{
+		{
+			name:             "export default 变量",
+			changedLine:      3, // Button 声明行
+			expectedSymbol:   "Button",
+			expectedExported: true,
+			expectedType:     ExportTypeDefault,
+		},
+		{
+			name:             "export default 函数",
+			changedLine:      5, // helper 函数内部
+			expectedSymbol:   "helper",
+			expectedExported: true,
+			expectedType:     ExportTypeDefault,
+		},
+		{
+			name:             "普通导出变量 (export const)",
+			changedLine:      13, // IconButton 声明行
+			expectedSymbol:   "IconButton",
+			expectedExported: true,
+			expectedType:     ExportTypeNamed, // 命名导出
+		},
+		{
+			name:             "私有变量 (无导出)",
+			changedLine:      16, // PrivateVar 声明行
+			expectedSymbol:   "PrivateVar",
+			expectedExported: false,
+			expectedType:     ExportTypeNone,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			changedLines := map[int]bool{tt.changedLine: true}
+			result, err := analyzer.AnalyzeFile("/src/test.ts", changedLines)
+			if err != nil {
+				t.Fatalf("预期没有错误，但得到: %v", err)
+			}
+
+			if len(result.AffectedSymbols) == 0 {
+				t.Errorf("预期找到受影响的符号，但没有找到")
+				return
+			}
+
+			symbol := result.AffectedSymbols[0]
+			if symbol.Name != tt.expectedSymbol {
+				t.Errorf("预期符号 '%s'，但得到 '%s'", tt.expectedSymbol, symbol.Name)
+			}
+
+			if symbol.IsExported != tt.expectedExported {
+				t.Errorf("预期 IsExported=%v，但得到 %v", tt.expectedExported, symbol.IsExported)
+			}
+
+			if symbol.ExportType != tt.expectedType {
+				t.Errorf("预期 ExportType=%v，但得到 %v", tt.expectedType, symbol.ExportType)
+			}
+		})
+	}
+}

@@ -27,44 +27,8 @@ func TestLoadManifest_InvalidJSON(t *testing.T) {
 	t.Skip("需要创建无效 JSON 测试文件")
 }
 
-func TestValidateManifest_EmptyVersion(t *testing.T) {
-	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "",
-			LibraryName: "test-lib",
-		},
-		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-		},
-	}
-
-	err := validateManifest(manifest)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "meta.version 不能为空")
-}
-
-func TestValidateManifest_EmptyLibraryName(t *testing.T) {
-	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "",
-		},
-		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-		},
-	}
-
-	err := validateManifest(manifest)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "meta.libraryName 不能为空")
-}
-
 func TestValidateManifest_EmptyComponents(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
 		Components: []ComponentDefinition{},
 	}
 
@@ -75,10 +39,7 @@ func TestValidateManifest_EmptyComponents(t *testing.T) {
 
 func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Button", Entry: "src/Button2/index.tsx"},
@@ -92,10 +53,7 @@ func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 
 func TestGetComponentByName(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -113,10 +71,6 @@ func TestGetComponentByName(t *testing.T) {
 
 func TestGetComponentCount(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -128,10 +82,6 @@ func TestGetComponentCount(t *testing.T) {
 
 func TestGetComponentNames(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -169,19 +119,16 @@ func TestComponentScope_Contains(t *testing.T) {
 
 func TestMultiComponentScope_FindComponentByFile(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{
 				Name:  "Button",
 				Entry: "src/Button/index.tsx",
-					},
+			},
 			{
 				Name:  "Input",
 				Entry: "src/Input/index.tsx",
-					},
+			},
 		},
 	}
 
@@ -203,19 +150,16 @@ func TestMultiComponentScope_FindComponentByFile(t *testing.T) {
 
 func TestMultiComponentScope_CrossComponentDetection(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{
 				Name:  "Button",
 				Entry: "src/Button/index.tsx",
-					},
+			},
 			{
 				Name:  "Input",
 				Entry: "src/Input/index.tsx",
-					},
+			},
 		},
 	}
 
@@ -252,10 +196,7 @@ func TestMultiComponentScope_CrossComponentDetection(t *testing.T) {
 
 func TestGraphBuilder_BuildDepGraph(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -281,10 +222,7 @@ func TestGraphBuilder_BuildDepGraph(t *testing.T) {
 
 func TestGraphBuilder_BuildRevDepGraph(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -310,10 +248,7 @@ func TestGraphBuilder_BuildRevDepGraph(t *testing.T) {
 
 func TestGraphBuilder_DetectCycles(t *testing.T) {
 	manifest := &ComponentManifest{
-		Meta: ManifestMeta{
-			Version:     "1.0.0",
-			LibraryName: "test-lib",
-		},
+
 		Components: []ComponentDefinition{
 			{Name: "A", Entry: "src/A/index.tsx"},
 			{Name: "B", Entry: "src/B/index.tsx"},
@@ -379,8 +314,6 @@ func TestComponentDepsV2Result_Name(t *testing.T) {
 func TestComponentDepsV2Result_Summary(t *testing.T) {
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
-			Version:        "1.0.0",
-			LibraryName:    "test-lib",
 			ComponentCount: 3,
 		},
 		DepGraph: DependencyGraph{
@@ -398,8 +331,6 @@ func TestComponentDepsV2Result_Summary(t *testing.T) {
 func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
-			Version:        "1.0.0",
-			LibraryName:    "test-lib",
 			ComponentCount: 1,
 		},
 		Components: map[string]ComponentInfo{
@@ -428,8 +359,6 @@ func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
-			Version:        "1.0.0",
-			LibraryName:    "test-lib",
 			ComponentCount: 2,
 		},
 		Components: map[string]ComponentInfo{
@@ -456,7 +385,6 @@ func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 
 	output := result.ToConsole()
 	assert.Contains(t, output, "组件依赖分析报告")
-	assert.Contains(t, output, "test-lib")
 	assert.Contains(t, output, "组件总数: 2")
 	assert.Contains(t, output, "Button")
 	assert.Contains(t, output, "Input")

@@ -6,7 +6,7 @@ export interface ButtonProps {
   loading?: boolean;  // 新增：加载状态
 }
 
-export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
+const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
   return (
     <button
       className={`btn btn-${variant} ${loading ? 'btn-loading' : ''}`}
@@ -28,3 +28,5 @@ export const LinkButton: React.FC<{ label: string; href?: string; onClick?: () =
   }
   return <button className="btn-link" onClick={onClick}>{label}</button>;
 };
+
+export default Button;

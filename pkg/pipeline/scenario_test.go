@@ -12,13 +12,12 @@ import (
 )
 
 // testGitDiff 测试用的 git diff 内容
-// 与 verify_flow.go 保持完全一致
-// 场景：修改了 Button 组件（添加 loading 状态）和 useDebounce hook（添加 immediate 选项）
+// 场景：修改了 Button 组件接口（添加 loading 状态）和 useDebounce hook（新增文件）
 const testGitDiff = `diff --git a/testdata/test_project/src/components/Button/Button.tsx b/testdata/test_project/src/components/Button/Button.tsx
 index 340a1b6..d192cfd 100644
 --- a/testdata/test_project/src/components/Button/Button.tsx
 +++ b/testdata/test_project/src/components/Button/Button.tsx
-@@ -1,9 +1,30 @@
+@@ -1,9 +1,32 @@
  // Button 组件实现
 -// export interface ButtonProps {
 -//   label: string;
@@ -31,12 +30,12 @@ index 340a1b6..d192cfd 100644
 +  loading?: boolean;  // 新增：加载状态
 +}
 
--export const Button: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => {
+-const Button: React.FC<{ label: string; onClick?: () => void }> = ({ label, onClick }) => {
 -  return <button onClick={onClick}>{label}</button>;
-+export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
++const Button: React.FC<ButtonProps> = ({ label, onClick, variant = 'primary', loading = false }) => {
 +  return (
 +    <button
-+      className="btn btn-" + variant + (loading ? " btn-loading" : "")
++      className={"btn btn-" + variant + (loading ? " btn-loading" : "")}
 +      onClick={onClick}
 +      disabled={loading}
 +    >
@@ -54,7 +53,9 @@ index 340a1b6..d192cfd 100644
 +    return <a href={href} className="btn-link">{label}</a>;
 +  }
 +  return <button className="btn-link" onClick={onClick}>{label}</button>;
- };
++};
++
++export default Button;
 diff --git a/testdata/test_project/src/hooks/useDebounce.ts b/testdata/test_project/src/hooks/useDebounce.ts
 new file mode 100644
 index 0000000..1e738aa

@@ -247,16 +247,30 @@ func (a *Analyzer) isExportedNode(sourceFile *tsmorphgo.SourceFile, node tsmorph
 
 	// 方法2：对于 VariableDeclaration 和 FunctionDeclaration，
 	// 使用 FileResult 中的 Exported 标志
-	if node.IsVariableDeclaration() {
+	// 注意：节点可能是 VariableStatement，包含多个 VariableDeclaration
+	if node.IsVariableDeclaration() || node.GetKind() == tsmorphgo.KindVariableStatement {
 		fileResult := sourceFile.GetFileResult()
 		if fileResult != nil {
-			nodeLine := node.GetStartLineNumber()
+			nodeName := a.extractSymbolName(node)
+			// 首先检查 VariableDeclarations 中的 Exported 标志
 			for _, varDecl := range fileResult.VariableDeclarations {
-				if varDecl.Node != nil {
-					// 使用节点的起始行号进行比较
-					varDeclLine := node.GetStartLineNumber()
-					if varDeclLine == nodeLine {
-						return varDecl.Exported
+				// 通过比较变量名称来匹配（而不是行号）
+				if len(varDecl.Declarators) > 0 && varDecl.Declarators[0].Identifier == nodeName {
+					if varDecl.Exported {
+						return true
+					}
+					// 如果未导出，继续检查 export default
+					break
+				}
+			}
+			// 如果 VariableDeclarations 中显示未导出，
+			// 还需要检查是否有 export default 引用此变量
+			if nodeName != "" {
+				for _, exportAssign := range fileResult.ExportAssignments {
+					// ExportAssignment.Expression 包含导出的表达式文本
+					// 例如 "export default Button" 的 Expression 是 "Button"
+					if exportAssign.Expression == nodeName {
+						return true
 					}
 				}
 			}
@@ -266,12 +280,23 @@ func (a *Analyzer) isExportedNode(sourceFile *tsmorphgo.SourceFile, node tsmorph
 	if node.IsFunctionDeclaration() {
 		fileResult := sourceFile.GetFileResult()
 		if fileResult != nil {
-			nodeLine := node.GetStartLineNumber()
+			nodeName := a.extractSymbolName(node)
+			// 检查 FunctionDeclarations 中的 Exported 标志
 			for _, fnDecl := range fileResult.FunctionDeclarations {
-				if fnDecl.Node != nil {
-					fnDeclLine := node.GetStartLineNumber()
-					if fnDeclLine == nodeLine {
-						return fnDecl.Exported
+				// 通过比较函数名称来匹配
+				if nodeName != "" && fnDecl.Identifier == nodeName {
+					if fnDecl.Exported {
+						return true
+					}
+					// 如果未导出，继续检查 export default
+					break
+				}
+			}
+			// 检查是否有 export default 引用此函数
+			if nodeName != "" {
+				for _, exportAssign := range fileResult.ExportAssignments {
+					if exportAssign.Expression == nodeName {
+						return true
 					}
 				}
 			}

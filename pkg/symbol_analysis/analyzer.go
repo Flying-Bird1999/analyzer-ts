@@ -591,11 +591,11 @@ func (a *Analyzer) isAffectedByChanges(
 func (a *Analyzer) fillExportInfo(result *FileAnalysisResult) {
 	// 构建导出索引以供快速查找
 	exportIndex := make(map[string]ExportInfo)
-	defaultExport := "" // 跟踪默认导出名称
+	defaultExports := make(map[string]bool) // 支持多个默认导出
 
 	for _, export := range result.FileExports {
 		if export.ExportType == ExportTypeDefault {
-			defaultExport = export.Name
+			defaultExports[export.Name] = true
 		} else {
 			exportIndex[export.Name] = export
 		}
@@ -613,13 +613,11 @@ func (a *Analyzer) fillExportInfo(result *FileAnalysisResult) {
 		}
 
 		// 检查默认导出
-		// 对于类，默认导出可能是类名
-		if defaultExport != "" {
-			if symbol.Kind == SymbolKindClass && defaultExport == symbol.Name {
-				symbol.IsExported = true
-				symbol.ExportType = ExportTypeDefault
-				continue
-			}
+		// 支持类、函数、变量等所有类型的默认导出
+		if defaultExports[symbol.Name] {
+			symbol.IsExported = true
+			symbol.ExportType = ExportTypeDefault
+			continue
 		}
 
 		// 检查节点本身是否有导出修饰符

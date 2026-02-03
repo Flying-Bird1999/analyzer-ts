@@ -1,5 +1,5 @@
 // Input 组件实现
-import { Button } from '../Button/Button';
+import Button from '../Button/Button';
 
 export interface InputProps {
   value: string;

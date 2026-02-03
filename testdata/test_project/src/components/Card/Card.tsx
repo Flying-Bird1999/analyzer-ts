@@ -1,5 +1,5 @@
 // Card 组件实现
-import { Button } from '../Button/Button';
+import Button from '../Button/Button';
 import { ThemeColor, ButtonSize, Direction } from '../../types/enums';
 
 export interface CardProps {
@@ -10,7 +10,7 @@ export interface CardProps {
   size?: ButtonSize;      // 使用枚举
 }
 
-export const Card: React.FC<CardProps> = ({ title, description, footer, theme = ThemeColor.Primary, size = ButtonSize.Medium }) => {
+const Card: React.FC<CardProps> = ({ title, description, footer, theme = ThemeColor.Primary, size = ButtonSize.Medium }) => {
   return (
     <div className={`card card-${theme} card-${size}`}>
       <div className="card-header">
@@ -30,3 +30,5 @@ export const CardWithButton: React.FC<CardProps & { buttonText?: string; directi
     </Card>
   );
 };
+
+export default Card;

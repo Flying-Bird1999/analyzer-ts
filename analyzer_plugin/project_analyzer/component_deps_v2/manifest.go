@@ -14,9 +14,8 @@ import (
 // ComponentManifest 配置文件结构
 // 对应 component-manifest.json 的格式
 type ComponentManifest struct {
-	Meta       ManifestMeta              `json:"meta"`
-	Components []ComponentDefinition     `json:"components"`
-	Rules      *ManifestRules            `json:"rules,omitempty"`
+	Components []ComponentDefinition `json:"components"`
+	Rules      *ManifestRules        `json:"rules,omitempty"`
 }
 
 // ManifestMeta 配置文件元数据
@@ -94,14 +93,6 @@ func LoadManifestFromProjectRoot(projectRoot string) (*ComponentManifest, error)
 
 // validateManifest 验证配置文件的有效性
 func validateManifest(manifest *ComponentManifest) error {
-	// 验证元数据
-	if manifest.Meta.Version == "" {
-		return fmt.Errorf("meta.version 不能为空")
-	}
-	if manifest.Meta.LibraryName == "" {
-		return fmt.Errorf("meta.libraryName 不能为空")
-	}
-
 	// 验证组件列表
 	if len(manifest.Components) == 0 {
 		return fmt.Errorf("components 列表不能为空")

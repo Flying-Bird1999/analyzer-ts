@@ -40,17 +40,15 @@ type ReverseDepGraph map[string][]string
 
 // Meta 分析元数据
 type Meta struct {
-	Version    string `json:"version"`    // 配置文件版本
-	LibraryName string `json:"libraryName"` // 组件库名称
-	ComponentCount int  `json:"componentCount"` // 组件总数
+	ComponentCount int `json:"componentCount"` // 组件总数
 }
 
 // ComponentDepsV2Result 组件依赖分析结果
 type ComponentDepsV2Result struct {
-	Meta           Meta                      `json:"meta"`                       // 元数据
-	Components     map[string]ComponentInfo  `json:"components"`                 // 组件信息
-	DepGraph       DependencyGraph           `json:"depGraph"`                   // 正向依赖图
-	RevDepGraph    ReverseDepGraph            `json:"revDepGraph"`                // 反向依赖图
+	Meta        Meta                     `json:"meta"`        // 元数据
+	Components  map[string]ComponentInfo `json:"components"`  // 组件信息
+	DepGraph    DependencyGraph          `json:"depGraph"`    // 正向依赖图
+	RevDepGraph ReverseDepGraph          `json:"revDepGraph"` // 反向依赖图
 }
 
 // =============================================================================
@@ -87,8 +85,6 @@ func (r *ComponentDepsV2Result) ToConsole() string {
 	buffer.WriteString("=====================================\n\n")
 
 	// 元数据
-	buffer.WriteString(fmt.Sprintf("组件库: %s\n", r.Meta.LibraryName))
-	buffer.WriteString(fmt.Sprintf("配置版本: %s\n", r.Meta.Version))
 	buffer.WriteString(fmt.Sprintf("组件总数: %d\n\n", r.Meta.ComponentCount))
 
 	// 按名称排序组件列表

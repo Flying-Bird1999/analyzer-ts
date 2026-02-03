@@ -1,6 +1,6 @@
 // Table 组件实现
 import { useState } from 'react';
-import { Button } from '../Button/Button';
+import Button from '../Button/Button';
 import { Input } from '../Input/Input';
 import { useDebounce } from '../../hooks/useDebounce';
 

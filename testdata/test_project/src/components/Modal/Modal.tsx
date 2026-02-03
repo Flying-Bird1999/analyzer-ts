@@ -1,6 +1,6 @@
 // Modal 组件实现
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../Button/Button';
+import Button from '../Button/Button';
 import logoImage from '../../assets/logo.png';
 import '../../assets/modal.css';
 

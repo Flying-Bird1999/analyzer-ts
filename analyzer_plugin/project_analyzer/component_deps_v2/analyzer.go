@@ -18,9 +18,10 @@ import (
 // - component-deps-v2: 基于配置文件显式声明组件
 //
 // 使用方式：
-//   analyzer-ts analyze component-deps-v2 \
-//     -i /path/to/project \
-//     -p "component-deps-v2.manifest=path/to/component-manifest.json"
+//
+//	analyzer-ts analyze component-deps-v2 \
+//	  -i /path/to/project \
+//	  -p "component-deps-v2.manifest=path/to/component-manifest.json"
 type ComponentDepsV2Analyzer struct {
 	// ManifestPath 配置文件路径
 	// 可以是绝对路径或相对于项目根目录的路径
@@ -80,8 +81,6 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 	// 步骤 5: 构建结果
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
-			Version:        a.manifest.Meta.Version,
-			LibraryName:    a.manifest.Meta.LibraryName,
 			ComponentCount: len(components),
 		},
 		Components:  components,
