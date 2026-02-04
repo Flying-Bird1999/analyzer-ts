@@ -113,9 +113,13 @@ func (s *ProjectParserStage) Execute(ctx *AnalysisContext) (interface{}, error) 
 	fmt.Println("  - 解析项目 AST...")
 
 	// 创建 tsmorphgo.Project（内部会自动解析项目）
-	project := tsmorphgo.NewProject(tsmorphgo.ProjectConfig{
-		RootPath: ctx.ProjectRoot,
-	})
+	// 使用 ExcludePaths 来忽略指定的文件/目录
+	projectConfig := tsmorphgo.ProjectConfig{
+		RootPath:       ctx.ProjectRoot,
+		IgnorePatterns: ctx.ExcludePaths,
+	}
+
+	project := tsmorphgo.NewProject(projectConfig)
 
 	// 获取解析结果
 	parsingResult := project.GetParserResult()

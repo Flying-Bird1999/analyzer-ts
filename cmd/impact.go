@@ -123,6 +123,7 @@ var (
 	gitRoot      string // Git 仓库根目录（可选，默认等于 projectRoot）
 	manifestPath string // 组件清单路径（可选）
 	maxDepth     int    // 影响分析最大深度
+	// excludePaths 已在 scan.go 中声明（包级别共享变量）
 
 	// 输出配置
 	outputFile   string // 输出文件路径（可选，默认 stdout）
@@ -201,6 +202,7 @@ func init() {
 	ImpactCmd.Flags().StringVar(&projectRoot, "project-root", "", "项目根目录（必需）")
 	ImpactCmd.Flags().StringVar(&gitRoot, "git-root", "", "Git 仓库根目录（可选，默认等于 projectRoot）")
 	ImpactCmd.Flags().StringVar(&manifestPath, "manifest", "", "组件清单路径（可选，用于组件级分析）")
+	ImpactCmd.Flags().StringSliceVarP(&excludePaths, "exclude", "x", []string{}, "要排除的 glob 模式（如 **/*.test.tsx, **/stories/**）")
 
 	// 分析配置
 	ImpactCmd.Flags().IntVar(&maxDepth, "max-depth", 10, "影响分析最大深度")
@@ -247,6 +249,14 @@ func runImpact(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 	analysisCtx := pipeline.NewAnalysisContext(ctx, projectRoot, nil)
+
+	// 设置排除路径
+	if len(excludePaths) > 0 {
+		analysisCtx.ExcludePaths = excludePaths
+		if !quiet {
+			fmt.Printf("🚫 排除模式: %v\n", excludePaths)
+		}
+	}
 
 	// 如果是 diff 字符串输入，通过 context 传递
 	if source == pipeline.DiffSourceString && diffString != "" {
