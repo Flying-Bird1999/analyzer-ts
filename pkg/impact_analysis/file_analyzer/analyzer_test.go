@@ -1477,3 +1477,78 @@ func TestPropagator_PropagateWithReexport_Complex(t *testing.T) {
 		}
 	}
 }
+
+// TestPropagator_Propagate_AutoReexport 验证普通的 Propagate 方法自动支持 Re-export
+// 用户无需显式调用 PropagateWithReexport，也不用构建 originMap
+func TestPropagator_Propagate_AutoReexport(t *testing.T) {
+	parsingResult := &projectParser.ProjectParserResult{
+		Js_Data: make(map[string]projectParser.JsFileParserResult),
+	}
+
+	// A.ts 导出 X
+	parsingResult.Js_Data["/project/A.ts"] = projectParser.JsFileParserResult{
+		ExportDeclarations: []projectParser.ExportDeclarationResult{
+			{
+				ExportModules: []projectParser.ExportModule{
+					{Identifier: "X", Type: "named"},
+				},
+			},
+		},
+	}
+
+	// B.ts re-export X from A
+	parsingResult.Js_Data["/project/B.ts"] = projectParser.JsFileParserResult{
+		ExportDeclarations: []projectParser.ExportDeclarationResult{
+			{
+				ExportModules: []projectParser.ExportModule{
+					{Identifier: "X", Type: "named"},
+				},
+				Source: &projectParser.SourceData{
+					FilePath: "/project/A.ts",
+				},
+			},
+		},
+	}
+
+	// C.ts import X from B
+	parsingResult.Js_Data["/project/C.ts"] = projectParser.JsFileParserResult{
+		ImportDeclarations: []projectParser.ImportDeclarationResult{
+			{
+				Source: projectParser.SourceData{
+					FilePath: "/project/B.ts",
+				},
+				ImportModules: []projectParser.ImportModule{
+					{Identifier: "X", Type: "named"},
+				},
+			},
+		},
+	}
+
+	// A.ts 的 X 变更
+	changedSymbols := []ChangedSymbol{
+		{
+			Name:       "X",
+			FilePath:   "/project/A.ts",
+			ExportType: symbol_analysis.ExportTypeNamed,
+		},
+	}
+
+	// 使用普通的 Propagate 方法（无需手动构建 originMap）
+	propagator := NewSymbolPropagator(parsingResult)
+	result := propagator.Propagate(changedSymbols, nil)
+
+	// 验证：B.ts 应该被标记为受影响（re-export 文件）
+	if _, exists := result.Indirect["/project/B.ts"]; !exists {
+		t.Error("B.ts should be impacted (it re-exports X from A.ts)")
+	}
+
+	// 验证：C.ts 应该被标记为间接受影响
+	if _, exists := result.Indirect["/project/C.ts"]; !exists {
+		t.Error("C.ts should be impacted when A.ts::X is modified (via B.ts re-export)")
+	}
+
+	// 验证：A.ts 应该在 Direct 中
+	if _, exists := result.Direct["/project/A.ts"]; !exists {
+		t.Error("A.ts should be in Direct (it's the changed file)")
+	}
+}

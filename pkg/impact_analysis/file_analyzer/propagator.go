@@ -110,19 +110,29 @@ func (p *SymbolPropagator) Propagate(changedSymbols []ChangedSymbol, changedNonS
 		return result
 	}
 
-	// 步骤 1: 构建符号索引（快速查找符号的导出信息）
-	symbolIndex := p.buildSymbolIndex(changedSymbols)
+	// 步骤 1: 构建 Re-export 符号来源映射（用于追踪 re-export 链）
+	originMap := BuildSymbolOriginMap(p.parsingResult)
 
-	// 步骤 2: 找出直接导入变更符号的文件
-	directImpactedFiles := p.findDirectImpactedFiles(changedSymbols, symbolIndex)
+	// 步骤 2: 构建符号索引（使用 re-export 增强版）
+	symbolIndex := p.buildSymbolIndexWithReexport(changedSymbols, originMap)
 
-	// 步骤 3: 找出导入非符号文件的文件
+	// 步骤 3: 找出直接导入变更符号的文件（使用 re-export 增强版）
+	directImpactedFiles := p.findDirectImpactedFilesWithReexport(changedSymbols, symbolIndex, originMap)
+
+	// 步骤 4: 找出 re-export 变更符号的文件
+	// 例如：B.ts export { X } from './A'，当 A.ts 的 X 变更时，B.ts 也应该被标记为受影响
+	reexportImpactedFiles := p.findFilesReexportingChangedSymbols(changedSymbols, originMap)
+	for filePath, impacts := range reexportImpactedFiles {
+		directImpactedFiles[filePath] = append(directImpactedFiles[filePath], impacts...)
+	}
+
+	// 步骤 5: 找出导入非符号文件的文件
 	nonSymbolImpactedFiles := p.findFilesImportingNonSymbols(changedNonSymbolFiles)
 	for filePath, impacts := range nonSymbolImpactedFiles {
 		directImpactedFiles[filePath] = append(directImpactedFiles[filePath], impacts...)
 	}
 
-	// 步骤 4: 标记直接变更的文件
+	// 步骤 6: 标记直接变更的文件
 	for _, sym := range changedSymbols {
 		if _, exists := result.Direct[sym.FilePath]; !exists {
 			result.Direct[sym.FilePath] = &FileImpact{
@@ -134,7 +144,7 @@ func (p *SymbolPropagator) Propagate(changedSymbols []ChangedSymbol, changedNonS
 		}
 	}
 
-	// 步骤 5: 标记直接变更的非符号文件
+	// 步骤 7: 标记直接变更的非符号文件
 	for _, filePath := range changedNonSymbolFiles {
 		if _, exists := result.Direct[filePath]; !exists {
 			result.Direct[filePath] = &FileImpact{
@@ -146,7 +156,7 @@ func (p *SymbolPropagator) Propagate(changedSymbols []ChangedSymbol, changedNonS
 		}
 	}
 
-	// 步骤 6: BFS 传播影响
+	// 步骤 8: BFS 传播影响
 	p.bfsPropagation(directImpactedFiles, symbolIndex, result)
 
 	return result
@@ -896,6 +906,21 @@ func (p *SymbolPropagator) buildSymbolIndexWithReexport(
 			Name:       symbolName,
 			FilePath:   originalFile,
 			ExportType: sym.ExportType,
+		}
+
+		// 对于 default 导出，同时创建 "default" 键
+		// 因为 export default 的情况下，FileExports 中使用 "default" 作为名称
+		// 而用户可能传入具体的符号名（如 "Button"）
+		if sym.ExportType == symbol_analysis.ExportTypeDefault {
+			defaultKey := originalFile + "::default"
+			// 如果原始符号名不是 "default"，也用原始名创建一个键
+			if symbolName != "default" {
+				index.ChangedSymbols[defaultKey] = &ChangedSymbolInfo{
+					Name:       "default",
+					FilePath:   originalFile,
+					ExportType: sym.ExportType,
+				}
+			}
 		}
 	}
 
