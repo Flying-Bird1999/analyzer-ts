@@ -41,6 +41,14 @@ func (a *Analyzer) extractSymbolChange(
 
 // extractSymbolName 从 AST 节点提取符号名称。
 func (a *Analyzer) extractSymbolName(node tsmorphgo.Node) string {
+	// 对于 export default（ExportAssignment）
+	// 对于 export default 的情况，我们总是返回 "default"
+	// 因为对于 export default () => {} 这样的表达式，符号名并不重要
+	// 重要的是记录有默认导出被影响了
+	if node.IsKind(tsmorphgo.KindExportAssignment) {
+		return "default"
+	}
+
 	// 对于函数声明
 	if node.IsFunctionDeclaration() {
 		if fnDecl, ok := node.AsFunctionDeclaration(); ok {
@@ -162,6 +170,12 @@ func (a *Analyzer) isDeclarationNode(node tsmorphgo.Node) bool {
 		}
 	}
 
+	// 检查 export default（ExportAssignment）
+	// 对于 export default () => {} 这样的表达式，我们需要将整个 ExportAssignment 视为一个符号
+	if node.IsExportAssignment() {
+		return true
+	}
+
 	// 我们关心的顶层声明
 	isTopLevelDeclaration := node.IsFunctionDeclaration() ||
 		node.IsClassDeclaration() ||
@@ -231,6 +245,12 @@ func (a *Analyzer) shouldIncludeSymbol(sourceFile *tsmorphgo.SourceFile, node ts
 
 // isExportedNode 检查节点是否已导出。
 func (a *Analyzer) isExportedNode(sourceFile *tsmorphgo.SourceFile, node tsmorphgo.Node) bool {
+	// 方法0：对于 ExportAssignment（export default），
+	// 它本身就是导出的，应该总是包含
+	if node.IsExportAssignment() {
+		return true
+	}
+
 	// 方法1：检查节点本身的修饰符（检查子节点中的 export 关键字）
 	// 这对 InterfaceDeclaration、ClassDeclaration 等有效
 	found := false

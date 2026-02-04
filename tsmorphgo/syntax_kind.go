@@ -25,6 +25,7 @@ const (
 	KindEnumDeclaration          SyntaxKind = ast.KindEnumDeclaration          // 枚举声明
 	KindImportDeclaration        SyntaxKind = ast.KindImportDeclaration        // 导入声明
 	KindExportDeclaration        SyntaxKind = ast.KindExportDeclaration        // 导出声明
+	KindExportAssignment         SyntaxKind = ast.KindExportAssignment         // export default 赋值
 	KindReturnStatement          SyntaxKind = ast.KindReturnStatement          // return语句
 	KindIfStatement              SyntaxKind = ast.KindIfStatement              // if语句
 	KindForStatement             SyntaxKind = ast.KindForStatement             // for语句

@@ -269,7 +269,17 @@ func (p *SymbolPropagator) matchImportsWithChangedSymbols(
 
 		// 检查这个导入是否匹配任何一个被修改的符号
 		for _, export := range exports {
-			if export.Name != importedName {
+			// 特殊处理：对于 export default 的情况
+			// 当导出是 "default" 且类型是 ExportTypeDefault 时
+			// 应该匹配所有 default 类型的导入（不管导入名是什么）
+			isDefaultExport := export.Name == "default" && export.ExportType == symbol_analysis.ExportTypeDefault
+			isDefaultImport := module.Type == "default"
+
+			if isDefaultExport && isDefaultImport {
+				// 对于 export default，不管导入名是什么都匹配
+				// 因为 import Button from ... 和 import MyButton from ... 都引用同一个默认导出
+			} else if export.Name != importedName {
+				// 对于非 default 导出，检查名称是否匹配
 				continue
 			}
 
@@ -513,11 +523,37 @@ func (p *SymbolPropagator) getSourceFilesFromImpacts(impacts []*SymbolImpact) ma
 
 // extractDefaultExportName 从默认导出赋值中提取名称
 func (p *SymbolPropagator) extractDefaultExportName(exportAssign parser.ExportAssignmentResult) string {
-	// 使用 parser 提取的 Expression 字段
+	// 与 symbol_analysis 的 extractDefaultExportNameFromAssign 逻辑保持一致
+	// 对于有效标识符（如 Button、helper）返回原值
+	// 对于匿名表达式（如 () => {}）返回 "default"
 	if exportAssign.Expression != "" {
-		return exportAssign.Expression
+		expr := exportAssign.Expression
+		// 检查是否是有效标识符
+		if p.isValidIdentifier(expr) {
+			return expr
+		}
 	}
 	return "default"
+}
+
+// isValidIdentifier 检查字符串是否是有效的标识符
+func (p *SymbolPropagator) isValidIdentifier(s string) bool {
+	if s == "" {
+		return false
+	}
+	// 简单检查：标识符应该以字母或下划线开头
+	for i, c := range s {
+		if i == 0 {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
+				return false
+			}
+		} else {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // exportTypeFromString 从字符串转换导出类型

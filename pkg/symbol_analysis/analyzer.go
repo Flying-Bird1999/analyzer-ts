@@ -519,18 +519,40 @@ func (a *Analyzer) calculateLineNumber(sourceFile *tsmorphgo.SourceFile, node *a
 
 // extractDefaultExportNameFromAssign 使用 AST 从默认导出赋值中提取名称。
 // 例如，从 "export default MyClass" 中提取 "MyClass"。
-// 使用 parser 的 AST 提取的 Expression 字段，而不是字符串解析。
+// 对于匿名表达式（如 export default () => {}），返回 "default"。
 func (a *Analyzer) extractDefaultExportNameFromAssign(exportAssign parser.ExportAssignmentResult) string {
 	// 使用 parser 提取的 Expression 字段（这是 parser 通过 AST 进行的提取）
 	if exportAssign.Expression != "" {
 		expr := strings.TrimSpace(exportAssign.Expression)
-		if expr != "" {
+		// 检查是否是有效的标识符（例如：MyClass, helper 等）
+		// 如果是表达式（如：() => {}, {} 等），则返回 "default"
+		if a.isValidIdentifier(expr) {
 			return expr
 		}
 	}
 
 	// 后备方案：为匿名导出返回 "default"
 	return "default"
+}
+
+// isValidIdentifier 检查字符串是否是有效的标识符
+func (a *Analyzer) isValidIdentifier(s string) bool {
+	if s == "" {
+		return false
+	}
+	// 简单检查：标识符应该以字母或下划线开头，只包含字母数字和下划线
+	for i, c := range s {
+		if i == 0 {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
+				return false
+			}
+		} else {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // =============================================================================

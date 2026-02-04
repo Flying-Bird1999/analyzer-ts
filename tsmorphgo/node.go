@@ -349,6 +349,7 @@ func (n Node) IsPropertyAssignment() bool { return n.IsKind(KindPropertyAssignme
 func (n Node) IsImportSpecifier() bool    { return n.IsKind(KindImportSpecifier) }
 func (n Node) IsImportDeclaration() bool  { return n.IsKind(KindImportDeclaration) }
 func (n Node) IsExportDeclaration() bool  { return n.IsKind(KindExportDeclaration) }
+func (n Node) IsExportAssignment() bool  { return n.IsKind(KindExportAssignment) }
 
 // =============================================================================
 // 全局辅助函数 - 来自原 node.go

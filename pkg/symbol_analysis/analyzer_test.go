@@ -542,3 +542,66 @@ const PrivateVar = { key: 'value' }
 		})
 	}
 }
+
+// TestAnalyzer_ExportDefaultArrowFunction 测试 export default () => {} 的正确识别
+// 这是用户报告的问题：当改动在 export default () => {} 内部时，应该检测到符号变更
+func TestAnalyzer_ExportDefaultArrowFunction(t *testing.T) {
+	sources := map[string]string{
+		"/src/button.ts": `
+// export default 箭头函数表达式
+export default () => {
+	return <button>Click me</button>
+}
+`,
+	}
+
+	project := tsmorphgo.NewProjectFromSources(sources)
+	analyzer := NewAnalyzerWithDefaults(project)
+
+	// 测试用例：变更发生在箭头函数内部（第 4 行）
+	tests := []struct {
+		name             string
+		changedLine      int
+		expectedSymbol   string
+		expectedExported bool
+		expectedType     ExportType
+	}{
+		{
+			name:             "export default () => 内部变更",
+			changedLine:      4, // 箭头函数内部
+			expectedSymbol:   "default",
+			expectedExported: true,
+			expectedType:     ExportTypeDefault,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			changedLines := map[int]bool{tt.changedLine: true}
+			result, err := analyzer.AnalyzeFile("/src/button.ts", changedLines)
+			if err != nil {
+				t.Fatalf("预期没有错误，但得到: %v", err)
+			}
+
+			if len(result.AffectedSymbols) == 0 {
+				t.Errorf("预期找到受影响的符号，但没有找到（这是用户报告的问题）")
+				return
+			}
+
+			symbol := result.AffectedSymbols[0]
+			t.Logf("符号名称: %s, 是否导出: %v, 导出类型: %v", symbol.Name, symbol.IsExported, symbol.ExportType)
+
+			if symbol.Name != tt.expectedSymbol {
+				t.Errorf("预期符号 '%s'，但得到 '%s'", tt.expectedSymbol, symbol.Name)
+			}
+
+			if !symbol.IsExported {
+				t.Errorf("预期 IsExported=true，但得到 false")
+			}
+
+			if symbol.ExportType != tt.expectedType {
+				t.Errorf("预期 ExportType=%v，但得到 %v", tt.expectedType, symbol.ExportType)
+			}
+		})
+	}
+}

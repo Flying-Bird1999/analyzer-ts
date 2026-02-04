@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/Flying-Bird1999/analyzer-ts/pkg/symbol_analysis"
 )
 
 // testGitDiff 测试用的 git diff 内容
@@ -540,4 +542,154 @@ type ComponentImpact struct {
 	ImpactLevel int      `json:"impactLevel"`
 	ImpactType  string   `json:"impactType"`
 	ChangePaths []string `json:"changePaths"`
+}
+
+// =============================================================================
+// export default () => {} 场景测试
+// =============================================================================
+
+// TestGitLabPipeline_ExportDefaultArrowFunction 测试 export default 箭头函数的场景
+// 这是用户报告的问题：当改动在 export default () => {} 内部时，应该检测到符号变更
+func TestGitLabPipeline_ExportDefaultArrowFunction(t *testing.T) {
+	// 模拟的 git diff：修改了 export default () => {} 内部的一行
+	// 使用 ButtonExportDefault.tsx 专门测试此场景
+	const exportDefaultDiff = `diff --git a/testdata/test_project/src/components/Button/ButtonExportDefault.tsx b/testdata/test_project/src/components/Button/ButtonExportDefault.tsx
+index 1234567..abcdefg 100644
+--- a/testdata/test_project/src/components/Button/ButtonExportDefault.tsx
++++ b/testdata/test_project/src/components/Button/ButtonExportDefault.tsx
+@@ -9,6 +9,6 @@
+ export default () => {
+-  return <button>Click</button>
++  return <button className="btn-primary">Click</button>
+ }
+`
+
+	wd, _ := os.Getwd()
+	projectRoot := filepath.Join(wd, "..", "..", "testdata", "test_project")
+	absPath, _ := filepath.Abs(projectRoot)
+	gitRoot := filepath.Join(wd, "..", "..")
+	absGitRoot, _ := filepath.Abs(gitRoot)
+
+	// 验证测试项目存在
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		t.Skip("测试项目不存在:", absPath)
+	}
+
+	t.Logf("📁 项目路径: %s", absPath)
+	t.Logf("📁 Git 仓库根目录: %s", absGitRoot)
+	t.Logf("📄 Git Diff: export default () => {} 内部变更")
+
+	// 创建 GitLab 管道
+	config := &GitLabPipelineConfig{
+		DiffSource:   DiffSourceString,
+		ProjectRoot:  absPath,
+		GitRoot:      absGitRoot,
+		MaxDepth:     10,
+		// 不使用 manifest，只测试文件级分析
+	}
+
+	ctx := context.Background()
+	analysisCtx := NewAnalysisContext(ctx, absPath, nil)
+	analysisCtx.SetOption("diffString", exportDefaultDiff)
+
+	pipeline := NewGitLabPipeline(config)
+
+	// 执行管道
+	result, err := pipeline.Execute(analysisCtx)
+	if err != nil {
+		t.Fatalf("管道执行失败: %v", err)
+	}
+
+	// 获取符号分析结果
+	symbolResult, ok := result.GetResult("符号分析")
+	if !ok {
+		t.Fatal("未找到符号分析结果")
+	}
+
+	symbolResults, ok := symbolResult.(map[string]*symbol_analysis.FileAnalysisResult)
+	if !ok {
+		t.Fatalf("符号分析结果格式错误: %T", symbolResult)
+	}
+
+	// 验证：ButtonExportDefault.tsx 应该检测到符号变更
+	// 注意：路径可能是绝对路径，需要灵活匹配
+	var buttonResult *symbol_analysis.FileAnalysisResult
+
+	for path, result := range symbolResults {
+		if strings.HasSuffix(path, "src/components/Button/ButtonExportDefault.tsx") ||
+		   strings.HasSuffix(path, "components/Button/ButtonExportDefault.tsx") {
+			buttonResult = result
+			break
+		}
+	}
+
+	if buttonResult == nil {
+		t.Errorf("未找到 ButtonExportDefault.tsx 的分析结果")
+		t.Errorf("已分析的文件:")
+		for path := range symbolResults {
+			t.Errorf("  - %s", path)
+		}
+		return
+	}
+
+	t.Logf("ButtonExportDefault.tsx 分析结果:")
+	t.Logf("  - IsSymbolFile: %v", buttonResult.IsSymbolFile)
+	t.Logf("  - AffectedSymbols 数量: %d", len(buttonResult.AffectedSymbols))
+
+	// 核心验证：应该检测到符号变更
+	if len(buttonResult.AffectedSymbols) == 0 {
+		t.Errorf("❌ 预期检测到符号变更，但得到 0 个")
+		return
+	}
+
+	symbol := buttonResult.AffectedSymbols[0]
+	t.Logf("  - 符号名称: %s", symbol.Name)
+	t.Logf("  - 是否导出: %v", symbol.IsExported)
+	t.Logf("  - 导出类型: %s", symbol.ExportType)
+
+	// 核心验证：对于 export default () => {}，符号名应该是 "default"
+	if symbol.Name != "default" {
+		t.Errorf("预期符号名称为 'default'，但得到 '%s'（这是用户报告的问题）", symbol.Name)
+	}
+
+	// 验证符号已导出
+	if !symbol.IsExported {
+		t.Errorf("预期符号已导出，但 IsExported = false")
+	}
+
+	// 验证导出类型是 "default"
+	if symbol.ExportType != symbol_analysis.ExportTypeDefault {
+		t.Errorf("预期导出类型为 ExportTypeDefault，但得到 %v", symbol.ExportType)
+	}
+
+	// 获取影响分析结果
+	impactResult, ok := result.GetResult("影响分析（文件级）")
+	if !ok {
+		t.Fatal("未找到影响分析结果")
+	}
+
+	impact, ok := impactResult.(*ImpactAnalysisResult)
+	if !ok {
+		t.Fatalf("影响分析结果格式错误: %T", impactResult)
+	}
+
+	// 验证：App.tsx 应该被检测为受影响的文件
+	if impact.FileResult == nil {
+		t.Error("未找到文件级影响分析结果")
+		return
+	}
+
+	t.Logf("文件级影响分析:")
+	t.Logf("  - 变更文件数: %d", impact.FileResult.Meta.ChangedFileCount)
+	t.Logf("  - 受影响文件数: %d", impact.FileResult.Meta.ImpactFileCount)
+
+	// 注意：ButtonExportDefault.tsx 没有被其他文件导入，所以不会有受影响文件
+	if impact.FileResult.Meta.ImpactFileCount > 0 {
+		t.Logf("受影响的文件:")
+		for _, imp := range impact.FileResult.Impact {
+			t.Logf("  - %s (层级: %d)", imp.Path, imp.ImpactLevel)
+		}
+	}
+
+	t.Log("✅ export default 场景测试通过")
 }

@@ -4,6 +4,7 @@ package file_analyzer
 import (
 	"testing"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/parser"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	"github.com/Flying-Bird1999/analyzer-ts/pkg/symbol_analysis"
 )
@@ -778,5 +779,73 @@ func TestSymbolPropagator_IndirectImpactInSameFile(t *testing.T) {
 	// Input.tsx 不应该在 Direct 中（因为它本身没有被修改）
 	if _, exists := result.Direct["/project/Input.tsx"]; exists {
 		t.Error("Input.tsx should not be in Direct changes (not modified)")
+	}
+}
+
+// TestSymbolPropagator_ExportDefaultArrowFunction 测试 export default () => {} 的影响传播
+// 验证：当 export default () => {} 内部有变更时，能正确传播到导入它的文件
+func TestSymbolPropagator_ExportDefaultArrowFunction(t *testing.T) {
+	parsingResult := &projectParser.ProjectParserResult{
+		Js_Data: make(map[string]projectParser.JsFileParserResult),
+	}
+
+	// Button.tsx 有 export default () => {}
+	parsingResult.Js_Data["/project/Button.tsx"] = projectParser.JsFileParserResult{
+		ImportDeclarations: []projectParser.ImportDeclarationResult{},
+		ExportDeclarations: []projectParser.ExportDeclarationResult{},
+		ExportAssignments: []parser.ExportAssignmentResult{
+			{
+				Expression: "() => {}",  // 箭头函数表达式
+			},
+		},
+	}
+
+	// App.tsx 导入 Button（使用 default import）
+	parsingResult.Js_Data["/project/App.tsx"] = projectParser.JsFileParserResult{
+		ImportDeclarations: []projectParser.ImportDeclarationResult{
+			{
+				Source: projectParser.SourceData{
+					FilePath: "/project/Button.tsx",
+					Type:     "file",
+				},
+				ImportModules: []projectParser.ImportModule{
+					{Identifier: "Button", Type: "default"}, // default import
+				},
+				Raw: `import Button from "./Button"`,
+			},
+		},
+	}
+
+	// 模拟：Button.tsx 的 default 符号被修改
+	changedSymbols := []ChangedSymbol{
+		{
+			Name:       "default",  // 符号名是 "default"
+			FilePath:   "/project/Button.tsx",
+			ExportType: symbol_analysis.ExportTypeDefault,
+		},
+	}
+
+	propagator := NewSymbolPropagator(parsingResult)
+	result := propagator.Propagate(changedSymbols, nil)
+
+	// 验证：Button.tsx 在 Direct 中
+	if _, exists := result.Direct["/project/Button.tsx"]; !exists {
+		t.Error("Button.tsx should be in Direct changes")
+	}
+
+	// 验证：App.tsx 在 Indirect 中（因为它导入了 Button 的默认导出）
+	appImpact, exists := result.Indirect["/project/App.tsx"]
+	if !exists {
+		t.Error("App.tsx should be in Indirect impacts (it imports Button)")
+		return
+	}
+
+	// 验证：影响信息正确
+	if appImpact.SymbolCount != 1 {
+		t.Errorf("Expected 1 impacted symbol, got %d", appImpact.SymbolCount)
+	}
+
+	if appImpact.ImpactLevel != 1 {
+		t.Errorf("Expected impact level 1, got %d", appImpact.ImpactLevel)
 	}
 }
