@@ -630,3 +630,509 @@ func formatPath(path []string) string {
 	}
 	return result
 }
+
+// =============================================================================
+// Re-export 链追踪支持
+// =============================================================================
+
+// SymbolOrigin 符号来源信息
+// 用于追踪 re-export 链，找出符号的实际来源文件
+type SymbolOrigin struct {
+	OriginalFile  string   // 实际来源文件（符号最初定义的文件）
+	SymbolName    string   // 符号名称
+	ReexportChain []string // Re-export 链（从源头到当前文件的路径）
+}
+
+// SymbolOriginMap 符号来源映射
+// key: "文件路径::符号名称"
+// value: 符号的实际来源信息
+type SymbolOriginMap map[string]*SymbolOrigin
+
+// BuildSymbolOriginMap 构建符号来源映射表
+// 用于追踪 re-export 链，将所有符号映射到它们的实际源头文件
+func BuildSymbolOriginMap(parsingResult *projectParser.ProjectParserResult) *SymbolOriginMap {
+	originMap := make(SymbolOriginMap)
+
+	// 步骤 1: 首先建立直接导出映射（自身定义的符号）
+	// A.ts::X → A.ts
+	for file, fileResult := range parsingResult.Js_Data {
+		// 从符号分析结果中获取导出信息
+		exports := make([]symbol_analysis.ExportInfo, 0)
+
+		// 从 ExportDeclarations 提取（跳过 re-export）
+		for _, exportDecl := range fileResult.ExportDeclarations {
+			// 跳过 re-export，只处理直接导出
+			if exportDecl.Source != nil && exportDecl.Source.FilePath != "" {
+				continue
+			}
+
+			for _, module := range exportDecl.ExportModules {
+				exports = append(exports, symbol_analysis.ExportInfo{
+					Name:       module.Identifier,
+					ExportType: exportTypeFromString(module.Type),
+					DeclLine:   0,
+					DeclNode:   "ExportDeclaration",
+				})
+			}
+		}
+
+		// 从 ExportAssignments 提取（export default）
+		for _, exportAssign := range fileResult.ExportAssignments {
+			exports = append(exports, symbol_analysis.ExportInfo{
+				Name:       extractDefaultExportNameFromAssign(exportAssign),
+				ExportType: symbol_analysis.ExportTypeDefault,
+				DeclLine:   0,
+				DeclNode:   "ExportAssignment",
+			})
+		}
+
+		// 从带有内联导出的声明中提取
+		for _, varDecl := range fileResult.VariableDeclarations {
+			if varDecl.Exported {
+				for _, declarator := range varDecl.Declarators {
+					if declarator.Identifier != "" {
+						exports = append(exports, symbol_analysis.ExportInfo{
+							Name:       declarator.Identifier,
+							ExportType: symbol_analysis.ExportTypeNamed,
+							DeclLine:   0,
+							DeclNode:   "VariableDeclaration",
+						})
+					}
+				}
+			}
+		}
+
+		for _, fnDecl := range fileResult.FunctionDeclarations {
+			if fnDecl.Exported {
+				exports = append(exports, symbol_analysis.ExportInfo{
+					Name:       fnDecl.Identifier,
+					ExportType: symbol_analysis.ExportTypeNamed,
+					DeclLine:   0,
+					DeclNode:   "FunctionDeclaration",
+				})
+			}
+		}
+
+		// 记录符号来源
+		for _, export := range exports {
+			key := file + "::" + export.Name
+			originMap[key] = &SymbolOrigin{
+				OriginalFile:  file,
+				SymbolName:    export.Name,
+				ReexportChain: []string{},
+			}
+		}
+	}
+
+	// 步骤 2: 迭代处理 Re-export，直到收敛
+	// B.ts re-export X from A.ts
+	// originMap["B.ts::X"] = originMap["A.ts::X"]
+	const MaxReexportIterations = 10 // 防止无限循环
+
+	for iteration := 0; iteration < MaxReexportIterations; iteration++ {
+		changed := false
+
+		for file, fileResult := range parsingResult.Js_Data {
+			// 从符号分析结果中获取 Re-export 信息
+			// 这里我们需要从 FileAnalysisResult 中获取，但由于当前结构限制，
+			// 我们先使用 ExportDeclaration 中的 Source 信息
+			for _, exportDecl := range fileResult.ExportDeclarations {
+				// 检查是否为 Re-export（Source 不为空）
+				if exportDecl.Source == nil || exportDecl.Source.FilePath == "" {
+					continue
+				}
+
+				sourceFile := exportDecl.Source.FilePath
+				exportedNames := make([]string, 0, len(exportDecl.ExportModules))
+				for _, module := range exportDecl.ExportModules {
+					exportedNames = append(exportedNames, module.Identifier)
+				}
+
+				// 处理每个 re-export 的符号
+				for _, symbolName := range exportedNames {
+					key := file + "::" + symbolName
+
+					// 如果已经存在映射，跳过
+					if _, exists := originMap[key]; exists {
+						continue
+					}
+
+					// 查找源文件的符号来源
+					sourceKey := sourceFile + "::" + symbolName
+					if origin, found := originMap[sourceKey]; found {
+						// 创建新的符号来源，记录 Re-export 链
+						originMap[key] = &SymbolOrigin{
+							OriginalFile:  origin.OriginalFile,
+							SymbolName:    symbolName,
+							ReexportChain: append([]string{file}, origin.ReexportChain...),
+						}
+						changed = true
+					}
+				}
+			}
+		}
+
+		// 如果没有变化，提前退出
+		if !changed {
+			break
+		}
+	}
+
+	return &originMap
+}
+
+// extractDefaultExportNameFromAssign 从默认导出赋值中提取名称
+func extractDefaultExportNameFromAssign(exportAssign interface{}) string {
+	// 简化版本，直接返回 "default"
+	return "default"
+}
+
+// GetSymbolOrigin 获取符号的实际来源
+// 返回：实际来源文件，如果符号不存在则返回空字符串
+func (m SymbolOriginMap) GetSymbolOrigin(filePath, symbolName string) *SymbolOrigin {
+	key := filePath + "::" + symbolName
+	if origin, exists := m[key]; exists {
+		return origin
+	}
+	return nil
+}
+
+// =============================================================================
+// 支持 Re-export 的传播方法
+// =============================================================================
+
+// PropagateWithReexport 使用符号来源映射进行传播
+// 支持 Re-export 链追踪：当 A.ts 的符号通过 B.ts re-export 到 C.ts
+// 如果 A.ts 变更，C.ts 也会被标记为受影响
+func (p *SymbolPropagator) PropagateWithReexport(
+	changedSymbols []ChangedSymbol,
+	changedNonSymbolFiles []string,
+	originMap *SymbolOriginMap,
+) *ImpactedFiles {
+	result := &ImpactedFiles{
+		Direct:   make(map[string]*FileImpact),
+		Indirect: make(map[string]*FileImpact),
+	}
+
+	if len(changedSymbols) == 0 && len(changedNonSymbolFiles) == 0 {
+		return result
+	}
+
+	// 构建符号索引（使用 re-export 增强版）
+	symbolIndex := p.buildSymbolIndexWithReexport(changedSymbols, originMap)
+
+	// 找出直接导入变更符号的文件（使用 re-export 增强版）
+	directImpactedFiles := p.findDirectImpactedFilesWithReexport(changedSymbols, symbolIndex, originMap)
+
+	// 找出 re-export 变更符号的文件
+	// 例如：B.ts export { X } from './A'，当 A.ts 的 X 变更时，B.ts 也应该被标记为受影响
+	reexportImpactedFiles := p.findFilesReexportingChangedSymbols(changedSymbols, originMap)
+	for filePath, impacts := range reexportImpactedFiles {
+		directImpactedFiles[filePath] = append(directImpactedFiles[filePath], impacts...)
+	}
+
+	// 找出导入非符号文件的文件
+	nonSymbolImpactedFiles := p.findFilesImportingNonSymbols(changedNonSymbolFiles)
+	for filePath, impacts := range nonSymbolImpactedFiles {
+		directImpactedFiles[filePath] = append(directImpactedFiles[filePath], impacts...)
+	}
+
+	// 标记直接变更的文件
+	for _, sym := range changedSymbols {
+		if _, exists := result.Direct[sym.FilePath]; !exists {
+			result.Direct[sym.FilePath] = &FileImpact{
+				FilePath:    sym.FilePath,
+				ImpactLevel: 0,
+				ChangePaths: []string{sym.FilePath},
+				SymbolCount: 1,
+			}
+		}
+	}
+
+	// 标记直接变更的非符号文件
+	for _, filePath := range changedNonSymbolFiles {
+		if _, exists := result.Direct[filePath]; !exists {
+			result.Direct[filePath] = &FileImpact{
+				FilePath:    filePath,
+				ImpactLevel: 0,
+				ChangePaths: []string{filePath},
+				SymbolCount: 0,
+			}
+		}
+	}
+
+	// BFS 传播影响
+	p.bfsPropagation(directImpactedFiles, symbolIndex, result)
+
+	return result
+}
+
+// buildSymbolIndexWithReexport 构建包含 re-export 信息的符号索引
+func (p *SymbolPropagator) buildSymbolIndexWithReexport(
+	changedSymbols []ChangedSymbol,
+	originMap *SymbolOriginMap,
+) *SymbolIndex {
+	index := &SymbolIndex{
+		ChangedSymbols: make(map[string]*ChangedSymbolInfo),
+		FileExports:    make(map[string][]symbol_analysis.ExportInfo),
+	}
+
+	// 索引被修改的符号（使用实际来源）
+	for i := range changedSymbols {
+		sym := &changedSymbols[i]
+		originalFile := sym.FilePath
+		symbolName := sym.Name
+
+		// 检查是否是 re-export 的符号
+		if originMap != nil {
+			if origin := originMap.GetSymbolOrigin(sym.FilePath, sym.Name); origin != nil {
+				originalFile = origin.OriginalFile
+				symbolName = origin.SymbolName
+			}
+		}
+
+		key := originalFile + "::" + symbolName
+		index.ChangedSymbols[key] = &ChangedSymbolInfo{
+			Name:       symbolName,
+			FilePath:   originalFile,
+			ExportType: sym.ExportType,
+		}
+	}
+
+	// 索引所有文件的导出信息
+	for filePath, fileResult := range p.parsingResult.Js_Data {
+		exports := make([]symbol_analysis.ExportInfo, 0)
+
+		// 从 ExportDeclarations 提取（包括 re-export）
+		for _, exportDecl := range fileResult.ExportDeclarations {
+			// Re-export 也需要被包含，因为其他文件可能从该文件导入 re-export 的符号
+			// 例如：C.ts import { X } from './B'，B.ts re-export X from A.ts
+			// B.ts 的 exports 需要包含 X，这样 C.ts 才能匹配到
+
+			for _, module := range exportDecl.ExportModules {
+				exports = append(exports, symbol_analysis.ExportInfo{
+					Name:       module.Identifier,
+					ExportType: exportTypeFromString(module.Type),
+					DeclLine:   0,
+					DeclNode:   "ExportDeclaration",
+				})
+			}
+		}
+
+		// 从 ExportAssignments 提取（export default）
+		for _, exportAssign := range fileResult.ExportAssignments {
+			exports = append(exports, symbol_analysis.ExportInfo{
+				Name:       extractDefaultExportNameFromAssign(exportAssign),
+				ExportType: symbol_analysis.ExportTypeDefault,
+				DeclLine:   0,
+				DeclNode:   "ExportAssignment",
+			})
+		}
+
+		// 从带有内联导出的声明中提取
+		for _, varDecl := range fileResult.VariableDeclarations {
+			if varDecl.Exported {
+				for _, declarator := range varDecl.Declarators {
+					if declarator.Identifier != "" {
+						exports = append(exports, symbol_analysis.ExportInfo{
+							Name:       declarator.Identifier,
+							ExportType: symbol_analysis.ExportTypeNamed,
+							DeclLine:   0,
+							DeclNode:   "VariableDeclaration",
+						})
+					}
+				}
+			}
+		}
+
+		for _, fnDecl := range fileResult.FunctionDeclarations {
+			if fnDecl.Exported {
+				exports = append(exports, symbol_analysis.ExportInfo{
+					Name:       fnDecl.Identifier,
+					ExportType: symbol_analysis.ExportTypeNamed,
+					DeclLine:   0,
+					DeclNode:   "FunctionDeclaration",
+				})
+			}
+		}
+
+		if len(exports) > 0 {
+			index.FileExports[filePath] = exports
+		}
+	}
+
+	return index
+}
+
+// findDirectImpactedFilesWithReexport 找出直接导入变更符号的文件（支持 Re-export 追溯）
+func (p *SymbolPropagator) findDirectImpactedFilesWithReexport(
+	changedSymbols []ChangedSymbol,
+	symbolIndex *SymbolIndex,
+	originMap *SymbolOriginMap,
+) map[string][]*SymbolImpact {
+	result := make(map[string][]*SymbolImpact)
+
+	// 构建变更文件集合，用于快速查找
+	changedFileSet := make(map[string]bool)
+	for _, sym := range changedSymbols {
+		changedFileSet[sym.FilePath] = true
+	}
+
+	for filePath, fileResult := range p.parsingResult.Js_Data {
+		for _, importDecl := range fileResult.ImportDeclarations {
+			sourceFile := importDecl.Source.FilePath
+
+			// 只处理项目内文件的导入
+			if sourceFile == "" {
+				continue
+			}
+
+			// 获取该文件的导出信息
+			exports, exists := symbolIndex.FileExports[sourceFile]
+			if !exists || len(exports) == 0 {
+				continue
+			}
+
+			// 检查该导入了哪些被修改的符号（支持 Re-export 追溯）
+			impactedSymbols := p.matchImportsWithChangedSymbolsWithReexport(
+				importDecl, sourceFile, exports, symbolIndex.ChangedSymbols, originMap,
+			)
+
+			if len(impactedSymbols) > 0 {
+				result[filePath] = append(result[filePath], impactedSymbols...)
+			}
+		}
+	}
+
+	return result
+}
+
+// findFilesReexportingChangedSymbols 找出 re-export 变更符号的文件
+// 例如：B.ts export { X } from './A'，当 A.ts 的 X 变更时，B.ts 也应该被标记为受影响
+func (p *SymbolPropagator) findFilesReexportingChangedSymbols(
+	changedSymbols []ChangedSymbol,
+	originMap *SymbolOriginMap,
+) map[string][]*SymbolImpact {
+	result := make(map[string][]*SymbolImpact)
+
+	// 构建变更符号集合，用于快速查找
+	changedSet := make(map[string]bool)
+	for _, sym := range changedSymbols {
+		key := sym.FilePath + "::" + sym.Name
+		changedSet[key] = true
+	}
+
+	// 遍历所有文件，检查是否有文件 re-export 了变更的符号
+	for filePath, fileResult := range p.parsingResult.Js_Data {
+		for _, exportDecl := range fileResult.ExportDeclarations {
+			// 只处理 re-export（有 Source 的 ExportDeclaration）
+			if exportDecl.Source == nil || exportDecl.Source.FilePath == "" {
+				continue
+			}
+
+			sourceFile := exportDecl.Source.FilePath
+
+			// 检查 re-export 的符号是否包含变更的符号
+			for _, module := range exportDecl.ExportModules {
+				symbolName := module.Identifier
+
+				// 检查这个符号是否是变更的符号（直接匹配）
+				key := sourceFile + "::" + symbolName
+				if !changedSet[key] {
+					// 如果不是直接匹配，尝试通过 originMap 查找实际来源
+					if originMap != nil {
+						// 检查 sourceFile 的这个符号是否来自变更文件
+						if origin := originMap.GetSymbolOrigin(sourceFile, symbolName); origin != nil {
+							originKey := origin.OriginalFile + "::" + origin.SymbolName
+							if !changedSet[originKey] {
+								continue
+							}
+							// 更新 sourceFile 为实际来源文件
+							sourceFile = origin.OriginalFile
+							symbolName = origin.SymbolName
+						} else {
+							continue
+						}
+					} else {
+						continue
+					}
+				}
+
+				// 找到了！这个文件 re-export 了变更的符号
+				result[filePath] = append(result[filePath], &SymbolImpact{
+					SymbolName: symbolName,
+					SourceFile: sourceFile,
+					ImportType: module.Type,
+				})
+			}
+		}
+	}
+
+	return result
+}
+
+// matchImportsWithChangedSymbolsWithReexport 匹配导入与被修改的符号（支持 Re-export 追溯）
+func (p *SymbolPropagator) matchImportsWithChangedSymbolsWithReexport(
+	importDecl projectParser.ImportDeclarationResult,
+	sourceFile string,
+	exports []symbol_analysis.ExportInfo,
+	changedSymbols map[string]*ChangedSymbolInfo,
+	originMap *SymbolOriginMap,
+) []*SymbolImpact {
+	impacts := make([]*SymbolImpact, 0)
+
+	// 遍历该导入声明的所有导入模块
+	for _, module := range importDecl.ImportModules {
+		importedName := module.Identifier
+
+		// 检查这个导入是否匹配任何一个被修改的符号
+		for _, export := range exports {
+			// 特殊处理：对于 export default 的情况
+			isDefaultExport := export.Name == "default" && export.ExportType == symbol_analysis.ExportTypeDefault
+			isDefaultImport := module.Type == "default"
+
+			if isDefaultExport && isDefaultImport {
+				// 对于 export default，不管导入名是什么都匹配
+			} else if export.Name != importedName {
+				// 对于非 default 导出，检查名称是否匹配
+				continue
+			}
+
+			// 找到符号名称
+			symbolName := export.Name
+
+			// 【Re-export 追溯】检查符号是否通过 re-export 来自变更的文件
+			actualSourceFile := sourceFile
+			if originMap != nil {
+				if origin := originMap.GetSymbolOrigin(sourceFile, symbolName); origin != nil {
+					// 使用实际来源文件
+					actualSourceFile = origin.OriginalFile
+					symbolName = origin.SymbolName
+				}
+			}
+
+			// 检查实际来源文件和符号是否变更
+			key := actualSourceFile + "::" + symbolName
+			_, exists := changedSymbols[key]
+			if !exists {
+				continue
+			}
+
+			// 检查导出/导入类型是否匹配
+			typeMatches := p.isExportImportMatch(export.ExportType, module.Type, importDecl)
+			if !typeMatches {
+				continue
+			}
+
+			// 添加匹配的符号影响
+			impacts = append(impacts, &SymbolImpact{
+				SymbolName: symbolName,
+				SourceFile: actualSourceFile, // 使用实际来源文件
+				ImportType: module.Type,
+				ExportType: export.ExportType,
+			})
+		}
+	}
+
+	return impacts
+}

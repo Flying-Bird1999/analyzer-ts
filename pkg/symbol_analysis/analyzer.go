@@ -196,6 +196,23 @@ func (a *Analyzer) extractExportsFromFileResult(
 
 	// 从 ExportDeclarations 提取（例如，export { A, B }）
 	for _, exportDecl := range fileResult.ExportDeclarations {
+		// 检查是否为 Re-export（export { X } from './Y'）
+		// 如果 Source 不为 nil，说明这是一个 Re-export
+		if exportDecl.Source != nil && exportDecl.Source.FilePath != "" {
+			// 这是一个 Re-export，记录到 ReExports
+			exportedNames := make([]string, 0, len(exportDecl.ExportModules))
+			for _, module := range exportDecl.ExportModules {
+				exportedNames = append(exportedNames, module.Identifier)
+			}
+
+			// 使用 Source.FilePath 作为原始路径（已经是绝对路径）
+			result.ReExports = append(result.ReExports, ReExportInfo{
+				OriginalPath:  exportDecl.Source.FilePath,
+				ExportedNames: exportedNames,
+			})
+		}
+
+		// 同时也将这些导出记录到 FileExports（用于后续查找）
 		for _, module := range exportDecl.ExportModules {
 			exportType := ExportTypeNamed
 			if module.Type == "default" {

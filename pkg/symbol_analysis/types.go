@@ -57,6 +57,7 @@ type FileAnalysisResult struct {
 	FileType        FileType       // 文件类型
 	AffectedSymbols []SymbolChange // 该文件中受影响的符号（仅符号文件）
 	FileExports     []ExportInfo   // 该文件的所有导出（仅符号文件）
+	ReExports       []ReExportInfo // 该文件的所有重新导出（export { X } from './Y'）
 	ChangedLines    []int          // 变更行号（所有文件）
 	IsSymbolFile    bool           // 是否为符号文件（可以进行符号分析）
 }
