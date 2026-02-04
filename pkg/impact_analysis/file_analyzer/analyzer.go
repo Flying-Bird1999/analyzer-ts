@@ -136,7 +136,6 @@ func buildFileImpactInfos(impactedFiles *ImpactedFiles) []FileImpactInfo {
 		infos = append(infos, FileImpactInfo{
 			Path:        impact.FilePath,
 			ImpactLevel: impact.ImpactLevel,
-			ImpactType:  impact.ImpactType,
 			ChangePaths: impact.ChangePaths,
 			SymbolCount: impact.SymbolCount,
 		})
@@ -160,7 +159,6 @@ type FileChangeInfo struct {
 type FileImpactInfo struct {
 	Path        string                      `json:"path"`
 	ImpactLevel int                         `json:"impactLevel"`
-	ImpactType  string                      `json:"impactType"`
 	ChangePaths []string                    `json:"changePaths"`
 	SymbolCount int                         `json:"symbolCount"` // 影响的符号数量
 }

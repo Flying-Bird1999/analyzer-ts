@@ -63,8 +63,8 @@ func (r *Result) ToConsole() string {
 		// 按影响层级排序
 		sortedByLevel := r.sortByImpactLevel()
 		for _, impact := range sortedByLevel {
-			buffer.WriteString(fmt.Sprintf("▶ %s (层级: %d, 类型: %s, 符号数: %d)\n",
-				impact.Path, impact.ImpactLevel, impact.ImpactType, impact.SymbolCount))
+			buffer.WriteString(fmt.Sprintf("▶ %s (层级: %d, 符号数: %d)\n",
+				impact.Path, impact.ImpactLevel, impact.SymbolCount))
 			if len(impact.ChangePaths) > 0 {
 				buffer.WriteString("  影响路径:\n")
 				for _, path := range impact.ChangePaths {
@@ -101,17 +101,6 @@ func (r *Result) GetImpactedFilesByLevel(level int) []FileImpactInfo {
 	result := make([]FileImpactInfo, 0)
 	for _, impact := range r.Impact {
 		if int(impact.ImpactLevel) == level {
-			result = append(result, impact)
-		}
-	}
-	return result
-}
-
-// GetImpactedFilesByType 获取指定影响类型的文件
-func (r *Result) GetImpactedFilesByType(impactType string) []FileImpactInfo {
-	result := make([]FileImpactInfo, 0)
-	for _, impact := range r.Impact {
-		if string(impact.ImpactType) == impactType {
 			result = append(result, impact)
 		}
 	}

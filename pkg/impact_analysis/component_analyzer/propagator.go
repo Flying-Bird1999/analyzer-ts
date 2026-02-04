@@ -49,7 +49,6 @@ func (p *Propagator) Propagate(changedComponents []string) *ImpactedComponents {
 		result.Direct[componentName] = &ComponentImpact{
 			ComponentName: componentName,
 			ImpactLevel:   impact_analysis.ImpactLevelDirect,
-			ImpactType:    impact_analysis.ImpactTypeInternal, // 默认内部变更
 			ChangePaths:   []string{componentName},
 		}
 	}
@@ -109,7 +108,6 @@ func (p *Propagator) bfsPropagation(
 				result.Indirect[downstream] = &ComponentImpact{
 					ComponentName: downstream,
 					ImpactLevel:   impact_analysis.ImpactLevel(current.depth + 1),
-					ImpactType:    impact_analysis.ImpactTypeInternal, // 传播后变为内部变更
 					ChangePaths:   []string{formatPath(newPath)},
 				}
 			}
@@ -154,7 +152,6 @@ type ImpactedComponents struct {
 type ComponentImpact struct {
 	ComponentName string                      // 组件名称
 	ImpactLevel   impact_analysis.ImpactLevel // 影响层级（0=直接变更，>0=传播层级）
-	ImpactType    impact_analysis.ImpactType  // 影响类型
 	ChangePaths   []string                    // 从变更源头到该组件的路径
 }
 

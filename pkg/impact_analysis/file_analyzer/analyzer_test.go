@@ -462,13 +462,9 @@ func TestSymbolPropagator_RemovedExportImpact(t *testing.T) {
 	}
 
 	// 验证 App.tsx 被影响
-	appImpact, exists := result.Indirect["/project/App.tsx"]
+	_, exists := result.Indirect["/project/App.tsx"]
 	if !exists {
 		t.Error("App.tsx should be impacted when Button export is removed")
-	}
-
-	if appImpact.ImpactType != "internal" {
-		t.Errorf("ImpactType should be internal, got %s", appImpact.ImpactType)
 	}
 }
 
@@ -533,15 +529,10 @@ func TestSymbolPropagator_CyclicDependency(t *testing.T) {
 	result := propagator.Propagate(changedSymbols, nil)
 
 	// 验证：循环依赖时，导入该符号的文件应该被影响
-	bImpact, bExists := result.Indirect["/project/B.tsx"]
+	_, bExists := result.Indirect["/project/B.tsx"]
 
 	if !bExists {
 		t.Error("B.tsx should be impacted (imports FuncFromA which is modified)")
-	}
-
-	// 验证影响类型
-	if bImpact.ImpactType != "internal" {
-		t.Errorf("B.tsx impact should be internal, got %s", bImpact.ImpactType)
 	}
 }
 

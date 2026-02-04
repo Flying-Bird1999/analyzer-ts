@@ -46,15 +46,6 @@ const (
 	ImpactLevelTransitive ImpactLevel = 2 // 传递影响
 )
 
-// ImpactType 影响类型
-type ImpactType string
-
-const (
-	ImpactTypeBreaking ImpactType = "breaking" // 破坏性变更
-	ImpactTypeInternal ImpactType = "internal" // 内部变更
-	ImpactTypeAdditive ImpactType = "additive" // 增强性变更
-)
-
 // =============================================================================
 // 变更类型
 // =============================================================================

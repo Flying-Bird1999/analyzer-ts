@@ -566,7 +566,6 @@ func buildOutput(result *pipeline.PipelineResult) (*AnalysisOutput, error) {
 			output.FileAnalysis.Impact = append(output.FileAnalysis.Impact, FileImpactOutput{
 				Path:        relPath,
 				ImpactLevel: impact.ImpactLevel,
-				ImpactType:  string(impact.ImpactType),
 				ChangePaths: changePaths,
 			})
 		}
@@ -599,7 +598,6 @@ func buildOutput(result *pipeline.PipelineResult) (*AnalysisOutput, error) {
 			output.ComponentAnalysis.Impact = append(output.ComponentAnalysis.Impact, ComponentImpactOutput{
 				Name:        impact.Name,
 				ImpactLevel: int(impact.ImpactLevel),
-				ImpactType:  string(impact.ImpactType),
 				ChangePaths: changePaths,
 			})
 		}

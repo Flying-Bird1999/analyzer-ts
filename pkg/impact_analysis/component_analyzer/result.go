@@ -69,8 +69,8 @@ func (r *Result) ToConsole() string {
 		// 按影响层级排序
 		sortedByLevel := r.sortByImpactLevel()
 		for _, impact := range sortedByLevel {
-			buffer.WriteString(fmt.Sprintf("▶ %s (层级: %d, 类型: %s)\n",
-				impact.Name, impact.ImpactLevel, impact.ImpactType))
+			buffer.WriteString(fmt.Sprintf("▶ %s (层级: %d)\n",
+				impact.Name, impact.ImpactLevel))
 			if len(impact.ChangePaths) > 0 {
 				buffer.WriteString("  影响路径:\n")
 				for _, path := range impact.ChangePaths {
@@ -107,17 +107,6 @@ func (r *Result) GetImpactedComponentsByLevel(level int) []ComponentImpactInfo {
 	result := make([]ComponentImpactInfo, 0)
 	for _, impact := range r.Impact {
 		if int(impact.ImpactLevel) == level {
-			result = append(result, impact)
-		}
-	}
-	return result
-}
-
-// GetImpactedComponentsByType 获取指定影响类型的组件
-func (r *Result) GetImpactedComponentsByType(impactType string) []ComponentImpactInfo {
-	result := make([]ComponentImpactInfo, 0)
-	for _, impact := range r.Impact {
-		if string(impact.ImpactType) == impactType {
 			result = append(result, impact)
 		}
 	}
@@ -205,16 +194,6 @@ func (r *Result) CountByImpactLevel() map[int]int {
 	for _, impact := range r.Impact {
 		level := int(impact.ImpactLevel)
 		counts[level]++
-	}
-	return counts
-}
-
-// CountByImpactType 统计各影响类型的组件数量
-func (r *Result) CountByImpactType() map[string]int {
-	counts := make(map[string]int)
-	for _, impact := range r.Impact {
-		impactType := string(impact.ImpactType)
-		counts[impactType]++
 	}
 	return counts
 }

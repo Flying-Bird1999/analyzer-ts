@@ -173,7 +173,6 @@ func (a *Analyzer) buildComponentImpacts(
 		impacts = append(impacts, ComponentImpactInfo{
 			Name:        impact.ComponentName,
 			ImpactLevel: impact.ImpactLevel,
-			ImpactType:  impact.ImpactType,
 			ChangePaths: impact.ChangePaths,
 			SymbolCount: 0, // TODO: 从符号变更中统计
 		})
@@ -184,7 +183,6 @@ func (a *Analyzer) buildComponentImpacts(
 		impacts = append(impacts, ComponentImpactInfo{
 			Name:        impact.ComponentName,
 			ImpactLevel: impact.ImpactLevel,
-			ImpactType:  impact.ImpactType,
 			ChangePaths: impact.ChangePaths,
 			SymbolCount: 0, // TODO: 从符号变更中统计
 		})
@@ -230,7 +228,6 @@ type FileChangeInfoProxy struct {
 type FileImpactInfoProxy struct {
 	Path        string
 	ImpactLevel impact_analysis.ImpactLevel
-	ImpactType  impact_analysis.ImpactType
 	ChangePaths []string
 }
 
@@ -267,7 +264,6 @@ type ComponentChange struct {
 type ComponentImpactInfo struct {
 	Name        string                      `json:"name"`        // 组件名称
 	ImpactLevel impact_analysis.ImpactLevel `json:"impactLevel"` // 影响层级
-	ImpactType  impact_analysis.ImpactType  `json:"impactType"`  // 影响类型
 	ChangePaths []string                    `json:"changePaths"` // 影响路径
 	SymbolCount int                         `json:"symbolCount"` // 影响的符号数量
 }

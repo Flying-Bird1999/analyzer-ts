@@ -256,7 +256,6 @@ func TestIntegration_FullAnalysis(t *testing.T) {
 		fileResultProxy.Impact = append(fileResultProxy.Impact, component_analyzer.FileImpactInfoProxy{
 			Path:        impact.Path,
 			ImpactLevel: impact_analysis.ImpactLevel(impact.ImpactLevel),
-			ImpactType:  impact_analysis.ImpactType(impact.ImpactType),
 			ChangePaths: impact.ChangePaths,
 		})
 	}

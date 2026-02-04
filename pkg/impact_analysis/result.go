@@ -73,12 +73,6 @@ type SymbolImpactChange struct {
 	// 所属组件
 	ComponentName string `json:"componentName"`
 
-	// 影响类型
-	ImpactType ImpactType `json:"impactType"`
-	// "breaking" - 破坏性变更（导出 API 修改/删除）
-	// "internal" - 内部变更（仅内部实现）
-	// "additive" - 增强性变更（新增导出）
-
 	// 影响的下游组件
 	AffectedComponents []string `json:"affectedComponents"`
 }
@@ -185,37 +179,13 @@ func (r *AnalysisResult) ToConsole() string {
 		buffer.WriteString("符号级变更详情\n")
 		buffer.WriteString("=====================================\n\n")
 
-		// 按影响类型分组
-		breakingChanges := filterByImpactType(r.SymbolChanges, ImpactTypeBreaking)
-		internalChanges := filterByImpactType(r.SymbolChanges, ImpactTypeInternal)
-		additiveChanges := filterByImpactType(r.SymbolChanges, ImpactTypeAdditive)
+		buffer.WriteString(fmt.Sprintf("共 %d 个符号变更\n\n", len(r.SymbolChanges)))
 
-		if len(breakingChanges) > 0 {
-			buffer.WriteString(fmt.Sprintf("🔴 破坏性变更 (%d)\n", len(breakingChanges)))
-			for _, sc := range breakingChanges {
-				buffer.WriteString(fmt.Sprintf("  • %s.%s (%s)\n",
-					sc.ComponentName, sc.Symbol.Name, sc.Symbol.Kind))
-			}
-			buffer.WriteString("\n")
+		for _, sc := range r.SymbolChanges {
+			buffer.WriteString(fmt.Sprintf("  • %s.%s (%s)\n",
+				sc.ComponentName, sc.Symbol.Name, sc.Symbol.Kind))
 		}
-
-		if len(internalChanges) > 0 {
-			buffer.WriteString(fmt.Sprintf("🟡 内部变更 (%d)\n", len(internalChanges)))
-			for _, sc := range internalChanges {
-				buffer.WriteString(fmt.Sprintf("  • %s.%s (%s)\n",
-					sc.ComponentName, sc.Symbol.Name, sc.Symbol.Kind))
-			}
-			buffer.WriteString("\n")
-		}
-
-		if len(additiveChanges) > 0 {
-			buffer.WriteString(fmt.Sprintf("🟢 增强性变更 (%d)\n", len(additiveChanges)))
-			for _, sc := range additiveChanges {
-				buffer.WriteString(fmt.Sprintf("  • %s.%s (%s)\n",
-					sc.ComponentName, sc.Symbol.Name, sc.Symbol.Kind))
-			}
-			buffer.WriteString("\n")
-		}
+		buffer.WriteString("\n")
 	}
 
 	// 受影响的组件
@@ -292,15 +262,4 @@ func (r *AnalysisResult) sortByRisk() []struct {
 	})
 
 	return items
-}
-
-// filterByImpactType 按影响类型过滤符号变更
-func filterByImpactType(changes []SymbolImpactChange, impactType ImpactType) []SymbolImpactChange {
-	result := make([]SymbolImpactChange, 0)
-	for _, change := range changes {
-		if change.ImpactType == impactType {
-			result = append(result, change)
-		}
-	}
-	return result
 }

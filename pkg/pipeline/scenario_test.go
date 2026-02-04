@@ -350,7 +350,6 @@ func TestGitLabPipeline_CompleteFlow(t *testing.T) {
 			output.FileAnalysis.Impact = append(output.FileAnalysis.Impact, FileImpactSimple{
 				Path:        relPath,
 				ImpactLevel: impact.ImpactLevel,
-				ImpactType:  string(impact.ImpactType),
 				ChangePaths: changePaths,
 			})
 		}
@@ -391,7 +390,6 @@ func TestGitLabPipeline_CompleteFlow(t *testing.T) {
 			output.ComponentAnalysis.Impact = append(output.ComponentAnalysis.Impact, ComponentImpact{
 				Name:        impact.Name,
 				ImpactLevel: int(impact.ImpactLevel),
-				ImpactType:  string(impact.ImpactType),
 				ChangePaths: changePaths,
 			})
 		}
@@ -518,7 +516,6 @@ type FileChangeSimple struct {
 type FileImpactSimple struct {
 	Path        string   `json:"path"`
 	ImpactLevel int      `json:"impactLevel"`
-	ImpactType  string   `json:"impactType"`
 	ChangePaths []string `json:"changePaths"`
 }
 
@@ -540,7 +537,6 @@ type ComponentChange struct {
 type ComponentImpact struct {
 	Name        string   `json:"name"`
 	ImpactLevel int      `json:"impactLevel"`
-	ImpactType  string   `json:"impactType"`
 	ChangePaths []string `json:"changePaths"`
 }
 

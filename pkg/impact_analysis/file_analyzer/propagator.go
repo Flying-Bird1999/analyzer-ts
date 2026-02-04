@@ -18,13 +18,62 @@ import (
 // 基于符号的 import/export 关系传播影响
 type SymbolPropagator struct {
 	parsingResult *projectParser.ProjectParserResult
+	// reverseImportIndex 反向导入索引：filePath -> importers[]
+	// 预构建后可将 getFilesImporting 从 O(N) 优化到 O(1)
+	reverseImportIndex map[string][]string
+	// indexBuilt 标记索引是否已构建
+	indexBuilt bool
+	// maxDepth 最大传播深度（0=不限制，推荐值：3-5）
+	maxDepth int
 }
 
-// NewSymbolPropagator 创建符号影响传播器
+// DefaultMaxDepth 默认最大传播深度
+const DefaultMaxDepth = 5
+
+// NewSymbolPropagator 创建符号影响传播器（使用默认深度）
 func NewSymbolPropagator(parsingResult *projectParser.ProjectParserResult) *SymbolPropagator {
-	return &SymbolPropagator{
-		parsingResult: parsingResult,
+	return NewSymbolPropagatorWithMaxDepth(parsingResult, DefaultMaxDepth)
+}
+
+// NewSymbolPropagatorWithMaxDepth 创建符号影响传播器（指定最大深度）
+func NewSymbolPropagatorWithMaxDepth(parsingResult *projectParser.ProjectParserResult, maxDepth int) *SymbolPropagator {
+	p := &SymbolPropagator{
+		parsingResult:      parsingResult,
+		reverseImportIndex: make(map[string][]string),
+		indexBuilt:         false,
+		maxDepth:           maxDepth,
 	}
+	// 在创建时预构建索引
+	p.buildReverseIndex()
+	return p
+}
+
+// buildReverseIndex 构建反向导入索引
+// 将"哪些文件导入了指定文件"的关系预先建立索引
+// 时间复杂度: O(N)，N 为文件数
+func (p *SymbolPropagator) buildReverseIndex() {
+	if p.parsingResult == nil {
+		return
+	}
+
+	p.reverseImportIndex = make(map[string][]string)
+
+	for sourceFile, fileResult := range p.parsingResult.Js_Data {
+		for _, importDecl := range fileResult.ImportDeclarations {
+			targetFile := importDecl.Source.FilePath
+			if targetFile == "" {
+				continue // 跳过外部依赖
+			}
+
+			// 记录：targetFile 被 sourceFile 导入
+			p.reverseImportIndex[targetFile] = appendUnique(
+				p.reverseImportIndex[targetFile],
+				sourceFile,
+			)
+		}
+	}
+
+	p.indexBuilt = true
 }
 
 // ImpactedFiles 受影响的文件集合
@@ -37,7 +86,6 @@ type ImpactedFiles struct {
 type FileImpact struct {
 	FilePath    string   // 文件路径
 	ImpactLevel int      // 影响层级（0=直接，1=间接，2+=二级）
-	ImpactType  string   // 影响类型
 	ChangePaths []string // 从变更源头到该文件的路径
 	SymbolCount int      // 影响的符号数量
 }
@@ -80,7 +128,6 @@ func (p *SymbolPropagator) Propagate(changedSymbols []ChangedSymbol, changedNonS
 			result.Direct[sym.FilePath] = &FileImpact{
 				FilePath:    sym.FilePath,
 				ImpactLevel: 0,
-				ImpactType:  "internal",
 				ChangePaths: []string{sym.FilePath},
 				SymbolCount: 1,
 			}
@@ -93,7 +140,6 @@ func (p *SymbolPropagator) Propagate(changedSymbols []ChangedSymbol, changedNonS
 			result.Direct[filePath] = &FileImpact{
 				FilePath:    filePath,
 				ImpactLevel: 0,
-				ImpactType:  "internal",
 				ChangePaths: []string{filePath},
 				SymbolCount: 0, // 非符号文件没有符号概念
 			}
@@ -409,7 +455,6 @@ func (p *SymbolPropagator) bfsPropagation(
 			result.Indirect[filePath] = &FileImpact{
 				FilePath:    filePath,
 				ImpactLevel: 1,
-				ImpactType:  "internal",
 				ChangePaths: []string{filePath},
 				SymbolCount: len(impacts),
 			}
@@ -430,8 +475,8 @@ func (p *SymbolPropagator) bfsPropagation(
 	for queue.Len() > 0 {
 		current := queue.Remove(queue.Front()).(*propagationNode)
 
-		// 检查深度限制（最多传播2级）
-		if current.depth > 2 {
+		// 检查深度限制（maxDepth=0 表示不限制）
+		if p.maxDepth > 0 && current.depth > p.maxDepth {
 			continue
 		}
 
@@ -458,7 +503,6 @@ func (p *SymbolPropagator) bfsPropagation(
 				result.Indirect[downstream] = &FileImpact{
 					FilePath:    downstream,
 					ImpactLevel: newDepth,
-					ImpactType:  "internal",
 					ChangePaths: []string{formatPath(newPath)},
 					SymbolCount: len(current.symbols),
 				}
@@ -497,9 +541,15 @@ type SymbolImpact struct {
 }
 
 // getFilesImporting 获取导入指定文件的所有文件
+// 使用预构建的反向索引，时间复杂度从 O(N) 优化到 O(1)
 func (p *SymbolPropagator) getFilesImporting(filePath string) []string {
-	importers := make([]string, 0)
+	// 使用预构建的索引
+	if p.indexBuilt {
+		return p.reverseImportIndex[filePath]
+	}
 
+	// 降级处理：如果索引未构建，使用原始方法（不应发生）
+	importers := make([]string, 0)
 	for sourceFile, fileResult := range p.parsingResult.Js_Data {
 		for _, importDecl := range fileResult.ImportDeclarations {
 			if importDecl.Source.FilePath == filePath {
@@ -508,7 +558,6 @@ func (p *SymbolPropagator) getFilesImporting(filePath string) []string {
 			}
 		}
 	}
-
 	return importers
 }
 

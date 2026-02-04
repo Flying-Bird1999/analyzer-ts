@@ -467,7 +467,6 @@ func convertFileImpactInfos(impacts []file_analyzer.FileImpactInfo) []component_
 		result[i] = component_analyzer.FileImpactInfoProxy{
 			Path:        imp.Path,
 			ImpactLevel: impact_analysis.ImpactLevel(imp.ImpactLevel),
-			ImpactType:  impact_analysis.ImpactType(imp.ImpactType),
 			ChangePaths: imp.ChangePaths,
 		}
 	}
