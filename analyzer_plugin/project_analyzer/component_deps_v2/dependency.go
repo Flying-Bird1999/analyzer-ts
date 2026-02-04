@@ -2,9 +2,9 @@ package component_deps_v2
 
 import (
 	"path/filepath"
+	"strings"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/samber/lo"
 )
 
 // =============================================================================
@@ -13,124 +13,144 @@ import (
 
 // DependencyAnalyzer 组件依赖分析器
 type DependencyAnalyzer struct {
-	scope    *MultiComponentScope // 组件作用域管理
-	manifest *ComponentManifest  // 组件配置
-	projectRoot string           // 项目根目录
+	manifest *ComponentManifest // 组件配置
 }
 
 // NewDependencyAnalyzer 创建依赖分析器
-func NewDependencyAnalyzer(manifest *ComponentManifest, scope *MultiComponentScope, projectRoot string) *DependencyAnalyzer {
+func NewDependencyAnalyzer(manifest *ComponentManifest) *DependencyAnalyzer {
 	return &DependencyAnalyzer{
-		scope:    scope,
 		manifest: manifest,
-		projectRoot: projectRoot,
 	}
 }
 
-// AnalyzeComponent 分析单个组件的依赖关系
-// 返回该组件依赖的其他组件列表
+// AnalyzeComponent 分析单个组件的外部依赖
+// 返回该组件的所有外部依赖（过滤掉组件内部依赖，并去重）
 func (da *DependencyAnalyzer) AnalyzeComponent(
 	comp *ComponentDefinition,
 	fileResults map[string]projectParser.JsFileParserResult,
-) []string {
-	// 获取所有文件路径，然后筛选属于该组件的文件
-	allFiles := getFilePaths(fileResults)
-	componentFiles := lo.Filter(allFiles, func(path string, _ int) bool {
-		// 检查文件是否在该组件的作用域内
-		compName, _ := da.scope.FindComponentByFile(path)
-		return compName == comp.Name
-	})
+) []projectParser.ImportDeclarationResult {
+	// 获取组件目录
+	compDir := filepath.Dir(comp.Entry)
 
-	// 分析依赖：查找跨组件导入
-	dependencies := make(map[string]bool)
-	for _, filePath := range componentFiles {
-		fileResult, ok := fileResults[filePath]
-		if !ok {
+	// 使用 map 去重：key -> ImportDeclarationResult
+	// npm 包: key = "npm:" + npmPkg
+	// 文件: key = "file:" + filePath
+	seen := make(map[string]projectParser.ImportDeclarationResult)
+
+	// 遍历所有文件
+	for sourceFile, fileResult := range fileResults {
+		// 检查源文件是否属于当前组件
+		if !da.isFileInComponent(sourceFile, compDir) {
 			continue
 		}
 
 		// 遍历该文件的所有导入
 		for _, importDecl := range fileResult.ImportDeclarations {
-			importPath := importDecl.Source.FilePath
-			if importPath == "" {
+			// 判断是否为外部依赖
+			if !da.isExternalDependency(importDecl, compDir) {
 				continue
 			}
 
-			// 将相对路径解析为绝对路径
-			resolvedPath := da.resolveImportPath(importPath, filePath)
+			// 计算去重 key
+			key := da.getDependencyKey(importDecl)
+			if key == "" {
+				continue
+			}
 
-			// 检查是否为跨组件导入
-			targetComp, isCross, isExternal := da.scope.DetectCrossComponentImports(
-				resolvedPath, filePath)
-
-			// 只记录跨组件的依赖
-			if isCross && !isExternal && targetComp != "" {
-				dependencies[targetComp] = true
+			// 如果该依赖尚未记录，则添加
+			if _, exists := seen[key]; !exists {
+				seen[key] = importDecl
 			}
 		}
 	}
 
-	// 返回依赖列表（去重后）
-	return lo.Keys(dependencies)
+	// 转换为切片返回
+	externalDeps := make([]projectParser.ImportDeclarationResult, 0, len(seen))
+	for _, dep := range seen {
+		externalDeps = append(externalDeps, dep)
+	}
+
+	return externalDeps
 }
 
-// resolveImportPath 解析导入路径
-// 如果是相对路径，基于源文件所在目录解析为绝对路径
-// 如果是绝对路径或 node_modules，直接返回
-func (da *DependencyAnalyzer) resolveImportPath(importPath, sourceFilePath string) string {
-	// 如果是相对路径
-	if isRelativePath(importPath) {
-		// 获取源文件所在目录
-		sourceDir := filepath.Dir(sourceFilePath)
-		// 拼接相对路径得到绝对路径
-		resolved := filepath.Join(sourceDir, importPath)
-		// 标准化路径（移除 .. 和 .）
-		resolved = filepath.Clean(resolved)
-		// 转换为正斜杠（Windows 兼容）
-		resolved = filepath.ToSlash(resolved)
+// getDependencyKey 获取依赖的唯一标识，用于去重
+func (da *DependencyAnalyzer) getDependencyKey(importDecl projectParser.ImportDeclarationResult) string {
+	switch importDecl.Source.Type {
+	case "npm":
+		return "npm:" + importDecl.Source.NpmPkg
+	case "file":
+		return "file:" + importDecl.Source.FilePath
+	default:
+		return ""
+	}
+}
 
-		// 如果是绝对路径，去掉项目根目录前缀，得到相对于项目根的路径
-		if filepath.IsAbs(resolved) && len(resolved) >= len(da.projectRoot) {
-			relativeToRoot := resolved
-			if len(resolved) > len(da.projectRoot) && resolved[len(da.projectRoot)] == '/' {
-				relativeToRoot = resolved[len(da.projectRoot)+1:]
-			} else if resolved == da.projectRoot {
-				relativeToRoot = "."
-			}
-			return relativeToRoot
+// isFileInComponent 判断文件是否在组件目录下
+func (da *DependencyAnalyzer) isFileInComponent(filePath, compDir string) bool {
+	// 标准化路径为正斜杠格式
+	normalizedDir := filepath.ToSlash(compDir)
+	normalizedPath := filepath.ToSlash(filePath)
+
+	// 首先尝试精确前缀匹配（处理相对路径情况）
+	if strings.HasPrefix(normalizedPath, normalizedDir+"/") || normalizedPath == normalizedDir {
+		return true
+	}
+
+	// 如果是绝对路径，尝试提取相对路径部分后再匹配
+	// 例如: /project/src/Button/xxx.tsx → src/Button/xxx.tsx
+	parts := strings.Split(normalizedPath, "/")
+	for i := 0; i < len(parts); i++ {
+		// 尝试从每个位置开始，看是否能匹配组件目录
+		candidatePath := strings.Join(parts[i:], "/")
+		if strings.HasPrefix(candidatePath, normalizedDir+"/") || candidatePath == normalizedDir {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isExternalDependency 判断是否为外部依赖
+// 规则：
+// 1. npm 包 → 外部依赖
+// 2. 文件类型：目标文件不在当前组件目录下 → 外部依赖
+// 3. 文件类型：目标文件在当前组件目录下 → 内部依赖（忽略）
+func (da *DependencyAnalyzer) isExternalDependency(
+	importDecl projectParser.ImportDeclarationResult,
+	sourceCompDir string,
+) bool {
+	// npm 包，直接视为外部依赖
+	if importDecl.Source.Type == "npm" {
+		return true
+	}
+
+	// 文件类型，判断目标文件是否在当前组件目录下
+	if importDecl.Source.Type == "file" {
+		targetFilePath := importDecl.Source.FilePath
+		if targetFilePath == "" {
+			return false
 		}
 
-		return resolved
+		// 检查目标文件是否在当前组件目录下
+		if da.isFileInComponent(targetFilePath, sourceCompDir) {
+			// 在同一组件内，是内部依赖
+			return false
+		}
+
+		// 不在当前组件目录下，是外部依赖
+		return true
 	}
 
-	// 如果不是相对路径（如 node_modules 或绝对路径），直接返回
-	return importPath
+	// 未知类型，不处理
+	return false
 }
 
-// isRelativePath 检查是否为相对路径
-func isRelativePath(path string) bool {
-	return len(path) >= 3 && (path[0] == '.' && (path[1] == '/' || (path[1] == '.' && path[2] == '/')))
-}
-
-// =============================================================================
-// 辅助函数
-// =============================================================================
-
-// getFilePaths 从解析结果中提取所有文件路径
-func getFilePaths(fileResults map[string]projectParser.JsFileParserResult) []string {
-	paths := make([]string, 0, len(fileResults))
-	for path := range fileResults {
-		paths = append(paths, path)
-	}
-	return paths
-}
-
-// AnalyzeAllComponents 分析所有组件的依赖关系
-// 返回组件名 -> 依赖列表的映射
+// AnalyzeAllComponents 分析所有组件的外部依赖
+// 返回组件名 -> 外部依赖列表的映射
 func (da *DependencyAnalyzer) AnalyzeAllComponents(
 	fileResults map[string]projectParser.JsFileParserResult,
-) map[string][]string {
-	result := make(map[string][]string)
+) map[string][]projectParser.ImportDeclarationResult {
+	result := make(map[string][]projectParser.ImportDeclarationResult)
 
 	for i := range da.manifest.Components {
 		comp := &da.manifest.Components[i]

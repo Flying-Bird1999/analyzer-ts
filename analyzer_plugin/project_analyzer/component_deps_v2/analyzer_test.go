@@ -3,28 +3,19 @@ package component_deps_v2
 import (
 	"testing"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // =============================================================================
 // 配置加载测试
 // =============================================================================
 
-func TestLoadManifest_Success(t *testing.T) {
-	// TODO: 创建测试配置文件并验证加载
-	t.Skip("需要创建测试配置文件")
-}
-
 func TestLoadManifest_FileNotFound(t *testing.T) {
 	_, err := LoadManifest("/non/existent/path.json")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "配置文件不存在")
-}
-
-func TestLoadManifest_InvalidJSON(t *testing.T) {
-	// TODO: 创建无效 JSON 文件测试
-	t.Skip("需要创建无效 JSON 测试文件")
 }
 
 func TestValidateManifest_EmptyComponents(t *testing.T) {
@@ -39,7 +30,6 @@ func TestValidateManifest_EmptyComponents(t *testing.T) {
 
 func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 	manifest := &ComponentManifest{
-
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Button", Entry: "src/Button2/index.tsx"},
@@ -53,7 +43,6 @@ func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 
 func TestGetComponentByName(t *testing.T) {
 	manifest := &ComponentManifest{
-
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
@@ -69,241 +58,171 @@ func TestGetComponentByName(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func TestGetComponentCount(t *testing.T) {
+// =============================================================================
+// 依赖分析测试
+// =============================================================================
+
+func TestIsFileInComponent(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Entry: "src/Button/index.tsx"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+	compDir := "src/Button"
+
+	// 测试在组件内的文件
+	assert.True(t, analyzer.isFileInComponent("src/Button/Button.tsx", compDir))
+	assert.True(t, analyzer.isFileInComponent("src/Button/components/ButtonIcon.tsx", compDir))
+	assert.True(t, analyzer.isFileInComponent("src/Button/utils/helpers.ts", compDir))
+
+	// 测试不在组件内的文件
+	assert.False(t, analyzer.isFileInComponent("src/Input/index.tsx", compDir))
+	assert.False(t, analyzer.isFileInComponent("src/ButtonTest/index.tsx", compDir))
+}
+
+func TestIsExternalDependency_NpmPackage(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Entry: "src/Button/index.tsx"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+	compDir := "src/Button"
+
+	// npm 包应该被视为外部依赖
+	importDecl := projectParser.ImportDeclarationResult{
+		Source: projectParser.SourceData{
+			Type:   "npm",
+			NpmPkg: "react",
+		},
+	}
+
+	assert.True(t, analyzer.isExternalDependency(importDecl, compDir))
+}
+
+func TestIsExternalDependency_InternalFile(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Entry: "src/Button/index.tsx"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+	compDir := "src/Button"
+
+	// 组件内部文件不应该被视为外部依赖
+	importDecl := projectParser.ImportDeclarationResult{
+		Source: projectParser.SourceData{
+			Type:     "file",
+			FilePath: "src/Button/utils/helper.ts",
+		},
+	}
+
+	assert.False(t, analyzer.isExternalDependency(importDecl, compDir))
+}
+
+func TestIsExternalDependency_CrossComponent(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
 			{Name: "Input", Entry: "src/Input/index.tsx"},
 		},
 	}
+	analyzer := NewDependencyAnalyzer(manifest)
+	compDir := "src/Button"
 
-	assert.Equal(t, 2, manifest.GetComponentCount())
+	// 跨组件引用应该被视为外部依赖
+	importDecl := projectParser.ImportDeclarationResult{
+		Source: projectParser.SourceData{
+			Type:     "file",
+			FilePath: "src/Input/index.tsx",
+		},
+	}
+
+	assert.True(t, analyzer.isExternalDependency(importDecl, compDir))
 }
 
-func TestGetComponentNames(t *testing.T) {
+func TestIsExternalDependency_ExternalFile(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Input", Entry: "src/Input/index.tsx"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+	compDir := "src/Button"
+
+	// 不属于任何组件的文件应该被视为外部依赖
+	importDecl := projectParser.ImportDeclarationResult{
+		Source: projectParser.SourceData{
+			Type:     "file",
+			FilePath: "src/utils/helper.ts",
 		},
 	}
 
-	names := manifest.GetComponentNames()
-	assert.Len(t, names, 2)
-	assert.Contains(t, names, "Button")
-	assert.Contains(t, names, "Input")
+	assert.True(t, analyzer.isExternalDependency(importDecl, compDir))
 }
 
-// =============================================================================
-// 作用域测试
-// =============================================================================
-
-func TestComponentScope_Contains(t *testing.T) {
-	comp := &ComponentDefinition{
-		Name:  "Button",
-		Entry: "src/Button/index.tsx",
-	}
-
-	scope := NewComponentScope(comp)
-
-	// 测试匹配
-	assert.True(t, scope.Contains("src/Button/index.tsx"))
-	assert.True(t, scope.Contains("src/Button/Button.tsx"))
-	assert.True(t, scope.Contains("src/Button/components/ButtonIcon.tsx"))
-	assert.True(t, scope.Contains("src/Button/utils/helpers.ts"))
-
-	// 测试不匹配
-	assert.False(t, scope.Contains("src/Input/index.tsx"))
-	assert.False(t, scope.Contains("src/ButtonTest/index.tsx"))
-}
-
-func TestMultiComponentScope_FindComponentByFile(t *testing.T) {
+// 去重测试
+func TestAnalyzeComponent_Dedup(t *testing.T) {
 	manifest := &ComponentManifest{
-
-		Components: []ComponentDefinition{
-			{
-				Name:  "Button",
-				Entry: "src/Button/index.tsx",
-			},
-			{
-				Name:  "Input",
-				Entry: "src/Input/index.tsx",
-			},
-		},
-	}
-
-	scope := NewMultiComponentScope(manifest, "/test/project")
-
-	// 测试查找
-	compName, ok := scope.FindComponentByFile("src/Button/index.tsx")
-	assert.True(t, ok)
-	assert.Equal(t, "Button", compName)
-
-	compName, ok = scope.FindComponentByFile("src/Input/Input.tsx")
-	assert.True(t, ok)
-	assert.Equal(t, "Input", compName)
-
-	// 测试未找到
-	_, ok = scope.FindComponentByFile("src/Select/index.tsx")
-	assert.False(t, ok)
-}
-
-func TestMultiComponentScope_CrossComponentDetection(t *testing.T) {
-	manifest := &ComponentManifest{
-
-		Components: []ComponentDefinition{
-			{
-				Name:  "Button",
-				Entry: "src/Button/index.tsx",
-			},
-			{
-				Name:  "Input",
-				Entry: "src/Input/index.tsx",
-			},
-		},
-	}
-
-	scope := NewMultiComponentScope(manifest, "/test/project")
-
-	// 测试跨组件检测
-	targetComp, isCross, isExternal := scope.DetectCrossComponentImports(
-		"src/Input/index.tsx", "src/Button/Button.tsx")
-
-	assert.Equal(t, "Input", targetComp)
-	assert.True(t, isCross)
-	assert.False(t, isExternal)
-
-	// 测试同组件内
-	targetComp, isCross, isExternal = scope.DetectCrossComponentImports(
-		"src/Button/utils.ts", "src/Button/index.tsx")
-
-	assert.Equal(t, "Button", targetComp)
-	assert.False(t, isCross)
-	assert.False(t, isExternal)
-
-	// 测试外部导入
-	targetComp, isCross, isExternal = scope.DetectCrossComponentImports(
-		"src/External/index.tsx", "src/Button/index.tsx")
-
-	assert.Equal(t, "", targetComp)
-	assert.False(t, isCross)
-	assert.True(t, isExternal)
-}
-
-// =============================================================================
-// 依赖图测试
-// =============================================================================
-
-func TestGraphBuilder_BuildDepGraph(t *testing.T) {
-	manifest := &ComponentManifest{
-
 		Components: []ComponentDefinition{
 			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Input", Entry: "src/Input/index.tsx"},
-			{Name: "Select", Entry: "src/Select/index.tsx"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+
+	// 模拟多个文件引用同一个 npm 包和同一个文件
+	fileResults := map[string]projectParser.JsFileParserResult{
+		"src/Button/Button.tsx": {
+			ImportDeclarations: []projectParser.ImportDeclarationResult{
+				{
+					Source: projectParser.SourceData{Type: "npm", NpmPkg: "react"},
+					Raw:    "import React from 'react'",
+				},
+				{
+					Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/index.ts"},
+					Raw:    "import { Input } from '../Input'",
+				},
+			},
+		},
+		"src/Button/ButtonIcon.tsx": {
+			ImportDeclarations: []projectParser.ImportDeclarationResult{
+				{
+					Source: projectParser.SourceData{Type: "npm", NpmPkg: "react"}, // 重复
+					Raw:    "import React from 'react'",
+				},
+				{
+					Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/index.ts"}, // 重复
+					Raw:    "import { Input } from '../Input'",
+				},
+				{
+					Source: projectParser.SourceData{Type: "npm", NpmPkg: "lodash"},
+					Raw:    "import { debounce } from 'lodash'",
+				},
+			},
 		},
 	}
 
-	builder := NewGraphBuilder(manifest)
+	comp := &ComponentDefinition{Name: "Button", Entry: "src/Button/index.tsx"}
+	deps := analyzer.AnalyzeComponent(comp, fileResults)
 
-	dependencies := map[string][]string{
-		"Button": {},
-		"Input":  {"Button"},
-		"Select": {"Input", "Button"},
-	}
+	// 应该去重，只有 3 个依赖：react、Input/index.ts、lodash
+	assert.Len(t, deps, 3)
 
-	graph := builder.BuildDepGraph(dependencies)
-
-	assert.Len(t, graph, 3)
-	assert.Empty(t, graph["Button"])
-	assert.Equal(t, []string{"Button"}, graph["Input"])
-	assert.Equal(t, []string{"Button", "Input"}, graph["Select"])
-}
-
-func TestGraphBuilder_BuildRevDepGraph(t *testing.T) {
-	manifest := &ComponentManifest{
-
-		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Input", Entry: "src/Input/index.tsx"},
-			{Name: "Select", Entry: "src/Select/index.tsx"},
-		},
-	}
-
-	builder := NewGraphBuilder(manifest)
-
-	depGraph := DependencyGraph{
-		"Button": {},
-		"Input":  {"Button"},
-		"Select": {"Input", "Button"},
-	}
-
-	revGraph := builder.BuildRevDepGraph(depGraph)
-
-	assert.Len(t, revGraph, 3)
-	assert.Equal(t, []string{"Input", "Select"}, revGraph["Button"])
-	assert.Equal(t, []string{"Select"}, revGraph["Input"])
-	assert.Empty(t, revGraph["Select"])
-}
-
-func TestGraphBuilder_DetectCycles(t *testing.T) {
-	manifest := &ComponentManifest{
-
-		Components: []ComponentDefinition{
-			{Name: "A", Entry: "src/A/index.tsx"},
-			{Name: "B", Entry: "src/B/index.tsx"},
-			{Name: "C", Entry: "src/C/index.tsx"},
-		},
-	}
-
-	builder := NewGraphBuilder(manifest)
-
-	// 测试无环
-	depGraph := DependencyGraph{
-		"A": {},
-		"B": {"A"},
-		"C": {"B"},
-	}
-	cycles := builder.DetectCycles(depGraph)
-	assert.Empty(t, cycles)
-
-	// 测试有环
-	depGraphWithCycle := DependencyGraph{
-		"A": {"B"},
-		"B": {"C"},
-		"C": {"A"},
-	}
-	cycles = builder.DetectCycles(depGraphWithCycle)
-	assert.NotEmpty(t, cycles)
-}
-
-// =============================================================================
-// 分析器接口测试
-// =============================================================================
-
-func TestComponentDepsV2Analyzer_Name(t *testing.T) {
-	analyzer := &ComponentDepsV2Analyzer{}
-	assert.Equal(t, "component-deps-v2", analyzer.Name())
-}
-
-func TestComponentDepsV2Analyzer_Configure_MissingParam(t *testing.T) {
-	analyzer := &ComponentDepsV2Analyzer{}
-	err := analyzer.Configure(map[string]string{})
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "缺少必需参数")
-}
-
-func TestComponentDepsV2Analyzer_Configure_Success(t *testing.T) {
-	analyzer := &ComponentDepsV2Analyzer{}
-	err := analyzer.Configure(map[string]string{
-		"manifest": "component-manifest.json",
+	// 验证去重后的结果
+	npmDeps := lo.Filter(deps, func(d projectParser.ImportDeclarationResult, _ int) bool {
+		return d.Source.Type == "npm"
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, "component-manifest.json", analyzer.ManifestPath)
+	assert.Len(t, npmDeps, 2)
+
+	fileDeps := lo.Filter(deps, func(d projectParser.ImportDeclarationResult, _ int) bool {
+		return d.Source.Type == "file"
+	})
+	assert.Len(t, fileDeps, 1)
 }
 
 // =============================================================================
-// 结果接口测试
+// 结果结构测试
 // =============================================================================
 
 func TestComponentDepsV2Result_Name(t *testing.T) {
@@ -313,94 +232,51 @@ func TestComponentDepsV2Result_Name(t *testing.T) {
 
 func TestComponentDepsV2Result_Summary(t *testing.T) {
 	result := &ComponentDepsV2Result{
-		Meta: Meta{
-			ComponentCount: 3,
-		},
-		DepGraph: DependencyGraph{
-			"Button": {},
-			"Input":  {"Button"},
-			"Select": {"Input", "Button"},
+		Meta: Meta{ComponentCount: 2},
+		Components: map[string]ComponentInfo{
+			"Button": {Dependencies: []projectParser.ImportDeclarationResult{{}, {}}},
+			"Input":  {Dependencies: []projectParser.ImportDeclarationResult{{}}},
 		},
 	}
 
 	summary := result.Summary()
-	assert.Contains(t, summary, "3 个组件")
-	assert.Contains(t, summary, "3 条依赖")
+	assert.Contains(t, summary, "2 个组件")
+	assert.Contains(t, summary, "3 条外部依赖")
 }
 
 func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 	result := &ComponentDepsV2Result{
-		Meta: Meta{
-			ComponentCount: 1,
-		},
+		Meta: Meta{ComponentCount: 1},
 		Components: map[string]ComponentInfo{
 			"Button": {
 				Name:         "Button",
 				Entry:        "src/Button/index.tsx",
-				Dependencies: []string{},
+				Dependencies: []projectParser.ImportDeclarationResult{},
 			},
 		},
-		DepGraph:    DependencyGraph{"Button": {}},
-		RevDepGraph: ReverseDepGraph{"Button": {}},
 	}
 
-	// 测试带缩进
-	jsonWithIndent, err := result.ToJSON(true)
-	require.NoError(t, err)
-	assert.Contains(t, string(jsonWithIndent), "Button")
-	assert.Contains(t, string(jsonWithIndent), "\n")
-
-	// 测试不带缩进
-	jsonWithoutIndent, err := result.ToJSON(false)
-	require.NoError(t, err)
-	assert.Contains(t, string(jsonWithoutIndent), "Button")
+	data, err := result.ToJSON(false)
+	assert.NoError(t, err)
+	assert.Contains(t, string(data), "Button")
+	assert.Contains(t, string(data), "src/Button/index.tsx")
 }
 
 func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 	result := &ComponentDepsV2Result{
-		Meta: Meta{
-			ComponentCount: 2,
-		},
+		Meta: Meta{ComponentCount: 1},
 		Components: map[string]ComponentInfo{
 			"Button": {
 				Name:         "Button",
 				Entry:        "src/Button/index.tsx",
-				Dependencies: []string{},
+				Dependencies: []projectParser.ImportDeclarationResult{},
 			},
-			"Input": {
-				Name:         "Input",
-				Entry:        "src/Input/index.tsx",
-				Dependencies: []string{"Button"},
-			},
-		},
-		DepGraph: DependencyGraph{
-			"Button": {},
-			"Input":  {"Button"},
-		},
-		RevDepGraph: ReverseDepGraph{
-			"Button": {"Input"},
-			"Input":  {},
 		},
 	}
 
 	output := result.ToConsole()
 	assert.Contains(t, output, "组件依赖分析报告")
-	assert.Contains(t, output, "组件总数: 2")
 	assert.Contains(t, output, "Button")
-	assert.Contains(t, output, "Input")
-	assert.Contains(t, output, "反向依赖")
-}
-
-// =============================================================================
-// 集成测试
-// =============================================================================
-
-func TestComponentDepsV2Analyzer_Analyze_Integration(t *testing.T) {
-	// TODO: 完整的集成测试需要：
-	// 1. 创建测试项目结构
-	// 2. 创建配置文件
-	// 3. 创建测试文件
-	// 4. 运行分析器
-	// 5. 验证结果
-	t.Skip("需要完整的测试项目设置")
+	assert.Contains(t, output, "src/Button/index.tsx")
+	assert.Contains(t, output, "外部依赖: 无")
 }

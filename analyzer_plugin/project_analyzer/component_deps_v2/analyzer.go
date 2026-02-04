@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
@@ -12,10 +13,6 @@ import (
 // =============================================================================
 
 // ComponentDepsV2Analyzer 组件依赖分析器（V2版本）
-//
-// 与 component-deps 的区别：
-// - component-deps: 从入口文件自动识别组件
-// - component-deps-v2: 基于配置文件显式声明组件
 //
 // 使用方式：
 //
@@ -54,41 +51,45 @@ func (a *ComponentDepsV2Analyzer) Configure(params map[string]string) error {
 // Analyze 执行组件依赖分析
 // 分析流程：
 // 1. 加载配置文件
-// 2. 构建组件作用域
-// 3. 分析依赖关系
-// 4. 构建依赖图
-// 5. 生成分析结果
+// 2. 分析外部依赖
+// 3. 生成分析结果
 func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
 	// 步骤 1: 加载配置文件
 	if err := a.loadManifest(ctx.ProjectRoot); err != nil {
 		return nil, fmt.Errorf("加载配置文件失败: %w", err)
 	}
 
-	// 步骤 2: 构建组件作用域管理器
-	scope := NewMultiComponentScope(a.manifest, ctx.ProjectRoot)
-
-	// 步骤 3: 分析依赖关系
-	depAnalyzer := NewDependencyAnalyzer(a.manifest, scope, ctx.ProjectRoot)
+	// 步骤 2: 分析外部依赖
+	depAnalyzer := NewDependencyAnalyzer(a.manifest)
 	fileResults := ctx.ParsingResult.Js_Data
 	dependencies := depAnalyzer.AnalyzeAllComponents(fileResults)
 
-	// 步骤 4: 构建依赖图
-	graphBuilder := NewGraphBuilder(a.manifest)
-	depGraph := graphBuilder.BuildDepGraph(dependencies)
-	revDepGraph := graphBuilder.BuildRevDepGraph(depGraph)
-	components := graphBuilder.BuildComponentInfo(depGraph)
-
-	// 步骤 5: 构建结果
+	// 步骤 3: 构建结果
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
-			ComponentCount: len(components),
+			ComponentCount: len(a.manifest.Components),
 		},
-		Components:  components,
-		DepGraph:    depGraph,
-		RevDepGraph: revDepGraph,
+		Components: a.buildComponentInfo(dependencies),
 	}
 
 	return result, nil
+}
+
+// buildComponentInfo 构建组件信息
+func (a *ComponentDepsV2Analyzer) buildComponentInfo(
+	dependencies map[string][]projectParser.ImportDeclarationResult,
+) map[string]ComponentInfo {
+	result := make(map[string]ComponentInfo)
+
+	for _, comp := range a.manifest.Components {
+		result[comp.Name] = ComponentInfo{
+			Name:         comp.Name,
+			Entry:        comp.Entry,
+			Dependencies: dependencies[comp.Name],
+		}
+	}
+
+	return result
 }
 
 // =============================================================================

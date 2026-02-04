@@ -1,14 +1,9 @@
 // Package component_deps_v2 实现了基于配置文件的组件依赖分析器（V2版本）。
 //
-// 与 component-deps 的区别：
-// - component-deps: 从入口文件自动识别组件
-// - component-deps-v2: 基于配置文件显式声明组件
-//
 // 核心特性：
 // 1. 配置驱动：通过 component-manifest.json 显式声明组件
-// 2. 精确作用域：每个组件可以定义自己的文件作用域
-// 3. 完整依赖图：生成正向和反向依赖关系
-// 4. 支持大型项目：适用于复杂的组件库项目
+// 2. 精确过滤：过滤掉组件内部依赖，只保留外部依赖
+// 3. 完整信息：保留原始 import 解析结果，包含导入的详细内容
 package component_deps_v2
 
 import (
@@ -16,6 +11,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
@@ -25,18 +21,10 @@ import (
 
 // ComponentInfo 单个组件的依赖信息
 type ComponentInfo struct {
-	Name         string   `json:"name"`         // 组件名称
-	Entry        string   `json:"entry"`        // 组件入口文件
-	Dependencies []string `json:"dependencies"` // 该组件依赖的其他组件
+	Name         string                              `json:"name"`         // 组件名称
+	Entry        string                              `json:"entry"`        // 组件入口文件
+	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表
 }
-
-// DependencyGraph 正向依赖图
-// key: 组件名称, value: 该组件直接依赖的组件列表
-type DependencyGraph map[string][]string
-
-// ReverseDepGraph 反向依赖图
-// key: 组件名称, value: 依赖该组件的其他组件列表
-type ReverseDepGraph map[string][]string
 
 // Meta 分析元数据
 type Meta struct {
@@ -45,10 +33,8 @@ type Meta struct {
 
 // ComponentDepsV2Result 组件依赖分析结果
 type ComponentDepsV2Result struct {
-	Meta        Meta                     `json:"meta"`        // 元数据
-	Components  map[string]ComponentInfo `json:"components"`  // 组件信息
-	DepGraph    DependencyGraph          `json:"depGraph"`    // 正向依赖图
-	RevDepGraph ReverseDepGraph          `json:"revDepGraph"` // 反向依赖图
+	Meta       Meta                        `json:"meta"`
+	Components map[string]ComponentInfo `json:"components"`
 }
 
 // =============================================================================
@@ -63,10 +49,10 @@ func (r *ComponentDepsV2Result) Name() string {
 // Summary 返回分析结果摘要
 func (r *ComponentDepsV2Result) Summary() string {
 	totalDeps := 0
-	for _, deps := range r.DepGraph {
-		totalDeps += len(deps)
+	for _, comp := range r.Components {
+		totalDeps += len(comp.Dependencies)
 	}
-	return fmt.Sprintf("分析完成，共发现 %d 个组件，%d 条依赖关系。",
+	return fmt.Sprintf("分析完成，共发现 %d 个组件，%d 条外部依赖。",
 		r.Meta.ComponentCount, totalDeps)
 }
 
@@ -100,29 +86,20 @@ func (r *ComponentDepsV2Result) ToConsole() string {
 		buffer.WriteString(fmt.Sprintf("▶ %s\n", name))
 		buffer.WriteString(fmt.Sprintf("  入口: %s\n", comp.Entry))
 		if len(comp.Dependencies) > 0 {
-			buffer.WriteString("  依赖:\n")
+			buffer.WriteString("  外部依赖:\n")
 			for _, dep := range comp.Dependencies {
-				buffer.WriteString(fmt.Sprintf("    - %s\n", dep))
+				// 根据 type 显示不同信息
+				if dep.Source.Type == "npm" {
+					buffer.WriteString(fmt.Sprintf("    - npm: %s\n", dep.Source.NpmPkg))
+				} else {
+					targetFile := dep.Source.FilePath
+					buffer.WriteString(fmt.Sprintf("    - file: %s\n", targetFile))
+				}
 			}
 		} else {
-			buffer.WriteString("  依赖: 无\n")
+			buffer.WriteString("  外部依赖: 无\n")
 		}
 		buffer.WriteString("\n")
-	}
-
-	// 反向依赖（被依赖情况）
-	buffer.WriteString("=====================================\n")
-	buffer.WriteString("反向依赖（被谁依赖）\n")
-	buffer.WriteString("=====================================\n\n")
-
-	for _, name := range sortedNames {
-		if revDeps, ok := r.RevDepGraph[name]; ok && len(revDeps) > 0 {
-			buffer.WriteString(fmt.Sprintf("▶ %s 被 %d 个组件依赖:\n", name, len(revDeps)))
-			for _, dep := range revDeps {
-				buffer.WriteString(fmt.Sprintf("    - %s\n", dep))
-			}
-			buffer.WriteString("\n")
-		}
 	}
 
 	return buffer.String()

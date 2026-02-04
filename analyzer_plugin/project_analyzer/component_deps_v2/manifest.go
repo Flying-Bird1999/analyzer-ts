@@ -18,17 +18,10 @@ type ComponentManifest struct {
 	Rules      *ManifestRules        `json:"rules,omitempty"`
 }
 
-// ManifestMeta 配置文件元数据
-type ManifestMeta struct {
-	Version     string `json:"version"`     // 配置协议版本
-	LibraryName string `json:"libraryName"` // 组件库名称
-}
-
 // ComponentDefinition 组件定义
 type ComponentDefinition struct {
 	Name  string `json:"name"`  // 组件名称
 	Entry string `json:"entry"` // 组件入口文件
-	// Scope 自动推断为 entry 文件所在目录
 }
 
 // ManifestRules 可选的规则配置
