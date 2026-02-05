@@ -22,6 +22,13 @@ package cmd
 //   5. 排除文件：
 //      ./analyzer-ts impact --project-root $(pwd) --diff-string "$(git diff)" --exclude "**/lib/**" --exclude "**/tests/**"
 //
+// Glob 模式说明：
+//   dist/**         仅匹配根目录的 dist 文件夹
+//   **/dist/**      仅匹配嵌套的 dist 文件夹（不匹配根目录）
+//   **/dist         匹配任意层级的 dist 文件夹（包括根目录）
+//   **/*.test.tsx   匹配所有 .test.tsx 文件
+//   node_modules    始终自动排除（硬编码）
+//
 // 参数说明：
 //   必需：
 //     --project-root <path>    项目根目录（绝对路径）
