@@ -21,6 +21,7 @@ import (
 	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
@@ -38,6 +39,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"count-any":               &countany.Counter{},
 	"count-as":                &countas.Counter{},
 	"npm-check":               &dependency.Checker{},
+	"list-deps":               &list_deps.Lister{},
 	"trace":                   &trace.Tracer{},
 	"api-tracer":              &apit.Tracer{},
 	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
@@ -92,6 +94,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			`  - count-as: 统计项目中所有 'as' 类型断言的使用情况.
 ` +
 			`  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.
+` +
+			`  - list-deps: 列出项目的所有 NPM 依赖.
 ` +
 			`  - trace: 追踪一个或多个NPM包的使用链路 (例如 antd).
 ` +
