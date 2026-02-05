@@ -689,3 +689,187 @@ index 1234567..abcdefg 100644
 
 	t.Log("✅ export default 场景测试通过")
 }
+
+// =============================================================================
+// 本地 Git Diff 场景测试
+// =============================================================================
+
+// TestGitLabPipeline_LocalGitDiff 测试使用本地 git 命令获取 diff
+// 场景：使用分支对比 (main...test-button-update) 进行影响分析
+func TestGitLabPipeline_LocalGitDiff(t *testing.T) {
+	wd, _ := os.Getwd()
+	projectRoot := filepath.Join(wd, "..", "..", "testdata", "test_project")
+	absPath, _ := filepath.Abs(projectRoot)
+
+	// 验证测试项目存在
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		t.Skip("测试项目不存在:", absPath)
+	}
+
+	// 检查测试项目是否有 git 仓库
+	gitDir := filepath.Join(absPath, ".git")
+	if _, err := os.Stat(gitDir); os.IsNotExist(err) {
+		t.Skip("测试项目没有 git 仓库，请先运行: cd testdata/test_project && git init && git add -A && git commit -m 'chore: init'")
+	}
+
+	// 验证测试分支存在
+	testBranch := "test-button-update"
+	baseBranch := "main"
+
+	t.Logf("📁 项目路径: %s", absPath)
+	t.Logf("📁 Git 仓库: testdata/test_project (子仓库)")
+	t.Logf("🌿 分支对比: %s...%s", baseBranch, testBranch)
+
+	// 创建 GitLab 管道，使用分支对比
+	config := &GitLabPipelineConfig{
+		DiffSource:   DiffSourceBranch, // 使用分支对比
+		ProjectRoot:  absPath,
+		GitRoot:      absPath, // 子仓库的 git root 就是项目根
+		MaxDepth:     10,
+	}
+
+	// 创建分析上下文，配置分支信息
+	ctx := context.Background()
+	analysisCtx := NewAnalysisContext(ctx, absPath, nil)
+	analysisCtx.SetOption("baseBranch", baseBranch)
+	analysisCtx.SetOption("targetBranch", testBranch)
+
+	pipeline := NewGitLabPipeline(config)
+
+	// 执行管道
+	result, err := pipeline.Execute(analysisCtx)
+	if err != nil {
+		t.Fatalf("管道执行失败: %v", err)
+	}
+
+	if !result.IsSuccessful() {
+		t.Fatalf("管道执行不成功: %v", result.GetErrors())
+	}
+
+	t.Logf("✅ 管道执行成功，阶段数: %d", len(result.Results))
+
+	// 获取影响分析结果
+	impactResult, ok := result.GetResult("影响分析（文件级）")
+	if !ok {
+		t.Fatal("未找到影响分析结果")
+	}
+
+	impact, ok := impactResult.(*ImpactAnalysisResult)
+	if !ok {
+		t.Fatalf("影响分析结果格式错误: %T", impactResult)
+	}
+
+	// 验证结果
+	if impact.FileResult == nil {
+		t.Fatal("未找到文件级影响分析结果")
+	}
+
+	t.Logf("文件级影响分析:")
+	t.Logf("  - 总文件数: %d", impact.FileResult.Meta.TotalFileCount)
+	t.Logf("  - 变更文件数: %d", impact.FileResult.Meta.ChangedFileCount)
+	t.Logf("  - 受影响文件数: %d", impact.FileResult.Meta.ImpactFileCount)
+
+	// 验证检测到变更文件
+	if len(impact.FileResult.Changes) == 0 {
+		t.Error("未检测到变更文件")
+	} else {
+		t.Logf("✅ 检测到 %d 个变更文件:", len(impact.FileResult.Changes))
+		for _, change := range impact.FileResult.Changes {
+			relPath, _ := filepath.Rel(absPath, change.Path)
+			t.Logf("  - %s (类型: %s, 符号数: %d)", relPath, change.ChangeType, change.SymbolCount)
+		}
+	}
+
+	// 验证 Button.tsx 被检测到变更
+	foundButton := false
+	for _, change := range impact.FileResult.Changes {
+		if strings.HasSuffix(change.Path, "Button.tsx") {
+			foundButton = true
+			// 验证新增的符号
+			if change.SymbolCount == 0 {
+				t.Errorf("Button.tsx 应该有符号变更，但 SymbolCount = 0")
+			}
+			break
+		}
+	}
+	if !foundButton {
+		t.Error("未检测到 Button.tsx 的变更")
+	}
+
+	// 输出受影响文件
+	if len(impact.FileResult.Impact) > 0 {
+		t.Logf("受影响的文件 (%d 个):", len(impact.FileResult.Impact))
+		for _, imp := range impact.FileResult.Impact {
+			relPath, _ := filepath.Rel(absPath, imp.Path)
+			changePaths := make([]string, len(imp.ChangePaths))
+			for i, p := range imp.ChangePaths {
+				changePaths[i], _ = filepath.Rel(absPath, p)
+			}
+			t.Logf("  - %s (影响层级: %d, 变更来源: %v)", relPath, imp.ImpactLevel, changePaths)
+		}
+	}
+
+	t.Log("✅ 本地 git diff 测试通过")
+}
+
+// TestGitLabPipeline_DiffSourceSHA 测试使用 SHA 对比获取 diff
+// 场景：使用 git diff SHA1...SHA2 进行影响分析
+func TestGitLabPipeline_DiffSourceSHA(t *testing.T) {
+	wd, _ := os.Getwd()
+	projectRoot := filepath.Join(wd, "..", "..", "testdata", "test_project")
+	absPath, _ := filepath.Abs(projectRoot)
+
+	// 验证测试项目存在
+	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+		t.Skip("测试项目不存在:", absPath)
+	}
+
+	// 检查测试项目是否有 git 仓库
+	gitDir := filepath.Join(absPath, ".git")
+	if _, err := os.Stat(gitDir); os.IsNotExist(err) {
+		t.Skip("测试项目没有 git 仓库")
+	}
+
+	t.Logf("📁 项目路径: %s", absPath)
+	t.Logf("📁 Git 仓库: testdata/test_project (子仓库)")
+
+	// 创建 GitLab 管道，使用 SHA 对比
+	config := &GitLabPipelineConfig{
+		DiffSource:  DiffSourceSHA,
+		ProjectRoot: absPath,
+		GitRoot:     absPath,
+		MaxDepth:    10,
+		// SHA 格式: "base...head"
+		DiffSHA: "main...test-button-update",
+	}
+
+	ctx := context.Background()
+	analysisCtx := NewAnalysisContext(ctx, absPath, nil)
+
+	pipeline := NewGitLabPipeline(config)
+
+	// 执行管道
+	result, err := pipeline.Execute(analysisCtx)
+	if err != nil {
+		t.Fatalf("管道执行失败: %v", err)
+	}
+
+	if !result.IsSuccessful() {
+		t.Fatalf("管道执行不成功: %v", result.GetErrors())
+	}
+
+	// 获取影响分析结果
+	impactResult, ok := result.GetResult("影响分析（文件级）")
+	if !ok {
+		t.Fatal("未找到影响分析结果")
+	}
+
+	impact, ok := impactResult.(*ImpactAnalysisResult)
+	if !ok {
+		t.Fatalf("影响分析结果格式错误: %T", impactResult)
+	}
+
+	t.Logf("✅ SHA 对比测试通过")
+	t.Logf("  - 变更文件数: %d", impact.FileResult.Meta.ChangedFileCount)
+	t.Logf("  - 受影响文件数: %d", impact.FileResult.Meta.ImpactFileCount)
+}

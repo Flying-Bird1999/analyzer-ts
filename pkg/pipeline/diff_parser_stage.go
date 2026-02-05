@@ -118,7 +118,16 @@ func (s *DiffParserStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 		if s.diffSHA != "" {
 			shas := s.parseSHA(s.diffSHA)
 			if len(shas) == 2 {
-				fmt.Printf("  - 执行 git diff %s...%s\n", shas[0][:8], shas[1][:8])
+				// 安全截取：如果长度 < 8，显示完整字符串
+				displayBase := shas[0]
+				displayHead := shas[1]
+				if len(displayBase) > 8 {
+					displayBase = displayBase[:8]
+				}
+				if len(displayHead) > 8 {
+					displayHead = displayHead[:8]
+				}
+				fmt.Printf("  - 执行 git diff %s...%s\n", displayBase, displayHead)
 				lineSet, err = parser.ParseFromGit(shas[0], shas[1])
 			} else {
 				return nil, fmt.Errorf("invalid SHA format, expected 'base...head'")
@@ -126,7 +135,11 @@ func (s *DiffParserStage) Execute(ctx *AnalysisContext) (interface{}, error) {
 		} else {
 			baseSHA := ctx.GetOption("baseSHA", "").(string)
 			if baseSHA != "" {
-				fmt.Printf("  - 执行 git diff %s...HEAD\n", baseSHA[:8])
+				displayBase := baseSHA
+				if len(displayBase) > 8 {
+					displayBase = displayBase[:8]
+				}
+				fmt.Printf("  - 执行 git diff %s...HEAD\n", displayBase)
 				lineSet, err = parser.ParseFromGit(baseSHA, "HEAD")
 			} else {
 				return nil, fmt.Errorf("no diff source available")

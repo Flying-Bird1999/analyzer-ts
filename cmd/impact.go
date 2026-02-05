@@ -3,93 +3,45 @@ package cmd
 
 // ImpactCmd 代码影响分析命令
 //
-// 使用示例：
+// 快速开始：
+//   ./analyzer-ts impact --project-root $(pwd) --diff-string "$(git diff)"
 //
-//   1. 使用 diff 字符串（适合 CI/CD 或前端调用）：
-//      analyzer-ts impact \
-//        --project-root /absolute/path/to/project \
-//        --diff-string "$(git diff HEAD~1 HEAD)" \
-//        --format json
+// 常用示例：
+//   1. 本地未提交变更：
+//      ./analyzer-ts impact --project-root $(pwd) --diff-string "$(git diff)" --format summary
 //
-//   2. 使用 diff 文件：
-//      analyzer-ts impact \
-//        --project-root /absolute/path/to/project \
-//        --diff-file ./mr.patch
+//   2. 分支对比：
+//      ./analyzer-ts impact --project-root $(pwd) --git-diff "main...HEAD"
 //
-//   3. 使用 git diff 命令：
-//      analyzer-ts impact \
-//        --project-root /absolute/path/to/project \
-//        --git-diff "main~1 main"
+//   3. package.json 配置：
+//      "analyze:impact": "analyzer-ts impact --project-root $(pwd) --diff-string \"$(git diff)\""
 //
-//   4. 完整示例（带组件清单）：
-//      analyzer-ts impact \
-//        --project-root /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project \
-//        --git-root /Users/zxc/Desktop/analyzer/analyzer-ts \
-//        --manifest /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/.analyzer/component-manifest.json \
-//        --diff-string 'diff --git a/testdata/test_project/src/components/Button/Button.tsx
-//index 1234567..abcdefg 100644
-// --- a/testdata/test_project/src/components/Button/Button.tsx
-// +++ b/testdata/test_project/src/components/Button/Button.tsx
-// @@ -8,7 +8,7 @@
-//  export const Button: React.FC<ButtonProps> = ({ label, onClick, variant = '\''primary'\'', loading = false }) => {
-//    return (
-//      <button
-// -        className={`btn btn-${variant} ${loading ? '\''btn-loading'\'' : '\'''\''}`}
-// +        className={`btn btn-${variant} ${loading ? '\''btn-loading'\'' : '\'''\''} modified`}
-//          onClick={onClick}
-//          disabled={loading}
-//      >
-//    )'
+//   4. Monorepo：
+//      ./analyzer-ts impact --project-root $(pwd) --git-root /path/to/monorepo --git-diff "main...HEAD"
 //
-//   5. CI/CD 集成示例：
-//      # GitLab CI
-//      analyzer-ts impact \
-//        --project-root ${CI_PROJECT_DIR} \
-//        --git-root ${CI_PROJECT_DIR} \
-//        --diff-string "$(git diff --diff-filter=d origin/main...HEAD)" \
-//        --output impact-report.json
+//   5. 排除文件：
+//      ./analyzer-ts impact --project-root $(pwd) --diff-string "$(git diff)" --exclude "**/lib/**" --exclude "**/tests/**"
 //
-//      # GitHub Actions
-//      - name: Impact Analysis
-//        run: |
-//          analyzer-ts impact \
-//            --project-root ${{ github.workspace }} \
-//            --diff-string "${{ steps.diff.outputs.diff }}" \
-//            --output impact-report.json
+// 参数说明：
+//   必需：
+//     --project-root <path>    项目根目录（绝对路径）
+//   输入（三选一）：
+//     --diff-string "$(git diff)"     直接传入 diff（注意：必须用双引号）
+//     --diff-file <path>              从文件读取 diff
+//     --git-diff "main...HEAD"        git 命令对比
+//   可选：
+//     --git-root <path>         Git 仓库根（默认=project-root）
+//     --manifest <path>         组件清单路径
+//     --format json|pretty|summary  输出格式（默认 json）
+//     --output <path>           输出文件
+//     --exclude <pattern>       排除 glob 模式
+//     --max-depth <n>           最大深度（默认 10）
+//     --quiet                   静默模式
 //
-//   6. npm scripts 集成：
-//      {
-//        "scripts": {
-//          "analyze:impact": "analyzer-ts impact --project-root $(pwd) --git-diff \"HEAD~1 HEAD\""
-//        }
-//      }
-//
-//   7. 实际测试用例（使用项目内 diff 文件）：
-//      ./analyzer-ts impact \
-//        --project-root /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project \
-//        --git-root /Users/zxc/Desktop/analyzer/analyzer-ts \
-//        --manifest /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/.analyzer/component-manifest.json \
-//        --diff-file /Users/zxc/Desktop/analyzer/analyzer-ts/testdata/test_project/.analyzer/test.diff
-//
-//      输出结果：
-//      - 变更文件: 1 (src/components/Button/Button.tsx)
-//      - 受影响文件: 7 (Card, Form, Select, Table, Modal, Badge, Input)
-//      - 变更组件: 1 (Button)
-//      - 受影响组件: 8 (Button, Card, Table, Modal, Form, Badge, Input, Select)
-//
-//      注意：diff 文件中的路径必须是相对于 git root 的路径
-//      例如 git root 为 /path/to/repo，项目在 /path/to/repo/testdata/test_project
-//      则 diff 路径应为 testdata/test_project/src/components/...
-//
-// 输出格式说明：
-//   - --format json     : JSON 格式（默认），适合程序解析
-//   - --format pretty   : 美化的 JSON，适合阅读
-//   - --format summary  : 简要摘要，适合快速查看
-//
-// 路径说明：
-//   --project-root 必须使用绝对路径（这是工具的要求）
-//   --git-root 可选，默认等于 project-root
-//   当 Git 仓库根 != 项目根目录时（如 monorepo），需要显式指定 git-root
+// 输出格式：
+//   json    - 紧凑 JSON，程序解析（默认）
+//   pretty  - 美化 JSON，人工阅读
+//   summary - 简要摘要，快速查看
 
 import (
 	"context"
@@ -134,53 +86,24 @@ var (
 )
 
 // ImpactCmd 代码影响分析命令
-//
-// 使用方式：
-//
-//	# 方式 1: 直接传入 diff 字符串
-//	analyzer-ts impact --diff-string "diff --git a/..." --project-root /path/to/project
-//
-//	# 方式 2: 从文件读取 diff
-//	analyzer-ts impact --diff-file ./changes.patch --project-root /path/to/project
-//
-//	# 方式 3: 使用 git diff 命令
-//	analyzer-ts impact --git-diff "HEAD~1 HEAD" --project-root /path/to/project
-//
-//	# 方式 4: 从 GitLab API 获取
-//	analyzer-ts impact --gitlab-api --gitlab-project-id 123 --gitlab-mr-iid 456 --gitlab-token xxx
-//
-// 输出格式：
-//
-//	--format json      # JSON 格式（默认，适合程序解析）
-//	--format pretty    # 美化的 JSON（适合阅读）
-//	--format summary   # 简要摘要
 var ImpactCmd = &cobra.Command{
 	Use:   "impact",
 	Short: "分析代码变更的影响范围",
 	Long: `分析代码变更（Git diff）对项目的影响范围，包括文件级和组件级影响。
 
-支持多种输入方式：
-  • diff 字符串：直接传入 diff 内容
-  • diff 文件：从文件读取 diff
-  • git diff：自动执行 git diff 命令
-  • GitLab API：从 GitLab MR 获取 diff
+输入方式（任选其一）：
+  --diff-string "$(git diff)"    直接传入 diff
+  --diff-file <path>             从文件读取
+  --git-diff "main...HEAD"       git 命令对比
 
-输出结果包括：
-  • 变更的文件列表
-  • 受影响的文件列表
-  • 受影响的组件列表（如果有组件清单）
-  • 符号级别的变更详情（--show-symbols）
+输出：变更文件列表、受影响文件、受影响组件（如果有组件清单）
 
 示例：
-  # 分析本地变更
-  analyzer-ts impact --git-diff "HEAD~1 HEAD" --project-root ./my-project
+  # 本地未提交变更
+  analyzer-ts impact --project-root $(pwd) --diff-string "$(git diff)"
 
-  # 分析指定 diff 文件
-  analyzer-ts impact --diff-file ./mr.patch --project-root ./my-project --output result.json
-
-  # 从 GitLab MR 分析
-  analyzer-ts impact --gitlab-api --gitlab-project-id 123 --gitlab-mr-iid 456 \\
-                    --project-root ./my-project --gitlab-token $GITLAB_TOKEN
+  # 分支对比
+  analyzer-ts impact --project-root $(pwd) --git-diff "main...HEAD"
 `,
 	RunE: runImpact,
 }
