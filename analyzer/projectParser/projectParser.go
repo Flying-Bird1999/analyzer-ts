@@ -41,6 +41,8 @@ type ProjectParserResult struct {
 	Config       ProjectParserConfig                    `json:"config"`
 	Js_Data      map[string]JsFileParserResult          `json:"js_data"`
 	Package_Data map[string]PackageJsonFileParserResult `json:"package_data"`
+	Css_Data     map[string]CssFileInfo                 `json:"css_data"` // CSS 文件路径占位
+	Md_Data      map[string]MdFileInfo                  `json:"md_data"`  // Markdown 文件路径占位
 }
 
 // NewProjectParserConfig 创建并初始化一个项目解析器的配置对象。
@@ -77,6 +79,8 @@ func NewProjectParserResult(config ProjectParserConfig) *ProjectParserResult {
 		Config:       config,
 		Js_Data:      make(map[string]JsFileParserResult),
 		Package_Data: make(map[string]PackageJsonFileParserResult),
+		Css_Data:     make(map[string]CssFileInfo),
+		Md_Data:      make(map[string]MdFileInfo),
 	}
 }
 
@@ -89,6 +93,11 @@ func (ppr *ProjectParserResult) ProjectParser() {
 	if len(ppr.Config.TargetExtensions) > 0 {
 		extensionsToUse = ppr.Config.TargetExtensions
 	}
+
+	// CSS 文件扩展名
+	cssExtensions := []string{".css", ".less", ".scss", ".sass"}
+	// MD 文件扩展名
+	mdExtensions := []string{".md", ".mdx"}
 
 	for targetPath, fileDetail := range projectScanner.GetFileList() {
 		included := false
@@ -109,6 +118,22 @@ func (ppr *ProjectParserResult) ProjectParser() {
 
 		if fileDetail.FileName == "package.json" {
 			ppr.parsePackageJson(targetPath)
+		}
+
+		// 收集 CSS 文件路径（仅占位）
+		for _, ext := range cssExtensions {
+			if strings.HasSuffix(targetPath, ext) {
+				ppr.Css_Data[targetPath] = CssFileInfo{}
+				break
+			}
+		}
+
+		// 收集 MD 文件路径（仅占位）
+		for _, ext := range mdExtensions {
+			if strings.HasSuffix(targetPath, ext) {
+				ppr.Md_Data[targetPath] = MdFileInfo{}
+				break
+			}
 		}
 	}
 }

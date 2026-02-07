@@ -20,8 +20,10 @@ import (
 	component_deps_v2 "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
 	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
+	css_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/css_plugin"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+	md_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/md_plugin"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
@@ -44,6 +46,8 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"api-tracer":              &apit.Tracer{},
 	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
 	"component-deps-v2":       &component_deps_v2.ComponentDepsV2Analyzer{},
+	"css-file":                &css_plugin.CssFile{},
+	"md-file":                 &md_plugin.MdFile{},
 }
 
 // GetAnalyzeCmd 构建并返回 `analyze` 命令。

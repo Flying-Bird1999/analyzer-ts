@@ -5,6 +5,16 @@ import (
 	"github.com/Zzzen/typescript-go/use-at-your-own-risk/ast"
 )
 
+// CssFileInfo CSS 文件路径占位（仅用于标记文件存在，实际解析由 UM-Creator 完成）
+type CssFileInfo struct {
+	// 保留空结构，仅用于占位
+}
+
+// MdFileInfo Markdown 文件路径占位（仅用于标记文件存在，实际解析由 UM-Creator 完成）
+type MdFileInfo struct {
+	// 保留空结构，仅用于占位
+}
+
 // JsFileParserResult 结构体用于存储对单个JS或TS文件进行解析后得到的核心数据。
 // 这些数据主要包括文件中的导入和导出声明，为项目级别的依赖分析和代码理解提供基础。
 type JsFileParserResult struct {
