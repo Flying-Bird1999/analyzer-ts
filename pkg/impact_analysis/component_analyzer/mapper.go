@@ -39,12 +39,10 @@ func (m *ComponentMapper) MapFileToComponent(filePath string) string {
 	}
 
 	// 遍历组件清单，检查文件是否在组件范围内
-	// 使用 entry 所在目录作为组件作用域
+	// 使用 path 作为组件作用域
 	for _, comp := range m.componentManifest.Components {
-		// 获取 entry 所在目录（绝对路径）
-		componentDir := filepath.Dir(comp.Entry)
 		// 检查文件是否在组件目录下
-		if strings.HasPrefix(filePath, componentDir) {
+		if strings.HasPrefix(filePath, comp.Path) {
 			return comp.Name
 		}
 	}
@@ -69,7 +67,9 @@ func (m *ComponentMapper) GetComponentByEntry(entry string) *impact_analysis.Com
 	}
 
 	for _, comp := range m.componentManifest.Components {
-		if comp.Entry == entry {
+		// 将 path 转换为 entry 格式进行比较
+		componentEntry := filepath.Join(comp.Path, "index.tsx")
+		if componentEntry == entry {
 			return &comp
 		}
 	}
@@ -96,7 +96,8 @@ func (m *ComponentMapper) GetComponentEntry(componentName string) string {
 	if comp == nil {
 		return ""
 	}
-	return comp.Entry
+	// 从 path 构造 entry 路径
+	return filepath.Join(comp.Path, "index.tsx")
 }
 
 // GetComponentFiles 获取组件的所有文件

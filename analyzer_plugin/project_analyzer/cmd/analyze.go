@@ -22,6 +22,7 @@ import (
 	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
 	css_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/css_plugin"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
+	export_call "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
 	md_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/md_plugin"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
@@ -46,6 +47,7 @@ var availableAnalyzers = map[string]projectanalyzer.Analyzer{
 	"api-tracer":              &apit.Tracer{},
 	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
 	"component-deps-v2":       &component_deps_v2.ComponentDepsV2Analyzer{},
+	"export-call":             &export_call.ExportCallAnalyzer{},
 	"css-file":                &css_plugin.CssFile{},
 	"md-file":                 &md_plugin.MdFile{},
 }
@@ -108,6 +110,8 @@ func GetAnalyzeCmd() *cobra.Command {
 			`  - component-deps: 分析组件之间的依赖关系. (必须使用 -p 'component-deps.entryPoint=path/to/entry.ts' 指定入口文件，支持 glob 模式)
 ` +
 			`  - component-deps-v2: 基于配置文件分析组件依赖关系. (必须使用 -p 'component-deps-v2.manifest=path/to/component-manifest.json')
+` +
+			`  - export-call: 分析资产目录的导出节点引用关系. (必须使用 -p 'export-call.manifest=path/to/manifest.json')
 ` +
 			`如果未指定任何分析器，命令将仅解析项目并输出完整的、未经处理的（但可能被剔除过的）原始AST结构.
 

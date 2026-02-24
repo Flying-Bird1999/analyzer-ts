@@ -14,8 +14,8 @@ import (
 func TestComponentMapper_MapFileToComponent(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
-			{Name: "Input", Entry: "/project/src/components/Input/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -61,7 +61,7 @@ func TestComponentMapper_MapFileToComponent(t *testing.T) {
 func TestComponentMapper_MapFilesToComponents(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -91,7 +91,7 @@ func TestComponentMapper_MapFilesToComponents(t *testing.T) {
 func TestComponentMapper_GetComponentByName(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -120,9 +120,9 @@ func TestComponentMapper_GetComponentByName(t *testing.T) {
 func TestBuildComponentDependencyGraph(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Form", Entry: "/project/src/components/Form/index.tsx"},
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
-			{Name: "Input", Entry: "/project/src/components/Input/index.tsx"},
+			{Name: "Form", Path: "/project/src/components/Form", Type: "component"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -524,8 +524,8 @@ func TestPropagator_CyclicDependency(t *testing.T) {
 func TestComponentMapper_EdgeCases(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
-			{Name: "Input", Entry: "/project/src/components/Input/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -587,7 +587,7 @@ func TestComponentMapper_EdgeCases(t *testing.T) {
 func TestBuildComponentDependencyGraph_EmptyGraph(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -616,8 +616,8 @@ func TestBuildComponentDependencyGraph_EmptyGraph(t *testing.T) {
 func TestBuildComponentDependencyGraph_ExternalFiles(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
 		Components: []impact_analysis.Component{
-			{Name: "Button", Entry: "/project/src/components/Button/index.tsx"},
-			{Name: "Form", Entry: "/project/src/components/Form/index.tsx"},
+			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			{Name: "Form", Path: "/project/src/components/Form", Type: "component"},
 		},
 	}
 

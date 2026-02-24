@@ -2,47 +2,75 @@
   "components": [
     {
       "name": "Button",
-      "entry": "src/components/Button/index.tsx"
+      "type": "component",
+      "path": "src/components/Button"
     },
     {
       "name": "Input",
-      "entry": "src/components/Input/index.tsx"
+      "type": "component",
+      "path": "src/components/Input"
     },
     {
       "name": "Select",
-      "entry": "src/components/Select/index.tsx"
+      "type": "component",
+      "path": "src/components/Select"
     },
     {
       "name": "Form",
-      "entry": "src/components/Form/index.tsx"
+      "type": "component",
+      "path": "src/components/Form"
     },
     {
       "name": "Modal",
-      "entry": "src/components/Modal/index.tsx"
+      "type": "component",
+      "path": "src/components/Modal"
     },
     {
       "name": "Table",
-      "entry": "src/components/Table/index.tsx"
+      "type": "component",
+      "path": "src/components/Table"
     },
     {
       "name": "Badge",
-      "entry": "src/components/Badge/index.tsx"
+      "type": "component",
+      "path": "src/components/Badge"
     },
     {
       "name": "Card",
-      "entry": "src/components/Card/index.tsx"
+      "type": "component",
+      "path": "src/components/Card"
     },
     {
       "name": "Dropdown",
-      "entry": "src/components/Dropdown/index.tsx"
+      "type": "component",
+      "path": "src/components/Dropdown"
     },
     {
       "name": "Tabs",
-      "entry": "src/components/Tabs/index.tsx"
+      "type": "component",
+      "path": "src/components/Tabs"
     },
     {
       "name": "Tooltip",
-      "entry": "src/components/Tooltip/index.tsx"
+      "type": "component",
+      "path": "src/components/Tooltip"
+    }
+  ],
+  "functions": [
+    {
+      "name": "utils",
+      "type": "functions",
+      "path": "src/utils"
+    },
+    {
+      "name": "hooks",
+      "type": "functions",
+      "path": "src/hooks"
+    },
+    {
+      "name": "types",
+      "type": "functions",
+      "path": "src/types"
     }
   ]
 }

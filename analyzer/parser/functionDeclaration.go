@@ -26,6 +26,7 @@ type ParameterResult struct {
 type FunctionDeclarationResult struct {
 	Identifier     string            `json:"identifier"`     // 函数的名称。对于匿名函数或表达式，这通常是变量名。
 	Exported       bool              `json:"exported"`       // 标记此函数是否被导出。
+	IsDefaultExport bool              `json:"isDefaultExport"` // 标记此函数是否为 default export (export default function foo()).
 	IsAsync        bool              `json:"isAsync"`        // 标记此函数是否为异步函数 (async)。
 	IsGenerator    bool              `json:"isGenerator"`    // 新增：标记此函数是否为生成器函数 (function*)。
 	Generics       []string          `json:"generics,omitempty"`       // 新增：存储泛型参数列表 (e.g., ["T", "K"])。
@@ -220,6 +221,17 @@ func parseParameters(result *FunctionDeclarationResult, params *ast.NodeList, so
 func (p *Parser) VisitFunctionDeclaration(node *ast.FunctionDeclaration) {
 	// 1. 解析函数声明本身的信息
 	fr := NewFunctionDeclarationResult(node, p.SourceCode)
-	// 2. 将解析结果存入
+
+	// 2. 检查是否为 default export (export default function foo() {})
+	if fr.Exported {
+		fullDecl := utils.GetNodeText(node.AsNode(), p.SourceCode)
+		// 检查是否包含 "export default function"
+		// 注意：utils.GetNodeText 返回的文本可能包含注释和换行，所以使用 Contains 而不是 HasPrefix
+		if strings.Contains(fullDecl, "export default function") || strings.Contains(fullDecl, "export default async function") {
+			fr.IsDefaultExport = true
+		}
+	}
+
+	// 3. 将解析结果存入
 	p.Result.FunctionDeclarations = append(p.Result.FunctionDeclarations, *fr)
 }

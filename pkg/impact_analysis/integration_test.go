@@ -120,8 +120,8 @@ func TestIntegration_ComponentDependencyGraph(t *testing.T) {
 
 	// 将相对路径转换为绝对路径
 	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Entry) {
-			manifest.Components[i].Entry = filepath.Join(testProjectPath, manifest.Components[i].Entry)
+		if !filepath.IsAbs(manifest.Components[i].Path) {
+			manifest.Components[i].Path = filepath.Join(testProjectPath, manifest.Components[i].Path)
 		}
 	}
 
@@ -198,9 +198,10 @@ func TestIntegration_FullAnalysis(t *testing.T) {
 		t.Fatalf("Failed to parse component manifest: %v", err)
 	}
 
+	// 将相对路径转换为绝对路径
 	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Entry) {
-			manifest.Components[i].Entry = filepath.Join(testProjectPath, manifest.Components[i].Entry)
+		if !filepath.IsAbs(manifest.Components[i].Path) {
+			manifest.Components[i].Path = filepath.Join(testProjectPath, manifest.Components[i].Path)
 		}
 	}
 

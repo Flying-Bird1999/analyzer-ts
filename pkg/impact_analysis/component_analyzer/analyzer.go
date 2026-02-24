@@ -148,7 +148,7 @@ func (a *Analyzer) getComponentChangedFiles(
 		return []string{}
 	}
 
-	componentDir := comp.Entry[:len(comp.Entry)-len("/index.tsx")]
+	componentDir := comp.Path
 	files := make([]string, 0)
 
 	// 从直接变更的文件中筛选

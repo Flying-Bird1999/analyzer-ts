@@ -133,10 +133,10 @@ type ManifestMeta struct {
 }
 
 // Component 组件定义
-// 使用 entry 字段，作用域自动推断为 entry 所在目录
 type Component struct {
-	Name  string `json:"name"`  // 组件名称
-	Entry string `json:"entry"` // 组件入口文件（绝对路径）
+	Name string `json:"name"` // 组件名称
+	Path string `json:"path"` // 组件目录路径（相对路径）
+	Type string `json:"type"` // 组件类型: "component" 或 "functions"
 }
 
 // =============================================================================
