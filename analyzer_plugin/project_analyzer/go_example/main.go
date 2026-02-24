@@ -49,32 +49,22 @@ func main() {
 		log.Fatalf("创建 Runner 失败: %v", err)
 	}
 
-	// 2. 注册分析器
-	fmt.Println("注册分析器...")
-	runner.RegisterBatch(
-		&list_deps.Lister{},
-		&component_deps_v2.ComponentDepsV2Analyzer{},
-		&export_call.ExportCallAnalyzer{},
-	)
-	fmt.Println("✓ 已注册: list-deps, component-deps-v2, export-call\n")
-
-	// 3. 准备配置
+	// 2. 准备配置（推荐方式：避免重复注册和配置）
 	manifestPath := filepath.Join(absPath, ".analyzer/component-manifest.json")
-	configs := map[string]map[string]string{
-		"list-deps": {}, // list_deps 不需要配置
-		"component-deps-v2": {
+	config := project_analyzer.NewConfig().
+		AddAnalyzer(&list_deps.Lister{}, nil). // list_deps 不需要配置
+		AddAnalyzer(&component_deps_v2.ComponentDepsV2Analyzer{}, map[string]string{
 			"manifest": manifestPath,
-		},
-		"export-call": {
+		}).
+		AddAnalyzer(&export_call.ExportCallAnalyzer{}, map[string]string{
 			"manifest": manifestPath,
-		},
-	}
+		})
 
-	// 4. 执行分析（批量）
+	// 3. 执行分析（一步完成注册+配置+执行）
 	fmt.Println("开始分析...")
 	fmt.Println("───────────────────────────────────────────")
 
-	results, err := runner.RunBatch(configs)
+	results, err := runner.ExecuteWithConfig(config)
 	if err != nil {
 		log.Fatalf("分析失败: %v", err)
 	}
