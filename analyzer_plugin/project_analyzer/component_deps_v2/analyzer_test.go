@@ -31,8 +31,8 @@ func TestValidateManifest_EmptyComponents(t *testing.T) {
 func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Button", Entry: "src/Button2/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
+			{Name: "Button", Type: "component", Path: "src/Button2"},
 		},
 	}
 
@@ -44,15 +44,15 @@ func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
 func TestGetComponentByName(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Input", Entry: "src/Input/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
+			{Name: "Input", Type: "component", Path: "src/Input"},
 		},
 	}
 
 	comp, ok := manifest.GetComponentByName("Button")
 	assert.True(t, ok)
 	assert.Equal(t, "Button", comp.Name)
-	assert.Equal(t, "src/Button/index.tsx", comp.Entry)
+	assert.Equal(t, "src/Button", comp.Path)
 
 	_, ok = manifest.GetComponentByName("NonExistent")
 	assert.False(t, ok)
@@ -65,7 +65,7 @@ func TestGetComponentByName(t *testing.T) {
 func TestIsFileInComponent(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -84,7 +84,7 @@ func TestIsFileInComponent(t *testing.T) {
 func TestIsExternalDependency_NpmPackage(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -104,7 +104,7 @@ func TestIsExternalDependency_NpmPackage(t *testing.T) {
 func TestIsExternalDependency_InternalFile(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -124,8 +124,8 @@ func TestIsExternalDependency_InternalFile(t *testing.T) {
 func TestIsExternalDependency_CrossComponent(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
-			{Name: "Input", Entry: "src/Input/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
+			{Name: "Input", Type: "component", Path: "src/Input"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -145,7 +145,7 @@ func TestIsExternalDependency_CrossComponent(t *testing.T) {
 func TestIsExternalDependency_ExternalFile(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -166,7 +166,7 @@ func TestIsExternalDependency_ExternalFile(t *testing.T) {
 func TestAnalyzeComponent_Dedup(t *testing.T) {
 	manifest := &ComponentManifest{
 		Components: []ComponentDefinition{
-			{Name: "Button", Entry: "src/Button/index.tsx"},
+			{Name: "Button", Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -203,7 +203,7 @@ func TestAnalyzeComponent_Dedup(t *testing.T) {
 		},
 	}
 
-	comp := &ComponentDefinition{Name: "Button", Entry: "src/Button/index.tsx"}
+	comp := &ComponentDefinition{Name: "Button", Type: "component", Path: "src/Button"}
 	deps := analyzer.AnalyzeComponent(comp, fileResults)
 
 	// 应该去重，只有 3 个依赖：react、Input/index.ts、lodash
@@ -250,7 +250,7 @@ func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 		Components: map[string]ComponentInfo{
 			"Button": {
 				Name:         "Button",
-				Entry:        "src/Button/index.tsx",
+				Path:         "src/Button",
 				Dependencies: []projectParser.ImportDeclarationResult{},
 			},
 		},
@@ -259,7 +259,7 @@ func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 	data, err := result.ToJSON(false)
 	assert.NoError(t, err)
 	assert.Contains(t, string(data), "Button")
-	assert.Contains(t, string(data), "src/Button/index.tsx")
+	assert.Contains(t, string(data), "src/Button")
 }
 
 func TestComponentDepsV2Result_ToConsole(t *testing.T) {
@@ -268,7 +268,7 @@ func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 		Components: map[string]ComponentInfo{
 			"Button": {
 				Name:         "Button",
-				Entry:        "src/Button/index.tsx",
+				Path:         "src/Button",
 				Dependencies: []projectParser.ImportDeclarationResult{},
 			},
 		},
@@ -277,6 +277,6 @@ func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 	output := result.ToConsole()
 	assert.Contains(t, output, "组件依赖分析报告")
 	assert.Contains(t, output, "Button")
-	assert.Contains(t, output, "src/Button/index.tsx")
+	assert.Contains(t, output, "src/Button")
 	assert.Contains(t, output, "外部依赖: 无")
 }

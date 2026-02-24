@@ -35,8 +35,8 @@
 │ 1. 解析 manifest.json                                   │
 │    └── 验证配置格式                                       │
 │                                                              │
-│ 2. 获取组件目录（基于 entry）                             │
-│    └── filepath.Dir(entry) → 组件目录                     │
+│ 2. 获取组件目录（基于 path）                             │
+│    └── 直接使用配置的 path 作为组件目录                        │
 │                                                              │
 │ 3. 分析组件外部依赖                                        │
 │    └── 遍历组件文件，提取 import 声明                     │
@@ -161,11 +161,13 @@ if _, exists := seen[key]; !exists {
   "components": [
     {
       "name": "Button",
-      "entry": "src/components/Button/index.tsx"
+      "type": "component",
+      "path": "src/components/Button"
     },
     {
       "name": "Input",
-      "entry": "src/components/Input/index.tsx"
+      "type": "component",
+      "path": "src/components/Input"
     }
   ]
 }
@@ -177,10 +179,11 @@ if _, exists := seen[key]; !exists {
 |------|------|------|------|
 | `components` | array | 是 | 组件定义数组 |
 | `components[].name` | string | 是 | 组件名称（唯一标识） |
-| `components[].entry` | string | 是 | 组件入口文件路径（相对于项目根目录） |
+| `components[].type` | string | 是 | 资产类型，固定值 `"component"` |
+| `components[].path` | string | 是 | 组件目录路径（相对于项目根目录） |
 
 **组件作用域**：
-- `entry` = `src/components/Button/index.tsx`
+- `path` = `src/components/Button`
 - 作用域 = `src/components/Button/` 下的所有文件
 
 ---
@@ -216,7 +219,7 @@ analyzer-ts analyze component-deps-v2 \
   "components": {
     "Button": {
       "name": "Button",
-      "entry": "src/components/Button/index.tsx",
+      "path": "src/components/Button",
       "dependencies": [
         {
           "importModules": [
@@ -242,7 +245,7 @@ analyzer-ts analyze component-deps-v2 \
     },
     "Input": {
       "name": "Input",
-      "entry": "src/components/Input/index.tsx",
+      "path": "src/components/Input",
       "dependencies": [
         {
           "importModules": [
@@ -270,13 +273,13 @@ analyzer-ts analyze component-deps-v2 \
 组件总数: 2
 
 ▶ Button
-  入口: src/components/Button/index.tsx
+  路径: src/components/Button
   外部依赖:
     - npm: react
     - file: src/components/Input/index.tsx
 
 ▶ Input
-  入口: src/components/Input/index.tsx
+  路径: src/components/Input
   外部依赖:
     - npm: react
 ```

@@ -84,7 +84,7 @@ func (a *ComponentDepsV2Analyzer) buildComponentInfo(
 	for _, comp := range a.manifest.Components {
 		result[comp.Name] = ComponentInfo{
 			Name:         comp.Name,
-			Entry:        comp.Entry,
+			Path:         comp.Path,
 			Dependencies: dependencies[comp.Name],
 		}
 	}

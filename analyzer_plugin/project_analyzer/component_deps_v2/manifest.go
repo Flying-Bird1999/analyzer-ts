@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 )
 
 // =============================================================================
@@ -20,8 +19,9 @@ type ComponentManifest struct {
 
 // ComponentDefinition 组件定义
 type ComponentDefinition struct {
-	Name  string `json:"name"`  // 组件名称
-	Entry string `json:"entry"` // 组件入口文件
+	Name string `json:"name"` // 组件名称
+	Type string `json:"type"` // 资产类型: "component"
+	Path string `json:"path"` // 组件目录路径
 }
 
 // ManifestRules 可选的规则配置
@@ -60,26 +60,6 @@ func LoadManifest(manifestPath string) (*ComponentManifest, error) {
 	return &manifest, nil
 }
 
-// LoadManifestFromProjectRoot 从项目根目录加载配置文件
-// 尝试多个可能的配置文件位置
-func LoadManifestFromProjectRoot(projectRoot string) (*ComponentManifest, error) {
-	// 尝试的配置文件路径（按优先级）
-	candidatePaths := []string{
-		filepath.Join(projectRoot, "component-manifest.json"),
-		filepath.Join(projectRoot, ".analyzer", "component-manifest.json"),
-		filepath.Join(projectRoot, ".components", "manifest.json"),
-	}
-
-	for _, path := range candidatePaths {
-		if _, err := os.Stat(path); err == nil {
-			return LoadManifest(path)
-		}
-	}
-
-	return nil, fmt.Errorf("未找到配置文件，已尝试以下路径: %v",
-		candidatePaths)
-}
-
 // =============================================================================
 // 配置验证
 // =============================================================================
@@ -103,9 +83,9 @@ func validateManifest(manifest *ComponentManifest) error {
 		}
 		componentNames[comp.Name] = true
 
-		// 验证入口文件
-		if comp.Entry == "" {
-			return fmt.Errorf("components[%d].entry 不能为空", i)
+		// 验证目录路径
+		if comp.Path == "" {
+			return fmt.Errorf("components[%d].path 不能为空", i)
 		}
 	}
 

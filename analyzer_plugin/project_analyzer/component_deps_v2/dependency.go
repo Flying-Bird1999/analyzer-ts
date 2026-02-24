@@ -29,8 +29,8 @@ func (da *DependencyAnalyzer) AnalyzeComponent(
 	comp *ComponentDefinition,
 	fileResults map[string]projectParser.JsFileParserResult,
 ) []projectParser.ImportDeclarationResult {
-	// 获取组件目录
-	compDir := filepath.Dir(comp.Entry)
+	// 直接使用目录路径
+	compDir := comp.Path
 
 	// 使用 map 去重：key -> ImportDeclarationResult
 	// npm 包: key = "npm:" + npmPkg

@@ -22,7 +22,7 @@ import (
 // ComponentInfo 单个组件的依赖信息
 type ComponentInfo struct {
 	Name         string                              `json:"name"`         // 组件名称
-	Entry        string                              `json:"entry"`        // 组件入口文件
+	Path         string                              `json:"path"`         // 组件目录路径
 	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表
 }
 
@@ -84,7 +84,7 @@ func (r *ComponentDepsV2Result) ToConsole() string {
 	for _, name := range sortedNames {
 		comp := r.Components[name]
 		buffer.WriteString(fmt.Sprintf("▶ %s\n", name))
-		buffer.WriteString(fmt.Sprintf("  入口: %s\n", comp.Entry))
+		buffer.WriteString(fmt.Sprintf("  路径: %s\n", comp.Path))
 		if len(comp.Dependencies) > 0 {
 			buffer.WriteString("  外部依赖:\n")
 			for _, dep := range comp.Dependencies {
