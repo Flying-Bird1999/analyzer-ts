@@ -61,3 +61,15 @@ func (r *MdFileResult) ToConsole() string {
 	}
 	return s
 }
+
+// AnalyzerName 返回对应的分析器名称
+func (r *MdFileResult) AnalyzerName() string {
+	return "md-file"
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("md-file", func() projectanalyzer.Analyzer {
+		return &MdFile{}
+	})
+}

@@ -61,3 +61,15 @@ func (r *CssFileResult) ToConsole() string {
 	}
 	return s
 }
+
+// AnalyzerName 返回对应的分析器名称
+func (r *CssFileResult) AnalyzerName() string {
+	return "css-file"
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("css-file", func() projectanalyzer.Analyzer {
+		return &CssFile{}
+	})
+}

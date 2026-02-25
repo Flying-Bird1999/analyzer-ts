@@ -155,3 +155,8 @@ func (r *FindUnreferencedFilesResult) ToConsole() string {
 
 	return builder.String()
 }
+
+// AnalyzerName 返回对应的分析器名称
+func (r *FindUnreferencedFilesResult) AnalyzerName() string {
+	return "find-unreferenced-files"
+}

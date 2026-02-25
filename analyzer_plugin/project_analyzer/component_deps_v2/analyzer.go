@@ -8,6 +8,13 @@ import (
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
+func init() {
+	// 注册分析器到工厂
+	projectanalyzer.RegisterAnalyzer("component-deps-v2", func() projectanalyzer.Analyzer {
+		return &ComponentDepsV2Analyzer{}
+	})
+}
+
 // =============================================================================
 // 分析器实现
 // =============================================================================

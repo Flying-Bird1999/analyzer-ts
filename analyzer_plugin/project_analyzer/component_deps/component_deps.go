@@ -342,8 +342,8 @@ func (a *ComponentDependencyAnalyzer) Analyze(ctx *project_analyzer.ProjectConte
 	// 步骤 2: 解析所有入口文件，构建"公共组件"清单
 	// 公共组件是指从入口文件中导出的组件
 	// 我们需要记录组件的公共名称、实际源文件路径和归属包
-	publicComponentSource := make(map[string]string)    // 公共名称 -> 源文件路径
-	publicComponentPackage := make(map[string]string)  // 公共名称 -> 包名称
+	publicComponentSource := make(map[string]string)  // 公共名称 -> 源文件路径
+	publicComponentPackage := make(map[string]string) // 公共名称 -> 包名称
 
 	for _, entryPointPath := range entryPointPaths {
 		entryPointResult, ok := fileResults[entryPointPath]
@@ -359,8 +359,8 @@ func (a *ComponentDependencyAnalyzer) Analyze(ctx *project_analyzer.ProjectConte
 				continue
 			}
 			for _, module := range exportDecl.ExportModules {
-				publicName := module.Identifier    // 公开导出的名称
-				originalName := module.ModuleName  // 原始模块名称
+				publicName := module.Identifier   // 公开导出的名称
+				originalName := module.ModuleName // 原始模块名称
 
 				// 判断是否为组件导出并且不是纯类型
 				// 使用递归回溯来判断一个符号的最终实体是否为纯类型
@@ -426,4 +426,11 @@ func (a *ComponentDependencyAnalyzer) Analyze(ctx *project_analyzer.ProjectConte
 	}
 
 	return &Result{Packages: finalResult}, nil
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	project_analyzer.RegisterAnalyzer("component-deps", func() project_analyzer.Analyzer {
+		return &ComponentDependencyAnalyzer{}
+	})
 }

@@ -56,9 +56,10 @@ func (c *Counter) Configure(params map[string]string) error {
 // 1. 从项目上下文中获取解析结果
 // 2. 初始化统计数据结构
 // 3. 遍历每个文件的解析数据：
-//    - 获取该文件中 'any' 类型的声明数量
-//    - 如果有 'any' 类型使用，记录详细信息
-//    - 累加到总数统计中
+//   - 获取该文件中 'any' 类型的声明数量
+//   - 如果有 'any' 类型使用，记录详细信息
+//   - 累加到总数统计中
+//
 // 4. 生成最终的分析结果对象
 //
 // 参数说明：
@@ -72,7 +73,7 @@ func (c *Counter) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.
 	parseResult := ctx.ParsingResult
 
 	// 初始化统计数据
-	totalAnyCount := 0       // 项目中 'any' 类型的总数
+	totalAnyCount := 0         // 项目中 'any' 类型的总数
 	var fileCounts []FileCount // 每个文件的统计信息
 
 	// 遍历所有已解析的文件
@@ -84,8 +85,8 @@ func (c *Counter) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.
 		// 如果该文件中有 'any' 类型使用，记录详细信息
 		if anyCountInFile > 0 {
 			fileCounts = append(fileCounts, FileCount{
-				FilePath: filePath, // 文件路径
-				AnyCount: anyCountInFile, // 该文件中的 'any' 类型数量
+				FilePath: filePath,                                // 文件路径
+				AnyCount: anyCountInFile,                          // 该文件中的 'any' 类型数量
 				Details:  fileData.ExtractedNodes.AnyDeclarations, // 详细的位置和源码信息
 			})
 		}
@@ -96,10 +97,17 @@ func (c *Counter) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.
 
 	// 构建最终的分析结果对象
 	finalResult := &CountAnyResult{
-		TotalAnyCount: totalAnyCount,    // 项目中 'any' 类型的总数
-		FileCounts:    fileCounts,       // 每个文件的详细统计
+		TotalAnyCount: totalAnyCount,            // 项目中 'any' 类型的总数
+		FileCounts:    fileCounts,               // 每个文件的详细统计
 		FilesParsed:   len(parseResult.Js_Data), // 总共解析的文件数量
 	}
 
 	return finalResult, nil
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("count-any", func() projectanalyzer.Analyzer {
+		return &Counter{}
+	})
 }

@@ -159,9 +159,6 @@ func (t *Tracer) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.R
 	return result, nil
 }
 
-
-
-
 // =============================================================================
 // 核心算法实现
 // =============================================================================
@@ -201,8 +198,8 @@ func (t *Tracer) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.R
 // - pr: 项目解析结果，包含所有文件的AST数据
 //
 // 返回值说明：
-// - map[string]string: 包含所有被污染符号的映射表
-//   key 为符号的全局唯一标识，value 为污染源包名
+//   - map[string]string: 包含所有被污染符号的映射表
+//     key 为符号的全局唯一标识，value 为污染源包名
 func (t *Tracer) performTaintAnalysis(pr *projectParser.ProjectParserResult) map[string]string {
 	// taintedSymbols map用于存储所有被污染的符号。
 	// key: "文件路径#符号名" (e.g., "/path/to/file.ts#myComponent")
@@ -294,8 +291,8 @@ func (t *Tracer) performTaintAnalysis(pr *projectParser.ProjectParserResult) map
 // - taintedSymbols: 污点分析的结果，包含所有被污染的符号
 //
 // 返回值说明：
-// - map[string]interface{}: 结构化的分析结果
-//   key 为文件路径，value 为包含相关代码节点的嵌套映射
+//   - map[string]interface{}: 结构化的分析结果
+//     key 为文件路径，value 为包含相关代码节点的嵌套映射
 func (t *Tracer) buildFilteredResult(pr *projectParser.ProjectParserResult, taintedSymbols map[string]string) map[string]interface{} {
 	// 最终返回的结果，key是文件路径
 	filteredJsData := make(map[string]interface{})
@@ -386,17 +383,17 @@ func (t *Tracer) buildFilteredResult(pr *projectParser.ProjectParserResult, tain
 // 识别策略：
 // 函数支持两种常见的变量声明形式：
 //
-// 1. Source 字段形式：
-//    ```typescript
-//    const { Button } = antd;
-//    // Source: { Type: "identifier", Expression: "antd" }
-//    ```
+//  1. Source 字段形式：
+//     ```typescript
+//     const { Button } = antd;
+//     // Source: { Type: "identifier", Expression: "antd" }
+//     ```
 //
-// 2. Declarators 形式：
-//    ```typescript
-//    const MyButton = Button;
-//    // Declarators[0].InitValue: { Type: "identifier", Expression: "Button" }
-//    ```
+//  2. Declarators 形式：
+//     ```typescript
+//     const MyButton = Button;
+//     // Declarators[0].InitValue: { Type: "identifier", Expression: "Button" }
+//     ```
 //
 // 应用场景：
 // - 污染传播：识别变量是否继承了其他符号的污染状态
@@ -425,4 +422,11 @@ func getSourceSymbolFromVarDecl(varDecl *parser.VariableDeclaration) (string, *p
 
 	// 无法识别来源符号的情况
 	return "", nil
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("trace", func() projectanalyzer.Analyzer {
+		return &Tracer{}
+	})
 }

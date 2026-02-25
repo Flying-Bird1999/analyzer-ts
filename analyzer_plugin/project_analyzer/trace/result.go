@@ -2,6 +2,7 @@ package trace
 
 import (
 	"fmt"
+
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
@@ -106,4 +107,9 @@ func (r *TraceResult) ToConsole() string {
 		return fmt.Sprintf("无法将结果序列化为JSON: %v", err)
 	}
 	return string(jsonData)
+}
+
+// AnalyzerName 返回对应的分析器名称
+func (r *TraceResult) AnalyzerName() string {
+	return "trace"
 }

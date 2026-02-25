@@ -1,9 +1,10 @@
 // package api_tracer 实现了追踪API调用链路的分析器插件。
 //
 // 使用示例:
-// go run main.go analyze api-tracer -i /path/to/your/project \
-//   -p "api-tracer.apiPaths=GET /api/v1/users" \
-//   -p "api-tracer.apiPaths=POST /api/v1/orders"
+//
+//	go run main.go analyze api-tracer -i /path/to/your/project \
+//	  -p "api-tracer.apiPaths=GET /api/v1/users" \
+//	  -p "api-tracer.apiPaths=POST /api/v1/orders"
 package api_tracer
 
 import (
@@ -119,4 +120,11 @@ func (t *Tracer) isFetchCall(callExpr parser.CallExpression) bool {
 		return true
 	}
 	return false
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("api-tracer", func() projectanalyzer.Analyzer {
+		return &Tracer{}
+	})
 }

@@ -6,7 +6,8 @@
 // 3. 按文件分组输出导出节点和引用信息
 //
 // 注意：本插件只处理 manifest.json 中的 functions 配置项，
-//       components 由 component_deps_v2 插件处理
+//
+//	components 由 component_deps_v2 插件处理
 package export_call
 
 import (
@@ -16,6 +17,13 @@ import (
 
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
+
+func init() {
+	// 注册分析器到工厂
+	projectanalyzer.RegisterAnalyzer("export-call", func() projectanalyzer.Analyzer {
+		return &ExportCallAnalyzer{}
+	})
+}
 
 // ExportCallAnalyzer 导出节点引用分析器
 type ExportCallAnalyzer struct {

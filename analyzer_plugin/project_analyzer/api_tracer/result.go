@@ -46,3 +46,8 @@ func (r *ApiTracerResult) ToConsole() string {
 	}
 	return sb.String()
 }
+
+// AnalyzerName 返回对应的分析器名称
+func (r *ApiTracerResult) AnalyzerName() string {
+	return "api-tracer"
+}

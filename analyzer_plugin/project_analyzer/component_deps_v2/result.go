@@ -21,8 +21,8 @@ import (
 
 // ComponentInfo 单个组件的依赖信息
 type ComponentInfo struct {
-	Name         string                              `json:"name"`         // 组件名称
-	Path         string                              `json:"path"`         // 组件目录路径
+	Name         string                                  `json:"name"`         // 组件名称
+	Path         string                                  `json:"path"`         // 组件目录路径
 	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表
 }
 
@@ -33,7 +33,7 @@ type Meta struct {
 
 // ComponentDepsV2Result 组件依赖分析结果
 type ComponentDepsV2Result struct {
-	Meta       Meta                        `json:"meta"`
+	Meta       Meta                     `json:"meta"`
 	Components map[string]ComponentInfo `json:"components"`
 }
 
@@ -103,4 +103,9 @@ func (r *ComponentDepsV2Result) ToConsole() string {
 	}
 
 	return buffer.String()
+}
+
+// AnalyzerName 返回对应的分析器名称
+func (r *ComponentDepsV2Result) AnalyzerName() string {
+	return "component-deps-v2"
 }

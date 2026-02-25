@@ -360,3 +360,10 @@ func addUnconsumedFromDeclarations(findings *[]Finding, totalExportsFound *int, 
 		}
 	}
 }
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("unconsumed", func() projectanalyzer.Analyzer {
+		return &Finder{}
+	})
+}

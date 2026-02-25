@@ -1,23 +1,23 @@
-# Runner 使用示例
+# ProjectAnalyzer 使用示例
 
-本示例演示如何使用 `Runner` 在 Go 项目中直接调用分析器插件。
+本示例演示如何使用 `ProjectAnalyzer` 在 Go 项目中直接调用分析器插件。
 
 ## 运行示例
 
 ### 1. 编译示例
 
 ```bash
-cd analyzer_plugin/project_analyzer/example
+cd analyzer_plugin/project_analyzer/go_example
 go build -o example main.go
 ```
 
 ### 2. 运行示例
 
 ```bash
-# 使用测试项目运行
-./example /path/to/testdata/test_project
+# 默认分析 ./testdata/test_project
+./example
 
-# 或使用自己的 TypeScript 项目
+# 或指定其他项目路径
 ./example /path/to/your/typescript-project
 ```
 
@@ -25,41 +25,33 @@ go build -o example main.go
 
 `main.go` 演示了以下功能：
 
-### 1. 创建 Runner
+### 1. 创建 ProjectAnalyzer
 
 ```go
-runner, err := project_analyzer.NewRunner(project_analyzer.RunnerConfig{
+analyzer, err := project_analyzer.NewProjectAnalyzer(project_analyzer.Config{
     ProjectRoot: projectPath,
     Exclude:     []string{"node_modules/**", "dist/**"},
     IsMonorepo:  false,
 })
 ```
 
-### 2. 注册分析器
+### 2. 准备执行配置
 
 ```go
-runner.RegisterBatch(
-    &list_deps.Lister{},
-    &component_deps_v2.ComponentDepsV2Analyzer{},
-    &export_call.ExportCallAnalyzer{},
-)
+execConfig := project_analyzer.NewExecutionConfig().
+    AddAnalyzer(&list_deps.Lister{}, nil). // list_deps 不需要配置
+    AddAnalyzer(&component_deps_v2.ComponentDepsV2Analyzer{}, map[string]string{
+        "manifest": manifestPath,
+    }).
+    AddAnalyzer(&export_call.ExportCallAnalyzer{}, map[string]string{
+        "manifest": manifestPath,
+    })
 ```
 
-### 3. 配置并执行
+### 3. 执行分析
 
 ```go
-manifestPath := filepath.Join(projectPath, ".analyzer/component-manifest.json")
-configs := map[string]map[string]string{
-    "list-deps": {}, // 无需配置
-    "component-deps-v2": {
-        "manifest": manifestPath,
-    },
-    "export-call": {
-        "manifest": manifestPath,
-    },
-}
-
-results, err := runner.RunBatch(configs)
+results, err := analyzer.ExecuteWithConfig(execConfig)
 ```
 
 ### 4. 直接使用结果
@@ -124,25 +116,23 @@ for _, module := range exportCallResult.ModuleExports {
 ### 修改分析器列表
 
 ```go
-runner.RegisterBatch(
-    &export_call.ExportCallAnalyzer{},
-    &unconsumed.Finder{},           // 添加未使用导出分析器
-    &trace.Tracer{},                 // 添加追踪分析器
-)
+execConfig := project_analyzer.NewExecutionConfig().
+    AddAnalyzer(&export_call.ExportCallAnalyzer{}, config).
+    AddAnalyzer(&unconsumed.Finder{}, config).           // 添加未使用导出分析器
+    AddAnalyzer(&trace.Tracer{}, nil)                    // 添加追踪分析器
 ```
 
 ### 修改配置
 
 ```go
-configs := map[string]map[string]string{
-    "export-call": {
+execConfig := project_analyzer.NewExecutionConfig().
+    AddAnalyzer(&export_call.ExportCallAnalyzer{}, map[string]string{
         "manifest": "/path/to/custom-manifest.json",
         "verbose":  "true",  // 如果插件支持
-    },
-    "unconsumed": {
+    }).
+    AddAnalyzer(&unconsumed.Finder{}, map[string]string{
         "targetFiles": "/path/to/file1.ts,/path/to/file2.ts",
-    },
-}
+    })
 ```
 
 ### 处理结果
@@ -164,6 +154,25 @@ for name, result := range results {
     }
 }
 ```
+
+## API 概览
+
+### 核心类型
+
+| 类型 | 说明 |
+|------|------|
+| `ProjectAnalyzer` | 项目分析器，封装解析和执行流程 |
+| `Config` | 分析器配置 (项目路径、排除规则等) |
+| `ExecutionConfig` | 执行配置 (分析器列表及各自配置) |
+
+### 核心方法
+
+| 方法 | 说明 |
+|------|------|
+| `NewProjectAnalyzer(Config)` | 创建分析器实例 |
+| `NewExecutionConfig()` | 创建执行配置 |
+| `AddAnalyzer(Analyzer, Config)` | 添加分析器 (链式调用) |
+| `ExecuteWithConfig(ExecutionConfig)` | 执行分析 |
 
 ## 更多信息
 

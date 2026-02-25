@@ -40,28 +40,28 @@ type ExportNode struct {
 
 // FileExportRecord 文件导出记录
 type FileExportRecord struct {
-	File  string       `json:"file"`  // 文件路径
+	File  string         `json:"file"`  // 文件路径
 	Nodes []NodeWithRefs `json:"nodes"` // 该文件的导出节点
 }
 
 // NodeWithRefs 带引用信息的节点
 type NodeWithRefs struct {
-	Name       string   `json:"name"`       // 节点名称
-	NodeType   NodeType `json:"nodeType"`   // 节点类型
+	Name       string     `json:"name"`       // 节点名称
+	NodeType   NodeType   `json:"nodeType"`   // 节点类型
 	ExportType ExportType `json:"exportType"` // 导出方式
-	RefFiles   []string `json:"refFiles"`   // 引用该节点的文件路径列表
+	RefFiles   []string   `json:"refFiles"`   // 引用该节点的文件路径列表
 }
 
 // ModuleExportRecord 模块导出记录（按模块分组）
 type ModuleExportRecord struct {
-	ModuleName  string              `json:"moduleName"`  // 模块名称
-	Path        string              `json:"path"`        // 资产配置路径
-	Files       []FileExportRecord  `json:"files"`       // 该模块的文件列表
+	ModuleName string             `json:"moduleName"` // 模块名称
+	Path       string             `json:"path"`       // 资产配置路径
+	Files      []FileExportRecord `json:"files"`      // 该模块的文件列表
 }
 
 // ExportCallResult 分析结果
 type ExportCallResult struct {
-	ModuleExports []ModuleExportRecord   `json:"moduleExports"` // 按模块分组的导出记录
+	ModuleExports []ModuleExportRecord `json:"moduleExports"` // 按模块分组的导出记录
 }
 
 // =============================================================================
@@ -161,4 +161,9 @@ func indexOf(s, substr string) int {
 		return -1
 	}
 	return idx
+}
+
+// AnalyzerName 返回对应的分析器名称
+func (r *ExportCallResult) AnalyzerName() string {
+	return "export-call"
 }

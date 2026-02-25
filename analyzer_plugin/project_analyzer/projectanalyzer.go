@@ -63,6 +63,7 @@ type Analyzer interface {
 // - Summary(): 提供分析结果的文本摘要，便于快速了解分析结果
 // - ToJSON(): 将结果序列化为JSON格式，支持缩进格式化
 // - ToConsole(): 将结果格式化为适合控制台显示的字符串
+// - AnalyzerName(): 返回对应的分析器名称，用于结果查找
 type Result interface {
 	// Name 返回分析结果的名称，通常与分析器名称一致。
 	// 这个名称用于标识结果数据的类型和来源。
@@ -87,6 +88,10 @@ type Result interface {
 	// ToConsole 将分析结果格式化为适合控制台显示的字符串。
 	// 这个方法应当提供清晰、易读的格式，包含关键信息和高亮显示。
 	ToConsole() string
+
+	// AnalyzerName 返回对应的分析器名称。
+	// 用于从 results 中查找特定类型的结果。
+	AnalyzerName() string
 }
 
 // =============================================================================

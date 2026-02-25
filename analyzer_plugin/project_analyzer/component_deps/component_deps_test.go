@@ -42,11 +42,11 @@ func TestComponentDepsAnalyzer(t *testing.T) {
 			entryPath: {
 				ExportDeclarations: []projectParser.ExportDeclarationResult{
 					{
-						Source:     &projectParser.SourceData{FilePath: buttonPath},
+						Source:        &projectParser.SourceData{FilePath: buttonPath},
 						ExportModules: []projectParser.ExportModule{{Identifier: "Button", ModuleName: "Button"}},
 					},
 					{
-						Source:     &projectParser.SourceData{FilePath: cardPath},
+						Source:        &projectParser.SourceData{FilePath: cardPath},
 						ExportModules: []projectParser.ExportModule{{Identifier: "Card", ModuleName: "Card"}},
 					},
 				},
@@ -79,7 +79,7 @@ func TestComponentDepsAnalyzer(t *testing.T) {
 	}
 
 	// 5. 断言结果
-	 depsResult, ok := result.(*Result)
+	depsResult, ok := result.(*Result)
 	if !ok {
 		t.Fatalf("Analyze() returned result of wrong type: got %T, want *Result", result)
 	}

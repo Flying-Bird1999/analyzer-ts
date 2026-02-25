@@ -170,3 +170,10 @@ func findOutdatedDependencies(ar *projectParser.ProjectParserResult) []OutdatedD
 
 	return outdatedDependencies
 }
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("npm-check", func() projectanalyzer.Analyzer {
+		return &Checker{}
+	})
+}

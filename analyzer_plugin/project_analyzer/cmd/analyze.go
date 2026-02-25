@@ -1,55 +1,67 @@
 // package cmd 定义了所有子命令的实现。
 package cmd
 
-// example: go run main.go analyze unconsumed find-unreferenced-files count-any npm-check -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**"
-
-// example: go run main.go analyze find-callers -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/ActivityPage/index.tsx" -p "find-callers.targetFiles=/Users/bird/company/sc1.0/live/shopline-live-sale/src/feature/SettingPage/index.tsx"
-
-// example: go run main.go analyze trace -i /Users/bird/company/sc1.0/live/shopline-live-sale -o /Users/bird/Desktop/alalyzer/analyzer-ts/analyzer_plugin -x "node_modules/**" -x "bffApiDoc/**" -p "trace.targetPkgs=antd" -p "trace.targetPkgs=@yy/sl-admin-components"
-
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
-	apit "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/api_tracer"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
-	component_deps_v2 "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
-	countany "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
-	countas "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
-	css_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/css_plugin"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
-	export_call "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
-	md_plugin "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/md_plugin"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
 
 	"github.com/spf13/cobra"
+
+	// 以下 import 用于触发各个 analyzer 包的 init() 注册
+	// 这样 GetAvailableAnalyzersMap() 才能获取到所有已注册的分析器
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/api_tracer"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/css_plugin"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/dependency"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/md_plugin"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/trace"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unconsumed"
+
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/unreferenced"
 )
 
-// availableAnalyzers 是一个中央注册表，用于存储所有可用的分析器。
-// key 是用户在命令行中使用的分析器名称 (例如 "unconsumed")。
-// value 是实现了 projectanalyzer.Analyzer 接口的分析器实例。
-// 这种设计使得添加新的分析器变得非常简单，只需在此 map 中增加一个条目即可。
-var availableAnalyzers = map[string]projectanalyzer.Analyzer{
-	"unconsumed":              &unconsumed.Finder{},
-	"find-unreferenced-files": &unreferenced.Finder{},
-	"count-any":               &countany.Counter{},
-	"count-as":                &countas.Counter{},
-	"npm-check":               &dependency.Checker{},
-	"list-deps":               &list_deps.Lister{},
-	"trace":                   &trace.Tracer{},
-	"api-tracer":              &apit.Tracer{},
-	"component-deps":          &component_deps.ComponentDependencyAnalyzer{},
-	"component-deps-v2":       &component_deps_v2.ComponentDepsV2Analyzer{},
-	"export-call":             &export_call.ExportCallAnalyzer{},
-	"css-file":                &css_plugin.CssFile{},
-	"md-file":                 &md_plugin.MdFile{},
+// availableAnalyzers 是所有可用分析器的缓存
+// 使用懒加载模式，确保在首次访问时所有 analyzer 的 init() 都已执行
+var (
+	availableAnalyzers     map[string]projectanalyzer.Analyzer
+	availableAnalyzersOnce sync.Once
+)
+
+// getAvailableAnalyzers 返回所有可用的分析器（懒加载）
+// key 从 analyzer 的 Name() 方法动态获取，确保单一数据源
+func getAvailableAnalyzers() map[string]projectanalyzer.Analyzer {
+	availableAnalyzersOnce.Do(func() {
+		availableAnalyzers = projectanalyzer.GetAvailableAnalyzersMap()
+	})
+	return availableAnalyzers
+}
+
+// GetAvailableAnalyzers 返回所有可用的分析器（供外部使用）
+func GetAvailableAnalyzers() map[string]projectanalyzer.Analyzer {
+	return getAvailableAnalyzers()
 }
 
 // GetAnalyzeCmd 构建并返回 `analyze` 命令。
@@ -217,8 +229,9 @@ func parseAnalyzerParams(params []string) map[string]map[string][]string {
 // selectAnalyzers 根据用户在命令行中提供的名称，从 `availableAnalyzers` 注册表中查找并返回一个分析器列表。
 func selectAnalyzers(args []string) []projectanalyzer.Analyzer {
 	var analyzersToRun []projectanalyzer.Analyzer
+	analyzers := getAvailableAnalyzers()
 	for _, name := range args {
-		if analyzer, ok := availableAnalyzers[name]; ok {
+		if analyzer, ok := analyzers[name]; ok {
 			analyzersToRun = append(analyzersToRun, analyzer)
 		} else {
 			fmt.Printf("错误: 未知的分析器 '%s'\n", name)

@@ -137,3 +137,8 @@ func (r *CountAsResult) ToConsole() string {
 
 	return builder.String()
 }
+
+// AnalyzerName 返回对应的分析器名称
+func (r *CountAsResult) AnalyzerName() string {
+	return "count-as"
+}

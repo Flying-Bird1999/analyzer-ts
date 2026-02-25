@@ -118,25 +118,25 @@ func (f *Finder) Configure(params map[string]string) error {
 // 该方法实现了完整的未引用文件检测流程，包含以下主要步骤：
 //
 // 1. 构建引用关系图：
-//    - 遍历所有文件的导入语句
-//    - 遍历所有文件的导出语句
-//    - 遍历所有文件的 JSX 组件引用
-//    - 建立文件间的完整引用关系
+//   - 遍历所有文件的导入语句
+//   - 遍历所有文件的导出语句
+//   - 遍历所有文件的 JSX 组件引用
+//   - 建立文件间的完整引用关系
 //
 // 2. 识别入口文件：
-//    - 使用用户指定的入口文件
-//    - 或自动识别常见的入口文件模式
-//    - 将入口文件作为图的起始节点
+//   - 使用用户指定的入口文件
+//   - 或自动识别常见的入口文件模式
+//   - 将入口文件作为图的起始节点
 //
 // 3. 执行可达性分析：
-//    - 从入口文件开始执行深度优先搜索
-//    - 标记所有从入口可达的文件
-//    - 识别不可达的未引用文件
+//   - 从入口文件开始执行深度优先搜索
+//   - 标记所有从入口可达的文件
+//   - 识别不可达的未引用文件
 //
 // 4. 智能文件分类：
-//    - 将未引用文件分为真正的未引用文件和可疑文件
-//    - 应用各种过滤规则避免误删重要文件
-//    - 考虑排除模式和文件类型
+//   - 将未引用文件分为真正的未引用文件和可疑文件
+//   - 应用各种过滤规则避免误删重要文件
+//   - 考虑排除模式和文件类型
 //
 // 参数说明：
 // - ctx: 项目上下文，包含完整的解析结果和项目信息
@@ -274,8 +274,8 @@ func (f *Finder) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.R
 // - deps: 项目解析结果，包含所有文件的依赖关系
 //
 // 返回值说明：
-// - map[string]bool: 从入口文件可达的文件集合
-//   key 为文件路径，value 为可达性标记（true 表示可达）
+//   - map[string]bool: 从入口文件可达的文件集合
+//     key 为文件路径，value 为可达性标记（true 表示可达）
 func performDFS(entrypointFiles map[string]bool, deps *projectParser.ProjectParserResult) map[string]bool {
 	visited := make(map[string]bool)
 
@@ -511,4 +511,11 @@ func getKeys(m map[string]bool) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+// init 在包加载时自动注册分析器
+func init() {
+	projectanalyzer.RegisterAnalyzer("find-unreferenced-files", func() projectanalyzer.Analyzer {
+		return &Finder{}
+	})
 }

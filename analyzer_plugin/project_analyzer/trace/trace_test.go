@@ -22,7 +22,7 @@ func TestTracerConfigure(t *testing.T) {
 			params: map[string]string{
 				"targetPkgs": "antd",
 			},
-			expectErr: false,
+			expectErr:    false,
 			expectedPkgs: map[string]struct{}{"antd": {}},
 		},
 		{

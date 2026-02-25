@@ -95,10 +95,11 @@ func (r *CountAnyResult) ToJSON(indent bool) ([]byte, error) {
 // ⚠️ 扫描文件 150 个，共发现 23 处 'any' 类型使用。
 // --------------------------------------------------
 //   - /path/to/file.ts (5 处):
-//     - Line 42: const data: any = response;
-//     - Line 58: function processData(input: any): void { ... }
+//   - Line 42: const data: any = response;
+//   - Line 58: function processData(input: any): void { ... }
 //   - /path/to/another.ts (18 处):
-//     - Line 12: let config: any;
+//   - Line 12: let config: any;
+//
 // --------------------------------------------------
 func (r *CountAnyResult) ToConsole() string {
 	// 特殊情况处理：项目中没有 'any' 类型，显示成功消息
@@ -128,4 +129,9 @@ func (r *CountAnyResult) ToConsole() string {
 	builder.WriteString("--------------------------------------------------\n")
 
 	return builder.String()
+}
+
+// AnalyzerName 返回对应的分析器名称
+func (r *CountAnyResult) AnalyzerName() string {
+	return "count-any"
 }

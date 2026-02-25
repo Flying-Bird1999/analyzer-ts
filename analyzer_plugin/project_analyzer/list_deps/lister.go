@@ -4,9 +4,16 @@ package list_deps
 import (
 	"fmt"
 
-	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
+
+func init() {
+	// 注册分析器到工厂
+	projectanalyzer.RegisterAnalyzer("list-deps", func() projectanalyzer.Analyzer {
+		return &Lister{}
+	})
+}
 
 // Lister 依赖列表分析器
 type Lister struct{}
@@ -55,4 +62,8 @@ func (r *ListDepsResult) ToConsole() string {
 		}
 	}
 	return s
+}
+
+func (r *ListDepsResult) AnalyzerName() string {
+	return "list-deps"
 }
