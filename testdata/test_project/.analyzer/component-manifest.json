@@ -41,6 +41,11 @@
       "path": "src/components/Card"
     },
     {
+      "name": "Counter",
+      "type": "component",
+      "path": "src/components/Counter"
+    },
+    {
       "name": "Dropdown",
       "type": "component",
       "path": "src/components/Dropdown"

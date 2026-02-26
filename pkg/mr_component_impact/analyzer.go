@@ -87,6 +87,18 @@ func (a *Analyzer) analyzeComponentChange(
 	// 分析影响
 	impacts := a.componentAnalyzer.AnalyzeComponentChange(componentName)
 
+	// 将变更组件本身也加入到受影响列表中
+	selfImpact := ComponentImpact{
+		ComponentName: componentName,
+		ImpactReason:  "直接变更",
+		ChangeType:    "component",
+		ChangeSource:  componentName,
+	}
+	result.ImpactedComponents[componentName] = append(
+		result.ImpactedComponents[componentName],
+		selfImpact,
+	)
+
 	// 记录受影响的组件
 	for _, impact := range impacts {
 		result.ImpactedComponents[impact.ComponentName] = append(

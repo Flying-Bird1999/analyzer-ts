@@ -27,7 +27,7 @@ func NewComponentImpactAnalyzer(
 }
 
 // AnalyzeComponentChange 分析组件变更的影响
-// 返回受影响的所有组件信息列表
+// 返回受影响的所有组件信息列表（包括传递依赖）
 func (a *ComponentImpactAnalyzer) AnalyzeComponentChange(
 	componentName string,
 ) []ComponentImpact {
@@ -36,24 +36,43 @@ func (a *ComponentImpactAnalyzer) AnalyzeComponentChange(
 	}
 
 	impacts := make([]ComponentImpact, 0)
+	visited := make(map[string]bool)     // 已访问的组件
+	queue := []string{componentName}      // BFS 队列
+	sourceMap := make(map[string]string)  // 记录每个组件的影响来源
 
-	// 遍历所有组件，查找依赖该组件的组件
-	for compName, compInfo := range a.componentDeps.Components {
-		// 跳过自身
-		if compName == componentName {
-			continue
-		}
+	visited[componentName] = true
+	sourceMap[componentName] = componentName
 
-		// 检查该组件是否依赖变更的组件
-		for _, dep := range compInfo.ComponentDeps {
-			if dep.Name == componentName {
-				impacts = append(impacts, ComponentImpact{
-					ComponentName: compName,
-					ImpactReason:  fmt.Sprintf("依赖组件 %s", componentName),
-					ChangeType:    "component",
-					ChangeSource:  componentName,
-				})
-				break
+	// BFS 遍历依赖链
+	for len(queue) > 0 {
+		current := queue[0]
+		queue = queue[1:]
+
+		// 查找所有依赖当前组件的组件
+		for compName, compInfo := range a.componentDeps.Components {
+			// 跳过已访问的组件
+			if visited[compName] {
+				continue
+			}
+
+			// 检查该组件是否依赖当前组件
+			for _, dep := range compInfo.ComponentDeps {
+				if dep.Name == current {
+					// 记录影响
+					source := sourceMap[current]
+					impacts = append(impacts, ComponentImpact{
+						ComponentName: compName,
+						ImpactReason:  fmt.Sprintf("依赖组件 %s", current),
+						ChangeType:    "component",
+						ChangeSource:  source,
+					})
+
+					// 标记为已访问并加入队列
+					visited[compName] = true
+					sourceMap[compName] = source
+					queue = append(queue, compName)
+					break
+				}
 			}
 		}
 	}

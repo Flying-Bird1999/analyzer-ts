@@ -137,10 +137,10 @@ func AnalyzeFromDiff(config *AnalyzeConfig) (*AnalysisResult, error) {
 	}
 
 	// 5. 运行 component_deps_v2 分析
-	componentDeps := runComponentDepsAnalysis(manifest, parsingResult, config.ProjectRoot)
+	componentDeps := runComponentDepsAnalysis(manifest, parsingResult, config.ProjectRoot, config.ManifestPath)
 
 	// 6. 运行 export_call 分析
-	exportCallResult := runExportCallAnalysis(manifest, parsingResult, config.ProjectRoot)
+	exportCallResult := runExportCallAnalysis(manifest, parsingResult, config.ProjectRoot, config.ManifestPath)
 
 	// 7. 创建分析器并执行分析
 	analyzer := NewAnalyzer(&AnalyzerConfig{
@@ -231,11 +231,11 @@ func parseProject(config *AnalyzeConfig) (*projectParser.ProjectParserResult, er
 }
 
 // runComponentDepsAnalysis 运行组件依赖分析
-func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string) *component_deps_v2.ComponentDepsV2Result {
+func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string, manifestPath string) *component_deps_v2.ComponentDepsV2Result {
 	analyzer := &component_deps_v2.ComponentDepsV2Analyzer{}
 
 	params := map[string]string{
-		"manifest": filepath.Join(projectRoot, ".analyzer", "component-manifest.json"),
+		"manifest": manifestPath,
 	}
 
 	_ = analyzer.Configure(params)
@@ -261,11 +261,11 @@ func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projec
 }
 
 // runExportCallAnalysis 运行导出引用分析
-func runExportCallAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string) *export_call.ExportCallResult {
+func runExportCallAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string, manifestPath string) *export_call.ExportCallResult {
 	analyzer := &export_call.ExportCallAnalyzer{}
 
 	params := map[string]string{
-		"manifest": filepath.Join(projectRoot, ".analyzer", "component-manifest.json"),
+		"manifest": manifestPath,
 	}
 
 	_ = analyzer.Configure(params)

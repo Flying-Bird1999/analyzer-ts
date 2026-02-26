@@ -87,8 +87,7 @@ func TestE2E_AnalyzeFromDiff(t *testing.T) {
 		t.Logf("Utils 变更影响分析:\n%s", result.ToConsole())
 	})
 
-	t.Run("Hooks函数变更", func(t *testing.T) {
-		// useDebounce正常，但是 "src/hooks/useCounter.ts" 有问题，需要排查
+	t.Run("Hooks函数变更(useDebounce)", func(t *testing.T) {
 		diffFile := createTempDiffFile(t, []string{
 			"src/hooks/useDebounce.ts",
 		})
@@ -114,6 +113,40 @@ func TestE2E_AnalyzeFromDiff(t *testing.T) {
 		}
 
 		t.Logf("Hooks 变更影响分析:\n%s", result.ToConsole())
+	})
+
+	t.Run("Hooks函数变更(useCounter)", func(t *testing.T) {
+		// 验证 Counter 组件添加到 manifest 后，useCounter 的影响分析正常工作
+		diffFile := createTempDiffFile(t, []string{
+			"src/hooks/useCounter.ts",
+		})
+
+		result, err := AnalyzeFromDiff(&AnalyzeConfig{
+			ProjectRoot:  absProjectRoot,
+			DiffFilePath: diffFile,
+		})
+
+		if err != nil {
+			t.Fatalf("分析失败: %v", err)
+		}
+
+		// 验证受影响组件 - Counter 组件应该被检测到
+		if len(result.ImpactedComponents) != 1 {
+			t.Errorf("期望 1 个受影响组件，实际 %d", len(result.ImpactedComponents))
+		}
+
+		if _, exists := result.ImpactedComponents["Counter"]; !exists {
+			t.Error("Counter 应该在受影响组件列表中")
+		}
+
+		// 验证影响原因
+		for _, impact := range result.ImpactedComponents["Counter"] {
+			if impact.ChangeType != "function" {
+				t.Errorf("期望变更类型为 'function'，实际 '%s'", impact.ChangeType)
+			}
+		}
+
+		t.Logf("useCounter 变更影响分析:\n%s", result.ToConsole())
 	})
 
 	t.Run("混合变更", func(t *testing.T) {

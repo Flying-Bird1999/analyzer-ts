@@ -33,6 +33,7 @@ func init() {
 	// 添加其他顶级命令
 	RootCmd.AddCommand(ScanCmd)
 	RootCmd.AddCommand(ImpactCmd)
+	RootCmd.AddCommand(MrComponentImpactCmd) // 新增: MR 组件影响分析命令
 }
 
 // Execute 将所有子命令添加到根命令并适当设置标志。
