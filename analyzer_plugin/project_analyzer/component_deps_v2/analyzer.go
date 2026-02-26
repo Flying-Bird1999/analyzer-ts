@@ -86,13 +86,31 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 func (a *ComponentDepsV2Analyzer) buildComponentInfo(
 	dependencies map[string][]projectParser.ImportDeclarationResult,
 ) map[string]ComponentInfo {
+	depAnalyzer := NewDependencyAnalyzer(a.manifest)
 	result := make(map[string]ComponentInfo)
 
 	for _, comp := range a.manifest.Components {
+		deps := dependencies[comp.Name]
+
+		// 分类依赖
+		classified := depAnalyzer.ClassifyDependencies(deps)
+
+		// 转换 ComponentDepDetail 为 ComponentDep
+		componentDeps := make([]ComponentDep, 0, len(classified.ComponentDeps))
+		for _, detail := range classified.ComponentDeps {
+			componentDeps = append(componentDeps, ComponentDep{
+				Name:     detail.Name,
+				Path:     detail.Path,
+				DepFiles: detail.DepFiles,
+			})
+		}
+
 		result[comp.Name] = ComponentInfo{
 			Name:         comp.Name,
 			Path:         comp.Path,
-			Dependencies: dependencies[comp.Name],
+			Dependencies: deps,
+			NpmDeps:      classified.NpmDeps,
+			ComponentDeps: componentDeps,
 		}
 	}
 

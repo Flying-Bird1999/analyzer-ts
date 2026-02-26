@@ -280,3 +280,120 @@ func TestComponentDepsV2Result_ToConsole(t *testing.T) {
 	assert.Contains(t, output, "src/Button")
 	assert.Contains(t, output, "外部依赖: 无")
 }
+
+// =============================================================================
+// 依赖分类测试 (新增功能)
+// =============================================================================
+
+func TestClassifyDependencies_NpmOnly(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Type: "component", Path: "src/Button"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+
+	dependencies := []projectParser.ImportDeclarationResult{
+		{Source: projectParser.SourceData{Type: "npm", NpmPkg: "react"}},
+		{Source: projectParser.SourceData{Type: "npm", NpmPkg: "lodash"}},
+		{Source: projectParser.SourceData{Type: "npm", NpmPkg: "react"}}, // 重复
+	}
+
+	classified := analyzer.ClassifyDependencies(dependencies)
+
+	assert.Len(t, classified.NpmDeps, 2)
+	assert.Contains(t, classified.NpmDeps, "react")
+	assert.Contains(t, classified.NpmDeps, "lodash")
+	assert.Empty(t, classified.ComponentDeps)
+}
+
+func TestClassifyDependencies_ComponentOnly(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Type: "component", Path: "src/Button"},
+			{Name: "Input", Type: "component", Path: "src/Input"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+
+	dependencies := []projectParser.ImportDeclarationResult{
+		{Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/index.tsx"}},
+		{Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/types.ts"}},
+		{Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/index.tsx"}}, // 重复文件
+	}
+
+	classified := analyzer.ClassifyDependencies(dependencies)
+
+	assert.Empty(t, classified.NpmDeps)
+	assert.Len(t, classified.ComponentDeps, 1)
+
+	inputDep := classified.ComponentDeps["Input"]
+	assert.NotNil(t, inputDep)
+	assert.Equal(t, "Input", inputDep.Name)
+	assert.Equal(t, "src/Input", inputDep.Path)
+	assert.Len(t, inputDep.DepFiles, 2) // 去重后只有 2 个文件
+}
+
+func TestClassifyDependencies_Mixed(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Type: "component", Path: "src/Button"},
+			{Name: "Input", Type: "component", Path: "src/Input"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+
+	dependencies := []projectParser.ImportDeclarationResult{
+		{Source: projectParser.SourceData{Type: "npm", NpmPkg: "react"}},
+		{Source: projectParser.SourceData{Type: "npm", NpmPkg: "lodash"}},
+		{Source: projectParser.SourceData{Type: "file", FilePath: "src/Input/index.tsx"}},
+		{Source: projectParser.SourceData{Type: "file", FilePath: "src/utils/helper.ts"}}, // 不属于任何组件
+	}
+
+	classified := analyzer.ClassifyDependencies(dependencies)
+
+	assert.Len(t, classified.NpmDeps, 2)
+	assert.Len(t, classified.ComponentDeps, 1) // 只有 Input，utils 不在 manifest 中
+	assert.Contains(t, classified.NpmDeps, "react")
+	assert.Contains(t, classified.NpmDeps, "lodash")
+	assert.NotNil(t, classified.ComponentDeps["Input"])
+	assert.Nil(t, classified.ComponentDeps["utils"])
+}
+
+func TestFindComponentByFile(t *testing.T) {
+	manifest := &ComponentManifest{
+		Components: []ComponentDefinition{
+			{Name: "Button", Type: "component", Path: "src/components/Button"},
+			{Name: "Input", Type: "component", Path: "src/components/Input"},
+		},
+	}
+	analyzer := NewDependencyAnalyzer(manifest)
+
+	// 测试找到组件（相对路径）
+	comp := analyzer.findComponentByFile("src/components/Button/index.tsx")
+	assert.NotNil(t, comp)
+	assert.Equal(t, "Button", comp.Name)
+
+	comp = analyzer.findComponentByFile("src/components/Input/types.ts")
+	assert.NotNil(t, comp)
+	assert.Equal(t, "Input", comp.Name)
+
+	// 测试绝对路径（包含项目根目录前缀）
+	comp = analyzer.findComponentByFile("/project/src/components/Button/index.tsx")
+	assert.NotNil(t, comp)
+	assert.Equal(t, "Button", comp.Name)
+
+	comp = analyzer.findComponentByFile("/project/src/components/Input/types.ts")
+	assert.NotNil(t, comp)
+	assert.Equal(t, "Input", comp.Name)
+
+	// 测试找不到组件
+	comp = analyzer.findComponentByFile("src/utils/helper.ts")
+	assert.Nil(t, comp)
+
+	comp = analyzer.findComponentByFile("src/components/ButtonTest/index.tsx")
+	assert.Nil(t, comp)
+
+	comp = analyzer.findComponentByFile("/project/src/utils/helper.ts")
+	assert.Nil(t, comp)
+}

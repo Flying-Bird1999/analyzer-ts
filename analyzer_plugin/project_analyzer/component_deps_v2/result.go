@@ -23,7 +23,29 @@ import (
 type ComponentInfo struct {
 	Name         string                                  `json:"name"`         // 组件名称
 	Path         string                                  `json:"path"`         // 组件目录路径
-	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表
+	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表（原始扫描数据，保持不变）
+
+	// NpmDeps 本组件依赖的 npm 包列表（去重）
+	// 例如: ["react", "lodash", "dayjs"]
+	NpmDeps []string `json:"npmDeps,omitempty"`
+
+	// ComponentDeps 本组件依赖的其他组件列表
+	// 例如: Button 组件依赖 Input 组件的多个文件
+	ComponentDeps []ComponentDep `json:"componentDeps,omitempty"`
+}
+
+// ComponentDep 组件依赖信息
+// 表示当前组件依赖了某个其他组件的具体情况
+type ComponentDep struct {
+	// Name 被依赖的组件名称（来自 manifest）
+	Name string `json:"name"`
+
+	// Path 被依赖组件在 manifest 中声明的路径
+	Path string `json:"path"`
+
+	// DepFiles 具体依赖的文件路径列表
+	// 表示当前组件中哪些文件引用了目标组件的文件
+	DepFiles []string `json:"depFiles,omitempty"`
 }
 
 // Meta 分析元数据
@@ -85,15 +107,36 @@ func (r *ComponentDepsV2Result) ToConsole() string {
 		comp := r.Components[name]
 		buffer.WriteString(fmt.Sprintf("▶ %s\n", name))
 		buffer.WriteString(fmt.Sprintf("  路径: %s\n", comp.Path))
+
+		// 显示 npm 依赖
+		if len(comp.NpmDeps) > 0 {
+			buffer.WriteString("  NPM 依赖:\n")
+			for _, pkg := range comp.NpmDeps {
+				buffer.WriteString(fmt.Sprintf("    - %s\n", pkg))
+			}
+		}
+
+		// 显示组件依赖
+		if len(comp.ComponentDeps) > 0 {
+			buffer.WriteString("  组件依赖:\n")
+			for _, dep := range comp.ComponentDeps {
+				buffer.WriteString(fmt.Sprintf("    - %s (%s)\n", dep.Name, dep.Path))
+				if len(dep.DepFiles) > 0 {
+					for _, file := range dep.DepFiles {
+						buffer.WriteString(fmt.Sprintf("      → %s\n", file))
+					}
+				}
+			}
+		}
+
+		// 显示完整依赖列表
 		if len(comp.Dependencies) > 0 {
-			buffer.WriteString("  外部依赖:\n")
+			buffer.WriteString("  完整依赖列表:\n")
 			for _, dep := range comp.Dependencies {
-				// 根据 type 显示不同信息
 				if dep.Source.Type == "npm" {
 					buffer.WriteString(fmt.Sprintf("    - npm: %s\n", dep.Source.NpmPkg))
 				} else {
-					targetFile := dep.Source.FilePath
-					buffer.WriteString(fmt.Sprintf("    - file: %s\n", targetFile))
+					buffer.WriteString(fmt.Sprintf("    - file: %s\n", dep.Source.FilePath))
 				}
 			}
 		} else {

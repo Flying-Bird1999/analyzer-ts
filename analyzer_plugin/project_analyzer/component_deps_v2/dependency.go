@@ -160,3 +160,113 @@ func (da *DependencyAnalyzer) AnalyzeAllComponents(
 
 	return result
 }
+
+// =============================================================================
+// 依赖分类方法
+// =============================================================================
+
+// ClassifiedDeps 分类后的依赖信息
+type ClassifiedDeps struct {
+	NpmDeps      []string               // npm 包列表（去重）
+	ComponentDeps map[string]*ComponentDepDetail // 组件名 -> 组件依赖详情
+}
+
+// ComponentDepDetail 组件依赖详情
+type ComponentDepDetail struct {
+	Name     string   // 被依赖的组件名
+	Path     string   // 被依赖组件的路径
+	DepFiles []string // 具体依赖的文件路径列表
+}
+
+// ClassifyDependencies 对依赖进行分类
+// 将 Dependencies 列表分类为 npm 依赖和组件依赖
+func (da *DependencyAnalyzer) ClassifyDependencies(
+	dependencies []projectParser.ImportDeclarationResult,
+) ClassifiedDeps {
+	npmDepsSet := make(map[string]bool)
+	componentDepsMap := make(map[string]*ComponentDepDetail)
+
+	for _, dep := range dependencies {
+		switch dep.Source.Type {
+		case "npm":
+			// 收集 npm 包（去重）
+			npmPkg := dep.Source.NpmPkg
+			if npmPkg != "" {
+				npmDepsSet[npmPkg] = true
+			}
+
+		case "file":
+			// 判断该文件是否属于 manifest 中的某个组件
+			targetFilePath := dep.Source.FilePath
+			if targetFilePath == "" {
+				continue
+			}
+
+			// 查找目标文件所属的组件
+			comp := da.findComponentByFile(targetFilePath)
+			if comp != nil {
+				// 属于某个组件，添加到组件依赖
+				if _, exists := componentDepsMap[comp.Name]; !exists {
+					componentDepsMap[comp.Name] = &ComponentDepDetail{
+						Name:     comp.Name,
+						Path:     comp.Path,
+						DepFiles: []string{},
+					}
+				}
+				// 添加文件路径（去重）
+				detail := componentDepsMap[comp.Name]
+				found := false
+				for _, f := range detail.DepFiles {
+					if f == targetFilePath {
+						found = true
+						break
+					}
+				}
+				if !found {
+					detail.DepFiles = append(detail.DepFiles, targetFilePath)
+				}
+			}
+			// 不属于任何组件的文件，保留在 Dependencies 中，不做额外处理
+		}
+	}
+
+	// 转换 npmDeps 为切片
+	npmDeps := make([]string, 0, len(npmDepsSet))
+	for pkg := range npmDepsSet {
+		npmDeps = append(npmDeps, pkg)
+	}
+
+	return ClassifiedDeps{
+		NpmDeps:      npmDeps,
+		ComponentDeps: componentDepsMap,
+	}
+}
+
+// findComponentByFile 根据文件路径查找其所属的组件
+// 返回：如果文件属于某个组件，返回该组件定义；否则返回 nil
+func (da *DependencyAnalyzer) findComponentByFile(filePath string) *ComponentDefinition {
+	// 标准化路径为正斜杠格式
+	normalizedPath := filepath.ToSlash(filePath)
+
+	for i := range da.manifest.Components {
+		comp := &da.manifest.Components[i]
+		normalizedDir := filepath.ToSlash(comp.Path)
+
+		// 首先尝试精确前缀匹配
+		if strings.HasPrefix(normalizedPath, normalizedDir+"/") || normalizedPath == normalizedDir {
+			return comp
+		}
+
+		// 如果是绝对路径，尝试提取相对路径部分后再匹配
+		// 例如: /project/src/components/Input/index.tsx → src/components/Input/index.tsx
+		parts := strings.Split(normalizedPath, "/")
+		for j := 0; j < len(parts); j++ {
+			candidatePath := strings.Join(parts[j:], "/")
+			if strings.HasPrefix(candidatePath, normalizedDir+"/") || candidatePath == normalizedDir {
+				return comp
+			}
+		}
+	}
+
+	return nil
+}
