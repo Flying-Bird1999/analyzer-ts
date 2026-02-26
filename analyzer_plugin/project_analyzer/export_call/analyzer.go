@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
@@ -81,7 +82,7 @@ func (a *ExportCallAnalyzer) Analyze(ctx *projectanalyzer.ProjectContext) (proje
 
 	// 步骤 5: 按模块分组构建结果
 	result := &ExportCallResult{
-		ModuleExports: a.buildModuleExports(assets, exportNodes, refMap),
+		ModuleExports: a.buildModuleExports(assets, exportNodes, refMap, ctx.ProjectRoot),
 	}
 
 	return result, nil
@@ -109,6 +110,7 @@ func (a *ExportCallAnalyzer) buildModuleExports(
 	assets []AssetItem,
 	exportNodes []*ExportNode,
 	refMap map[string][]string,
+	projectRoot string,
 ) []ModuleExportRecord {
 	// 构建 assetName -> assetPath 映射（使用原始相对路径）
 	assetPathMap := make(map[string]string)
@@ -146,10 +148,11 @@ func (a *ExportCallAnalyzer) buildModuleExports(
 		}
 
 		record.Nodes = append(record.Nodes, NodeWithRefs{
-			Name:       node.Name,
-			NodeType:   node.NodeType,
-			ExportType: node.ExportType,
-			RefFiles:   refMap[node.ID],
+			Name:          node.Name,
+			NodeType:      node.NodeType,
+			ExportType:    node.ExportType,
+			RefFiles:      refMap[node.ID],
+			RefComponents: a.mapFilesToComponents(refMap[node.ID], projectRoot),
 		})
 	}
 
@@ -224,4 +227,60 @@ func (a *ExportCallAnalyzer) resolveAssetPaths(assets []AssetItem, projectRoot s
 	}
 
 	return resolved
+}
+
+// mapFilesToComponents 将文件列表映射到组件
+// 返回每个组件引用了哪些文件
+func (a *ExportCallAnalyzer) mapFilesToComponents(refFiles []string, projectRoot string) []ComponentRef {
+	if len(refFiles) == 0 || len(a.manifest.Components) == 0 {
+		return nil
+	}
+
+	// 构建组件路径映射（将相对路径转换为绝对路径）
+	compPathMap := make(map[string]string)
+	for _, comp := range a.manifest.Components {
+		absPath := comp.Path
+		if !filepath.IsAbs(comp.Path) {
+			absPath = filepath.Join(projectRoot, comp.Path)
+		}
+		compPathMap[comp.Name] = absPath
+	}
+
+	// 将文件分组到组件
+	compFileMap := make(map[string][]string)
+	for _, file := range refFiles {
+		// 检查文件属于哪个组件
+		for compName, compPath := range compPathMap {
+			if a.isFileInPath(file, compPath) {
+				compFileMap[compName] = append(compFileMap[compName], file)
+				break
+			}
+		}
+	}
+
+	// 转换为 ComponentRef 列表
+	result := make([]ComponentRef, 0, len(compFileMap))
+	for compName, files := range compFileMap {
+		result = append(result, ComponentRef{
+			ComponentName: compName,
+			RefFiles:      files,
+		})
+	}
+
+	// 按组件名称排序
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].ComponentName < result[j].ComponentName
+	})
+
+	return result
+}
+
+// isFileInPath 检查文件是否在指定路径下
+func (a *ExportCallAnalyzer) isFileInPath(filePath, targetPath string) bool {
+	relPath, err := filepath.Rel(targetPath, filePath)
+	if err != nil {
+		return false
+	}
+	// 如果相对路径不以 ".." 开头，说明文件在目标路径下
+	return !filepath.IsAbs(relPath) && relPath != ".." && !strings.HasPrefix(relPath, ".."+string(filepath.Separator))
 }

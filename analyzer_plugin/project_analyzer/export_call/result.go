@@ -44,12 +44,20 @@ type FileExportRecord struct {
 	Nodes []NodeWithRefs `json:"nodes"` // 该文件的导出节点
 }
 
+// ComponentRef 组件级引用信息
+// 表示某个组件引用了该导出节点
+type ComponentRef struct {
+	ComponentName string   `json:"componentName"` // 组件名称
+	RefFiles      []string `json:"refFiles"`      // 该组件中引用该节点的文件列表
+}
+
 // NodeWithRefs 带引用信息的节点
 type NodeWithRefs struct {
-	Name       string     `json:"name"`       // 节点名称
-	NodeType   NodeType   `json:"nodeType"`   // 节点类型
-	ExportType ExportType `json:"exportType"` // 导出方式
-	RefFiles   []string   `json:"refFiles"`   // 引用该节点的文件路径列表
+	Name           string         `json:"name"`           // 节点名称
+	NodeType       NodeType       `json:"nodeType"`       // 节点类型
+	ExportType     ExportType     `json:"exportType"`     // 导出方式
+	RefFiles       []string       `json:"refFiles"`       // 引用该节点的文件路径列表
+	RefComponents  []ComponentRef `json:"refComponents"`  // 引用该节点的组件列表（基于 manifest 中的 components 配置）
 }
 
 // ModuleExportRecord 模块导出记录（按模块分组）
@@ -140,6 +148,15 @@ func (r *ExportCallResult) ToConsole() string {
 					} else {
 						buffer.WriteString(fmt.Sprintf("    - %s [%s, %s] 未被引用\n",
 							node.Name, node.NodeType, node.ExportType))
+					}
+
+					// 显示组件级引用
+					if len(node.RefComponents) > 0 {
+						buffer.WriteString("      影响组件:\n")
+						for _, compRef := range node.RefComponents {
+							buffer.WriteString(fmt.Sprintf("        • %s (%d 个文件)\n",
+								compRef.ComponentName, len(compRef.RefFiles)))
+						}
 					}
 				}
 				buffer.WriteString("\n")

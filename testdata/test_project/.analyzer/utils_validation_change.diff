@@ -1,0 +1,33 @@
+diff --git a/src/utils/validation.ts b/src/utils/validation.ts
+index 1234567..abcdefg 100644
+--- a/src/utils/validation.ts
++++ b/src/utils/validation.ts
+@@ -43,6 +43,18 @@ export const validateEmail = (email: string): boolean => {
+   return emailPattern.test(email);
+ };
+
+ export const validatePhone = (phone: string): boolean => {
+   const phonePattern = /^\+?[\d\s-()]+$/;
+   return phonePattern.test(phone);
+ };
++
++// 新增：URL 验证函数
++export const validateURL = (url: string): boolean => {
++  try {
++    new URL(url);
++    return true;
++  } catch {
++    return false;
++  }
++};
++
++// 新增：数字范围验证
++export const validateNumberRange = (value: number, min: number, max: number): boolean => {
++  return value >= min && value <= max;
++};
++
++// 增强：添加更严格的邮箱验证
++export const validateEmailStrict = (email: string): boolean => {
++  const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
++  return emailPattern.test(email);
++};
