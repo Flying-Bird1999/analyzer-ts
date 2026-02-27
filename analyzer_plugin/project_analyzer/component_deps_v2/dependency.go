@@ -13,7 +13,9 @@ import (
 
 // DependencyAnalyzer 组件依赖分析器
 type DependencyAnalyzer struct {
-	manifest *ComponentManifest // 组件配置
+	manifest    *ComponentManifest                              // 组件配置
+	fileResults map[string]projectParser.JsFileParserResult     // 文件解析结果
+	reexportResolver *ReExportResolver                           // 重导出解析器（延迟初始化）
 }
 
 // NewDependencyAnalyzer 创建依赖分析器
@@ -210,6 +212,10 @@ func (da *DependencyAnalyzer) isExternalDependency(
 func (da *DependencyAnalyzer) AnalyzeAllComponents(
 	fileResults map[string]projectParser.JsFileParserResult,
 ) map[string][]projectParser.ImportDeclarationResult {
+	// 保存 fileResults 用于后续的重导出解析
+	da.fileResults = fileResults
+	da.reexportResolver = NewReExportResolver(fileResults)
+
 	result := make(map[string][]projectParser.ImportDeclarationResult)
 
 	for i := range da.manifest.Components {
@@ -240,13 +246,20 @@ type ComponentDepDetail struct {
 
 // ClassifyDependencies 对依赖进行分类
 // 将 Dependencies 列表分类为 npm 依赖和组件依赖
+// 支持重导出解析：会解析 export { xxx } from './path' 并重定向到真实源文件
 func (da *DependencyAnalyzer) ClassifyDependencies(
 	dependencies []projectParser.ImportDeclarationResult,
 ) ClassifiedDeps {
 	npmDepsSet := make(map[string]bool)
 	componentDepsMap := make(map[string]*ComponentDepDetail)
 
-	for _, dep := range dependencies {
+	// 使用重导出解析器解析所有依赖
+	resolvedDeps := dependencies
+	if da.reexportResolver != nil {
+		resolvedDeps = da.reexportResolver.ResolveDependencies(dependencies)
+	}
+
+	for _, dep := range resolvedDeps {
 		switch dep.Source.Type {
 		case "npm":
 			// 收集 npm 包（去重）
@@ -300,6 +313,20 @@ func (da *DependencyAnalyzer) ClassifyDependencies(
 		NpmDeps:      npmDeps,
 		ComponentDeps: componentDepsMap,
 	}
+}
+
+// GetReExportResolver 获取重导出解析器（用于调试）
+func (da *DependencyAnalyzer) GetReExportResolver() *ReExportResolver {
+	return da.reexportResolver
+}
+
+// GetReExportStats 获取重导出解析统计信息（用于调试）
+func (da *DependencyAnalyzer) GetReExportStats() *ReExportStats {
+	if da.reexportResolver == nil {
+		return nil
+	}
+	stats := da.reexportResolver.GetStats()
+	return &stats
 }
 
 // findComponentByFile 根据文件路径查找其所属的组件

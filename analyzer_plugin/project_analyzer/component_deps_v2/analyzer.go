@@ -71,12 +71,12 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 	fileResults := ctx.ParsingResult.Js_Data
 	dependencies := depAnalyzer.AnalyzeAllComponents(fileResults)
 
-	// 步骤 3: 构建结果
+	// 步骤 3: 构建结果（传递 depAnalyzer 以便重导出解析器可用）
 	result := &ComponentDepsV2Result{
 		Meta: Meta{
 			ComponentCount: len(a.manifest.Components),
 		},
-		Components: a.buildComponentInfo(dependencies),
+		Components: a.buildComponentInfo(dependencies, depAnalyzer),
 	}
 
 	return result, nil
@@ -85,8 +85,8 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 // buildComponentInfo 构建组件信息
 func (a *ComponentDepsV2Analyzer) buildComponentInfo(
 	dependencies map[string][]projectParser.ImportDeclarationResult,
+	depAnalyzer *DependencyAnalyzer,
 ) map[string]ComponentInfo {
-	depAnalyzer := NewDependencyAnalyzer(a.manifest)
 	result := make(map[string]ComponentInfo)
 
 	for _, comp := range a.manifest.Components {

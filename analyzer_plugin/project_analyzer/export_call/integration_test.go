@@ -371,3 +371,102 @@ func TestExportCallIntegration_DefaultExport(t *testing.T) {
 	assert.Equal(t, ExportTypeNamed, namedNode.ExportType, "namedExport 应该是 named 类型")
 	t.Logf("✅ named export 正确: '%s', type: %s", namedNode.Name, namedNode.ExportType)
 }
+
+// TestExportCallIntegration_ReExportTracking 测试重导出追踪功能
+// 验证 export * from './path' 和 export { xxx } from './path' 会被正确追踪
+func TestExportCallIntegration_ReExportTracking(t *testing.T) {
+	testProjectPath, err := filepath.Abs("../../../testdata/test_project")
+	require.NoError(t, err)
+
+	manifestPath := filepath.Join(testProjectPath, ".analyzer", "component-manifest.json")
+
+	// 解析项目
+	config := projectParser.NewProjectParserConfig(testProjectPath, []string{}, false, []string{})
+	parsingResult := projectParser.NewProjectParserResult(config)
+	parsingResult.ProjectParser()
+
+	// 创建分析器
+	analyzer := &ExportCallAnalyzer{}
+	err = analyzer.Configure(map[string]string{"manifest": manifestPath})
+	require.NoError(t, err)
+
+	ctx := &projectanalyzer.ProjectContext{
+		ProjectRoot:   testProjectPath,
+		ParsingResult: parsingResult,
+	}
+
+	result, err := analyzer.Analyze(ctx)
+	require.NoError(t, err)
+
+	exportCallResult, ok := result.(*ExportCallResult)
+	require.True(t, ok)
+
+	// utils/index.ts 有重导出:
+	//   export * from './validation'
+	//   export * from './format'
+	// 验证这些重导出的内容被正确追踪
+
+	// 查找 utils 模块
+	var utilsModule *ModuleExportRecord
+	for _, module := range exportCallResult.ModuleExports {
+		if module.ModuleName == "utils" {
+			utilsModule = &module
+			break
+		}
+	}
+	require.NotNil(t, utilsModule, "应该找到 utils 模块")
+
+	// 验证 format.ts 的导出被正确追踪（通过 index.ts 的 export *）
+	var formatRecord *FileExportRecord
+	for i := range utilsModule.Files {
+		if strings.Contains(utilsModule.Files[i].File, "format.ts") {
+			formatRecord = &utilsModule.Files[i]
+			break
+		}
+	}
+	require.NotNil(t, formatRecord, "应该找到 format.ts 的导出记录")
+
+	// format.ts 的导出节点应该被扫描到（通过 index.ts 的重导出）
+	nodeNames := make([]string, 0, len(formatRecord.Nodes))
+	for _, node := range formatRecord.Nodes {
+		nodeNames = append(nodeNames, node.Name)
+	}
+	sort.Strings(nodeNames)
+
+	// format.ts 导出的函数
+	expectedExports := []string{"formatDate", "formatCurrency", "formatNumber", "truncate"}
+	sort.Strings(expectedExports)
+	assert.Equal(t, expectedExports, nodeNames, "format.ts 的导出应该被正确追踪（通过重导出）")
+
+	// 验证 validation.ts 的导出也被正确追踪
+	var validationRecord *FileExportRecord
+	for i := range utilsModule.Files {
+		if strings.Contains(utilsModule.Files[i].File, "validation.ts") {
+			validationRecord = &utilsModule.Files[i]
+			break
+		}
+	}
+	require.NotNil(t, validationRecord, "应该找到 validation.ts 的导出记录")
+
+	// validation.ts 导出的函数和类型
+	expectedValidationExports := []string{
+		"validateField",
+		"validateEmail",
+		"validatePhone",
+		"ValidationResult",
+		"ValidationRule",
+	}
+	sort.Strings(expectedValidationExports)
+
+	validationNodeNames := make([]string, 0, len(validationRecord.Nodes))
+	for _, node := range validationRecord.Nodes {
+		validationNodeNames = append(validationNodeNames, node.Name)
+	}
+	sort.Strings(validationNodeNames)
+
+	assert.Equal(t, expectedValidationExports, validationNodeNames, "validation.ts 的导出应该被正确追踪（通过重导出）")
+
+	t.Logf("✅ 重导出追踪功能正常工作！")
+	t.Logf("  - format.ts: 找到 %d 个导出", len(formatRecord.Nodes))
+	t.Logf("  - validation.ts: 找到 %d 个导出", len(validationRecord.Nodes))
+}
