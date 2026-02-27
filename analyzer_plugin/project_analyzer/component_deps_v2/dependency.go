@@ -24,7 +24,9 @@ func NewDependencyAnalyzer(manifest *ComponentManifest) *DependencyAnalyzer {
 }
 
 // AnalyzeComponent 分析单个组件的外部依赖
-// 返回该组件的所有外部依赖（过滤掉组件内部依赖，并去重）
+// 返回该组件的所有外部依赖（过滤掉组件内部依赖，并合并去重）
+// 去重策略：同一来源（npm 包或文件）的多次引用会被合并为一条记录，
+// ImportModules 会累积所有导入的模块，确保信息不丢失
 func (da *DependencyAnalyzer) AnalyzeComponent(
 	comp *ComponentDefinition,
 	fileResults map[string]projectParser.JsFileParserResult,
@@ -58,7 +60,11 @@ func (da *DependencyAnalyzer) AnalyzeComponent(
 			}
 
 			// 如果该依赖尚未记录，则添加
-			if _, exists := seen[key]; !exists {
+			if existing, exists := seen[key]; exists {
+				// 已存在，合并 ImportModules 以保留完整信息
+				seen[key] = da.mergeImportDeclarations(existing, importDecl)
+			} else {
+				// 首次遇到，直接记录
 				seen[key] = importDecl
 			}
 		}
@@ -83,6 +89,60 @@ func (da *DependencyAnalyzer) getDependencyKey(importDecl projectParser.ImportDe
 	default:
 		return ""
 	}
+}
+
+// mergeImportDeclarations 合并两个 ImportDeclarationResult
+// 保留 ImportModules 的完整信息，避免去重时丢失导入模块详情
+// 合并规则：
+// 1. ImportModules：合并并去重（基于 Type + ImportModule + Identifier）
+// 2. Source：保留第一个（来源相同）
+// 3. Raw：合并多个原始语句（用换行符分隔）
+func (da *DependencyAnalyzer) mergeImportDeclarations(
+	existing, new projectParser.ImportDeclarationResult,
+) projectParser.ImportDeclarationResult {
+	// 合并 ImportModules，基于 Type + ImportModule + Identifier 去重
+	mergedModules := make(map[string]projectParser.ImportModule)
+
+	// 添加现有的模块
+	for _, mod := range existing.ImportModules {
+		key := da.getModuleKey(mod)
+		mergedModules[key] = mod
+	}
+
+	// 添加新的模块（重复的会被覆盖，保留最新的）
+	for _, mod := range new.ImportModules {
+		key := da.getModuleKey(mod)
+		mergedModules[key] = mod
+	}
+
+	// 转换为切片
+	resultModules := make([]projectParser.ImportModule, 0, len(mergedModules))
+	for _, mod := range mergedModules {
+		resultModules = append(resultModules, mod)
+	}
+
+	// 合并 Raw 语句
+	var mergedRaw string
+	if existing.Raw != "" && new.Raw != "" {
+		mergedRaw = existing.Raw + "\n" + new.Raw
+	} else if existing.Raw != "" {
+		mergedRaw = existing.Raw
+	} else {
+		mergedRaw = new.Raw
+	}
+
+	return projectParser.ImportDeclarationResult{
+		ImportModules: resultModules,
+		Source:        existing.Source, // 来源相同，保留第一个
+		Raw:           mergedRaw,
+		Node:          existing.Node,   // 保留第一个的 AST 节点
+	}
+}
+
+// getModuleKey 获取模块的唯一标识，用于 ImportModules 去重
+// key 格式：Type:ImportModule:Identifier
+func (da *DependencyAnalyzer) getModuleKey(mod projectParser.ImportModule) string {
+	return mod.Type + ":" + mod.ImportModule + ":" + mod.Identifier
 }
 
 // isFileInComponent 判断文件是否在组件目录下
