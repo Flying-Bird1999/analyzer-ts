@@ -13,13 +13,12 @@ import (
 // ComponentManifest 配置文件结构
 // 对应 component-manifest.json 的格式
 type ComponentManifest struct {
-	Components []ComponentDefinition `json:"components"`
-	Rules      *ManifestRules        `json:"rules,omitempty"`
+	Components map[string]ComponentDefinition `json:"components"` // 组件名 -> 组件定义
+	Rules      *ManifestRules                   `json:"rules,omitempty"`
 }
 
 // ComponentDefinition 组件定义
 type ComponentDefinition struct {
-	Name string `json:"name"` // 组件名称
 	Type string `json:"type"` // 资产类型: "component"
 	Path string `json:"path"` // 组件目录路径
 }
@@ -68,24 +67,26 @@ func LoadManifest(manifestPath string) (*ComponentManifest, error) {
 func validateManifest(manifest *ComponentManifest) error {
 	// 验证组件列表
 	if len(manifest.Components) == 0 {
-		return fmt.Errorf("components 列表不能为空")
+		return fmt.Errorf("components 不能为空")
 	}
 
-	componentNames := make(map[string]bool)
-	for i, comp := range manifest.Components {
+	for name, comp := range manifest.Components {
 		// 验证组件名称
-		if comp.Name == "" {
-			return fmt.Errorf("components[%d].name 不能为空", i)
+		if name == "" {
+			return fmt.Errorf("组件名不能为空")
 		}
-		// 检查组件名称重复
-		if componentNames[comp.Name] {
-			return fmt.Errorf("组件名称重复: %s", comp.Name)
+
+		// 验证类型
+		if comp.Type == "" {
+			return fmt.Errorf("组件 '%s' 的 type 不能为空", name)
 		}
-		componentNames[comp.Name] = true
+		if comp.Type != "component" {
+			return fmt.Errorf("组件 '%s' 的 type 必须为 'component'", name)
+		}
 
 		// 验证目录路径
 		if comp.Path == "" {
-			return fmt.Errorf("components[%d].path 不能为空", i)
+			return fmt.Errorf("组件 '%s' 的 path 不能为空", name)
 		}
 	}
 
@@ -98,12 +99,8 @@ func validateManifest(manifest *ComponentManifest) error {
 
 // GetComponentByName 根据名称获取组件定义
 func (m *ComponentManifest) GetComponentByName(name string) (*ComponentDefinition, bool) {
-	for i := range m.Components {
-		if m.Components[i].Name == name {
-			return &m.Components[i], true
-		}
-	}
-	return nil, false
+	comp, ok := m.Components[name]
+	return &comp, ok
 }
 
 // GetComponentCount 获取组件数量
@@ -113,9 +110,14 @@ func (m *ComponentManifest) GetComponentCount() int {
 
 // GetComponentNames 获取所有组件名称列表
 func (m *ComponentManifest) GetComponentNames() []string {
-	names := make([]string, len(m.Components))
-	for i, comp := range m.Components {
-		names[i] = comp.Name
+	names := make([]string, 0, len(m.Components))
+	for name := range m.Components {
+		names = append(names, name)
 	}
 	return names
+}
+
+// GetAllComponents 返回所有组件的名称和定义
+func (m *ComponentManifest) GetAllComponents() map[string]ComponentDefinition {
+	return m.Components
 }

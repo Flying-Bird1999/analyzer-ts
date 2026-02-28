@@ -89,8 +89,8 @@ func (a *ComponentDepsAnalyzer) buildComponentInfo(
 ) map[string]ComponentInfo {
 	result := make(map[string]ComponentInfo)
 
-	for _, comp := range a.manifest.Components {
-		deps := dependencies[comp.Name]
+	for name, comp := range a.manifest.Components {
+		deps := dependencies[name]
 
 		// 分类依赖
 		classified := depAnalyzer.ClassifyDependencies(deps)
@@ -105,11 +105,11 @@ func (a *ComponentDepsAnalyzer) buildComponentInfo(
 			})
 		}
 
-		result[comp.Name] = ComponentInfo{
-			Name:         comp.Name,
-			Path:         comp.Path,
-			Dependencies: deps,
-			NpmDeps:      classified.NpmDeps,
+		result[name] = ComponentInfo{
+			Name:          name,
+			Path:          comp.Path,
+			Dependencies:  deps,
+			NpmDeps:       classified.NpmDeps,
 			ComponentDeps: componentDeps,
 		}
 	}

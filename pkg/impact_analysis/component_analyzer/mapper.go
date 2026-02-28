@@ -40,10 +40,10 @@ func (m *ComponentMapper) MapFileToComponent(filePath string) string {
 
 	// 遍历组件清单，检查文件是否在组件范围内
 	// 使用 path 作为组件作用域
-	for _, comp := range m.componentManifest.Components {
+	for name, comp := range m.componentManifest.Components {
 		// 检查文件是否在组件目录下
 		if strings.HasPrefix(filePath, comp.Path) {
-			return comp.Name
+			return name
 		}
 	}
 

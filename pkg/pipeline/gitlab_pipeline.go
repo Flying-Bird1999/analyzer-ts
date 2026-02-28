@@ -287,9 +287,10 @@ func (s *ImpactAnalysisStage) detectComponentLibrary(ctx *AnalysisContext) (*imp
 	}
 
 	// 将相对路径转换为绝对路径
-	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Path) {
-			manifest.Components[i].Path = filepath.Join(ctx.ProjectRoot, manifest.Components[i].Path)
+	for name, comp := range manifest.Components {
+		if !filepath.IsAbs(comp.Path) {
+			comp.Path = filepath.Join(ctx.ProjectRoot, comp.Path)
+			manifest.Components[name] = comp
 		}
 	}
 

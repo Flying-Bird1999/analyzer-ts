@@ -482,21 +482,21 @@ func TestE2E_HooksWithMockData(t *testing.T) {
 
 	// 创建模拟的 component_deps 结果
 	mockComponentDeps := createMockComponentDepsResult(&ComponentManifest{
-		Components: []ComponentInfo{
-			{Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
-			{Name: "Counter", Path: filepath.Join(projectRoot, "src/components/Counter"), Type: "component"},
+		Components: map[string]ComponentInfo{
+			"Button": {Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
+			"Counter": {Name: "Counter", Path: filepath.Join(projectRoot, "src/components/Counter"), Type: "component"},
 		},
 	})
 
 	// 创建 MR 组件影响分析器
 	analyzer := NewAnalyzer(&AnalyzerConfig{
 		Manifest: &ComponentManifest{
-			Components: []ComponentInfo{
-				{Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
-				{Name: "Counter", Path: filepath.Join(projectRoot, "src/components/Counter"), Type: "component"},
+			Components: map[string]ComponentInfo{
+				"Button":  {Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
+				"Counter": {Name: "Counter", Path: filepath.Join(projectRoot, "src/components/Counter"), Type: "component"},
 			},
-			Functions: []FunctionInfo{
-				{Name: "hooks", Path: filepath.Join(projectRoot, "src/hooks"), Type: "functions"},
+			Functions: map[string]FunctionInfo{
+				"hooks": {Name: "hooks", Path: filepath.Join(projectRoot, "src/hooks"), Type: "functions"},
 			},
 		},
 		FunctionPaths: []string{filepath.Join(projectRoot, "src/hooks")},
@@ -575,8 +575,8 @@ func createTempDiffFile(t *testing.T, files []string) string {
 // createMockComponentDepsResult 创建模拟的组件依赖结果
 func createMockComponentDepsResult(manifest *ComponentManifest) *component_deps.ComponentDepsResult {
 	components := make(map[string]component_deps.ComponentInfo)
-	for _, comp := range manifest.Components {
-		components[comp.Name] = component_deps.ComponentInfo{
+	for name, comp := range manifest.Components {
+		components[name] = component_deps.ComponentInfo{
 			Name:          comp.Name,
 			Path:          comp.Path,
 			Dependencies:  []projectParser.ImportDeclarationResult{},

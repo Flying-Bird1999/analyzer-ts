@@ -13,9 +13,9 @@ import (
 
 func TestComponentMapper_MapFileToComponent(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
-			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			"Input":  {Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -60,8 +60,8 @@ func TestComponentMapper_MapFileToComponent(t *testing.T) {
 
 func TestComponentMapper_MapFilesToComponents(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -90,8 +90,8 @@ func TestComponentMapper_MapFilesToComponents(t *testing.T) {
 
 func TestComponentMapper_GetComponentByName(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -119,10 +119,10 @@ func TestComponentMapper_GetComponentByName(t *testing.T) {
 
 func TestBuildComponentDependencyGraph(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Form", Path: "/project/src/components/Form", Type: "component"},
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
-			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Form":   {Name: "Form", Path: "/project/src/components/Form", Type: "component"},
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			"Input":  {Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -523,9 +523,9 @@ func TestPropagator_CyclicDependency(t *testing.T) {
 // TestComponentMapper_EdgeCases 测试 ComponentMapper 边界情况
 func TestComponentMapper_EdgeCases(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
-			{Name: "Input", Path: "/project/src/components/Input", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			"Input":  {Name: "Input", Path: "/project/src/components/Input", Type: "component"},
 		},
 	}
 
@@ -586,8 +586,8 @@ func TestComponentMapper_EdgeCases(t *testing.T) {
 // TestBuildComponentDependencyGraph_EmptyGraph 测试空依赖图构建
 func TestBuildComponentDependencyGraph_EmptyGraph(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
 		},
 	}
 
@@ -615,9 +615,9 @@ func TestBuildComponentDependencyGraph_EmptyGraph(t *testing.T) {
 // TestBuildComponentDependencyGraph_ExternalFiles 测试外部文件处理
 func TestBuildComponentDependencyGraph_ExternalFiles(t *testing.T) {
 	manifest := &impact_analysis.ComponentManifest{
-		Components: []impact_analysis.Component{
-			{Name: "Button", Path: "/project/src/components/Button", Type: "component"},
-			{Name: "Form", Path: "/project/src/components/Form", Type: "component"},
+		Components: map[string]impact_analysis.Component{
+			"Button": {Name: "Button", Path: "/project/src/components/Button", Type: "component"},
+			"Form":   {Name: "Form", Path: "/project/src/components/Form", Type: "component"},
 		},
 	}
 

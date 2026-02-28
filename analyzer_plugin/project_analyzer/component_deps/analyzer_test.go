@@ -20,38 +20,37 @@ func TestLoadManifest_FileNotFound(t *testing.T) {
 
 func TestValidateManifest_EmptyComponents(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{},
+		Components: map[string]ComponentDefinition{},
 	}
 
 	err := validateManifest(manifest)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "components 列表不能为空")
+	assert.Contains(t, err.Error(), "components 不能为空")
 }
 
 func TestValidateManifest_DuplicateComponentNames(t *testing.T) {
+	// 新格式不支持重复名称（map 会自动去重），所以这个测试改为验证 map 的工作方式
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
-			{Name: "Button", Type: "component", Path: "src/Button2"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 
 	err := validateManifest(manifest)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "组件名称重复")
+	// 由于是 map，不可能有重复的 key，所以验证应该通过
+	assert.NoError(t, err)
 }
 
 func TestGetComponentByName(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
-			{Name: "Input", Type: "component", Path: "src/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
+			"Input":  {Type: "component", Path: "src/Input"},
 		},
 	}
 
 	comp, ok := manifest.GetComponentByName("Button")
 	assert.True(t, ok)
-	assert.Equal(t, "Button", comp.Name)
 	assert.Equal(t, "src/Button", comp.Path)
 
 	_, ok = manifest.GetComponentByName("NonExistent")
@@ -64,8 +63,8 @@ func TestGetComponentByName(t *testing.T) {
 
 func TestIsFileInComponent(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -83,8 +82,8 @@ func TestIsFileInComponent(t *testing.T) {
 
 func TestIsExternalDependency_NpmPackage(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -103,8 +102,8 @@ func TestIsExternalDependency_NpmPackage(t *testing.T) {
 
 func TestIsExternalDependency_InternalFile(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -123,9 +122,9 @@ func TestIsExternalDependency_InternalFile(t *testing.T) {
 
 func TestIsExternalDependency_CrossComponent(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
-			{Name: "Input", Type: "component", Path: "src/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
+			"Input":  {Type: "component", Path: "src/Input"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -144,8 +143,8 @@ func TestIsExternalDependency_CrossComponent(t *testing.T) {
 
 func TestIsExternalDependency_ExternalFile(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -165,8 +164,8 @@ func TestIsExternalDependency_ExternalFile(t *testing.T) {
 // 去重测试 - 验证合并 ImportModules 的逻辑
 func TestAnalyzeComponent_Dedup(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -203,8 +202,7 @@ func TestAnalyzeComponent_Dedup(t *testing.T) {
 		},
 	}
 
-	comp := &ComponentDefinition{Name: "Button", Type: "component", Path: "src/Button"}
-	deps := analyzer.AnalyzeComponent(comp, fileResults)
+	deps := analyzer.AnalyzeComponent("Button", fileResults)
 
 	// 应该去重，只有 3 个依赖：react、Input/index.ts、lodash
 	assert.Len(t, deps, 3)
@@ -287,8 +285,8 @@ func TestComponentDepsResult_ToConsole(t *testing.T) {
 
 func TestClassifyDependencies_NpmOnly(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -309,9 +307,9 @@ func TestClassifyDependencies_NpmOnly(t *testing.T) {
 
 func TestClassifyDependencies_ComponentOnly(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
-			{Name: "Input", Type: "component", Path: "src/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
+			"Input":  {Type: "component", Path: "src/Input"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -336,9 +334,9 @@ func TestClassifyDependencies_ComponentOnly(t *testing.T) {
 
 func TestClassifyDependencies_Mixed(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
-			{Name: "Input", Type: "component", Path: "src/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
+			"Input":  {Type: "component", Path: "src/Input"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -362,48 +360,51 @@ func TestClassifyDependencies_Mixed(t *testing.T) {
 
 func TestFindComponentByFile(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/components/Button"},
-			{Name: "Input", Type: "component", Path: "src/components/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
+			"Input":  {Type: "component", Path: "src/Input"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
 
 	// 测试找到组件（相对路径）
-	comp := analyzer.findComponentByFile("src/components/Button/index.tsx")
+	name, comp := analyzer.findComponentByFile("src/Button/index.tsx")
 	assert.NotNil(t, comp)
-	assert.Equal(t, "Button", comp.Name)
+	assert.Equal(t, "Button", name)
 
-	comp = analyzer.findComponentByFile("src/components/Input/types.ts")
+	name, comp = analyzer.findComponentByFile("src/Input/types.ts")
 	assert.NotNil(t, comp)
-	assert.Equal(t, "Input", comp.Name)
+	assert.Equal(t, "Input", name)
 
 	// 测试绝对路径（包含项目根目录前缀）
-	comp = analyzer.findComponentByFile("/project/src/components/Button/index.tsx")
+	name, comp = analyzer.findComponentByFile("/project/src/Button/index.tsx")
 	assert.NotNil(t, comp)
-	assert.Equal(t, "Button", comp.Name)
+	assert.Equal(t, "Button", name)
 
-	comp = analyzer.findComponentByFile("/project/src/components/Input/types.ts")
+	name, comp = analyzer.findComponentByFile("/project/src/Input/types.ts")
 	assert.NotNil(t, comp)
-	assert.Equal(t, "Input", comp.Name)
+	assert.Equal(t, "Input", name)
 
 	// 测试找不到组件
-	comp = analyzer.findComponentByFile("src/utils/helper.ts")
+	name, comp = analyzer.findComponentByFile("src/utils/helper.ts")
 	assert.Nil(t, comp)
+	assert.Equal(t, "", name)
 
-	comp = analyzer.findComponentByFile("src/components/ButtonTest/index.tsx")
+	name, comp = analyzer.findComponentByFile("src/ButtonTest/index.tsx")
 	assert.Nil(t, comp)
+	assert.Equal(t, "", name)
 
-	comp = analyzer.findComponentByFile("/project/src/utils/helper.ts")
+	name, comp = analyzer.findComponentByFile("/project/src/utils/helper.ts")
 	assert.Nil(t, comp)
+	assert.Equal(t, "", name)
 }
 
 // TestAnalyzeComponent_MergeImportModules 测试同一来源多次引用时合并 ImportModules
 // 验证去重时不会丢失导入模块信息
 func TestAnalyzeComponent_MergeImportModules(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -437,8 +438,7 @@ func TestAnalyzeComponent_MergeImportModules(t *testing.T) {
 		},
 	}
 
-	comp := &ComponentDefinition{Name: "Button", Type: "component", Path: "src/Button"}
-	deps := analyzer.AnalyzeComponent(comp, fileResults)
+	deps := analyzer.AnalyzeComponent("Button", fileResults)
 
 	// 应该只有 1 个 npm 包依赖（react），但 ImportModules 应该包含所有导入
 	assert.Len(t, deps, 1, "应该只有一个 react 依赖记录")
@@ -467,8 +467,8 @@ func TestAnalyzeComponent_MergeImportModules(t *testing.T) {
 // TestAnalyzeComponent_MergeCrossFile 测试跨文件合并 ImportModules
 func TestAnalyzeComponent_MergeCrossFile(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Button", Type: "component", Path: "src/Button"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/Button"},
 		},
 	}
 	analyzer := NewDependencyAnalyzer(manifest)
@@ -499,8 +499,7 @@ func TestAnalyzeComponent_MergeCrossFile(t *testing.T) {
 		},
 	}
 
-	comp := &ComponentDefinition{Name: "Button", Type: "component", Path: "src/Button"}
-	deps := analyzer.AnalyzeComponent(comp, fileResults)
+	deps := analyzer.AnalyzeComponent("Button", fileResults)
 
 	// 应该只有 1 个文件依赖（helpers.ts），但 ImportModules 应该包含所有导入
 	assert.Len(t, deps, 1, "应该只有一个 helpers.ts 依赖记录")
@@ -602,10 +601,10 @@ func TestReExportResolver_BasicReExport(t *testing.T) {
 // TestReExportResolver_ClassifyWithReExport 测试在分类时解析重导出
 func TestReExportResolver_ClassifyWithReExport(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "Form", Type: "component", Path: "src/features/Form"},
-			{Name: "Button", Type: "component", Path: "src/components/Button"},
-			{Name: "Input", Type: "component", Path: "src/components/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button": {Type: "component", Path: "src/components/Button"},
+			"Input":  {Type: "component", Path: "src/components/Input"},
+			"Form":   {Type: "component", Path: "src/features/Form"},
 		},
 	}
 
@@ -788,11 +787,11 @@ func TestReExportResolver_EmptyExportDeclarations(t *testing.T) {
 // 模拟真实场景：组件通过统一导出目录导入其他组件
 func TestReExportResolver_EndToEnd(t *testing.T) {
 	manifest := &ComponentManifest{
-		Components: []ComponentDefinition{
-			{Name: "ProDatePicker", Type: "component", Path: "packages/ProDatePicker"},
-			{Name: "Button", Type: "component", Path: "packages/atlas/src/core/Button"},
-			{Name: "Popcard", Type: "component", Path: "packages/atlas/src/core/Popcard"},
-			{Name: "Input", Type: "component", Path: "packages/atlas/src/core/Input"},
+		Components: map[string]ComponentDefinition{
+			"Button":       {Type: "component", Path: "packages/atlas/src/core/Button"},
+			"Popcard":      {Type: "component", Path: "packages/atlas/src/core/Popcard"},
+			"Input":        {Type: "component", Path: "packages/atlas/src/core/Input"},
+			"ProDatePicker": {Type: "component", Path: "packages/ProDatePicker"},
 		},
 	}
 

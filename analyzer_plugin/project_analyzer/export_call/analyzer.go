@@ -91,15 +91,15 @@ func (a *ExportCallAnalyzer) Analyze(ctx *projectanalyzer.ProjectContext) (proje
 // buildAssetList 仅使用 functions 构建资产列表
 // Components 由 component_deps 插件处理，本插件只关注工具函数模块
 func (a *ExportCallAnalyzer) buildAssetList() []AssetItem {
-	assets := make([]AssetItem, len(a.manifest.Functions))
+	assets := make([]AssetItem, 0, len(a.manifest.Functions))
 
 	// 仅添加 functions
-	for i, fn := range a.manifest.Functions {
-		assets[i] = AssetItem{
-			Name: fn.Name,
+	for name, fn := range a.manifest.Functions {
+		assets = append(assets, AssetItem{
+			Name: name,
 			Type: fn.Type,
 			Path: fn.Path,
-		}
+		})
 	}
 
 	return assets
@@ -115,13 +115,9 @@ func (a *ExportCallAnalyzer) buildModuleExports(
 	// 构建 assetName -> assetPath 映射（使用原始相对路径）
 	assetPathMap := make(map[string]string)
 	for _, asset := range assets {
-		// 这里需要获取原始配置的相对路径，而不是解析后的绝对路径
-		// 由于 resolveAssetPaths 已经将路径转换为绝对路径，我们需要从 manifest 中获取原始路径
-		for _, fn := range a.manifest.Functions {
-			if fn.Name == asset.Name {
-				assetPathMap[asset.Name] = fn.Path
-				break
-			}
+		// 直接从 manifest 中获取原始路径
+		if fn, ok := a.manifest.Functions[asset.Name]; ok {
+			assetPathMap[asset.Name] = fn.Path
 		}
 	}
 
@@ -238,12 +234,12 @@ func (a *ExportCallAnalyzer) mapFilesToComponents(refFiles []string, projectRoot
 
 	// 构建组件路径映射（将相对路径转换为绝对路径）
 	compPathMap := make(map[string]string)
-	for _, comp := range a.manifest.Components {
+	for compName, comp := range a.manifest.Components {
 		absPath := comp.Path
 		if !filepath.IsAbs(comp.Path) {
 			absPath = filepath.Join(projectRoot, comp.Path)
 		}
-		compPathMap[comp.Name] = absPath
+		compPathMap[compName] = absPath
 	}
 
 	// 将文件分组到组件

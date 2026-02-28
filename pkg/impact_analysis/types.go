@@ -122,8 +122,8 @@ type SymbolChange struct {
 
 // ComponentManifest 组件清单
 type ComponentManifest struct {
-	Meta       ManifestMeta `json:"meta"`
-	Components []Component  `json:"components"`
+	Meta       ManifestMeta       `json:"meta"`
+	Components map[string]Component `json:"components"`
 }
 
 // ManifestMeta 清单元数据

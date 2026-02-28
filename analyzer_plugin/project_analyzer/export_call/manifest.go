@@ -9,13 +9,13 @@ import (
 
 // AssetManifest 统一的资产清单配置文件
 type AssetManifest struct {
-	Components []AssetItem `json:"components"`
-	Functions  []AssetItem `json:"functions"`
+	Components map[string]AssetItem `json:"components"` // 组件名 -> 组件定义
+	Functions  map[string]AssetItem `json:"functions"`  // 函数名 -> 函数定义
 }
 
 // AssetItem 单个资产项（组件或函数组）
 type AssetItem struct {
-	Name string `json:"name"` // 资产名称
+	Name string `json:"name"` // 资产名称（从 map key 复制，用于结果返回）
 	Type string `json:"type"` // "component" | "functions"
 	Path string `json:"path"` // 目录路径
 }
@@ -50,30 +50,48 @@ func LoadAssetManifest(manifestPath string) (*AssetManifest, error) {
 // validateManifest 验证配置文件的有效性
 func validateManifest(manifest *AssetManifest) error {
 	// 验证 components
-	for i, comp := range manifest.Components {
-		if comp.Name == "" {
-			return fmt.Errorf("components[%d].name 不能为空", i)
+	for name, comp := range manifest.Components {
+		if name == "" {
+			return fmt.Errorf("组件名不能为空")
 		}
 		if comp.Type != "component" {
-			return fmt.Errorf("components[%d].type 必须为 'component'", i)
+			return fmt.Errorf("组件 '%s' 的 type 必须为 'component'", name)
 		}
 		if comp.Path == "" {
-			return fmt.Errorf("components[%d].path 不能为空", i)
+			return fmt.Errorf("组件 '%s' 的 path 不能为空", name)
 		}
 	}
 
 	// 验证 functions
-	for i, fn := range manifest.Functions {
-		if fn.Name == "" {
-			return fmt.Errorf("functions[%d].name 不能为空", i)
+	for name, fn := range manifest.Functions {
+		if name == "" {
+			return fmt.Errorf("函数名不能为空")
 		}
 		if fn.Type != "functions" {
-			return fmt.Errorf("functions[%d].type 必须为 'functions'", i)
+			return fmt.Errorf("函数 '%s' 的 type 必须为 'functions'", name)
 		}
 		if fn.Path == "" {
-			return fmt.Errorf("functions[%d].path 不能为空", i)
+			return fmt.Errorf("函数 '%s' 的 path 不能为空", name)
 		}
 	}
 
 	return nil
+}
+
+// GetComponentNames 获取所有组件名称列表
+func (m *AssetManifest) GetComponentNames() []string {
+	names := make([]string, 0, len(m.Components))
+	for name := range m.Components {
+		names = append(names, name)
+	}
+	return names
+}
+
+// GetFunctionNames 获取所有函数名称列表
+func (m *AssetManifest) GetFunctionNames() []string {
+	names := make([]string, 0, len(m.Functions))
+	for name := range m.Functions {
+		names = append(names, name)
+	}
+	return names
 }

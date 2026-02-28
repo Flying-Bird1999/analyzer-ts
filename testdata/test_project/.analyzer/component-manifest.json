@@ -1,81 +1,21 @@
 {
-  "components": [
-    {
-      "name": "Button",
-      "type": "component",
-      "path": "src/components/Button"
-    },
-    {
-      "name": "Input",
-      "type": "component",
-      "path": "src/components/Input"
-    },
-    {
-      "name": "Select",
-      "type": "component",
-      "path": "src/components/Select"
-    },
-    {
-      "name": "Form",
-      "type": "component",
-      "path": "src/components/Form"
-    },
-    {
-      "name": "Modal",
-      "type": "component",
-      "path": "src/components/Modal"
-    },
-    {
-      "name": "Table",
-      "type": "component",
-      "path": "src/components/Table"
-    },
-    {
-      "name": "Badge",
-      "type": "component",
-      "path": "src/components/Badge"
-    },
-    {
-      "name": "Card",
-      "type": "component",
-      "path": "src/components/Card"
-    },
-    {
-      "name": "Counter",
-      "type": "component",
-      "path": "src/components/Counter"
-    },
-    {
-      "name": "Dropdown",
-      "type": "component",
-      "path": "src/components/Dropdown"
-    },
-    {
-      "name": "Tabs",
-      "type": "component",
-      "path": "src/components/Tabs"
-    },
-    {
-      "name": "Tooltip",
-      "type": "component",
-      "path": "src/components/Tooltip"
-    }
-  ],
-  "functions": [
-    {
-      "name": "utils",
-      "type": "functions",
-      "path": "src/utils"
-    },
-    {
-      "name": "hooks",
-      "type": "functions",
-      "path": "src/hooks"
-    },
-    {
-      "name": "types",
-      "type": "functions",
-      "path": "src/types"
-    }
-  ]
+  "components": {
+    "Button": {"type": "component", "path": "src/components/Button"},
+    "Input": {"type": "component", "path": "src/components/Input"},
+    "Select": {"type": "component", "path": "src/components/Select"},
+    "Form": {"type": "component", "path": "src/components/Form"},
+    "Modal": {"type": "component", "path": "src/components/Modal"},
+    "Table": {"type": "component", "path": "src/components/Table"},
+    "Badge": {"type": "component", "path": "src/components/Badge"},
+    "Card": {"type": "component", "path": "src/components/Card"},
+    "Counter": {"type": "component", "path": "src/components/Counter"},
+    "Dropdown": {"type": "component", "path": "src/components/Dropdown"},
+    "Tabs": {"type": "component", "path": "src/components/Tabs"},
+    "Tooltip": {"type": "component", "path": "src/components/Tooltip"}
+  },
+  "functions": {
+    "utils": {"type": "functions", "path": "src/utils"},
+    "hooks": {"type": "functions", "path": "src/hooks"},
+    "types": {"type": "functions", "path": "src/types"}
+  }
 }

@@ -58,22 +58,70 @@ type ComponentImpact struct {
 // ComponentManifest 组件清单配置
 // 对应 component-manifest.json 文件内容
 type ComponentManifest struct {
-	Components []ComponentInfo `json:"components"` // 组件列表
-	Functions  []FunctionInfo  `json:"functions"`  // 函数列表（可选）
+	Components map[string]ComponentInfo `json:"components"` // 组件名 -> 组件信息
+	Functions  map[string]FunctionInfo  `json:"functions"`  // 函数名 -> 函数信息（可选）
 }
 
 // ComponentInfo 组件信息
 type ComponentInfo struct {
 	Name string `json:"name"` // 组件名称
-	Path string `json:"path"` // 组件路径
 	Type string `json:"type"` // 类型: "component"
+	Path string `json:"path"` // 组件路径
 }
 
 // FunctionInfo 函数信息
 type FunctionInfo struct {
-	Name string `json:"name"` // 函数组名称（如 utils, hooks 等）
-	Path string `json:"path"` // 函数目录路径
+	Name string `json:"name"` // 函数组名称
 	Type string `json:"type"` // 类型: "functions"
+	Path string `json:"path"` // 函数目录路径
+}
+
+// GetComponentNames 获取所有组件名称列表
+func (m *ComponentManifest) GetComponentNames() []string {
+	names := make([]string, 0, len(m.Components))
+	for name := range m.Components {
+		names = append(names, name)
+	}
+	return names
+}
+
+// GetFunctionNames 获取所有函数名称列表
+func (m *ComponentManifest) GetFunctionNames() []string {
+	names := make([]string, 0, len(m.Functions))
+	for name := range m.Functions {
+		names = append(names, name)
+	}
+	return names
+}
+
+// GetComponentByFile 根据文件路径查找所属组件
+// 返回组件名称和组件信息
+func (m *ComponentManifest) GetComponentByFile(filePath string) (string, *ComponentInfo) {
+	for name, comp := range m.Components {
+		// 检查文件是否在该组件路径下
+		if len(filePath) >= len(comp.Path) && filePath[:len(comp.Path)] == comp.Path {
+			// 确保路径匹配（比如 /src/Button 和 /src/Button2）
+			if len(filePath) == len(comp.Path) || filePath[len(comp.Path)] == '/' {
+				return name, &comp
+			}
+		}
+	}
+	return "", nil
+}
+
+// GetFunctionByFile 根据文件路径查找所属函数组
+// 返回函数名称和函数信息
+func (m *ComponentManifest) GetFunctionByFile(filePath string) (string, *FunctionInfo) {
+	for name, fn := range m.Functions {
+		// 检查文件是否在该函数路径下
+		if len(filePath) >= len(fn.Path) && filePath[:len(fn.Path)] == fn.Path {
+			// 确保路径匹配
+			if len(filePath) == len(fn.Path) || filePath[len(fn.Path)] == '/' {
+				return name, &fn
+			}
+		}
+	}
+	return "", nil
 }
 
 // =============================================================================

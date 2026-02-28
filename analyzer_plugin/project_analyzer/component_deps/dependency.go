@@ -30,9 +30,14 @@ func NewDependencyAnalyzer(manifest *ComponentManifest) *DependencyAnalyzer {
 // 去重策略：同一来源（npm 包或文件）的多次引用会被合并为一条记录，
 // ImportModules 会累积所有导入的模块，确保信息不丢失
 func (da *DependencyAnalyzer) AnalyzeComponent(
-	comp *ComponentDefinition,
+	componentName string,
 	fileResults map[string]projectParser.JsFileParserResult,
 ) []projectParser.ImportDeclarationResult {
+	// 从 manifest 获取组件定义
+	comp, ok := da.manifest.Components[componentName]
+	if !ok {
+		return nil
+	}
 	// 直接使用目录路径
 	compDir := comp.Path
 
@@ -218,10 +223,9 @@ func (da *DependencyAnalyzer) AnalyzeAllComponents(
 
 	result := make(map[string][]projectParser.ImportDeclarationResult)
 
-	for i := range da.manifest.Components {
-		comp := &da.manifest.Components[i]
-		deps := da.AnalyzeComponent(comp, fileResults)
-		result[comp.Name] = deps
+	for componentName := range da.manifest.Components {
+		deps := da.AnalyzeComponent(componentName, fileResults)
+		result[componentName] = deps
 	}
 
 	return result
@@ -276,18 +280,18 @@ func (da *DependencyAnalyzer) ClassifyDependencies(
 			}
 
 			// 查找目标文件所属的组件
-			comp := da.findComponentByFile(targetFilePath)
+			componentName, comp := da.findComponentByFile(targetFilePath)
 			if comp != nil {
 				// 属于某个组件，添加到组件依赖
-				if _, exists := componentDepsMap[comp.Name]; !exists {
-					componentDepsMap[comp.Name] = &ComponentDepDetail{
-						Name:     comp.Name,
+				if _, exists := componentDepsMap[componentName]; !exists {
+					componentDepsMap[componentName] = &ComponentDepDetail{
+						Name:     componentName,
 						Path:     comp.Path,
 						DepFiles: []string{},
 					}
 				}
 				// 添加文件路径（去重）
-				detail := componentDepsMap[comp.Name]
+				detail := componentDepsMap[componentName]
 				found := false
 				for _, f := range detail.DepFiles {
 					if f == targetFilePath {
@@ -330,18 +334,17 @@ func (da *DependencyAnalyzer) GetReExportStats() *ReExportStats {
 }
 
 // findComponentByFile 根据文件路径查找其所属的组件
-// 返回：如果文件属于某个组件，返回该组件定义；否则返回 nil
-func (da *DependencyAnalyzer) findComponentByFile(filePath string) *ComponentDefinition {
+// 返回：组件名称和组件定义；如果找不到则返回空字符串和 nil
+func (da *DependencyAnalyzer) findComponentByFile(filePath string) (string, *ComponentDefinition) {
 	// 标准化路径为正斜杠格式
 	normalizedPath := filepath.ToSlash(filePath)
 
-	for i := range da.manifest.Components {
-		comp := &da.manifest.Components[i]
+	for name, comp := range da.manifest.Components {
 		normalizedDir := filepath.ToSlash(comp.Path)
 
 		// 首先尝试精确前缀匹配
 		if strings.HasPrefix(normalizedPath, normalizedDir+"/") || normalizedPath == normalizedDir {
-			return comp
+			return name, &comp
 		}
 
 		// 如果是绝对路径，尝试提取相对路径部分后再匹配
@@ -350,10 +353,10 @@ func (da *DependencyAnalyzer) findComponentByFile(filePath string) *ComponentDef
 		for j := 0; j < len(parts); j++ {
 			candidatePath := strings.Join(parts[j:], "/")
 			if strings.HasPrefix(candidatePath, normalizedDir+"/") || candidatePath == normalizedDir {
-				return comp
+				return name, &comp
 			}
 		}
 	}
 
-	return nil
+	return "", nil
 }

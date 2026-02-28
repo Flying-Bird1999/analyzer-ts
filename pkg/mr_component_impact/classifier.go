@@ -50,10 +50,10 @@ func (c *Classifier) isComponentFile(filePath string) string {
 		return ""
 	}
 
-	for _, comp := range c.manifest.Components {
+	for name, comp := range c.manifest.Components {
 		// 检查文件是否在组件路径下
 		if isFileInPath(filePath, comp.Path) {
-			return comp.Name
+			return name
 		}
 	}
 
@@ -64,9 +64,9 @@ func (c *Classifier) isComponentFile(filePath string) string {
 func (c *Classifier) isFunctionFile(filePath string) string {
 	// 优先检查 manifest 中的 functions 配置（直接返回配置的名称）
 	if c.manifest != nil {
-		for _, funcInfo := range c.manifest.Functions {
+		for name, funcInfo := range c.manifest.Functions {
 			if isFileInPath(filePath, funcInfo.Path) {
-				return funcInfo.Name
+				return name
 			}
 		}
 	}

@@ -119,9 +119,10 @@ func TestIntegration_ComponentDependencyGraph(t *testing.T) {
 	}
 
 	// 将相对路径转换为绝对路径
-	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Path) {
-			manifest.Components[i].Path = filepath.Join(testProjectPath, manifest.Components[i].Path)
+	for name, comp := range manifest.Components {
+		if !filepath.IsAbs(comp.Path) {
+			comp.Path = filepath.Join(testProjectPath, comp.Path)
+			manifest.Components[name] = comp
 		}
 	}
 
@@ -199,9 +200,10 @@ func TestIntegration_FullAnalysis(t *testing.T) {
 	}
 
 	// 将相对路径转换为绝对路径
-	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Path) {
-			manifest.Components[i].Path = filepath.Join(testProjectPath, manifest.Components[i].Path)
+	for name, comp := range manifest.Components {
+		if !filepath.IsAbs(comp.Path) {
+			comp.Path = filepath.Join(testProjectPath, comp.Path)
+			manifest.Components[name] = comp
 		}
 	}
 

@@ -55,17 +55,21 @@ func LoadManifest(manifestPath string) (*ComponentManifest, error) {
 	// 获取项目根目录（manifest 文件在 .analyzer 目录中，项目根目录是其父目录）
 	projectRoot := filepath.Clean(filepath.Join(filepath.Dir(manifestPath), ".."))
 
-	// 转换为绝对路径
-	for i := range manifest.Components {
-		if !filepath.IsAbs(manifest.Components[i].Path) {
-			manifest.Components[i].Path = filepath.Join(projectRoot, manifest.Components[i].Path)
+	// 转换为绝对路径，并复制 Name 字段
+	for name, comp := range manifest.Components {
+		comp.Name = name
+		if !filepath.IsAbs(comp.Path) {
+			comp.Path = filepath.Join(projectRoot, comp.Path)
 		}
+		manifest.Components[name] = comp
 	}
 
-	for i := range manifest.Functions {
-		if !filepath.IsAbs(manifest.Functions[i].Path) {
-			manifest.Functions[i].Path = filepath.Join(projectRoot, manifest.Functions[i].Path)
+	for name, fn := range manifest.Functions {
+		fn.Name = name
+		if !filepath.IsAbs(fn.Path) {
+			fn.Path = filepath.Join(projectRoot, fn.Path)
 		}
+		manifest.Functions[name] = fn
 	}
 
 	return &manifest, nil
@@ -319,9 +323,9 @@ func normalizeFilePaths(files []string, projectRoot string) []string {
 // createEmptyComponentDepsResult 创建空的组件依赖结果
 func createEmptyComponentDepsResult(manifest *ComponentManifest) *component_deps.ComponentDepsResult {
 	components := make(map[string]component_deps.ComponentInfo)
-	for _, comp := range manifest.Components {
-		components[comp.Name] = component_deps.ComponentInfo{
-			Name:          comp.Name,
+	for name, comp := range manifest.Components {
+		components[name] = component_deps.ComponentInfo{
+			Name:          name,
 			Path:          comp.Path,
 			Dependencies:  []projectParser.ImportDeclarationResult{},
 			ComponentDeps: []component_deps.ComponentDep{},
