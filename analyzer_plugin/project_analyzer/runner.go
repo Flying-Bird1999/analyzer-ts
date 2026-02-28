@@ -22,19 +22,18 @@ import (
 type AnalyzerType string
 
 const (
-	AnalyzerListDeps        AnalyzerType = "list-deps"
-	AnalyzerComponentDeps   AnalyzerType = "component-deps"
-	AnalyzerComponentDepsV2 AnalyzerType = "component-deps-v2"
-	AnalyzerExportCall      AnalyzerType = "export-call"
-	AnalyzerUnconsumed      AnalyzerType = "unconsumed"
-	AnalyzerCountAny        AnalyzerType = "count-any"
-	AnalyzerCountAs         AnalyzerType = "count-as"
-	AnalyzerNpmCheck        AnalyzerType = "npm-check"
-	AnalyzerUnreferenced    AnalyzerType = "find-unreferenced-files"
-	AnalyzerTrace           AnalyzerType = "trace"
-	AnalyzerApiTracer       AnalyzerType = "api-tracer"
-	AnalyzerCssFile         AnalyzerType = "css-file"
-	AnalyzerMdFile          AnalyzerType = "md-file"
+	AnalyzerPkgDeps       AnalyzerType = "pkg-deps"
+	AnalyzerComponentDeps AnalyzerType = "component-deps"
+	AnalyzerExportCall    AnalyzerType = "export-call"
+	AnalyzerUnconsumed    AnalyzerType = "unconsumed"
+	AnalyzerCountAny      AnalyzerType = "count-any"
+	AnalyzerCountAs       AnalyzerType = "count-as"
+	AnalyzerNpmCheck      AnalyzerType = "npm-check"
+	AnalyzerUnreferenced  AnalyzerType = "find-unreferenced-files"
+	AnalyzerTrace         AnalyzerType = "trace"
+	AnalyzerApiTracer     AnalyzerType = "api-tracer"
+	AnalyzerCssFile       AnalyzerType = "css-file"
+	AnalyzerMdFile        AnalyzerType = "md-file"
 )
 
 // analyzerRegistry 分析器注册表（名称 -> 工厂函数）
@@ -62,16 +61,11 @@ func (t AnalyzerType) String() string {
 // 配置类型定义
 // =============================================================================
 
-// ListDepsConfig list-deps 分析器配置（无需配置）
-type ListDepsConfig struct{}
+// PkgDepsConfig pkg-deps 分析器配置（无需配置）
+type PkgDepsConfig struct{}
 
 // ComponentDepsConfig component-deps 分析器配置
 type ComponentDepsConfig struct {
-	EntryPoint string
-}
-
-// ComponentDepsV2Config component-deps-v2 分析器配置
-type ComponentDepsV2Config struct {
 	Manifest string
 }
 
@@ -124,17 +118,10 @@ type AnalyzerConfig interface {
 }
 
 // 实现 ToMap 方法
-func (c ListDepsConfig) ToMap() map[string]string        { return nil }
+func (c PkgDepsConfig) ToMap() map[string]string { return nil }
 func (c ComponentDepsConfig) ToMap() map[string]string {
-	m := make(map[string]string)
-	if c.EntryPoint != "" {
-		m["entryPoint"] = c.EntryPoint
-	}
-	return m
-}
-func (c ComponentDepsV2Config) ToMap() map[string]string {
 	if c.Manifest == "" {
-		panic("ComponentDepsV2Config.Manifest is required")
+		panic("ComponentDepsConfig.Manifest is required")
 	}
 	return map[string]string{"manifest": c.Manifest}
 }
@@ -144,10 +131,10 @@ func (c ExportCallConfig) ToMap() map[string]string {
 	}
 	return map[string]string{"manifest": c.Manifest}
 }
-func (c UnconsumedConfig) ToMap() map[string]string       { return nil }
-func (c CountAnyConfig) ToMap() map[string]string         { return nil }
-func (c CountAsConfig) ToMap() map[string]string          { return nil }
-func (c NpmCheckConfig) ToMap() map[string]string         { return nil }
+func (c UnconsumedConfig) ToMap() map[string]string { return nil }
+func (c CountAnyConfig) ToMap() map[string]string   { return nil }
+func (c CountAsConfig) ToMap() map[string]string    { return nil }
+func (c NpmCheckConfig) ToMap() map[string]string   { return nil }
 func (c UnreferencedConfig) ToMap() map[string]string {
 	m := make(map[string]string)
 	if c.Entrypoint != "" {
@@ -167,8 +154,8 @@ func (c ApiTracerConfig) ToMap() map[string]string {
 	}
 	return map[string]string{"apiPaths": c.ApiPaths}
 }
-func (c CssFileConfig) ToMap() map[string]string          { return nil }
-func (c MdFileConfig) ToMap() map[string]string           { return nil }
+func (c CssFileConfig) ToMap() map[string]string { return nil }
+func (c MdFileConfig) ToMap() map[string]string  { return nil }
 
 // toConfigMap 将任意配置类型转换为 map[string]string
 func toConfigMap(config any) map[string]string {
@@ -563,9 +550,8 @@ func NewExecutionConfig() *ExecutionConfig {
 //   - config: 分析器配置，使用对应的配置结构体
 //
 // 可用的 AnalyzerType 常量（IDE 会自动提示）:
-//   - AnalyzerListDeps
+//   - AnalyzerPkgDeps
 //   - AnalyzerComponentDeps
-//   - AnalyzerComponentDepsV2
 //   - AnalyzerExportCall
 //   - AnalyzerUnconsumed
 //   - AnalyzerCountAny
@@ -579,12 +565,12 @@ func NewExecutionConfig() *ExecutionConfig {
 //
 // 使用示例:
 //
-//	import _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+//	import _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/pkg_deps"
 //	// 注意：需要 import 各个 analyzer 包以触发其 init() 注册
 //
 //	execConfig := project_analyzer.NewExecutionConfig().
-//	    AddAnalyzer(project_analyzer.AnalyzerListDeps, project_analyzer.ListDepsConfig{}).
-//	    AddAnalyzer(project_analyzer.AnalyzerComponentDepsV2, project_analyzer.ComponentDepsV2Config{
+//	    AddAnalyzer(project_analyzer.AnalyzerPkgDeps, project_analyzer.PkgDepsConfig{}).
+//	    AddAnalyzer(project_analyzer.AnalyzerComponentDeps, project_analyzer.ComponentDepsConfig{
 //	        Manifest: path,
 //	    })
 func (c *ExecutionConfig) AddAnalyzer(analyzerType AnalyzerType, config any) *ExecutionConfig {
@@ -695,12 +681,12 @@ func GetResult[T Result](results map[string]Result) (T, error) {
 //
 // 使用示例:
 //
-//	listResult, err := project_analyzer.RunOneT[*list_deps.ListDepsResult](
+//	listResult, err := project_analyzer.RunOneT[*pkg_deps.PkgDepsResult](
 //	    s.analyzer,
-//	    project_analyzer.AnalyzerListDeps,
-//	    project_analyzer.ListDepsConfig{},
+//	    project_analyzer.AnalyzerPkgDeps,
+//	    project_analyzer.PkgDepsConfig{},
 //	)
-//	// listResult 直接是 *list_deps.ListDepsResult 类型，无需类型断言
+//	// listResult 直接是 *pkg_deps.PkgDepsResult 类型，无需类型断言
 func RunOneT[T Result](analyzer *ProjectAnalyzer, analyzerType AnalyzerType, config any) (T, error) {
 	var zero T
 

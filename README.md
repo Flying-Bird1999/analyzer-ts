@@ -1339,7 +1339,7 @@ analyzer-ts/
 │   │   ├── trace/                   # NPM 包使用追踪
 │   │   ├── api_tracer/              # API 调用链追踪
 │   │   ├── component_deps/          # 组件依赖分析
-│   │   └── component_deps_v2/       # 组件依赖分析 v2（基于 manifest）
+│   │   └── component_deps/       # 组件依赖分析 v2（基于 manifest）
 │   │
 │   └── ts_bundle/                   # TypeScript 类型打包工具
 │       ├── README.md                # 详细文档
@@ -1413,7 +1413,7 @@ analyzer-ts/
 
 ### 插件开发
 - **[插件开发指南](./analyzer_plugin/project_analyzer/README.md)**: 开发自定义分析器
-- **[component_deps_v2 文档](./analyzer_plugin/project_analyzer/component_deps_v2/README.md)**: 组件依赖分析 v2
+- **[component_deps 文档](./analyzer_plugin/project_analyzer/component_deps/README.md)**: 组件依赖分析 v2
 
 ### API 文档
 - **[ts_bundle 文档](./analyzer_plugin/ts_bundle/README.md)**: 类型打包工具详解

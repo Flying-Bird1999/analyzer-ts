@@ -89,9 +89,9 @@ type Result interface {
 import (
     "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
     // 导入 analyzer 包以触发注册
-    _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+    _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
     _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
-    _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+    _ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/pkg_deps"
 )
 
 func main() {
@@ -104,8 +104,8 @@ func main() {
     // 2. 准备执行配置（使用 AnalyzerType 常量，IDE 会自动补全）
     manifestPath := "/path/to/component-manifest.json"
     execConfig := project_analyzer.NewExecutionConfig().
-        AddAnalyzer(project_analyzer.AnalyzerListDeps, project_analyzer.ListDepsConfig{}).
-        AddAnalyzer(project_analyzer.AnalyzerComponentDepsV2, project_analyzer.ComponentDepsV2Config{
+        AddAnalyzer(project_analyzer.AnalyzerPkgDeps, project_analyzer.PkgDepsConfig{}).
+        AddAnalyzer(project_analyzer.AnalyzerComponentDeps, project_analyzer.ComponentDepsConfig{
             Manifest: manifestPath,
         }).
         AddAnalyzer(project_analyzer.AnalyzerExportCall, project_analyzer.ExportCallConfig{
@@ -116,8 +116,8 @@ func main() {
     results, _ := analyzer.ExecuteWithConfig(execConfig)
 
     // 4. 处理结果
-    listResult, _ := project_analyzer.GetResult[*list_deps.ListDepsResult](results)
-    // ... 消费 listResult
+    pkgDepsResult, _ := project_analyzer.GetResult[*pkg_deps.PkgDepsResult](results)
+    // ... 消费 pkgDepsResult
 }
 ```
 

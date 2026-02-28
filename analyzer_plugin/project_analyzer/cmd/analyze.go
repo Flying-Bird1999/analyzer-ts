@@ -20,8 +20,6 @@ import (
 
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 
-	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
-
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAny"
 
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/countAs"
@@ -32,7 +30,7 @@ import (
 
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 
-	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/pkg_deps"
 
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/md_plugin"
 
@@ -113,15 +111,13 @@ func GetAnalyzeCmd() *cobra.Command {
 ` +
 			`  - npm-check: 检查 NPM 依赖，识别隐式、未使用和过期依赖.
 ` +
-			`  - list-deps: 列出项目的所有 NPM 依赖.
+			`  - pkg-deps: 列出项目的所有 NPM 依赖.
 ` +
 			`  - trace: 追踪一个或多个NPM包的使用链路 (例如 antd).
 ` +
 			`  - api-tracer: 追踪一个或多个接口的调用链路.
 ` +
-			`  - component-deps: 分析组件之间的依赖关系. (必须使用 -p 'component-deps.entryPoint=path/to/entry.ts' 指定入口文件，支持 glob 模式)
-` +
-			`  - component-deps-v2: 基于配置文件分析组件依赖关系. (必须使用 -p 'component-deps-v2.manifest=path/to/component-manifest.json')
+			`  - component-deps: 分析组件之间的依赖关系. (必须使用 -p 'component-deps.manifest=path/to/component-manifest.json')
 ` +
 			`  - export-call: 分析资产目录的导出节点引用关系. (必须使用 -p 'export-call.manifest=path/to/manifest.json')
 ` +

@@ -4,7 +4,7 @@ package mr_component_impact
 import (
 	"fmt"
 
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 )
 
 // =============================================================================
@@ -12,14 +12,14 @@ import (
 // =============================================================================
 
 // ComponentImpactAnalyzer 组件影响分析器
-// 基于 component_deps_v2 的结果分析组件变更的影响
+// 基于 component_deps 的结果分析组件变更的影响
 type ComponentImpactAnalyzer struct {
-	componentDeps *component_deps_v2.ComponentDepsV2Result
+	componentDeps *component_deps.ComponentDepsResult
 }
 
 // NewComponentImpactAnalyzer 创建组件影响分析器
 func NewComponentImpactAnalyzer(
-	componentDeps *component_deps_v2.ComponentDepsV2Result,
+	componentDeps *component_deps.ComponentDepsResult,
 ) *ComponentImpactAnalyzer {
 	return &ComponentImpactAnalyzer{
 		componentDeps: componentDeps,

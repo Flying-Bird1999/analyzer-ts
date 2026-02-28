@@ -1,468 +1,353 @@
-# 组件依赖分析器 (component-deps)
+# Component Dependencies Analyzer
 
-## 🎯 概述
+> 基于 manifest 配置文件的组件依赖关系分析插件
 
-`component-deps` 是一个高性能的 TypeScript/React 组件依赖分析器，专为现代化前端项目设计。它能够：
+## 概述
 
-- 🔍 **精准识别公共组件**：从指定的入口文件出发，自动识别所有对外暴露的公共组件
-- 📊 **构建依赖图谱**：生成清晰的组件依赖关系图，支持 Monorepo 架构
-- 🚫 **智能过滤类型**：自动排除纯类型定义，只分析实际的组件依赖
-- 📈 **多维度输出**：支持 JSON 格式和人类可读的控制台报告
+`component-deps` 是 `analyzer-ts` 的一个分析器插件，用于分析 TypeScript/JavaScript 项目中组件之间的外部依赖关系。与原始的 `component-deps` 不同，本插件通过配置文件显式声明组件列表，并智能过滤掉组件内部依赖，只保留有价值的外部依赖信息。
 
-## 🏗️ 架构设计
+### 核心特性
+
+- ✅ **配置驱动**: 通过 `component-manifest.json` 显式声明组件
+- ✅ **智能过滤**: 自动过滤组件内部依赖，只保留外部依赖
+- ✅ **完整信息**: 保留原始 import 解析结果，包含导入的详细内容
+- ✅ **自动去重**: 同一文件或 npm 包被多次引用时自动合并
+- ✅ **跨平台**: 支持绝对路径和相对路径的智能匹配
+
+---
+
+## 架构设计
 
 ### 整体架构
 
-```mermaid
-graph TB
-    A[入口文件配置] --> B[发现入口文件]
-    B --> C[识别公共组件]
-    C --> D[定位源文件与包归属]
-    D --> E[建立文件归属映射]
-    E --> F[构建依赖图谱]
-    F --> G[生成分析报告]
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   component-deps 架构                      │
+└─────────────────────────────────────────────────────────────┘
 
-    H[项目解析器] -->|提供 AST 数据| C
-    H -->|提供包信息| D
+输入层
+┌──────────────┐
+│ manifest.json │ ← 组件配置文件（由业务方维护）
+└──────────────┘
+        ↓
+解析层
+┌───────────────────────────────────────────────────────────┐
+│ 1. 解析 manifest.json                                   │
+│    └── 验证配置格式                                       │
+│                                                              │
+│ 2. 获取组件目录（基于 path）                             │
+│    └── 直接使用配置的 path 作为组件目录                        │
+│                                                              │
+│ 3. 分析组件外部依赖                                        │
+│    └── 遍历组件文件，提取 import 声明                     │
+│    └── 过滤组件内部依赖（路径前缀匹配）                    │
+│    └── 保留外部依赖（跨组件 + npm 包）                     │
+│    └── 自动去重（同一文件/包只记录一次）                   │
+└───────────────────────────────────────────────────────────┘
+        ↓
+输出层
+┌──────────────────────────────────────────────────────────┐
+│ ComponentDepsV2Result                                     │
+│ ├─ meta: 元数据（组件数）                                │
+│ └─ components: 各组件的外部依赖列表                       │
+│    └─ dependencies: ImportDeclarationResult[]            │
+│       ├─ npm 包依赖（Source.Type = "npm"）                │
+│       └─ 文件依赖（Source.Type = "file"）                 │
+└───────────────────────────────────────────────────────────┘
 ```
 
-### 核心分析流程
+### 核心算法流程
 
 ```mermaid
-graph LR
-    A[用户指定入口文件] --> B[扫描入口文件]
-    B --> C[解析导出声明]
-    C --> D{是否为组件导出?}
-    D -->|否| E[过滤掉]
-    D -->|是| F{是否为纯类型?}
-    F -->|是| E
-    F -->|否| G[添加到公共组件清单]
-    G --> H[追溯源文件路径]
-    H --> I[确定包归属]
-    I --> J[建立文件映射]
-    J --> K[分析依赖关系]
-    K --> L[生成最终结果]
+flowchart TD
+    A[开始] --> B[加载 manifest.json]
+    B --> C[验证配置格式]
+    C --> D[遍历每个组件]
+    D --> E[获取组件目录]
+    E --> F[遍历所有项目文件]
+    F --> G{文件在组件目录下?}
+    G -->|否| F
+    G -->|是| H[分析文件 import 声明]
+    H --> I{Source.Type 是什么?}
+    I -->|npm| J[记录 npm 依赖]
+    I -->|file| K{目标文件在组件内?}
+    K -->|是| L[忽略内部依赖]
+    K -->|否| M[记录外部文件依赖]
+    J --> N[去重: npm:包名 / file:路径]
+    M --> N
+    L --> N
+    N --> O{还有组件?}
+    O -->|是| D
+    O -->|否| P[输出结果]
 ```
 
-### 数据结构
+### 核心逻辑
 
-```mermaid
-graph TD
-    Result[Result] --> Packages[Packages]
-    Packages --> PackageName[包名]
-    PackageName --> Components[组件映射]
-    Components --> ComponentInfo[组件信息]
-    ComponentInfo --> SourcePath[源文件路径]
-    ComponentInfo --> Dependencies[依赖列表]
+#### 1. 路径匹配（简化版）
 
-    style Result fill:#e1f5fe
-    style ComponentInfo fill:#e8f5e8
-```
-
-## ⚡ 工作原理
-
-### 四阶段分析流程
-
-#### 🔍 第一阶段：入口文件发现
-分析器根据用户提供的 Glob 模式，扫描项目并找到所有匹配的入口文件。每个入口文件都会被映射到其所属的包。
-
-#### 🏷️ 第二阶段：公共组件识别
-通过分析入口文件的导出声明，识别出符合以下条件的公共组件：
-- **命名规范**：遵循帕斯卡命名法（PascalCase）
-- **类型过滤**：排除纯类型定义（`interface`、`type`、`enum`）
-- **实际存在**：能够追溯到真实的源文件位置
-
-#### 📂 第三阶段：文件映射建立
-为每个公共组件建立与其相关的文件集合，包括：
-- 组件的主要源文件
-- 组件目录下的所有相关文件
-- 依赖文件与公共组件的映射关系
-
-#### 🔗 第四阶段：依赖图谱构建
-遍历所有文件，分析导入关系，构建完整的依赖图谱：
-- 识别组件间的直接依赖
-- 排除对自身的循环依赖
-- 支持跨包依赖分析
-
-### 核心算法
-
-#### 组件识别算法
 ```go
-// 组件识别的核心逻辑
-if isComponentExport(name) && !isPureTypeRecursive(originalName, sourcePath, fileResults, visited) {
-    // 添加到公共组件清单
-    publicComponentSource[publicName] = finalSourcePath
-}
-```
+// 判断文件是否在组件目录下
+func isFileInComponent(filePath, compDir string) bool {
+    // 标准化为正斜杠
+    normalizedDir := filepath.ToSlash(compDir)      // "src/Button"
+    normalizedPath := filepath.ToSlash(filePath)    // "/project/src/Button/xxx.tsx"
 
-#### 依赖分析算法
-```go
-// 依赖分析的核心逻辑
-if depPublicNames, isPublic := sourceToPublicNamesMap[importedFilePath]; isPublic {
-    for _, depPublicName := range depPublicNames {
-        if depPublicName != publicName { // 排除自依赖
-            currentDeps = append(currentDeps, depPublicName)
+    // 精确前缀匹配
+    if strings.HasPrefix(normalizedPath, normalizedDir+"/") {
+        return true
+    }
+
+    // 支持绝对路径：提取相对部分后再匹配
+    parts := strings.Split(normalizedPath, "/")
+    for i := 0; i < len(parts); i++ {
+        candidatePath := strings.Join(parts[i:], "/")
+        if strings.HasPrefix(candidatePath, normalizedDir+"/") {
+            return true
         }
     }
+    return false
 }
 ```
 
-## 🛠️ 使用方法
+#### 2. 外部依赖判断
 
-### 基本用法
+```go
+// 判断是否为外部依赖
+func isExternalDependency(importDecl, sourceCompDir) bool {
+    // 1. npm 包 → 外部依赖
+    if importDecl.Source.Type == "npm" {
+        return true
+    }
 
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/your-project \
-  -p "component-deps.entryPoint=packages/*/src/index.ts"
+    // 2. 文件类型
+    if importDecl.Source.Type == "file" {
+        targetFile := importDecl.Source.FilePath
+        // 目标文件在组件内 → 内部依赖
+        if isFileInComponent(targetFile, sourceCompDir) {
+            return false
+        }
+        // 目标文件在组件外 → 外部依赖
+        return true
+    }
+
+    return false
+}
 ```
 
-### 高级用法
+#### 3. 自动去重
 
-#### 1. 分析单个组件库
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/ui-library \
-  -p "component-deps.entryPoint=src/index.ts"
+```go
+// 使用 map 去重
+seen := make(map[string]ImportDeclarationResult)
+
+// 计算唯一 key
+key := getDependencyKey(importDecl)
+// npm: "npm:" + npmPkg      例如: "npm:react"
+// file: "file:" + filePath  例如: "file:src/Input/index.ts"
+
+if _, exists := seen[key]; !exists {
+    seen[key] = importDecl  // 只保留第一次出现
+}
 ```
 
-#### 2. 分析 Monorepo 项目
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/monorepo \
-  -m \
-  -p "component-deps.entryPoint=packages/*/src/index.ts"
-```
+---
 
-#### 3. 指定多个入口模式
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/project \
-  -p "component-deps.entryPoint=components/*/index.ts,src/components/*/index.ts"
-```
+## 配置说明
 
-#### 4. 输出 JSON 格式结果
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/project \
-  -p "component-deps.entryPoint=packages/*/src/index.ts" \
-  --json | jq .
-```
-
-## 📊 参数说明
-
-### 必需参数
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `component-deps.entryPoint` | 入口文件路径，支持 Glob 模式 | `packages/*/src/index.ts` |
-
-### 全局参数
-
-| 参数 | 说明 | 示例 |
-|------|------|------|
-| `-i, --input` | 项目根目录 | `/path/to/project` |
-| `-m, --monorepo` | 启用 Monorepo 模式 | - |
-| `--json` | 输出 JSON 格式 | - |
-| `-o, --output` | 输出文件路径 | `/path/to/output.json` |
-
-## 📋 输出示例
-
-### JSON 格式输出
+### 配置文件格式
 
 ```json
 {
-  "packages": {
-    "@sl/sc-product": {
-      "ProductSetPicker": {
-        "sourcePath": ".../Product/src/ProductSetPicker/index.tsx",
-        "dependencies": [
-          "AddProductSet"
-        ]
-      },
-      "AddProductSet": {
-        "sourcePath": ".../Product/src/AddProductSet/index.tsx",
-        "dependencies": []
-      }
+  "components": [
+    {
+      "name": "Button",
+      "type": "component",
+      "path": "src/components/Button"
     },
-    "@sl/sc-base": {
-      "AsyncButton": {
-        "sourcePath": ".../Base/src/AsyncButton/index.tsx",
-        "dependencies": []
-      },
-      "CustomerGroupPicker": {
-        "sourcePath": ".../Base/src/CustomerGroupPicker/index.tsx",
-        "dependencies": [
-          "NovaTree"
-        ]
-      }
+    {
+      "name": "Input",
+      "type": "component",
+      "path": "src/components/Input"
+    }
+  ]
+}
+```
+
+### 字段说明
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `components` | array | 是 | 组件定义数组 |
+| `components[].name` | string | 是 | 组件名称（唯一标识） |
+| `components[].type` | string | 是 | 资产类型，固定值 `"component"` |
+| `components[].path` | string | 是 | 组件目录路径（相对于项目根目录） |
+
+**组件作用域**：
+- `path` = `src/components/Button`
+- 作用域 = `src/components/Button/` 下的所有文件
+
+---
+
+## 使用方式
+
+### 命令行使用
+
+```bash
+analyzer-ts analyze component-deps \
+  -i /path/to/project \
+  -p "component-deps.manifest=path/to/component-manifest.json"
+```
+
+### 参数说明
+
+| 参数 | 说明 | 示例 |
+|------|------|------|
+| `-i` | 项目根目录 | `/Users/bird/project` |
+| `-p` | 配置参数 | `component-deps.manifest=...` |
+
+---
+
+## 输出格式
+
+### JSON 输出
+
+```json
+{
+  "meta": {
+    "componentCount": 2
+  },
+  "components": {
+    "Button": {
+      "name": "Button",
+      "path": "src/components/Button",
+      "dependencies": [
+        {
+          "importModules": [
+            {"name": "useState", "type": "named", "identifier": "useState"}
+          ],
+          "raw": "import { useState } from 'react'",
+          "source": {
+            "type": "npm",
+            "npmPkg": "react"
+          }
+        },
+        {
+          "importModules": [
+            {"name": "Input", "type": "named", "identifier": "Input"}
+          ],
+          "raw": "import { Input } from '../Input'",
+          "source": {
+            "type": "file",
+            "filePath": "src/components/Input/index.tsx"
+          }
+        }
+      ]
+    },
+    "Input": {
+      "name": "Input",
+      "path": "src/components/Input",
+      "dependencies": [
+        {
+          "importModules": [
+            {"name": "useState", "type": "named", "identifier": "useState"}
+          ],
+          "raw": "import { useState } from 'react'",
+          "source": {
+            "type": "npm",
+            "npmPkg": "react"
+          }
+        }
+      ]
     }
   }
 }
 ```
 
-### 控制台格式输出
+### 控制台输出
 
 ```
-组件依赖分析报告:
-
 =====================================
-📦 包: @sl/sc-product (2 个组件)
+组件依赖分析报告 (V2)
 =====================================
 
-▶ 组件: ProductSetPicker
-  - 源文件: .../Product/src/ProductSetPicker/index.tsx
-  - 依赖的组件:
-    - AddProductSet
+组件总数: 2
 
-▶ 组件: AddProductSet
-  - 源文件: .../Product/src/AddProductSet/index.tsx
-  - 依赖的组件: 无
+▶ Button
+  路径: src/components/Button
+  外部依赖:
+    - npm: react
+    - file: src/components/Input/index.tsx
 
-=====================================
-📦 包: @sl/sc-base (2 个组件)
-=====================================
-
-▶ 组件: AsyncButton
-  - 源文件: .../Base/src/AsyncButton/index.tsx
-  - 依赖的组件: 无
-
-▶ 组件: CustomerGroupPicker
-  - 源文件: .../Base/src/CustomerGroupPicker/index.tsx
-  - 依赖的组件:
-    - NovaTree
+▶ Input
+  路径: src/components/Input
+  外部依赖:
+    - npm: react
 ```
 
-## 💡 最佳实践
+---
 
-### 1. 项目结构优化
+## 实现细节
+
+### 文件结构
 
 ```
-my-component-library/
-├── packages/
-│   ├── components/
-│   │   ├── src/
-│   │   │   ├── index.ts          # 主入口文件
-│   │   │   ├── Button/
-│   │   │   │   ├── index.tsx     # 组件实现
-│   │   │   │   └── types.ts      # 类型定义
-│   │   │   ├── Modal/
-│   │   │   │   ├── index.tsx
-│   │   │   │   └── styles.css
-│   │   │   └── utils/
-│   │   │       └── index.ts      # 工具函数
-│   │   └── package.json
-│   └── hooks/
-│       ├── src/
-│       │   └── index.ts
-│       └── package.json
-└── package.json
+component_deps/
+├── analyzer.go     # 主分析器，实现 Analyzer 接口
+├── manifest.go     # 配置文件解析和验证
+├── dependency.go   # 依赖分析逻辑（路径匹配 + 去重）
+├── result.go       # 结果定义（实现 Result 接口）
+└── analyzer_test.go # 测试
 ```
 
-### 2. 入口文件配置
-
-```typescript
-// packages/components/src/index.ts
-export { Button } from './Button';
-export { Modal } from './Modal';
-export type ButtonProps from './Button/types';
-export { useCustomHook } from './utils';
-
-// ✅ 正确：明确导出公共 API
-export { InternalComponent } from './InternalComponent'; // ❌ 避免：导出内部组件
-```
-
-### 3. 命名规范
-
-```typescript
-// ✅ 组件名称使用 PascalCase
-export const Button = () => {};
-export const ModalContainer = () => {};
-
-// ✅ 类型名称使用 PascalCase
-export type ButtonSize = 'small' | 'medium' | 'large';
-export interface ModalProps {
-  isOpen: boolean;
-}
-
-// ❌ 避免小写开头的导出（会被识别为工具函数）
-export const buttonUtils = {};  // 不会被识别为组件
-```
-
-### 4. 依赖管理
-
-```typescript
-// ✅ 明确依赖关系
-import { BaseButton } from '../base-components/Button';
-import { useTheme } from '../hooks/useTheme';
-
-// ❌ 避免循环依赖
-// Button.tsx 依赖 Modal.tsx，同时 Modal.tsx 依赖 Button.tsx
-```
-
-## 🚨 故障排除
-
-### 常见问题
-
-#### 1. 找不到入口文件
-```
-错误: 未找到任何匹配的入口文件: packages/*/src/index.ts
-```
-
-**解决方案**：
-- 检查路径是否正确
-- 确认文件是否存在
-- 验证 Glob 模式语法
-
-#### 2. 组件识别错误
-```typescript
-// 问题：类型被误识别为组件
-export type ComponentConfig = {};
-
-// 解决方案：确保类型文件不包含可执行代码
-// 或者使用明确的类型导出语法
-export type { ComponentConfig };
-```
-
-#### 3. 依赖分析不准确
-```typescript
-// 问题：动态导入无法分析
-const Component = dynamic(() => import('./Component'));
-
-// 解决方案：使用静态导入
-import { Component } from './Component';
-```
-
-### 调试技巧
-
-#### 1. 启用详细日志
-```bash
-./analyzer-ts analyze component-deps \
-  -i /path/to/project \
-  -p "component-deps.entryPoint=packages/*/src/index.ts" \
-  --verbose
-```
-
-#### 2. 检查 AST 数据
-```bash
-./analyzer-ts store-db \
-  -i /path/to/project \
-  -o /path/to/database.sqlite
-```
-
-#### 3. 验证项目配置
-```bash
-./analyzer-ts analyze npm-check \
-  -i /path/to/project
-```
-
-## 🔧 扩展开发
-
-### 添加新的分析规则
+### 核心数据结构
 
 ```go
-// 在 component_deps.go 中扩展 isComponentExport 函数
-func isComponentExport(name string) bool {
-    if name == "" {
-        return false
-    }
+// ComponentInfo 组件信息
+type ComponentInfo struct {
+    Name         string                       // 组件名称
+    Entry        string                       // 入口文件
+    Dependencies []ImportDeclarationResult    // 外部依赖列表
+}
 
-    // 现有规则
-    firstChar := []rune(name)[0]
-    if !unicode.IsUpper(firstChar) {
-        return false
-    }
-
-    // 新增规则：排除特定前缀
-    if strings.HasPrefix(name, "_") {
-        return false
-    }
-
-    return true
+// ImportDeclarationResult 直接复用解析结果
+type ImportDeclarationResult struct {
+    ImportModules []ImportModule  // 导入的模块详情
+    Raw           string          // 原始语句
+    Source        SourceData      // 来源信息（npm/file）
 }
 ```
 
-### 自定义输出格式
+---
 
-```go
-// 在 result.go 中扩展 ToConsole 方法
-func (r *Result) ToConsole() string {
-    var buffer bytes.Buffer
+## 测试验证
 
-    // 添加标题
-    buffer.WriteString("📊 Component Dependency Analysis\n")
-    buffer.WriteString("================================\n")
-
-    // 现有内容...
-
-    // 添加总结
-    buffer.WriteString("\n📈 Analysis Summary:\n")
-    buffer.WriteString(fmt.Sprintf("- Total packages: %d\n", len(r.Packages)))
-
-    return buffer.String()
-}
-```
-
-## 📈 性能优化
-
-### 1. 大型项目优化
+### 运行测试
 
 ```bash
-# 使用 exclude 参数排除不必要的文件
-./analyzer-ts analyze component-deps \
-  -i /path/to/large-project \
-  -p "component-deps.entryPoint=packages/*/src/index.ts" \
-  --exclude="**/*.test.ts,**/*.spec.ts,**/node_modules/**"
+go test ./analyzer_plugin/project_analyzer/component_deps/... -v
 ```
 
-### 2. 增量分析
+### 测试覆盖
 
-```bash
-# 只分析特定的包
-./analyzer-ts analyze component-deps \
-  -i /path/to/project \
-  -p "component-deps.entryPoint=packages/ui-components/src/index.ts"
-```
+- ✅ 配置文件解析和验证
+- ✅ 路径前缀匹配（组件内外判断）
+- ✅ 外部依赖判断（npm / 跨组件 / 外部文件）
+- ✅ 自动去重功能
 
-### 3. 缓存利用
+---
 
-```bash
-# 预解析项目到数据库
-./analyzer-ts store-db \
-  -i /path/to/project \
-  -o /path/to/database.sqlite
+## 相关文档
 
-# 从数据库读取进行分析
-./analyzer-ts analyze component-deps \
-  -i /path/to/project \
-  -p "component-deps.entryPoint=packages/*/src/index.ts" \
-  --database=/path/to/database.sqlite
-```
+- [Project Analyzer 架构](../README.md)
+- [技术方案概述](../../README.md)
 
-## 🤝 贡献指南
+---
 
-欢迎提交 Issue 和 Pull Request！
+## 版本历史
 
-### 开发环境设置
-
-```bash
-# 克隆项目
-git clone https://github.com/your-username/analyzer-ts.git
-cd analyzer-ts
-
-# 安装依赖
-go mod tidy
-
-# 运行测试
-go test ./analyzer_plugin/project_analyzer/component_deps/...
-```
-
-### 代码规范
-
-- 遵循 Go 语言标准规范
-- 添加详细的中文注释
-- 确保测试覆盖率
-
-## 📄 许可证
-
-MIT License
+- **v2.0.0** (2025-01-31) - 完全重构
+  - 移除复杂的 glob 模式匹配，改用简单的路径前缀匹配
+  - 移除循环依赖检测和反向依赖图
+  - 简化数据结构，直接复用 `ImportDeclarationResult`
+  - 添加自动去重功能
+- **v1.0.0** (2024-01-31) - 初始版本

@@ -12,9 +12,9 @@ import (
 
 	// 导入 analyzer 包以触发注册
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
-	component_deps_v2_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	component_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	export_call_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
-	list_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+	pkg_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/pkg_deps"
 )
 
 func main() {
@@ -65,8 +65,8 @@ func main() {
 	// 使用 AnalyzerType 常量，IDE 会自动补全
 	manifestPath := filepath.Join(absPath, ".analyzer/component-manifest.json")
 	execConfig := project_analyzer.NewExecutionConfig().
-		AddAnalyzer(project_analyzer.AnalyzerListDeps, project_analyzer.ListDepsConfig{}).
-		AddAnalyzer(project_analyzer.AnalyzerComponentDepsV2, project_analyzer.ComponentDepsV2Config{
+		AddAnalyzer(project_analyzer.AnalyzerPkgDeps, project_analyzer.PkgDepsConfig{}).
+		AddAnalyzer(project_analyzer.AnalyzerComponentDeps, project_analyzer.ComponentDepsConfig{
 			Manifest: manifestPath,
 		}).
 		AddAnalyzer(project_analyzer.AnalyzerExportCall, project_analyzer.ExportCallConfig{
@@ -86,13 +86,13 @@ func main() {
 	fmt.Println("\n分析结果:")
 	fmt.Println("===========================================\n")
 
-	// 4.1 list-deps 结果
-	if listResult, err := project_analyzer.GetResult[*list_deps_pkg.ListDepsResult](results); err == nil {
-		PrintListDepsResult(listResult)
+	// 4.1 pkg-deps 结果
+	if listResult, err := project_analyzer.GetResult[*pkg_deps_pkg.PkgDepsResult](results); err == nil {
+		PrintPkgDepsResult(listResult)
 	}
 
-	// 4.2 component-deps-v2 结果
-	if compResult, err := project_analyzer.GetResult[*component_deps_v2_pkg.ComponentDepsV2Result](results); err == nil {
+	// 4.2 component-deps 结果
+	if compResult, err := project_analyzer.GetResult[*component_deps_pkg.ComponentDepsResult](results); err == nil {
 		PrintComponentDepsResult(compResult)
 	}
 
@@ -122,9 +122,9 @@ func main() {
 	fmt.Println("===========================================")
 }
 
-// PrintListDepsResult 打印 list-deps 结果
-func PrintListDepsResult(result *list_deps_pkg.ListDepsResult) {
-	fmt.Println("【list-deps】NPM 依赖列表")
+// PrintPkgDepsResult 打印 pkg-deps 结果
+func PrintPkgDepsResult(result *pkg_deps_pkg.PkgDepsResult) {
+	fmt.Println("【pkg-deps】NPM 依赖列表")
 	fmt.Println("───────────────────────────────────────────")
 
 	fmt.Printf("摘要: %s\n\n", result.Summary())
@@ -151,9 +151,9 @@ func PrintListDepsResult(result *list_deps_pkg.ListDepsResult) {
 	}
 }
 
-// PrintComponentDepsResult 打印 component-deps-v2 结果
-func PrintComponentDepsResult(result *component_deps_v2_pkg.ComponentDepsV2Result) {
-	fmt.Println("【component-deps-v2】组件依赖分析")
+// PrintComponentDepsResult 打印 component-deps 结果
+func PrintComponentDepsResult(result *component_deps_pkg.ComponentDepsResult) {
+	fmt.Println("【component-deps】组件依赖分析")
 	fmt.Println("───────────────────────────────────────────")
 
 	fmt.Printf("摘要: %s\n\n", result.Summary())

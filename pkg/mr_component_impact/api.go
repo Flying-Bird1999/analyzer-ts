@@ -11,7 +11,7 @@ import (
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
 	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 )
 
@@ -136,7 +136,7 @@ func AnalyzeFromDiff(config *AnalyzeConfig) (*AnalysisResult, error) {
 		return nil, err
 	}
 
-	// 5. 运行 component_deps_v2 分析
+	// 5. 运行 component_deps 分析
 	componentDeps := runComponentDepsAnalysis(manifest, parsingResult, config.ProjectRoot, config.ManifestPath)
 
 	// 6. 运行 export_call 分析
@@ -231,8 +231,8 @@ func parseProject(config *AnalyzeConfig) (*projectParser.ProjectParserResult, er
 }
 
 // runComponentDepsAnalysis 运行组件依赖分析
-func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string, manifestPath string) *component_deps_v2.ComponentDepsV2Result {
-	analyzer := &component_deps_v2.ComponentDepsV2Analyzer{}
+func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projectParser.ProjectParserResult, projectRoot string, manifestPath string) *component_deps.ComponentDepsResult {
+	analyzer := &component_deps.ComponentDepsAnalyzer{}
 
 	params := map[string]string{
 		"manifest": manifestPath,
@@ -252,7 +252,7 @@ func runComponentDepsAnalysis(manifest *ComponentManifest, parsingResult *projec
 		return createEmptyComponentDepsResult(manifest)
 	}
 
-	componentDepsResult, ok := result.(*component_deps_v2.ComponentDepsV2Result)
+	componentDepsResult, ok := result.(*component_deps.ComponentDepsResult)
 	if !ok {
 		return createEmptyComponentDepsResult(manifest)
 	}
@@ -317,19 +317,19 @@ func normalizeFilePaths(files []string, projectRoot string) []string {
 }
 
 // createEmptyComponentDepsResult 创建空的组件依赖结果
-func createEmptyComponentDepsResult(manifest *ComponentManifest) *component_deps_v2.ComponentDepsV2Result {
-	components := make(map[string]component_deps_v2.ComponentInfo)
+func createEmptyComponentDepsResult(manifest *ComponentManifest) *component_deps.ComponentDepsResult {
+	components := make(map[string]component_deps.ComponentInfo)
 	for _, comp := range manifest.Components {
-		components[comp.Name] = component_deps_v2.ComponentInfo{
+		components[comp.Name] = component_deps.ComponentInfo{
 			Name:          comp.Name,
 			Path:          comp.Path,
 			Dependencies:  []projectParser.ImportDeclarationResult{},
-			ComponentDeps: []component_deps_v2.ComponentDep{},
+			ComponentDeps: []component_deps.ComponentDep{},
 		}
 	}
 
-	return &component_deps_v2.ComponentDepsV2Result{
-		Meta:       component_deps_v2.Meta{ComponentCount: len(manifest.Components)},
+	return &component_deps.ComponentDepsResult{
+		Meta:       component_deps.Meta{ComponentCount: len(manifest.Components)},
 		Components: components,
 	}
 }

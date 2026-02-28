@@ -35,7 +35,7 @@ From `analyzer_plugin/project_analyzer/impact_analysis/`:
 testProjectPath := "../../../testdata/test_project"
 ```
 
-From `analyzer_plugin/project_analyzer/component_deps_v2/`:
+From `analyzer_plugin/project_analyzer/component_deps/`:
 ```go
 testProjectPath := "../../../testdata/test_project"
 ```

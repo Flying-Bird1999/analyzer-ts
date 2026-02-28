@@ -39,8 +39,8 @@ analyzer, err := project_analyzer.NewProjectAnalyzer(project_analyzer.Config{
 
 ```go
 execConfig := project_analyzer.NewExecutionConfig().
-    AddAnalyzer(&list_deps.Lister{}, nil). // list_deps 不需要配置
-    AddAnalyzer(&component_deps_v2.ComponentDepsV2Analyzer{}, map[string]string{
+    AddAnalyzer(&pkg_deps.PkgDepsAnalyzer{}, nil). // pkg_deps 不需要配置
+    AddAnalyzer(&component_deps.ComponentDepsAnalyzer{}, map[string]string{
         "manifest": manifestPath,
     }).
     AddAnalyzer(&export_call.ExportCallAnalyzer{}, map[string]string{
@@ -70,17 +70,17 @@ for _, module := range exportCallResult.ModuleExports {
 
 本示例演示了三个内置分析器的使用：
 
-### list-deps
+### pkg-deps
 列出项目的 NPM 依赖。
 
 - **配置**: 无需配置
-- **结果**: `*list_deps.ListDepsResult`
+- **结果**: `*pkg_deps.PkgDepsResult`
 
-### component-deps-v2
+### component-deps
 分析组件的外部依赖关系。
 
 - **配置**: `manifest` - 组件清单文件路径
-- **结果**: `*component_deps_v2.ComponentDepsV2Result`
+- **结果**: `*component_deps.ComponentDepsResult`
 
 ### export-call
 分析导出节点的引用关系。
@@ -94,8 +94,8 @@ for _, module := range exportCallResult.ModuleExports {
 
 示例程序会在控制台输出格式化的分析结果，包括：
 
-1. **list-deps**: 每个 package.json 的 NPM 依赖列表
-2. **component-deps-v2**: 每个组件的外部依赖包
+1. **pkg-deps**: 每个 package.json 的 NPM 依赖列表
+2. **component-deps**: 每个组件的外部依赖包
 3. **export-call**: 每个模块的导出节点及引用状态
 
 ### JSON 文件
@@ -104,8 +104,8 @@ for _, module := range exportCallResult.ModuleExports {
 
 ```
 .analyzer/output/
-├── list-deps.json
-├── component-deps-v2.json
+├── pkg-deps.json
+├── component-deps.json
 └── export-call.json
 ```
 
@@ -148,9 +148,9 @@ for name, result := range results {
     case "export-call":
         r := result.(*export_call.ExportCallResult)
         // 处理 export-call 结果...
-    case "list-deps":
-        r := result.(*list_deps.ListDepsResult)
-        // 处理 list-deps 结果...
+    case "pkg-deps":
+        r := result.(*pkg_deps.PkgDepsResult)
+        // 处理 pkg-deps 结果...
     }
 }
 ```

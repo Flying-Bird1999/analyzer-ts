@@ -1,4 +1,4 @@
-package component_deps_v2
+package component_deps
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 
 func init() {
 	// 注册分析器到工厂
-	projectanalyzer.RegisterAnalyzer("component-deps-v2", func() projectanalyzer.Analyzer {
-		return &ComponentDepsV2Analyzer{}
+	projectanalyzer.RegisterAnalyzer("component-deps", func() projectanalyzer.Analyzer {
+		return &ComponentDepsAnalyzer{}
 	})
 }
 
@@ -19,14 +19,14 @@ func init() {
 // 分析器实现
 // =============================================================================
 
-// ComponentDepsV2Analyzer 组件依赖分析器（V2版本）
+// ComponentDepsAnalyzer 组件依赖分析器
 //
 // 使用方式：
 //
-//	analyzer-ts analyze component-deps-v2 \
+//	analyzer-ts analyze component-deps \
 //	  -i /path/to/project \
-//	  -p "component-deps-v2.manifest=path/to/component-manifest.json"
-type ComponentDepsV2Analyzer struct {
+//	  -p "component-deps.manifest=path/to/component-manifest.json"
+type ComponentDepsAnalyzer struct {
 	// ManifestPath 配置文件路径
 	// 可以是绝对路径或相对于项目根目录的路径
 	ManifestPath string
@@ -36,19 +36,19 @@ type ComponentDepsV2Analyzer struct {
 }
 
 // Name 返回分析器标识符
-func (a *ComponentDepsV2Analyzer) Name() string {
-	return "component-deps-v2"
+func (a *ComponentDepsAnalyzer) Name() string {
+	return "component-deps"
 }
 
 // Configure 配置分析器参数
 // 支持的参数：
 //   - manifest: 配置文件路径（必需）
-func (a *ComponentDepsV2Analyzer) Configure(params map[string]string) error {
+func (a *ComponentDepsAnalyzer) Configure(params map[string]string) error {
 	// 获取配置文件路径
 	manifestPath, ok := params["manifest"]
 	if !ok {
 		return fmt.Errorf("缺少必需参数: manifest\n" +
-			"请使用 -p 'component-deps-v2.manifest=path/to/component-manifest.json' 指定配置文件")
+			"请使用 -p 'component-deps.manifest=path/to/component-manifest.json' 指定配置文件")
 	}
 	a.ManifestPath = manifestPath
 
@@ -60,7 +60,7 @@ func (a *ComponentDepsV2Analyzer) Configure(params map[string]string) error {
 // 1. 加载配置文件
 // 2. 分析外部依赖
 // 3. 生成分析结果
-func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
+func (a *ComponentDepsAnalyzer) Analyze(ctx *projectanalyzer.ProjectContext) (projectanalyzer.Result, error) {
 	// 步骤 1: 加载配置文件
 	if err := a.loadManifest(ctx.ProjectRoot); err != nil {
 		return nil, fmt.Errorf("加载配置文件失败: %w", err)
@@ -72,7 +72,7 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 	dependencies := depAnalyzer.AnalyzeAllComponents(fileResults)
 
 	// 步骤 3: 构建结果（传递 depAnalyzer 以便重导出解析器可用）
-	result := &ComponentDepsV2Result{
+	result := &ComponentDepsResult{
 		Meta: Meta{
 			ComponentCount: len(a.manifest.Components),
 		},
@@ -83,7 +83,7 @@ func (a *ComponentDepsV2Analyzer) Analyze(ctx *projectanalyzer.ProjectContext) (
 }
 
 // buildComponentInfo 构建组件信息
-func (a *ComponentDepsV2Analyzer) buildComponentInfo(
+func (a *ComponentDepsAnalyzer) buildComponentInfo(
 	dependencies map[string][]projectParser.ImportDeclarationResult,
 	depAnalyzer *DependencyAnalyzer,
 ) map[string]ComponentInfo {
@@ -123,7 +123,7 @@ func (a *ComponentDepsV2Analyzer) buildComponentInfo(
 
 // loadManifest 加载配置文件
 // 支持绝对路径和相对路径
-func (a *ComponentDepsV2Analyzer) loadManifest(projectRoot string) error {
+func (a *ComponentDepsAnalyzer) loadManifest(projectRoot string) error {
 	var manifestPath string
 
 	// 判断是否为绝对路径

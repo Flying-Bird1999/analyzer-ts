@@ -9,7 +9,7 @@
 - 支持通过 manifest 配置定义组件和函数路径
 
 ### 2. 组件影响分析
-- 基于 component_deps_v2 的结果，直接查询组件依赖关系
+- 基于 component_deps 的结果，直接查询组件依赖关系
 - 无需复杂的传播算法，简单高效
 
 ### 3. 函数影响分析
@@ -26,7 +26,7 @@
 ```go
 import (
     mrcomponentimpact "github.com/Flying-Bird1999/analyzer-ts/pkg/mr_component_impact"
-    "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+    "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
     "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 )
 
@@ -34,7 +34,7 @@ import (
 analyzer := mrcomponentimpact.NewAnalyzer(&mrcomponentimpact.AnalyzerConfig{
     Manifest:      manifest,
     FunctionPaths: []string{"src/functions", "src/utils"},
-    ComponentDeps: componentDepsResult,  // component_deps_v2 的结果
+    ComponentDeps: componentDepsResult,  // component_deps 的结果
     ExportCall:    exportCallResult,    // export_call 的结果
 })
 
@@ -128,7 +128,7 @@ Changed Files (git diff)
     ↓
 ┌──────────────────────┬──────────────────────┐
 │  ComponentAnalyzer   │  FunctionAnalyzer    │
-│  - component_deps_v2 │  - export_call       │
+│  - component_deps │  - export_call       │
 │  - 查询组件依赖      │  - RefComponents     │
 └──────────────────────┴──────────────────────┘
     ↓
@@ -155,7 +155,7 @@ pkg/mr_component_impact/
 
 | 分析器 | 用途 | 组件级支持 |
 |--------|------|-----------|
-| **component_deps_v2** | 组件依赖分析 | ✅ ComponentDeps |
+| **component_deps** | 组件依赖分析 | ✅ ComponentDeps |
 | **export_call** | 函数引用分析 | ✅ RefComponents |
 
 这两个分析器均已原生支持组件级影响分析，无需在上层做文件→组件映射。

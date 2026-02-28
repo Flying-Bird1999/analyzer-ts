@@ -1,4 +1,4 @@
-package component_deps_v2
+package component_deps
 
 import (
 	"testing"
@@ -225,13 +225,13 @@ func TestAnalyzeComponent_Dedup(t *testing.T) {
 // 结果结构测试
 // =============================================================================
 
-func TestComponentDepsV2Result_Name(t *testing.T) {
-	result := &ComponentDepsV2Result{}
-	assert.Equal(t, "component-deps-v2", result.Name())
+func TestComponentDepsResult_Name(t *testing.T) {
+	result := &ComponentDepsResult{}
+	assert.Equal(t, "component-deps", result.Name())
 }
 
-func TestComponentDepsV2Result_Summary(t *testing.T) {
-	result := &ComponentDepsV2Result{
+func TestComponentDepsResult_Summary(t *testing.T) {
+	result := &ComponentDepsResult{
 		Meta: Meta{ComponentCount: 2},
 		Components: map[string]ComponentInfo{
 			"Button": {Dependencies: []projectParser.ImportDeclarationResult{{}, {}}},
@@ -244,8 +244,8 @@ func TestComponentDepsV2Result_Summary(t *testing.T) {
 	assert.Contains(t, summary, "3 条外部依赖")
 }
 
-func TestComponentDepsV2Result_ToJSON(t *testing.T) {
-	result := &ComponentDepsV2Result{
+func TestComponentDepsResult_ToJSON(t *testing.T) {
+	result := &ComponentDepsResult{
 		Meta: Meta{ComponentCount: 1},
 		Components: map[string]ComponentInfo{
 			"Button": {
@@ -262,8 +262,8 @@ func TestComponentDepsV2Result_ToJSON(t *testing.T) {
 	assert.Contains(t, string(data), "src/Button")
 }
 
-func TestComponentDepsV2Result_ToConsole(t *testing.T) {
-	result := &ComponentDepsV2Result{
+func TestComponentDepsResult_ToConsole(t *testing.T) {
+	result := &ComponentDepsResult{
 		Meta: Meta{ComponentCount: 1},
 		Components: map[string]ComponentInfo{
 			"Button": {

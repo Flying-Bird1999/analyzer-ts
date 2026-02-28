@@ -7,7 +7,7 @@
 //
 // 注意：本插件只处理 manifest.json 中的 functions 配置项，
 //
-//	components 由 component_deps_v2 插件处理
+//	components 由 component_deps 插件处理
 package export_call
 
 import (
@@ -89,7 +89,7 @@ func (a *ExportCallAnalyzer) Analyze(ctx *projectanalyzer.ProjectContext) (proje
 }
 
 // buildAssetList 仅使用 functions 构建资产列表
-// Components 由 component_deps_v2 插件处理，本插件只关注工具函数模块
+// Components 由 component_deps 插件处理，本插件只关注工具函数模块
 func (a *ExportCallAnalyzer) buildAssetList() []AssetItem {
 	assets := make([]AssetItem, len(a.manifest.Functions))
 

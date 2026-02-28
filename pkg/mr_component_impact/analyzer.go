@@ -2,7 +2,7 @@
 package mr_component_impact
 
 import (
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 )
 
@@ -22,7 +22,7 @@ type Analyzer struct {
 type AnalyzerConfig struct {
 	Manifest      *ComponentManifest
 	FunctionPaths []string
-	ComponentDeps  *component_deps_v2.ComponentDepsV2Result
+	ComponentDeps  *component_deps.ComponentDepsResult
 	ExportCall    *export_call.ExportCallResult
 }
 

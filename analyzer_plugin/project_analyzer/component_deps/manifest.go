@@ -1,4 +1,4 @@
-package component_deps_v2
+package component_deps
 
 import (
 	"encoding/json"

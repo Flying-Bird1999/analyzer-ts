@@ -47,7 +47,7 @@ package cmd
 //      - functions: 函数/工具文件
 //      - other: 其他文件
 //   3. 对于组件变更：
-//      - 查询 component_deps_v2 的依赖关系
+//      - 查询 component_deps 的依赖关系
 //      - 找出所有依赖该组件的其他组件
 //   4. 对于函数变更：
 //      - 查询 export_call 的引用关系
@@ -153,7 +153,7 @@ func runMrComponentImpact(cmd *cobra.Command, args []string) error {
 	// 2. 准备配置
 	config := &mrcomponentimpact.AnalyzeConfig{
 		ProjectRoot:  mrProjectRoot,
-		DiffFilePath:  mrDiffFile,
+		DiffFilePath: mrDiffFile,
 		ManifestPath: mrManifestPath,
 		ExcludePaths: mrExcludePaths,
 	}

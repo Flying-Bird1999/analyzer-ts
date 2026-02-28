@@ -24,9 +24,9 @@ import (
 
 	// 导入 analyzer 包以触发注册
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
-	component_deps_v2_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	component_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	export_call_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
-	list_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/list_deps"
+	pkg_deps_pkg "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/pkg_deps"
 )
 
 // MyBusinessService 模拟你的业务服务
@@ -85,41 +85,41 @@ func NewMyBusinessService(projectPath string) (*MyBusinessService, error) {
 }
 
 // ListDependencies 列出项目依赖
-// 调用 list-deps analyzer 获取项目的所有 NPM 依赖
+// 调用 pkg-deps analyzer 获取项目的所有 NPM 依赖
 func (s *MyBusinessService) ListDependencies() error {
 	fmt.Println("===========================================")
-	fmt.Println("列出项目依赖: list-deps")
+	fmt.Println("列出项目依赖: pkg-deps")
 	fmt.Println("===========================================")
 
 	// 使用 RunOneT 泛型函数，直接返回具体类型，无需类型断言
-	result, err := project_analyzer.RunOneT[*list_deps_pkg.ListDepsResult](
+	result, err := project_analyzer.RunOneT[*pkg_deps_pkg.PkgDepsResult](
 		s.analyzer,
-		project_analyzer.AnalyzerListDeps,
-		project_analyzer.ListDepsConfig{},
+		project_analyzer.AnalyzerPkgDeps,
+		project_analyzer.PkgDepsConfig{},
 	)
 	if err != nil {
-		return fmt.Errorf("执行 list-deps 失败: %w", err)
+		return fmt.Errorf("执行 pkg-deps 失败: %w", err)
 	}
 
 	// 存储结果
 	s.results[result.Name()] = result
 
-	printListDepsResultOndemand(result)
+	printPkgDepsResultOndemand(result)
 	return nil
 }
 
 // AnalyzeComponentDeps 分析组件依赖
-// 调用 component-deps-v2 analyzer 分析组件之间的依赖关系
+// 调用 component-deps analyzer 分析组件之间的依赖关系
 func (s *MyBusinessService) AnalyzeComponentDeps() error {
 	fmt.Println("===========================================")
 	fmt.Println("分析组件依赖: component-deps-v2")
 	fmt.Println("===========================================")
 
 	// 使用 RunOneT 泛型函数，直接返回具体类型，无需类型断言
-	result, err := project_analyzer.RunOneT[*component_deps_v2_pkg.ComponentDepsV2Result](
+	result, err := project_analyzer.RunOneT[*component_deps_pkg.ComponentDepsResult](
 		s.analyzer,
-		project_analyzer.AnalyzerComponentDepsV2,
-		project_analyzer.ComponentDepsV2Config{
+		project_analyzer.AnalyzerComponentDeps,
+		project_analyzer.ComponentDepsConfig{
 			Manifest: s.manifestPath,
 		},
 	)
@@ -200,9 +200,9 @@ func (s *MyBusinessService) SaveResults() error {
 // 结果打印函数（复制自 main.go）
 // =============================================================================
 
-// printListDepsResultOndemand 打印 list-deps 结果
-func printListDepsResultOndemand(result *list_deps_pkg.ListDepsResult) {
-	fmt.Println("【list-deps】NPM 依赖列表")
+// printPkgDepsResultOndemand 打印 pkg-deps 结果
+func printPkgDepsResultOndemand(result *pkg_deps_pkg.PkgDepsResult) {
+	fmt.Println("【pkg-deps】NPM 依赖列表")
 	fmt.Println("───────────────────────────────────────────")
 
 	fmt.Printf("摘要: %s\n\n", result.Summary())
@@ -230,7 +230,7 @@ func printListDepsResultOndemand(result *list_deps_pkg.ListDepsResult) {
 }
 
 // printComponentDepsResultOndemand 打印 component-deps-v2 结果
-func printComponentDepsResultOndemand(result *component_deps_v2_pkg.ComponentDepsV2Result) {
+func printComponentDepsResultOndemand(result *component_deps_pkg.ComponentDepsResult) {
 	fmt.Println("【component-deps-v2】组件依赖分析")
 	fmt.Println("───────────────────────────────────────────")
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps_v2"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 )
 
@@ -480,7 +480,7 @@ func TestE2E_HooksWithMockData(t *testing.T) {
 		},
 	}
 
-	// 创建模拟的 component_deps_v2 结果
+	// 创建模拟的 component_deps 结果
 	mockComponentDeps := createMockComponentDepsResult(&ComponentManifest{
 		Components: []ComponentInfo{
 			{Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
@@ -573,19 +573,19 @@ func createTempDiffFile(t *testing.T, files []string) string {
 }
 
 // createMockComponentDepsResult 创建模拟的组件依赖结果
-func createMockComponentDepsResult(manifest *ComponentManifest) *component_deps_v2.ComponentDepsV2Result {
-	components := make(map[string]component_deps_v2.ComponentInfo)
+func createMockComponentDepsResult(manifest *ComponentManifest) *component_deps.ComponentDepsResult {
+	components := make(map[string]component_deps.ComponentInfo)
 	for _, comp := range manifest.Components {
-		components[comp.Name] = component_deps_v2.ComponentInfo{
+		components[comp.Name] = component_deps.ComponentInfo{
 			Name:          comp.Name,
 			Path:          comp.Path,
 			Dependencies:  []projectParser.ImportDeclarationResult{},
-			ComponentDeps: []component_deps_v2.ComponentDep{},
+			ComponentDeps: []component_deps.ComponentDep{},
 		}
 	}
 
-	return &component_deps_v2.ComponentDepsV2Result{
-		Meta:       component_deps_v2.Meta{ComponentCount: len(manifest.Components)},
+	return &component_deps.ComponentDepsResult{
+		Meta:       component_deps.Meta{ComponentCount: len(manifest.Components)},
 		Components: components,
 	}
 }

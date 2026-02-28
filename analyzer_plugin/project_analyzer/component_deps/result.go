@@ -1,124 +1,154 @@
+// Package component_deps 实现了基于配置文件的组件依赖分析器。
+//
+// 核心特性：
+// 1. 配置驱动：通过 component-manifest.json 显式声明组件
+// 2. 精确过滤：过滤掉组件内部依赖，只保留外部依赖
+// 3. 完整信息：保留原始 import 解析结果，包含导入的详细内容
 package component_deps
 
 import (
 	"bytes"
 	"fmt"
+	"sort"
 
-	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
+	"github.com/Flying-Bird1999/analyzer-ts/analyzer/projectParser"
+	projectanalyzer "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer"
 )
 
-// ComponentInfo 包含了单个公共组件的详细分析信息
-// 该结构体存储了每个组件的源文件路径和依赖关系
-// 用于构建完整的组件依赖图和可视化展示
-//
-// JSON 标签说明:
-//   - sourcePath: 组件源文件的完整路径
-//   - dependencies: 该组件依赖的其他公共组件名称列表
+// =============================================================================
+// 数据结构定义
+// =============================================================================
+
+// ComponentInfo 单个组件的依赖信息
 type ComponentInfo struct {
-	SourcePath   string   `json:"sourcePath"`   // 组件源文件的完整路径
-	Dependencies []string `json:"dependencies"` // 依赖的其他公共组件名称列表
+	Name         string                                  `json:"name"`         // 组件名称
+	Path         string                                  `json:"path"`         // 组件目录路径
+	Dependencies []projectParser.ImportDeclarationResult `json:"dependencies"` // 外部依赖列表（原始扫描数据，保持不变）
+
+	// NpmDeps 本组件依赖的 npm 包列表（去重）
+	// 例如: ["react", "lodash", "dayjs"]
+	NpmDeps []string `json:"npmDeps,omitempty"`
+
+	// ComponentDeps 本组件依赖的其他组件列表
+	// 例如: Button 组件依赖 Input 组件的多个文件
+	ComponentDeps []ComponentDep `json:"componentDeps,omitempty"`
 }
 
-// Result 保存了对组件库的完整分析结果，以 package 分组
-// 该结构体是分析器的最终输出结果，包含了所有组件的依赖关系信息
-// 支持多包分析，每个包可以包含多个组件
-//
-// JSON 标签说明:
-//   - packages: 包名 -> 组件名 -> 组件信息的嵌套映射结构
-type Result struct {
-	Packages map[string]map[string]ComponentInfo `json:"packages"` // 包名到组件信息的映射
+// ComponentDep 组件依赖信息
+// 表示当前组件依赖了某个其他组件的具体情况
+type ComponentDep struct {
+	// Name 被依赖的组件名称（来自 manifest）
+	Name string `json:"name"`
+
+	// Path 被依赖组件在 manifest 中声明的路径
+	Path string `json:"path"`
+
+	// DepFiles 具体依赖的文件路径列表
+	// 表示当前组件中哪些文件引用了目标组件的文件
+	DepFiles []string `json:"depFiles,omitempty"`
 }
 
-// Name 返回分析结果的标识符
-// 用于在插件系统中识别和分类不同的分析结果
-// 该值与分析器的名称保持一致
-func (r *Result) Name() string {
+// Meta 分析元数据
+type Meta struct {
+	ComponentCount int `json:"componentCount"` // 组件总数
+}
+
+// ComponentDepsResult 组件依赖分析结果
+type ComponentDepsResult struct {
+	Meta       Meta                     `json:"meta"`
+	Components map[string]ComponentInfo `json:"components"`
+}
+
+// =============================================================================
+// Result 接口实现
+// =============================================================================
+
+// Name 返回分析结果标识符
+func (r *ComponentDepsResult) Name() string {
 	return "component-deps"
 }
 
-// Summary 返回分析结果的摘要信息
-// 提供分析结果的统计概览，包括:
-//   - 分析的包总数
-//   - 发现的公共组件总数
-//
-// 返回值:
-//   - 包含统计信息的格式化字符串
-func (r *Result) Summary() string {
-	packageCount := len(r.Packages) // 包总数
-	componentCount := 0
-	for _, components := range r.Packages {
-		componentCount += len(components) // 累计组件总数
+// Summary 返回分析结果摘要
+func (r *ComponentDepsResult) Summary() string {
+	totalDeps := 0
+	for _, comp := range r.Components {
+		totalDeps += len(comp.Dependencies)
 	}
-	return fmt.Sprintf("分析完成，共找到 %d 个包中的 %d 个公共组件。", packageCount, componentCount)
+	return fmt.Sprintf("分析完成，共发现 %d 个组件，%d 条外部依赖。",
+		r.Meta.ComponentCount, totalDeps)
 }
 
-// ToJSON 将分析结果序列化为 JSON 格式
-// 支持带缩进和不带缩进的 JSON 输出格式
-// 便于机器处理和数据持久化
-//
-// 参数:
-//   - indent: 是否格式化 JSON 输出（带缩进和换行）
-//
-// 返回值:
-//   - []byte: JSON 格式的字节数据
-//   - error: 序列化过程中的错误
-func (r *Result) ToJSON(indent bool) ([]byte, error) {
-	return project_analyzer.ToJSONBytes(r, indent)
+// ToJSON 将结果序列化为 JSON
+func (r *ComponentDepsResult) ToJSON(indent bool) ([]byte, error) {
+	return projectanalyzer.ToJSONBytes(r, indent)
 }
 
-// ToConsole 以易于阅读的格式在控制台打印分析结果
-// 生成的报告包含以下内容：
-//   - 总体标题和概览
-//   - 每个包的详细信息（带图标装饰）
-//   - 每个组件的详细信息，包括源文件路径和依赖关系
-//   - 使用清晰的层级结构和视觉分隔线
-//
-// 报告格式特点：
-//   - 使用 Unicode 图标增强可读性
-//   - 清晰的层级缩进
-//   - 分隔线区分不同的包和组件
-//   - 依赖列表使用嵌套格式显示
-//
-// 返回值:
-//   - 包含完整分析报告的格式化字符串
-func (r *Result) ToConsole() string {
+// ToConsole 将结果格式化为控制台输出
+func (r *ComponentDepsResult) ToConsole() string {
 	var buffer bytes.Buffer
-	// 报告标题
-	buffer.WriteString(fmt.Sprintf("组件依赖分析报告:\n"))
 
-	// 遍历每个包，生成包级别的信息
-	for pkgName, components := range r.Packages {
-		// 包分隔线
-		buffer.WriteString("\n=====================================\n")
-		// 包标题，包含包名和组件数量统计
-		buffer.WriteString(fmt.Sprintf("📦 包: %s (%d 个组件)\n", pkgName, len(components)))
-		buffer.WriteString("=====================================\n")
+	// 标题
+	buffer.WriteString("=====================================\n")
+	buffer.WriteString("组件依赖分析报告\n")
+	buffer.WriteString("=====================================\n\n")
 
-		// 遍历包中的每个组件，生成组件级别的信息
-		for name, info := range components {
-			// 组件名称标题
-			buffer.WriteString(fmt.Sprintf("\n▶ 组件: %s\n", name))
-			// 组件源文件路径
-			buffer.WriteString(fmt.Sprintf("  - 源文件: %s\n", info.SourcePath))
+	// 元数据
+	buffer.WriteString(fmt.Sprintf("组件总数: %d\n\n", r.Meta.ComponentCount))
 
-			// 处理依赖关系信息
-			if len(info.Dependencies) > 0 {
-				// 如果有依赖，显示依赖列表
-				buffer.WriteString("  - 依赖的组件:\n")
-				for _, dep := range info.Dependencies {
-					buffer.WriteString(fmt.Sprintf("    - %s\n", dep))
-				}
-			} else {
-				// 如果没有依赖，显示无依赖信息
-				buffer.WriteString("  - 依赖的组件: 无\n")
+	// 按名称排序组件列表
+	sortedNames := make([]string, 0, len(r.Components))
+	for name := range r.Components {
+		sortedNames = append(sortedNames, name)
+	}
+	sort.Strings(sortedNames)
+
+	// 组件详情
+	for _, name := range sortedNames {
+		comp := r.Components[name]
+		buffer.WriteString(fmt.Sprintf("▶ %s\n", name))
+		buffer.WriteString(fmt.Sprintf("  路径: %s\n", comp.Path))
+
+		// 显示 npm 依赖
+		if len(comp.NpmDeps) > 0 {
+			buffer.WriteString("  NPM 依赖:\n")
+			for _, pkg := range comp.NpmDeps {
+				buffer.WriteString(fmt.Sprintf("    - %s\n", pkg))
 			}
 		}
+
+		// 显示组件依赖
+		if len(comp.ComponentDeps) > 0 {
+			buffer.WriteString("  组件依赖:\n")
+			for _, dep := range comp.ComponentDeps {
+				buffer.WriteString(fmt.Sprintf("    - %s (%s)\n", dep.Name, dep.Path))
+				if len(dep.DepFiles) > 0 {
+					for _, file := range dep.DepFiles {
+						buffer.WriteString(fmt.Sprintf("      → %s\n", file))
+					}
+				}
+			}
+		}
+
+		// 显示完整依赖列表
+		if len(comp.Dependencies) > 0 {
+			buffer.WriteString("  完整依赖列表:\n")
+			for _, dep := range comp.Dependencies {
+				if dep.Source.Type == "npm" {
+					buffer.WriteString(fmt.Sprintf("    - npm: %s\n", dep.Source.NpmPkg))
+				} else {
+					buffer.WriteString(fmt.Sprintf("    - file: %s\n", dep.Source.FilePath))
+				}
+			}
+		} else {
+			buffer.WriteString("  外部依赖: 无\n")
+		}
+		buffer.WriteString("\n")
 	}
 
 	return buffer.String()
 }
 
 // AnalyzerName 返回对应的分析器名称
-func (r *Result) AnalyzerName() string {
+func (r *ComponentDepsResult) AnalyzerName() string {
 	return "component-deps"
 }

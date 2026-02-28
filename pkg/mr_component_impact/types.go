@@ -2,7 +2,7 @@
 //
 // 核心功能：
 // - 基于 git diff 分析代码变更对组件的影响范围
-// - 支持 component_deps_v2 和 export_call 的组件级引用分析
+// - 支持 component_deps 和 export_call 的组件级引用分析
 // - 简单直接的影响传播，无需复杂的 BFS 算法
 package mr_component_impact
 
