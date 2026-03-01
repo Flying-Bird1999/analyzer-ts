@@ -20,15 +20,31 @@ const (
 )
 
 // =============================================================================
+// 关系类型常量
+// =============================================================================
+
+// RelationType 关系类型
+const (
+	RelationDirect   = "direct"   // 直接变更
+	RelationDepends  = "depends"  // 直接依赖
+	RelationImports  = "imports"  // 导入引用
+	RelationIndirect = "indirect" // 间接依赖（传递依赖）
+)
+
+// =============================================================================
 // 分析结果相关类型
 // =============================================================================
 
 // AnalysisResult 分析结果
 type AnalysisResult struct {
-	ChangedComponents  map[string]*ComponentChangeInfo `json:"changedComponents"`  // 变更的组件
-	ChangedFunctions   map[string]*FunctionChangeInfo  `json:"changedFunctions"`   // 变更的函数
-	ImpactedComponents map[string][]ComponentImpact    `json:"impactedComponents"` // 受影响的组件
-	OtherFiles         []string                        `json:"otherFiles"`         // 其他文件
+	// 受影响的组件（包含所有受影响的组件，包括直接变更）
+	// key: 组件名, value: 影响列表
+	ImpactedComponents map[string][]ComponentImpact `json:"impactedComponents"`
+
+	// 详细信息（可选，用于展示和调试）
+	ChangedComponents map[string]*ComponentChangeInfo `json:"changedComponents,omitempty"`
+	ChangedFunctions  map[string]*FunctionChangeInfo  `json:"changedFunctions,omitempty"`
+	OtherFiles        []string                        `json:"otherFiles,omitempty"`
 }
 
 // ComponentChangeInfo 组件变更信息
@@ -45,10 +61,21 @@ type FunctionChangeInfo struct {
 
 // ComponentImpact 组件影响信息
 type ComponentImpact struct {
-	ComponentName string `json:"componentName"` // 受影响的组件名称
-	ImpactReason  string `json:"impactReason"`  // 影响原因说明
-	ChangeType    string `json:"changeType"`    // 变更类型: "component" 或 "function"
-	ChangeSource  string `json:"changeSource"`  // 变更来源（组件名或函数路径）
+	// 被影响的组件名
+	Component string `json:"component"`
+
+	// 原始变更源头：组件名（如 "Popcard"）或 函数名（如 "packages/atlas/src/core/helper/_utils"）
+	ChangeSource string `json:"changeSource"`
+
+	// 关系类型：direct/depends/imports/indirect
+	Relation string `json:"relation"`
+
+	// 影响层级：0=直接变更, 1=直接影响, 2+=间接影响
+	Level int `json:"level"`
+
+	// 传播路径（可选，用于间接依赖）
+	// 例如：["Popcard", "NewDropdown", "NewSelect"] 表示 Popcard → NewDropdown → NewSelect
+	Path []string `json:"path,omitempty"`
 }
 
 // =============================================================================

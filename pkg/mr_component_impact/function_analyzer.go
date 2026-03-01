@@ -2,9 +2,6 @@
 package mr_component_impact
 
 import (
-	"fmt"
-	"path/filepath"
-
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/export_call"
 )
 
@@ -54,10 +51,10 @@ func (a *FunctionImpactAnalyzer) AnalyzeFunctionChange(
 				// 直接使用 export_call 提供的组件级引用
 				for _, compRef := range node.RefComponents {
 					impacts = append(impacts, ComponentImpact{
-						ComponentName: compRef.ComponentName,
-						ImpactReason:  fmt.Sprintf("引用函数 %s/%s", functionName, node.Name),
-						ChangeType:    "function",
-						ChangeSource:  fmt.Sprintf("%s/%s", functionName, filepath.Base(functionFile)),
+						Component:    compRef.ComponentName,
+						ChangeSource: functionName, // 使用函数名
+						Relation:     RelationImports,
+						Level:        1,
 					})
 				}
 			}

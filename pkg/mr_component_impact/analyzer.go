@@ -22,7 +22,7 @@ type Analyzer struct {
 type AnalyzerConfig struct {
 	Manifest      *ComponentManifest
 	FunctionPaths []string
-	ComponentDeps  *component_deps.ComponentDepsResult
+	ComponentDeps *component_deps.ComponentDepsResult
 	ExportCall    *export_call.ExportCallResult
 }
 
@@ -87,12 +87,11 @@ func (a *Analyzer) analyzeComponentChange(
 	// 分析影响
 	impacts := a.componentAnalyzer.AnalyzeComponentChange(componentName)
 
-	// 将变更组件本身也加入到受影响列表中
+	// 将变更组件本身也加入到受影响列表中（标记为直接变更）
 	selfImpact := ComponentImpact{
-		ComponentName: componentName,
-		ImpactReason:  "直接变更",
-		ChangeType:    "component",
-		ChangeSource:  componentName,
+		ChangeSource: componentName,
+		Relation:     RelationDirect,
+		Level:        0,
 	}
 	result.ImpactedComponents[componentName] = append(
 		result.ImpactedComponents[componentName],
@@ -101,8 +100,8 @@ func (a *Analyzer) analyzeComponentChange(
 
 	// 记录受影响的组件
 	for _, impact := range impacts {
-		result.ImpactedComponents[impact.ComponentName] = append(
-			result.ImpactedComponents[impact.ComponentName],
+		result.ImpactedComponents[impact.Component] = append(
+			result.ImpactedComponents[impact.Component],
 			impact,
 		)
 	}
@@ -131,8 +130,8 @@ func (a *Analyzer) analyzeFunctionChange(
 
 	// 记录受影响的组件
 	for _, impact := range impacts {
-		result.ImpactedComponents[impact.ComponentName] = append(
-			result.ImpactedComponents[impact.ComponentName],
+		result.ImpactedComponents[impact.Component] = append(
+			result.ImpactedComponents[impact.Component],
 			impact,
 		)
 	}

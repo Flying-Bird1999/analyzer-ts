@@ -141,8 +141,8 @@ func TestE2E_AnalyzeFromDiff(t *testing.T) {
 
 		// 验证影响原因
 		for _, impact := range result.ImpactedComponents["Counter"] {
-			if impact.ChangeType != "function" {
-				t.Errorf("期望变更类型为 'function'，实际 '%s'", impact.ChangeType)
+			if impact.Relation != RelationImports {
+				t.Errorf("期望关系类型为 'imports'，实际 '%s'", impact.Relation)
 			}
 		}
 
@@ -483,7 +483,7 @@ func TestE2E_HooksWithMockData(t *testing.T) {
 	// 创建模拟的 component_deps 结果
 	mockComponentDeps := createMockComponentDepsResult(&ComponentManifest{
 		Components: map[string]ComponentInfo{
-			"Button": {Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
+			"Button":  {Name: "Button", Path: filepath.Join(projectRoot, "src/components/Button"), Type: "component"},
 			"Counter": {Name: "Counter", Path: filepath.Join(projectRoot, "src/components/Counter"), Type: "component"},
 		},
 	})
@@ -531,9 +531,9 @@ func TestE2E_HooksWithMockData(t *testing.T) {
 			t.Logf("✅ 成功检测到 Counter 组件受影响!")
 			// 检查影响原因
 			for _, impact := range result.ImpactedComponents["Counter"] {
-				t.Logf("  影响原因: %s", impact.ImpactReason)
-				if impact.ChangeType == "function" {
-					t.Logf("  ✅ 变更类型正确: function")
+				t.Logf("  影响原因: %s", impact.DisplayReason())
+				if impact.Relation == RelationImports {
+					t.Logf("  ✅ 关系类型正确: imports")
 				}
 			}
 		}

@@ -2,8 +2,6 @@
 package mr_component_impact
 
 import (
-	"fmt"
-
 	"github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/component_deps"
 )
 
@@ -36,19 +34,27 @@ func (a *ComponentImpactAnalyzer) AnalyzeComponentChange(
 	}
 
 	impacts := make([]ComponentImpact, 0)
-	visited := make(map[string]bool)     // 已访问的组件
-	queue := []string{componentName}      // BFS 队列
-	sourceMap := make(map[string]string)  // 记录每个组件的影响来源
+	visited := make(map[string]bool) // 已访问的组件
 
+	// BFS 传播节点：记录组件名、原始源头、当前层级、传播路径
+	type propagationNode struct {
+		name   string
+		source string // 原始变更源头
+		level  int    // 当前层级
+		path   []string
+	}
+
+	queue := []propagationNode{
+		{name: componentName, source: componentName, level: 0, path: []string{componentName}},
+	}
 	visited[componentName] = true
-	sourceMap[componentName] = componentName
 
 	// BFS 遍历依赖链
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
 
-		// 查找所有依赖当前组件的组件
+		// 查找所有依赖当前组件的组件（下游组件）
 		for compName, compInfo := range a.componentDeps.Components {
 			// 跳过已访问的组件
 			if visited[compName] {
@@ -57,20 +63,40 @@ func (a *ComponentImpactAnalyzer) AnalyzeComponentChange(
 
 			// 检查该组件是否依赖当前组件
 			for _, dep := range compInfo.ComponentDeps {
-				if dep.Name == current {
+				if dep.Name == current.name {
+					// 构建传播路径
+					newPath := append([]string{}, current.path...)
+					newPath = append(newPath, compName)
+
+					// 确定关系类型
+					relation := RelationDepends
+					if current.level > 0 {
+						relation = RelationIndirect
+					}
+
 					// 记录影响
-					source := sourceMap[current]
-					impacts = append(impacts, ComponentImpact{
-						ComponentName: compName,
-						ImpactReason:  fmt.Sprintf("依赖组件 %s", current),
-						ChangeType:    "component",
-						ChangeSource:  source,
-					})
+					impact := ComponentImpact{
+						Component:    compName,
+						ChangeSource: current.source, // 始终是原始变更源头
+						Relation:     relation,
+						Level:        current.level + 1,
+					}
+
+					// 对于间接依赖，添加传播路径
+					if current.level > 0 {
+						impact.Path = newPath
+					}
+
+					impacts = append(impacts, impact)
 
 					// 标记为已访问并加入队列
 					visited[compName] = true
-					sourceMap[compName] = source
-					queue = append(queue, compName)
+					queue = append(queue, propagationNode{
+						name:   compName,
+						source: current.source, // 保持原始源头
+						level:  current.level + 1,
+						path:   newPath,
+					})
 					break
 				}
 			}
