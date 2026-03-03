@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/project_analyzer/cmd"
 	_ "github.com/Flying-Bird1999/analyzer-ts/analyzer_plugin/ts_bundle/cmd"
 	"github.com/Flying-Bird1999/analyzer-ts/cmd"
@@ -8,4 +10,5 @@ import (
 
 func main() {
 	cmd.Execute()
+	fmt.Println("Hello, World!")
 }
